@@ -19,3 +19,15 @@ export type { InitCommandOptions, InitCommandResult, StarterArtifact } from "./c
 export { runCommand } from "./commands/run.js";
 export { statusCommand } from "./commands/status.js";
 export { doctorCommand } from "./commands/doctor.js";
+export { addCredentialCommand, listCredentialsCommand } from "./commands/credentials.js";
+export type {
+  AddCredentialCommandOptions,
+  AddCredentialCommandResult,
+  CredentialStoreCommandOptions,
+  ListedCredential,
+  ListCredentialsCommandResult,
+} from "./commands/credentials.js";
+export { listSkillsCommand } from "./commands/skills.js";
+export type { ListedSkill, ListSkillsCommandOptions, ListSkillsCommandResult } from "./commands/skills.js";
+export { searchWorldCommand } from "./commands/world.js";
+export type { SearchWorldCommandOptions, SearchWorldCommandResult } from "./commands/world.js";

@@ -36,7 +36,7 @@ Not complete. The roadmap has substantial local implementation complete, but the
 | Phase 1 attention budget enforcement | `applyAttentionLimits` caps skills, traces, tools, and recent episodes; orchestrator uses attention-limited world context before Plan; token-budget accounting is not implemented | Partially complete |
 | Phase 1 read-only world paths | Local reader, retrieval, and multi-world search tests exist | Partially complete |
 | Phase 1 daemon | Daemon service and HTTP lifecycle transport exist with tests | Partially complete |
-| Phase 1 CLI | `init`, `run`, `status`, and `doctor` helpers exist; init runs migrations, installs starter skills, discovers starter traces/curriculum, and returns provider/credential prompts; `credentials`, `skills`, and `world` command helpers are not fully wired | Partially complete |
+| Phase 1 CLI | `init`, `run`, `credentials`, `skills`, `world`, `status`, and `doctor` helpers exist; init runs migrations, installs starter skills, discovers starter traces/curriculum, and returns provider/credential prompts; no interactive parser UX yet | Complete locally |
 | Phase 1 e2e run/recover | `tests/e2e-run.test.ts` and `tests/e2e-recover.test.ts` pass in current test suite | Complete locally |
 | Phase 1 done scenario | A developer can run a synthetic local goal; real provider config, credential use, anti-pattern automatic lookup, and full CLI install flow are not verified | Incomplete |
 | Phase 2 Dream primitive | Deterministic `runDream` exists with promotion/pruning/habituation/identity/confidence behavior | Partially complete |
@@ -65,16 +65,16 @@ Not complete. The roadmap has substantial local implementation complete, but the
 - `git -C the-world status --short`: clean.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
-- `bun run lint`: scanned 160 TypeScript files.
+- `bun run lint`: scanned 166 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 60 tests passed, 0 failed.
+- `bun run test`: 63 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value unblocked local gap after the CLI init starter-pack slice is Phase 1 CLI command coverage:
+The highest-value unblocked local gap after the CLI command-helper slice is Phase 1 web external tools and run-level safety behavior:
 
-1. Add `credentials`, `skills`, and `world` command helpers backed by the credential store, local state, and local world reader.
-2. Keep the existing e2e run/recover tests green while adding focused command tests.
+1. Add `web.fetch`, `web.read`, and `web.search` adapters or explicit fallbacks through the external tool router.
+2. Add local run-level tests for destructive confirmation continuation and harmful-request refusal behavior.
 
 Live provider credentials, real GitHub remotes, real GitHub Discussions, cross-install cultural transmission, and deployment supervision still require user-provided decisions or external access.
