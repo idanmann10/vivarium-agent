@@ -1,0 +1,13 @@
+{
+  "name": "@vivarium/core",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test src",
+    "typecheck": "tsc --noEmit -p ../../tsconfig.base.json"
+  }
+}

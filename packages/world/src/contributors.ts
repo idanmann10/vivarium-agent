@@ -1,0 +1,1 @@
+export const contributorProfileKind = "contributor";

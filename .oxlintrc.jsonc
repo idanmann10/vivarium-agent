@@ -1,0 +1,10 @@
+{
+  "categories": {
+    "correctness": "error",
+    "perf": "warn",
+    "suspicious": "error"
+  },
+  "deny": [
+    "typescript/no-explicit-any"
+  ]
+}

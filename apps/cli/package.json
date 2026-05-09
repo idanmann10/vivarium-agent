@@ -1,0 +1,14 @@
+{
+  "name": "@vivarium/cli",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "the-agent": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "bun ../../scripts/build.ts",
+    "test": "bun test src --pass-with-no-tests",
+    "typecheck": "tsc --noEmit -p ../../tsconfig.base.json"
+  }
+}
