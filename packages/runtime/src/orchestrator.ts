@@ -3,11 +3,18 @@ import {
   episodeId,
   runId,
   type Episode,
-  type Reflection,
   type RunId,
 } from "../../core/src/index.js";
 import type { LocalProvider } from "../../providers/src/index.js";
 import type { SelfTools } from "../../tools/src/index.js";
+import { applyAttentionLimits, type AttentionLimits } from "./attention.js";
+import { runExecutePrimitive } from "./primitives/execute/index.js";
+import { runMonitorPrimitive } from "./primitives/monitor/index.js";
+import { runPlanPrimitive } from "./primitives/plan/index.js";
+import { runPredictPrimitive } from "./primitives/predict/index.js";
+import { runRecoverPrimitive } from "./primitives/recover/index.js";
+import { runReflectPrimitive } from "./primitives/reflect/index.js";
+import { runValidatePrimitive } from "./primitives/validate/index.js";
 
 export const runSkeleton = ["plan", "predict", "execute", "monitor", "recover", "validate", "reflect"] as const;
 
@@ -18,6 +25,7 @@ export interface RunGoalRequest {
   readonly provider: LocalProvider;
   readonly tools: SelfTools;
   readonly forceFailure?: boolean;
+  readonly attentionLimits?: AttentionLimits;
 }
 
 export interface RunGoalResult {
@@ -78,31 +86,49 @@ export async function runGoal(request: RunGoalRequest): Promise<RunGoalResult> {
   append({ kind: "run_start", goal: request.goal, domain: request.domain });
 
   const worldResults = request.tools.world.search({ domain: request.domain, query: request.goal });
-  const plan = await request.provider.complete({ kind: "plan", input: request.goal });
+  const attentionRequest = {
+    worldResults,
+    tools: ["local-provider.execute"],
+    episodes: request.tools.episodes.list(id),
+  };
+  const attention = applyAttentionLimits(
+    request.attentionLimits === undefined ? attentionRequest : { ...attentionRequest, limits: request.attentionLimits },
+  );
   append({
     kind: "plan",
-    plan: `${plan}\nLoaded: ${worldResults.map((result) => result.title).join(", ")}`,
-    skillsLoaded: [],
-    tracesLoaded: [],
+    ...(await runPlanPrimitive({
+      goal: request.goal,
+      provider: request.provider,
+      context: attention,
+    })),
   });
 
-  const prediction = {
-    about: "local-runtime",
-    expected: await request.provider.complete({ kind: "predict", input: request.goal }),
-    confidence: 0.72,
+  const prediction = await runPredictPrimitive({
+    goal: request.goal,
+    provider: request.provider,
+    tool: "local-provider.execute",
+  });
+  append({ kind: "prediction", ...prediction });
+
+  const executeRequest = {
+    goal: request.goal,
+    provider: request.provider,
+    tool: "local-provider.execute",
   };
-  append({ kind: "prediction", prediction });
+  const execution = await runExecutePrimitive(
+    request.forceFailure === undefined ? executeRequest : { ...executeRequest, forceFailure: request.forceFailure },
+  );
 
-  append({ kind: "action", tool: "local-provider.execute", args: { goal: request.goal } });
-
-  const observation = request.forceFailure
-    ? "Forced failure for recovery test"
-    : await request.provider.complete({ kind: "execute", input: request.goal });
-  append({ kind: "observation", content: observation });
+  append({ kind: "action", ...execution.action });
+  append({ kind: "observation", content: execution.observation });
 
   if (request.forceFailure === true) {
-    append({ kind: "monitor_signal", offTrackScore: 0.9, reasons: ["forced failure"] });
-    append({ kind: "recovery", decision: "replan", reason: await request.provider.complete({ kind: "recover", input: request.goal }) });
+    const monitor = runMonitorPrimitive({ observation: execution.observation, forceFailure: request.forceFailure });
+    append({ kind: "monitor_signal", ...monitor });
+    append({
+      kind: "recovery",
+      ...(await runRecoverPrimitive({ goal: request.goal, provider: request.provider, signal: monitor })),
+    });
     append({ kind: "run_end", success: false, score: 0 });
     const failedRun = request.tools.runs.get(id);
     if (failedRun !== undefined) {
@@ -111,23 +137,12 @@ export async function runGoal(request: RunGoalRequest): Promise<RunGoalResult> {
     return { runId: id, success: false };
   }
 
-  const validation = await request.provider.complete({ kind: "validate", input: observation });
-  append({ kind: "validation", score: 0.8, passed: true, reasons: [validation] });
-  request.tools.confidence.record(prediction.confidence, true);
+  const validation = await runValidatePrimitive({ output: execution.observation, provider: request.provider });
+  append({ kind: "validation", ...validation });
+  request.tools.confidence.record(prediction.prediction.confidence, true);
   request.tools.curriculum.advance(request.domain, 0);
 
-  const reflection: Reflection = {
-    worked: ["local deterministic runtime completed"],
-    didntWork: [],
-    surprises: [],
-    skillCandidates: [],
-    skillRefinements: [],
-    skillPrunings: [],
-    antiPatternCandidates: [],
-    scaffoldingGaps: [],
-    publishable: false,
-  };
-  append({ kind: "reflection", reflection });
+  append({ kind: "reflection", ...runReflectPrimitive({ validationScore: validation.score }) });
   append({ kind: "run_end", success: true, score: 0.8 });
 
   const run = request.tools.runs.get(id);

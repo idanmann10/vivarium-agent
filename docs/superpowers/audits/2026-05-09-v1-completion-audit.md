@@ -32,8 +32,8 @@ Not complete. The roadmap has substantial local implementation complete, but the
 | Phase 1 external tools | Typed router supports HTTP, file read/write/edit, terminal, code, and MCP-style calls through injected adapters; web-specific search/read adapters are not implemented | Partially complete |
 | Phase 1 encrypted keychain | `createEncryptedFileCredentialStore` persists AES-256-GCM encrypted credential records and tests verify no plaintext secret leakage | Complete locally; OS keychain/OAuth UX missing |
 | Phase 1 safety | HTTP safety pipeline exists and is enforced by `createToolDispatcher` for generic HTTP calls | Partially complete |
-| Phase 1 all 8 primitives implemented | `primitiveNames` lists 8, but only `dream/` has a primitive module; orchestrator embeds a simplified run skeleton | Incomplete |
-| Phase 1 attention budget enforcement | `attention.ts` exports default limits only | Incomplete |
+| Phase 1 all 8 primitives implemented | Plan, Predict, Execute, Monitor, Recover, Validate, Reflect, and Dream have metadata; lifecycle primitives have modules and tests; orchestrator delegates to lifecycle modules | Complete locally |
+| Phase 1 attention budget enforcement | `applyAttentionLimits` caps skills, traces, tools, and recent episodes; orchestrator uses attention-limited world context before Plan; token-budget accounting is not implemented | Partially complete |
 | Phase 1 read-only world paths | Local reader, retrieval, and multi-world search tests exist | Partially complete |
 | Phase 1 daemon | Daemon service and HTTP lifecycle transport exist with tests | Partially complete |
 | Phase 1 CLI | `run`, `status`, `doctor`, and `init` descriptors exist; `init`, `credentials`, `skills`, and `world` are not fully wired | Incomplete |
@@ -65,17 +65,17 @@ Not complete. The roadmap has substantial local implementation complete, but the
 - `git -C the-world status --short`: clean.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
-- `bun run lint`: scanned 134 TypeScript files.
+- `bun run lint`: scanned 159 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 54 tests passed, 0 failed.
+- `bun run test`: 58 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value unblocked local gap after the tools/credentials slice is Phase 1 primitives and attention:
+The highest-value unblocked local gap after the runtime primitives slice is Phase 1 state/schema and CLI init:
 
-1. Split the embedded run skeleton into concrete primitive modules for Plan, Predict, Execute, Monitor, Recover, Validate, and Reflect.
-2. Enforce attention budgets when selecting skills, traces, tools, and recent episodes.
-3. Add primitive-level tests and keep the existing e2e run/recover tests green.
+1. Add the missing `semantic_facts` table and repository access path.
+2. Expand CLI init from a descriptor into a local starter-pack install plan that records primary domain, starter skills/traces, curriculum, migrations, and provider/credential prompts.
+3. Keep the existing e2e run/recover tests green while adding focused init/state tests.
 
 Live provider credentials, real GitHub remotes, real GitHub Discussions, cross-install cultural transmission, and deployment supervision still require user-provided decisions or external access.
