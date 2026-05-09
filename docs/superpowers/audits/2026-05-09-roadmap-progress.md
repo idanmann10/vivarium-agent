@@ -25,6 +25,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` CLI init starter-pack slice implemented after semantic facts storage.
 - `the-agent` CLI credentials/skills/world helper slice implemented after CLI init.
 - `the-agent` web external tools slice implemented after CLI command helpers.
+- `the-agent` run-level safety behavior slice implemented after web external tools.
 - `the-world` Phase 0 committed at `81b28a2`.
 - `the-world` Phase 3 maintenance scripts committed at `866c121`.
 - `the-world` trust-gates slice committed at `719f0a1`.
@@ -34,9 +35,9 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 
 `the-agent`:
 
-- `bun run lint`: scanned 166 TypeScript files.
+- `bun run lint`: scanned 167 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 65 tests passed, 0 failed.
+- `bun run test`: 68 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 `the-world`:
@@ -56,7 +57,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 | Use Superpowers | Superpowers skills used during execution; URL cited in plan and seed lineage | Complete |
 | Use GStack | URL cited in plan and seed lineage for role/command-shaped review patterns | Complete |
 | Phase 0 bootstrap | Two local repos, tooling, core types/math/kernel, world seed content, validators | Complete locally |
-| Phase 1 agent works alone | Offline deterministic runtime, state, SQLite persistence, semantic facts storage, versioned SQL migration runner, local provider, Anthropic/OpenAI/OpenAI-compatible HTTP adapters, encrypted credential store, typed tool dispatcher, web/HTTP/file/terminal/code/MCP external adapters, self-tools, safety, world read, concrete primitive modules, attention-limited world context selection, daemon service, HTTP transport lifecycle, scheduler helper, MCP tool manifest, CLI init/run/credentials/skills/world/status/doctor helpers, e2e run/recover | Local slice partially complete |
+| Phase 1 agent works alone | Offline deterministic runtime, state, SQLite persistence, semantic facts storage, versioned SQL migration runner, local provider, Anthropic/OpenAI/OpenAI-compatible HTTP adapters, encrypted credential store, typed tool dispatcher, web/HTTP/file/terminal/code/MCP external adapters, self-tools, HTTP/tool safety, run-level harmful refusal and destructive confirmation behavior, world read, concrete primitive modules, attention-limited world context selection, daemon service, HTTP transport lifecycle, scheduler helper, MCP tool manifest, CLI init/run/credentials/skills/world/status/doctor helpers, e2e run/recover | Local slice partially complete |
 | Phase 2 Dream | Offline deterministic Dream, promotion/pruning/habits/identity/confidence/anonymizer/eval/e2e | Local slice complete |
 | Phase 3 world integration | Local proposal/publish, multi-world retrieval, GitHub PR/issue/Discussion client with mocked tests, world maintenance scripts, trust gates, held-review listing, cultural transmission e2e | Local slice complete |
 

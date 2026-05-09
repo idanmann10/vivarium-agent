@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, but the audit found uncovered v1 requirements in Phase 1, Phase 2, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal and destructive confirmation behavior, but the audit still finds uncovered v1 requirements in Phase 1, Phase 2, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -31,7 +31,7 @@ Not complete. The roadmap has substantial local implementation complete, but the
 | Phase 1 builtin self-tools | `createSelfTools` covers runs, episodes, world search, curriculum, confidence | Partially complete |
 | Phase 1 external tools | Typed router supports web fetch/read/search, HTTP, file read/write/edit, terminal, code, and MCP-style calls through injected adapters | Complete locally |
 | Phase 1 encrypted keychain | `createEncryptedFileCredentialStore` persists AES-256-GCM encrypted credential records and tests verify no plaintext secret leakage | Complete locally; OS keychain/OAuth UX missing |
-| Phase 1 safety | HTTP safety pipeline exists and is enforced by `createToolDispatcher` for generic HTTP calls | Partially complete |
+| Phase 1 safety | HTTP safety pipeline exists and is enforced by `createToolDispatcher` for generic HTTP calls; `runGoal` refuses harmful goals before planning and escalates destructive goals until confirmed | Partially complete |
 | Phase 1 all 8 primitives implemented | Plan, Predict, Execute, Monitor, Recover, Validate, Reflect, and Dream have metadata; lifecycle primitives have modules and tests; orchestrator delegates to lifecycle modules | Complete locally |
 | Phase 1 attention budget enforcement | `applyAttentionLimits` caps skills, traces, tools, and recent episodes; orchestrator uses attention-limited world context before Plan; token-budget accounting is not implemented | Partially complete |
 | Phase 1 read-only world paths | Local reader, retrieval, and multi-world search tests exist | Partially complete |
@@ -54,27 +54,29 @@ Not complete. The roadmap has substantial local implementation complete, but the
 | Phase 3 done scenario | No canonical remote world, second install, live PR, auto-merge, cross-install pull, featured maintainer pick, or recognizable live STATS loop verified | Incomplete externally |
 | v1 starter pack init | `runInitCommand` discovers starter skills/traces, installs starter skills in SQLite, records migrations, returns curriculum path and prompts; actual 20-30 skill availability depends on world content and no interactive prompt UX exists | Partially complete |
 | v1 real goals over a week | Synthetic tests only | Incomplete externally |
-| v1 destructive action confirmation | Safety check exists; full run continuation after user confirmation is not verified | Incomplete |
-| v1 harmful request refusal | Kernel allows refusal, but no refusal behavior test is present | Incomplete |
+| v1 destructive action confirmation | `runGoal` tests verify unconfirmed destructive goals escalate before execution and confirmed destructive goals continue through validation/reflection | Complete locally |
+| v1 harmful request refusal | `runGoal` tests verify harmful goals emit `refusal` and stop before planning | Complete locally |
 | v1 public/private fork contribution loop | Local/mocked pieces exist; live fork/canonical flow not verified | Incomplete externally |
 
 ## Fresh Evidence Used
 
 - `sed -n '1882,2085p' goal.md`: phase, v1 done, and out-of-scope criteria.
-- `git -C the-agent status --short`: clean.
+- `git -C the-agent status --short`: clean before the safety slice; safety changes are tracked in the follow-up commit.
 - `git -C the-world status --short`: clean.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
-- `bun run lint`: scanned 166 TypeScript files.
+- `bun test packages/runtime/src/orchestrator.test.ts`: 5 tests passed, including harmful refusal and destructive confirmation behavior.
+- `bun run lint`: scanned 167 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 65 tests passed, 0 failed.
+- `bun run test`: 68 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value unblocked local gap after the web external tools slice is run-level safety behavior:
+The highest-value unblocked local gap after the run-level safety behavior slice is Phase 2 candidate generation:
 
-1. Add local run-level tests for destructive confirmation continuation.
-2. Add local run-level tests for harmful-request refusal behavior.
+1. Wire anti-pattern candidate generation from failed or costly runs.
+2. Wire trace candidate extraction with annotations from completed runs.
+3. Persist the candidate queue in the existing state layer before publication.
 
 Live provider credentials, real GitHub remotes, real GitHub Discussions, cross-install cultural transmission, and deployment supervision still require user-provided decisions or external access.

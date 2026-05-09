@@ -15,6 +15,7 @@ import { runPredictPrimitive } from "./primitives/predict/index.js";
 import { runRecoverPrimitive } from "./primitives/recover/index.js";
 import { runReflectPrimitive } from "./primitives/reflect/index.js";
 import { runValidatePrimitive } from "./primitives/validate/index.js";
+import { classifyGoalSafety } from "./safety.js";
 
 export const runSkeleton = ["plan", "predict", "execute", "monitor", "recover", "validate", "reflect"] as const;
 
@@ -26,6 +27,7 @@ export interface RunGoalRequest {
   readonly tools: SelfTools;
   readonly forceFailure?: boolean;
   readonly attentionLimits?: AttentionLimits;
+  readonly destructiveConfirmed?: boolean;
 }
 
 export interface RunGoalResult {
@@ -84,6 +86,27 @@ export async function runGoal(request: RunGoalRequest): Promise<RunGoalResult> {
   };
 
   append({ kind: "run_start", goal: request.goal, domain: request.domain });
+
+  const safety = classifyGoalSafety(request.goal, request.destructiveConfirmed ?? false);
+  if (safety.kind === "refuse") {
+    append({ kind: "refusal", reason: safety.reason, category: safety.category });
+    append({ kind: "run_end", success: false, score: 0 });
+    const refusedRun = request.tools.runs.get(id);
+    if (refusedRun !== undefined) {
+      request.tools.runs.update({ ...refusedRun, endedAt: now(), success: false, score: 0, notes: safety.reason });
+    }
+    return { runId: id, success: false };
+  }
+
+  if (safety.kind === "confirm_destructive") {
+    append({ kind: "recovery", decision: "escalate", reason: safety.reason });
+    append({ kind: "run_end", success: false, score: 0 });
+    const heldRun = request.tools.runs.get(id);
+    if (heldRun !== undefined) {
+      request.tools.runs.update({ ...heldRun, endedAt: now(), success: false, score: 0, notes: safety.reason });
+    }
+    return { runId: id, success: false };
+  }
 
   const worldResults = request.tools.world.search({ domain: request.domain, query: request.goal });
   const attentionRequest = {
