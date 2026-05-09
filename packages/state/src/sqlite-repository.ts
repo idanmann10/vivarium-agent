@@ -3,6 +3,7 @@ import { Database } from "bun:sqlite";
 import type { RunId } from "../../core/src/ids.js";
 import type { CurriculumProgress, Episode, Identity, Run } from "../../core/src/index.js";
 import type { ConfidenceBucket, LocalSkillRecord, PredictionOutcome, PublishableArtifact } from "./repository.js";
+import { runMigrations } from "./storage/migrations.js";
 
 interface JsonRow {
   readonly json: string;
@@ -20,27 +21,11 @@ export class SQLiteStateRepository {
   constructor(path: string) {
     this.#db = new Database(path, { create: true });
     this.#db.run("PRAGMA journal_mode = WAL");
-    this.#initializeSchema();
+    runMigrations(this.#db);
   }
 
   close(): void {
     this.#db.close();
-  }
-
-  #initializeSchema(): void {
-    this.#db.run("CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, json TEXT NOT NULL)");
-    this.#db.run(
-      "CREATE TABLE IF NOT EXISTS episodes (sequence INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT UNIQUE NOT NULL, run_id TEXT NOT NULL, json TEXT NOT NULL)",
-    );
-    this.#db.run(
-      "CREATE TABLE IF NOT EXISTS confidence_buckets (bucket TEXT PRIMARY KEY, correct INTEGER NOT NULL, total INTEGER NOT NULL)",
-    );
-    this.#db.run("CREATE TABLE IF NOT EXISTS curriculum_progress (domain TEXT PRIMARY KEY, json TEXT NOT NULL)");
-    this.#db.run("CREATE TABLE IF NOT EXISTS local_skills (id TEXT PRIMARY KEY, json TEXT NOT NULL)");
-    this.#db.run("CREATE TABLE IF NOT EXISTS identity (id TEXT PRIMARY KEY, json TEXT NOT NULL)");
-    this.#db.run(
-      "CREATE TABLE IF NOT EXISTS publishable_artifacts (sequence INTEGER PRIMARY KEY AUTOINCREMENT, json TEXT NOT NULL)",
-    );
   }
 
   createRun(run: Run): void {

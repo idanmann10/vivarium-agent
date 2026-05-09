@@ -1,0 +1,37 @@
+CREATE TABLE IF NOT EXISTS runs (
+  id TEXT PRIMARY KEY,
+  json TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS episodes (
+  sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+  id TEXT UNIQUE NOT NULL,
+  run_id TEXT NOT NULL,
+  json TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS confidence_buckets (
+  bucket TEXT PRIMARY KEY,
+  correct INTEGER NOT NULL,
+  total INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS curriculum_progress (
+  domain TEXT PRIMARY KEY,
+  json TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS local_skills (
+  id TEXT PRIMARY KEY,
+  json TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS identity (
+  id TEXT PRIMARY KEY,
+  json TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS publishable_artifacts (
+  sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+  json TEXT NOT NULL
+);

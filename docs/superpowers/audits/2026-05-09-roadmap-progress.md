@@ -17,6 +17,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` provider adapter slice committed after SQLite persistence.
 - `the-agent` daemon service slice committed after provider adapters.
 - `the-agent` GitHub world client slice committed after daemon service.
+- `the-agent` SQLite migration runner slice implemented after GitHub world client.
 - `the-world` Phase 0 committed at `81b28a2`.
 - `the-world` Phase 3 maintenance scripts committed at `866c121`.
 - `the-world` trust-gates slice committed at `719f0a1`.
@@ -26,9 +27,9 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 
 `the-agent`:
 
-- `bun run lint`: scanned 126 TypeScript files.
+- `bun run lint`: scanned 128 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 43 tests passed, 0 failed.
+- `bun run test`: 44 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 `the-world`:
@@ -48,14 +49,14 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 | Use Superpowers | Superpowers skills used during execution; URL cited in plan and seed lineage | Complete |
 | Use GStack | URL cited in plan and seed lineage for role/command-shaped review patterns | Complete |
 | Phase 0 bootstrap | Two local repos, tooling, core types/math/kernel, world seed content, validators | Complete locally |
-| Phase 1 agent works alone | Offline deterministic runtime, state, SQLite persistence, local provider, Anthropic/OpenAI/OpenAI-compatible HTTP adapters, self-tools, safety, world read, daemon service, scheduler helper, MCP tool manifest, CLI helpers, e2e run/recover | Local slice complete |
+| Phase 1 agent works alone | Offline deterministic runtime, state, SQLite persistence, versioned SQL migration runner, local provider, Anthropic/OpenAI/OpenAI-compatible HTTP adapters, self-tools, safety, world read, daemon service, scheduler helper, MCP tool manifest, CLI helpers, e2e run/recover | Local slice complete |
 | Phase 2 Dream | Offline deterministic Dream, promotion/pruning/habits/identity/confidence/anonymizer/eval/e2e | Local slice complete |
 | Phase 3 world integration | Local proposal/publish, multi-world retrieval, GitHub PR/issue/Discussion client with mocked tests, world maintenance scripts, trust gates, held-review listing, cultural transmission e2e | Local slice complete |
 
 ## Remaining Blockers For Full Roadmap Completion
 
 - Anthropic/OpenAI/OpenRouter-compatible adapters are implemented and tested with mocked fetch; live calls still require API keys and runtime configuration.
-- Drizzle migrations are not implemented; durable SQLite persistence exists through `SQLiteStateRepository` using `bun:sqlite`.
+- Versioned SQL migrations are implemented on top of `bun:sqlite`; replacing that base with the roadmap's `better-sqlite3`/Drizzle stack remains a production stack decision.
 - GitHub PR/issue/Discussion client code and local trust/held-review gate logic are implemented and tested; live PR creation, auto-merge execution, and remote repository settings require actual GitHub remotes and credentials.
 - End-to-end cultural transmission is verified locally, not across two distinct real installs pulling from a canonical GitHub world.
 - Daemon service, scheduler decision helper, and MCP tool manifest are implemented and tested locally; production socket/transport supervision is not implemented.
@@ -67,4 +68,4 @@ To finish the production roadmap rather than the local executable slices, provid
 1. Final repo names and GitHub remote targets for agent/world.
 2. Whether to use real GitHub API writes in this workspace.
 3. Provider credentials/environment names to support live model calls.
-4. Whether to keep `bun:sqlite` as the persistence base or migrate the repository to the roadmap's `better-sqlite3`/Drizzle stack.
+4. Whether to keep the current `bun:sqlite` plus versioned SQL migration base or migrate the repository to the roadmap's `better-sqlite3`/Drizzle stack.
