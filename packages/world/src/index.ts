@@ -1,5 +1,16 @@
 export { createLocalWorldReader } from "./local-reader.js";
 export type { LocalWorldReader, LocalWorldSearchRequest, LocalWorldSearchResult } from "./local-reader.js";
+export { createGitHubWorldClient } from "./github.js";
+export type {
+  CreateDiscussionRequest,
+  CreateIssueRequest,
+  CreatePullRequestRequest,
+  GitHubDiscussionUrl,
+  GitHubFetch,
+  GitHubWorldClient,
+  GitHubWorldClientOptions,
+  NumberedGitHubUrl,
+} from "./github.js";
 export { worldOperations } from "./operations.js";
 export { proposeSkill } from "./push.js";
 export type { ProposeSkillRequest } from "./push.js";
