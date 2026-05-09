@@ -1,5 +1,6 @@
 export { memorySystems } from "./memory/index.js";
 export { InMemoryStateRepository } from "./repository.js";
+export { SQLiteStateRepository } from "./sqlite-repository.js";
 export type {
   ConfidenceBucket,
   DomainStats,
