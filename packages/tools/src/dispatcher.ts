@@ -96,6 +96,14 @@ function parseExternalRequest(request: ToolDispatchRequest): ExternalToolRequest
     };
   }
 
+  if ((request.name === "web.fetch" || request.name === "web.read") && typeof request.args.url === "string") {
+    return { name: request.name, args: { url: request.args.url } };
+  }
+
+  if (request.name === "web.search" && typeof request.args.query === "string") {
+    return { name: request.name, args: { query: request.args.query } };
+  }
+
   if (request.name === "file.read" && typeof request.args.path === "string") {
     return { name: request.name, args: { path: request.args.path } };
   }

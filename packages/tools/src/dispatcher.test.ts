@@ -68,4 +68,17 @@ describe("createToolDispatcher", () => {
     expect(blocked).toEqual({ ok: false, error: "Destructive request requires confirmation", blocked: true });
     expect(events).toContainEqual(expect.objectContaining({ name: "http.request", status: "blocked" }));
   });
+
+  test("parses web search requests for external routing", async () => {
+    const dispatcher = createToolDispatcher({
+      externalAdapters: {
+        searchWeb: async (query) => [{ title: "Docs", url: "https://example.test/docs", snippet: query }],
+      },
+    });
+
+    await expect(dispatcher.dispatch({ name: "web.search", args: { query: "docs" } })).resolves.toEqual({
+      ok: true,
+      value: [{ title: "Docs", url: "https://example.test/docs", snippet: "docs" }],
+    });
+  });
 });

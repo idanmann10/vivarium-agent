@@ -9,6 +9,7 @@ export type {
   ExternalToolset,
   FileToolAdapter,
   ProcessToolResult,
+  WebSearchResult,
 } from "./external/index.js";
 export { createToolDispatcher, dispatchTool } from "./dispatcher.js";
 export type {

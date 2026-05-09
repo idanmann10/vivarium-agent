@@ -29,7 +29,7 @@ Not complete. The roadmap has substantial local implementation complete, but the
 | Phase 1 semantic facts storage | `SemanticFactRecord` exists in state repositories; `0002_semantic_facts.sql` creates the table; in-memory and SQLite tests verify upsert/list/persistence | Complete locally |
 | Phase 1 providers | OpenAI, Anthropic, OpenAI-compatible adapters and router exist with mocked HTTP tests | Complete locally; live credentials unverified |
 | Phase 1 builtin self-tools | `createSelfTools` covers runs, episodes, world search, curriculum, confidence | Partially complete |
-| Phase 1 external tools | Typed router supports HTTP, file read/write/edit, terminal, code, and MCP-style calls through injected adapters; web-specific search/read adapters are not implemented | Partially complete |
+| Phase 1 external tools | Typed router supports web fetch/read/search, HTTP, file read/write/edit, terminal, code, and MCP-style calls through injected adapters | Complete locally |
 | Phase 1 encrypted keychain | `createEncryptedFileCredentialStore` persists AES-256-GCM encrypted credential records and tests verify no plaintext secret leakage | Complete locally; OS keychain/OAuth UX missing |
 | Phase 1 safety | HTTP safety pipeline exists and is enforced by `createToolDispatcher` for generic HTTP calls | Partially complete |
 | Phase 1 all 8 primitives implemented | Plan, Predict, Execute, Monitor, Recover, Validate, Reflect, and Dream have metadata; lifecycle primitives have modules and tests; orchestrator delegates to lifecycle modules | Complete locally |
@@ -67,14 +67,14 @@ Not complete. The roadmap has substantial local implementation complete, but the
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
 - `bun run lint`: scanned 166 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 63 tests passed, 0 failed.
+- `bun run test`: 65 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value unblocked local gap after the CLI command-helper slice is Phase 1 web external tools and run-level safety behavior:
+The highest-value unblocked local gap after the web external tools slice is run-level safety behavior:
 
-1. Add `web.fetch`, `web.read`, and `web.search` adapters or explicit fallbacks through the external tool router.
-2. Add local run-level tests for destructive confirmation continuation and harmful-request refusal behavior.
+1. Add local run-level tests for destructive confirmation continuation.
+2. Add local run-level tests for harmful-request refusal behavior.
 
 Live provider credentials, real GitHub remotes, real GitHub Discussions, cross-install cultural transmission, and deployment supervision still require user-provided decisions or external access.

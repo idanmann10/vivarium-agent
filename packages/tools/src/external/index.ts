@@ -19,6 +19,27 @@ export interface HttpToolRequest {
   };
 }
 
+export interface WebFetchToolRequest {
+  readonly name: "web.fetch";
+  readonly args: {
+    readonly url: string;
+  };
+}
+
+export interface WebReadToolRequest {
+  readonly name: "web.read";
+  readonly args: {
+    readonly url: string;
+  };
+}
+
+export interface WebSearchToolRequest {
+  readonly name: "web.search";
+  readonly args: {
+    readonly query: string;
+  };
+}
+
 export interface FileReadToolRequest {
   readonly name: "file.read";
   readonly args: {
@@ -69,6 +90,9 @@ export interface McpToolRequest {
 
 export type ExternalToolRequest =
   | HttpToolRequest
+  | WebFetchToolRequest
+  | WebReadToolRequest
+  | WebSearchToolRequest
   | FileReadToolRequest
   | FileWriteToolRequest
   | FileEditToolRequest
@@ -86,6 +110,12 @@ export interface FileEditResult {
   readonly replacements: number;
 }
 
+export interface WebSearchResult {
+  readonly title: string;
+  readonly url: string;
+  readonly snippet: string;
+}
+
 export interface FileToolAdapter {
   read(path: string): Promise<string>;
   write(path: string, content: string): Promise<void>;
@@ -94,6 +124,7 @@ export interface FileToolAdapter {
 
 export interface ExternalToolAdapters {
   readonly fetch?: (request: Request) => Promise<Response>;
+  readonly searchWeb?: (query: string) => Promise<readonly WebSearchResult[]>;
   readonly files?: FileToolAdapter;
   readonly runTerminal?: (command: string) => Promise<ProcessToolResult>;
   readonly executeCode?: (request: CodeToolRequest["args"]) => Promise<ProcessToolResult>;
@@ -122,6 +153,15 @@ type RequestInitWithDefinedValues = {
 
 function headerRecord(headers: Headers): Readonly<Record<string, string>> {
   return Object.fromEntries(headers.entries());
+}
+
+function readableText(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function isInsideAllowlist(path: string, allowlist: readonly string[]): boolean {
@@ -191,6 +231,36 @@ export async function dispatchExternalTool(
       const response = await fetchAdapter(new Request(request.args.url, initWithBody));
       return { status: response.status, headers: headerRecord(response.headers), body: await response.text() };
     });
+  }
+
+  if (request.name === "web.fetch") {
+    const fetchAdapter = adapters.fetch;
+    if (fetchAdapter === undefined) {
+      return missingAdapter(request.name);
+    }
+    return attempt(async () => {
+      const response = await fetchAdapter(new Request(request.args.url, { method: "GET" }));
+      return { status: response.status, headers: headerRecord(response.headers), body: await response.text() };
+    });
+  }
+
+  if (request.name === "web.read") {
+    const fetchAdapter = adapters.fetch;
+    if (fetchAdapter === undefined) {
+      return missingAdapter(request.name);
+    }
+    return attempt(async () => {
+      const response = await fetchAdapter(new Request(request.args.url, { method: "GET" }));
+      return { status: response.status, text: readableText(await response.text()) };
+    });
+  }
+
+  if (request.name === "web.search") {
+    const searchWeb = adapters.searchWeb;
+    if (searchWeb === undefined) {
+      return missingAdapter(request.name);
+    }
+    return attempt(() => searchWeb(request.args.query));
   }
 
   if (request.name === "file.read") {

@@ -77,4 +77,27 @@ describe("dispatchExternalTool", () => {
       await dispatchExternalTool({ name: "mcp.call", args: { server: "memory", tool: "search", input: { q: "x" } } }, adapters),
     ).toMatchObject({ ok: true, value: { server: "memory", tool: "search" } });
   });
+
+  test("routes web fetch, read, and search requests through injected adapters", async () => {
+    const adapters = {
+      fetch: async (request: Request) =>
+        new Response("<html><body><h1>Example</h1><p>Readable page</p></body></html>", {
+          status: request.url.includes("example.test") ? 200 : 404,
+        }),
+      searchWeb: async (query: string) => [{ title: "Example", url: "https://example.test", snippet: `Result for ${query}` }],
+    };
+
+    expect(await dispatchExternalTool({ name: "web.fetch", args: { url: "https://example.test" } }, adapters)).toMatchObject({
+      ok: true,
+      value: { status: 200, body: expect.stringContaining("<h1>Example</h1>") },
+    });
+    expect(await dispatchExternalTool({ name: "web.read", args: { url: "https://example.test" } }, adapters)).toEqual({
+      ok: true,
+      value: { status: 200, text: "Example Readable page" },
+    });
+    expect(await dispatchExternalTool({ name: "web.search", args: { query: "example" } }, adapters)).toEqual({
+      ok: true,
+      value: [{ title: "Example", url: "https://example.test", snippet: "Result for example" }],
+    });
+  });
 });
