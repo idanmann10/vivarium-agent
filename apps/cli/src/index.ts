@@ -13,3 +13,7 @@ export const cliCommands = [
 ] as const;
 
 export type CliCommand = (typeof cliCommands)[number];
+
+export { runCommand } from "./commands/run.js";
+export { statusCommand } from "./commands/status.js";
+export { doctorCommand } from "./commands/doctor.js";
