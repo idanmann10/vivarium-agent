@@ -1,3 +1,11 @@
 export { createLocalWorldReader } from "./local-reader.js";
 export type { LocalWorldReader, LocalWorldSearchRequest, LocalWorldSearchResult } from "./local-reader.js";
 export { worldOperations } from "./operations.js";
+export { proposeSkill } from "./push.js";
+export type { ProposeSkillRequest } from "./push.js";
+export { searchWorlds } from "./retrieve.js";
+export type { SearchWorldsRequest, SourcedWorldSearchResult, WorldSubscriptionSearch } from "./retrieve.js";
+export { publishRun } from "./runs.js";
+export type { PublishRunRequest } from "./runs.js";
+export { publishTrace } from "./traces.js";
+export type { PublishTraceRequest } from "./traces.js";

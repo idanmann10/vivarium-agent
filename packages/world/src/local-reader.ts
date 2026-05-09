@@ -60,7 +60,8 @@ export function createLocalWorldReader({ root }: LocalWorldReaderOptions): Local
   return {
     search({ domain, query, limit = 8 }) {
       const domainRoot = join(root, "domains", domain);
-      const files = walk(domainRoot).filter(
+      const proposalRoot = join(root, "proposals", "skills", domain);
+      const files = [...walk(domainRoot), ...walk(proposalRoot)].filter(
         (path) => path.endsWith("SKILL.md") || path.endsWith("ANTI-PATTERN.md") || path.endsWith("TRACE.md"),
       );
 
