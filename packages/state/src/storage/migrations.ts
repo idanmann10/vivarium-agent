@@ -10,6 +10,7 @@ interface Migration {
 
 const migrations = [
   { version: "0001_initial", fileName: "0001_initial.sql" },
+  { version: "0002_semantic_facts", fileName: "0002_semantic_facts.sql" },
 ] as const satisfies readonly Migration[];
 
 const currentDirectory = dirname(fileURLToPath(import.meta.url));

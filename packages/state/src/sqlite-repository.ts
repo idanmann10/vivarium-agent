@@ -2,7 +2,13 @@ import { Database } from "bun:sqlite";
 
 import type { RunId } from "../../core/src/ids.js";
 import type { CurriculumProgress, Episode, Identity, Run } from "../../core/src/index.js";
-import type { ConfidenceBucket, LocalSkillRecord, PredictionOutcome, PublishableArtifact } from "./repository.js";
+import type {
+  ConfidenceBucket,
+  LocalSkillRecord,
+  PredictionOutcome,
+  PublishableArtifact,
+  SemanticFactRecord,
+} from "./repository.js";
 import { runMigrations } from "./storage/migrations.js";
 
 interface JsonRow {
@@ -128,6 +134,20 @@ export class SQLiteStateRepository {
   listLocalSkills(): readonly LocalSkillRecord[] {
     const rows = this.#db.query("SELECT json FROM local_skills ORDER BY id").all() as JsonRow[];
     return rows.map((row) => JSON.parse(row.json) as LocalSkillRecord);
+  }
+
+  upsertSemanticFact(fact: SemanticFactRecord): void {
+    this.#db
+      .query("INSERT OR REPLACE INTO semantic_facts (id, domain, json) VALUES (?, ?, ?)")
+      .run(fact.id, fact.domain, JSON.stringify(fact));
+  }
+
+  listSemanticFacts(domain?: string): readonly SemanticFactRecord[] {
+    const rows =
+      domain === undefined
+        ? (this.#db.query("SELECT json FROM semantic_facts ORDER BY id").all() as JsonRow[])
+        : (this.#db.query("SELECT json FROM semantic_facts WHERE domain = ? ORDER BY id").all(domain) as JsonRow[]);
+    return rows.map((row) => JSON.parse(row.json) as SemanticFactRecord);
   }
 
   setIdentity(identity: Identity): void {

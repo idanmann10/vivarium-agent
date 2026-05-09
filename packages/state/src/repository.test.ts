@@ -103,4 +103,49 @@ describe("InMemoryStateRepository", () => {
     expect(state.getIdentity()?.summary).toContain("Newborn");
     expect(state.listPublishableArtifacts()).toEqual([{ kind: "run", path: "runs/local", body: "redacted" }]);
   });
+
+  test("upserts semantic facts and filters by domain", () => {
+    const state = new InMemoryStateRepository();
+
+    state.upsertSemanticFact({
+      id: "fact-api-rate-limit",
+      domain: "coding",
+      subject: "GitHub API",
+      fact: "Search requests can be rate limited.",
+      confidence: 0.8,
+      derivedFromEpisodeIds: ["episode-1"],
+      updatedAt: "2026-05-09T00:00:00.000Z",
+    });
+    state.upsertSemanticFact({
+      id: "fact-summary-tone",
+      domain: "summarization",
+      subject: "Executive summaries",
+      fact: "Lead with the decision.",
+      confidence: 0.7,
+      derivedFromEpisodeIds: ["episode-2"],
+      updatedAt: "2026-05-09T00:00:00.000Z",
+    });
+    state.upsertSemanticFact({
+      id: "fact-api-rate-limit",
+      domain: "coding",
+      subject: "GitHub API",
+      fact: "Search requests can return 403 when rate limited.",
+      confidence: 0.9,
+      derivedFromEpisodeIds: ["episode-1", "episode-3"],
+      updatedAt: "2026-05-09T00:00:01.000Z",
+    });
+
+    expect(state.listSemanticFacts("coding")).toEqual([
+      {
+        id: "fact-api-rate-limit",
+        domain: "coding",
+        subject: "GitHub API",
+        fact: "Search requests can return 403 when rate limited.",
+        confidence: 0.9,
+        derivedFromEpisodeIds: ["episode-1", "episode-3"],
+        updatedAt: "2026-05-09T00:00:01.000Z",
+      },
+    ]);
+    expect(state.listSemanticFacts()).toHaveLength(2);
+  });
 });

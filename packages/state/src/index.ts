@@ -7,5 +7,6 @@ export type {
   LocalSkillRecord,
   PredictionOutcome,
   PublishableArtifact,
+  SemanticFactRecord,
 } from "./repository.js";
 export { storageTables } from "./storage/schema.js";

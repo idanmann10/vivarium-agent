@@ -1,5 +1,5 @@
 import type { RunId, SkillId } from "../../core/src/ids.js";
-import type { CurriculumProgress, DevStage, Episode, Identity, Run } from "../../core/src/index.js";
+import type { CurriculumProgress, DevStage, Episode, Identity, Run, SemanticFact } from "../../core/src/index.js";
 
 export interface ConfidenceBucket {
   readonly bucket: string;
@@ -32,6 +32,12 @@ export interface PublishableArtifact {
   readonly body: string;
 }
 
+export interface SemanticFactRecord extends SemanticFact {
+  readonly id: string;
+  readonly domain: string;
+  readonly updatedAt: string;
+}
+
 export interface DomainStats {
   readonly runsCompleted: number;
   readonly successRate: number;
@@ -45,6 +51,7 @@ export class InMemoryStateRepository {
   readonly #confidence = new Map<string, { correct: number; total: number }>();
   readonly #curriculum = new Map<string, CurriculumProgress>();
   readonly #skills = new Map<SkillId, LocalSkillRecord>();
+  readonly #semanticFacts = new Map<string, SemanticFactRecord>();
   readonly #publishable: PublishableArtifact[] = [];
   #identity: Identity | undefined;
 
@@ -129,6 +136,16 @@ export class InMemoryStateRepository {
 
   listLocalSkills(): readonly LocalSkillRecord[] {
     return [...this.#skills.values()];
+  }
+
+  upsertSemanticFact(fact: SemanticFactRecord): void {
+    this.#semanticFacts.set(fact.id, fact);
+  }
+
+  listSemanticFacts(domain?: string): readonly SemanticFactRecord[] {
+    return [...this.#semanticFacts.values()]
+      .filter((fact) => domain === undefined || fact.domain === domain)
+      .sort((left, right) => left.id.localeCompare(right.id));
   }
 
   setIdentity(identity: Identity): void {

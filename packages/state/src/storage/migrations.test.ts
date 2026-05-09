@@ -28,7 +28,8 @@ describe("runMigrations", () => {
 
     expect(tables.map((row) => row.name)).toContain("runs");
     expect(tables.map((row) => row.name)).toContain("episodes");
-    expect(versions).toEqual([{ version: "0001_initial" }]);
+    expect(tables.map((row) => row.name)).toContain("semantic_facts");
+    expect(versions).toEqual([{ version: "0001_initial" }, { version: "0002_semantic_facts" }]);
     db.close();
   });
 });

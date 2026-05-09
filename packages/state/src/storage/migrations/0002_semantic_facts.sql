@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS semantic_facts (
+  id TEXT PRIMARY KEY,
+  domain TEXT NOT NULL,
+  json TEXT NOT NULL
+);

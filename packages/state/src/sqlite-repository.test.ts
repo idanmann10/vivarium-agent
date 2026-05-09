@@ -51,6 +51,15 @@ describe("SQLiteStateRepository", () => {
         habitual: false,
         body: "Persist state.",
       });
+      state.upsertSemanticFact({
+        id: "fact-sqlite",
+        domain: "coding",
+        subject: "SQLite",
+        fact: "Local state survives process restarts.",
+        confidence: 0.95,
+        derivedFromEpisodeIds: ["episode-sqlite"],
+        updatedAt: "2026-05-09T00:00:02.000Z",
+      });
       state.setIdentity({
         agentId: agentId("agent-sqlite"),
         name: "agent-sqlite",
@@ -71,6 +80,17 @@ describe("SQLiteStateRepository", () => {
       expect(state.listConfidenceBuckets()).toEqual([{ bucket: "0.7-0.8", correct: 1, total: 1 }]);
       expect(state.getCurriculumProgress("coding")?.completedSteps).toEqual([2]);
       expect(state.listLocalSkills()[0]?.name).toBe("SQLite Skill");
+      expect(state.listSemanticFacts("coding")).toEqual([
+        {
+          id: "fact-sqlite",
+          domain: "coding",
+          subject: "SQLite",
+          fact: "Local state survives process restarts.",
+          confidence: 0.95,
+          derivedFromEpisodeIds: ["episode-sqlite"],
+          updatedAt: "2026-05-09T00:00:02.000Z",
+        },
+      ]);
       expect(state.getIdentity()?.summary).toBe("SQLite-backed local agent.");
       expect(state.listPublishableArtifacts()).toEqual([{ kind: "run", path: "runs/run-sqlite", body: "redacted" }]);
       state.close();

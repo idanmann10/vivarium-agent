@@ -26,7 +26,7 @@ Not complete. The roadmap has substantial local implementation complete, but the
 | Phase 0 world seed content | World validator previously reports 30 skills, 6 anti-patterns, 6 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, 1 contributor | Complete locally |
 | Phase 0 GitHub Discussion open | `the-world/proposals/0001-phase-0-bootstrap-rfc.md` and `.github/DISCUSSION_TEMPLATE/rfc.yml` exist; no live GitHub Discussion can be verified without a remote | Incomplete externally |
 | Phase 1 state schema/migrations/all memory implementations | `packages/state/src/` includes memory modules, `SQLiteStateRepository`, and versioned migration runner | Partially complete |
-| Phase 1 semantic facts storage | `storageTables` lists `semantic_facts`, but `0001_initial.sql` does not create a `semantic_facts` table | Incomplete |
+| Phase 1 semantic facts storage | `SemanticFactRecord` exists in state repositories; `0002_semantic_facts.sql` creates the table; in-memory and SQLite tests verify upsert/list/persistence | Complete locally |
 | Phase 1 providers | OpenAI, Anthropic, OpenAI-compatible adapters and router exist with mocked HTTP tests | Complete locally; live credentials unverified |
 | Phase 1 builtin self-tools | `createSelfTools` covers runs, episodes, world search, curriculum, confidence | Partially complete |
 | Phase 1 external tools | Typed router supports HTTP, file read/write/edit, terminal, code, and MCP-style calls through injected adapters; web-specific search/read adapters are not implemented | Partially complete |
@@ -67,15 +67,14 @@ Not complete. The roadmap has substantial local implementation complete, but the
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
 - `bun run lint`: scanned 159 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 58 tests passed, 0 failed.
+- `bun run test`: 59 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value unblocked local gap after the runtime primitives slice is Phase 1 state/schema and CLI init:
+The highest-value unblocked local gap after the semantic facts slice is Phase 1 CLI init:
 
-1. Add the missing `semantic_facts` table and repository access path.
-2. Expand CLI init from a descriptor into a local starter-pack install plan that records primary domain, starter skills/traces, curriculum, migrations, and provider/credential prompts.
-3. Keep the existing e2e run/recover tests green while adding focused init/state tests.
+1. Expand CLI init from a descriptor into a local starter-pack install plan that records primary domain, starter skills/traces, curriculum, migrations, and provider/credential prompts.
+2. Add focused init tests and keep the existing e2e run/recover tests green.
 
 Live provider credentials, real GitHub remotes, real GitHub Discussions, cross-install cultural transmission, and deployment supervision still require user-provided decisions or external access.
