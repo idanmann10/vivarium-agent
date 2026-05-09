@@ -10,3 +10,4 @@ export type {
   SemanticFactRecord,
 } from "./repository.js";
 export { storageTables } from "./storage/schema.js";
+export { migrationVersions } from "./storage/migrations.js";

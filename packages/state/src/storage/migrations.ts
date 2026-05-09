@@ -13,6 +13,8 @@ const migrations = [
   { version: "0002_semantic_facts", fileName: "0002_semantic_facts.sql" },
 ] as const satisfies readonly Migration[];
 
+export const migrationVersions = migrations.map((migration) => migration.version);
+
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 
 export function runMigrations(db: Database): void {

@@ -36,7 +36,7 @@ Not complete. The roadmap has substantial local implementation complete, but the
 | Phase 1 attention budget enforcement | `applyAttentionLimits` caps skills, traces, tools, and recent episodes; orchestrator uses attention-limited world context before Plan; token-budget accounting is not implemented | Partially complete |
 | Phase 1 read-only world paths | Local reader, retrieval, and multi-world search tests exist | Partially complete |
 | Phase 1 daemon | Daemon service and HTTP lifecycle transport exist with tests | Partially complete |
-| Phase 1 CLI | `run`, `status`, `doctor`, and `init` descriptors exist; `init`, `credentials`, `skills`, and `world` are not fully wired | Incomplete |
+| Phase 1 CLI | `init`, `run`, `status`, and `doctor` helpers exist; init runs migrations, installs starter skills, discovers starter traces/curriculum, and returns provider/credential prompts; `credentials`, `skills`, and `world` command helpers are not fully wired | Partially complete |
 | Phase 1 e2e run/recover | `tests/e2e-run.test.ts` and `tests/e2e-recover.test.ts` pass in current test suite | Complete locally |
 | Phase 1 done scenario | A developer can run a synthetic local goal; real provider config, credential use, anti-pattern automatic lookup, and full CLI install flow are not verified | Incomplete |
 | Phase 2 Dream primitive | Deterministic `runDream` exists with promotion/pruning/habituation/identity/confidence behavior | Partially complete |
@@ -52,7 +52,7 @@ Not complete. The roadmap has substantial local implementation complete, but the
 | Phase 3 world workflows | Auto-merge, validation, archive, nightly stats, stale workflows exist in `the-world/.github/workflows/` | Partially complete |
 | Phase 3 anti-gaming and trust gates | Trust scripts and held-review listing exist; independent machine fingerprinting is not fully implemented | Partially complete |
 | Phase 3 done scenario | No canonical remote world, second install, live PR, auto-merge, cross-install pull, featured maintainer pick, or recognizable live STATS loop verified | Incomplete externally |
-| v1 starter pack init | `describeInitCommand` returns text only; no 20-30 skills + curriculum + 3-5 traces install flow | Incomplete |
+| v1 starter pack init | `runInitCommand` discovers starter skills/traces, installs starter skills in SQLite, records migrations, returns curriculum path and prompts; actual 20-30 skill availability depends on world content and no interactive prompt UX exists | Partially complete |
 | v1 real goals over a week | Synthetic tests only | Incomplete externally |
 | v1 destructive action confirmation | Safety check exists; full run continuation after user confirmation is not verified | Incomplete |
 | v1 harmful request refusal | Kernel allows refusal, but no refusal behavior test is present | Incomplete |
@@ -65,16 +65,16 @@ Not complete. The roadmap has substantial local implementation complete, but the
 - `git -C the-world status --short`: clean.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
-- `bun run lint`: scanned 159 TypeScript files.
+- `bun run lint`: scanned 160 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 59 tests passed, 0 failed.
+- `bun run test`: 60 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value unblocked local gap after the semantic facts slice is Phase 1 CLI init:
+The highest-value unblocked local gap after the CLI init starter-pack slice is Phase 1 CLI command coverage:
 
-1. Expand CLI init from a descriptor into a local starter-pack install plan that records primary domain, starter skills/traces, curriculum, migrations, and provider/credential prompts.
-2. Add focused init tests and keep the existing e2e run/recover tests green.
+1. Add `credentials`, `skills`, and `world` command helpers backed by the credential store, local state, and local world reader.
+2. Keep the existing e2e run/recover tests green while adding focused command tests.
 
 Live provider credentials, real GitHub remotes, real GitHub Discussions, cross-install cultural transmission, and deployment supervision still require user-provided decisions or external access.
