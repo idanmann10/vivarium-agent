@@ -19,6 +19,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` GitHub world client slice committed after daemon service.
 - `the-agent` SQLite migration runner slice implemented after GitHub world client.
 - `the-agent` daemon HTTP transport slice implemented after SQLite migrations.
+- `the-agent` tools/credentials dispatch slice implemented after daemon HTTP transport.
 - `the-world` Phase 0 committed at `81b28a2`.
 - `the-world` Phase 3 maintenance scripts committed at `866c121`.
 - `the-world` trust-gates slice committed at `719f0a1`.
@@ -28,9 +29,9 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 
 `the-agent`:
 
-- `bun run lint`: scanned 130 TypeScript files.
+- `bun run lint`: scanned 134 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 47 tests passed, 0 failed.
+- `bun run test`: 54 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 `the-world`:
@@ -50,7 +51,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 | Use Superpowers | Superpowers skills used during execution; URL cited in plan and seed lineage | Complete |
 | Use GStack | URL cited in plan and seed lineage for role/command-shaped review patterns | Complete |
 | Phase 0 bootstrap | Two local repos, tooling, core types/math/kernel, world seed content, validators | Complete locally |
-| Phase 1 agent works alone | Offline deterministic runtime, state, SQLite persistence, versioned SQL migration runner, local provider, Anthropic/OpenAI/OpenAI-compatible HTTP adapters, self-tools, safety, world read, daemon service, HTTP transport lifecycle, scheduler helper, MCP tool manifest, CLI helpers, e2e run/recover | Local slice complete |
+| Phase 1 agent works alone | Offline deterministic runtime, state, SQLite persistence, versioned SQL migration runner, local provider, Anthropic/OpenAI/OpenAI-compatible HTTP adapters, encrypted credential store, typed tool dispatcher, HTTP/file/terminal/code/MCP external adapters, self-tools, safety, world read, daemon service, HTTP transport lifecycle, scheduler helper, MCP tool manifest, CLI helpers, e2e run/recover | Local slice partially complete |
 | Phase 2 Dream | Offline deterministic Dream, promotion/pruning/habits/identity/confidence/anonymizer/eval/e2e | Local slice complete |
 | Phase 3 world integration | Local proposal/publish, multi-world retrieval, GitHub PR/issue/Discussion client with mocked tests, world maintenance scripts, trust gates, held-review listing, cultural transmission e2e | Local slice complete |
 
