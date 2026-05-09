@@ -1,0 +1,65 @@
+# Roadmap Progress Audit
+
+## Objective
+
+Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` plus `https://github.com/garrytan/gstack` as references.
+
+## Completed Evidence
+
+- Roadmap saved as `/Users/idanmann/.codex/memories/vivarium-goal.md` and verified byte-for-byte against `/Users/idanmann/Vivarium/goal.md`.
+- Phase 0 plan saved in `docs/superpowers/plans/2026-05-09-phase-0-bootstrap.md` and `/Users/idanmann/.codex/memories/vivarium-phase-0-bootstrap-plan.md`.
+- Phase 1, Phase 2, and Phase 3 specs/plans saved in this repo and mirrored into `/Users/idanmann/.codex/memories/`.
+- `the-agent` Phase 0 committed at `8052c88`.
+- `the-agent` local Phase 1 runtime slice committed at `81ba469`.
+- `the-agent` local Phase 2 Dream slice committed at `e3f4d5e`.
+- `the-agent` local Phase 3 world-integration slice committed at `6733564`.
+- `the-world` Phase 0 committed at `81b28a2`.
+- `the-world` Phase 3 maintenance scripts committed at `866c121`.
+- Superpowers and GStack URLs are recorded in Phase 0 plan and seed skill lineage.
+
+## Fresh Verification Evidence
+
+`the-agent`:
+
+- `bun run lint`: scanned 118 TypeScript files.
+- `bun run typecheck`: TypeScript passed.
+- `bun run test`: 32 tests passed, 0 failed.
+- `bun run build`: 9 entrypoints present.
+
+`the-world`:
+
+- `bun run lint`: world validator reports 30 skills, 6 anti-patterns, 6 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, 1 contributor.
+- `bun run typecheck`: TypeScript passed.
+- `bun run test`: 4 tests passed, 0 failed.
+- `bun run build`: 8 required files present.
+
+## Prompt-To-Artifact Checklist
+
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| Read and run `goal.md` | Phase 0 through Phase 3 local slices implemented with specs, plans, tests, and commits | Partially complete |
+| Save roadmap somewhere durable | `/Users/idanmann/.codex/memories/vivarium-goal.md` | Complete |
+| Keep recoverable checkpoints | Git commits in both local repos plus memory copies of specs/plans | Complete |
+| Use Superpowers | Superpowers skills used during execution; URL cited in plan and seed lineage | Complete |
+| Use GStack | URL cited in plan and seed lineage for role/command-shaped review patterns | Complete |
+| Phase 0 bootstrap | Two local repos, tooling, core types/math/kernel, world seed content, validators | Complete locally |
+| Phase 1 agent works alone | Offline deterministic runtime, state, local provider, self-tools, safety, world read, CLI helpers, e2e run/recover | Local slice complete |
+| Phase 2 Dream | Offline deterministic Dream, promotion/pruning/habits/identity/confidence/anonymizer/eval/e2e | Local slice complete |
+| Phase 3 world integration | Local proposal/publish, multi-world retrieval, world maintenance scripts, cultural transmission e2e | Local slice complete |
+
+## Remaining Blockers For Full Roadmap Completion
+
+- Real Anthropic/OpenAI/OpenRouter provider calls require API keys and live provider configuration.
+- SQLite persistence and migrations are not implemented; current state is in-memory.
+- GitHub API PR creation, auto-merge, Discussions, maintainer review queues, and remote repository settings require actual GitHub remotes and credentials.
+- End-to-end cultural transmission is verified locally, not across two distinct real installs pulling from a canonical GitHub world.
+- Real nightly daemon scheduling and MCP server behavior are still scaffolded, not production runtime services.
+
+## Next Decision
+
+To finish the production roadmap rather than the local executable slices, provide:
+
+1. Final repo names and GitHub remote targets for agent/world.
+2. Whether to use real GitHub API writes in this workspace.
+3. Provider credentials/environment names to support live model calls.
+4. Whether SQLite persistence should be implemented with `bun:sqlite` or the roadmap's `better-sqlite3`/Drizzle stack.
