@@ -1,5 +1,5 @@
-import type { RunId } from "../../core/src/ids.js";
-import type { CurriculumProgress, Episode, Run } from "../../core/src/index.js";
+import type { RunId, SkillId } from "../../core/src/ids.js";
+import type { CurriculumProgress, DevStage, Episode, Identity, Run } from "../../core/src/index.js";
 
 export interface ConfidenceBucket {
   readonly bucket: string;
@@ -12,11 +12,41 @@ export interface PredictionOutcome {
   readonly correct: boolean;
 }
 
+export type LocalSkillStatus = "candidate" | "promoted" | "deprecated" | "archived";
+
+export interface LocalSkillRecord {
+  readonly id: SkillId;
+  readonly name: string;
+  readonly domain: string;
+  readonly status: LocalSkillStatus;
+  readonly uses: number;
+  readonly helped: number;
+  readonly lastUsedRunOffset: number;
+  readonly habitual: boolean;
+  readonly body: string;
+}
+
+export interface PublishableArtifact {
+  readonly kind: "run" | "trace" | "skill" | "anti-pattern";
+  readonly path: string;
+  readonly body: string;
+}
+
+export interface DomainStats {
+  readonly runsCompleted: number;
+  readonly successRate: number;
+  readonly skillDiversity: number;
+  readonly stage: DevStage;
+}
+
 export class InMemoryStateRepository {
   readonly #runs = new Map<RunId, Run>();
   readonly #episodes = new Map<RunId, Episode[]>();
   readonly #confidence = new Map<string, { correct: number; total: number }>();
   readonly #curriculum = new Map<string, CurriculumProgress>();
+  readonly #skills = new Map<SkillId, LocalSkillRecord>();
+  readonly #publishable: PublishableArtifact[] = [];
+  #identity: Identity | undefined;
 
   createRun(run: Run): void {
     this.#runs.set(run.id, run);
@@ -91,5 +121,29 @@ export class InMemoryStateRepository {
 
   getCurriculumProgress(domain: string): CurriculumProgress | undefined {
     return this.#curriculum.get(domain);
+  }
+
+  upsertLocalSkill(skill: LocalSkillRecord): void {
+    this.#skills.set(skill.id, skill);
+  }
+
+  listLocalSkills(): readonly LocalSkillRecord[] {
+    return [...this.#skills.values()];
+  }
+
+  setIdentity(identity: Identity): void {
+    this.#identity = identity;
+  }
+
+  getIdentity(): Identity | undefined {
+    return this.#identity;
+  }
+
+  queuePublishableArtifact(artifact: PublishableArtifact): void {
+    this.#publishable.push(artifact);
+  }
+
+  listPublishableArtifacts(): readonly PublishableArtifact[] {
+    return [...this.#publishable];
   }
 }

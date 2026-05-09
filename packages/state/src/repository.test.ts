@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { agentId, episodeId, runId } from "../../core/src/index.js";
+import { agentId, episodeId, runId, skillId } from "../../core/src/index.js";
 import { InMemoryStateRepository } from "./repository.js";
 
 describe("InMemoryStateRepository", () => {
@@ -73,5 +73,34 @@ describe("InMemoryStateRepository", () => {
       completedSteps: [0, 1],
       startedAt: "local",
     });
+  });
+
+  test("stores local skills, identity, and publishable artifacts", () => {
+    const state = new InMemoryStateRepository();
+
+    state.upsertLocalSkill({
+      id: skillId("coding.red-green-refactor"),
+      name: "Red Green Refactor",
+      domain: "coding",
+      status: "candidate",
+      uses: 3,
+      helped: 3,
+      lastUsedRunOffset: 0,
+      habitual: false,
+      body: "Write a failing test first.",
+    });
+    state.setIdentity({
+      agentId: agentId("agent-1"),
+      name: "agent-1",
+      devStages: { coding: "newborn" },
+      runsCompleted: 0,
+      summary: "Newborn local agent.",
+      updatedAt: "local",
+    });
+    state.queuePublishableArtifact({ kind: "run", path: "runs/local", body: "redacted" });
+
+    expect(state.listLocalSkills()).toHaveLength(1);
+    expect(state.getIdentity()?.summary).toContain("Newborn");
+    expect(state.listPublishableArtifacts()).toEqual([{ kind: "run", path: "runs/local", body: "redacted" }]);
   });
 });

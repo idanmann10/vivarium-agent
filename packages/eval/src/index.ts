@@ -1,2 +1,3 @@
 export { signalNames } from "./signals.js";
-export { compoundingEvalName } from "./compounding.js";
+export { compoundingEvalName, scoreCompoundingImprovement } from "./compounding.js";
+export type { CompoundingImprovementInput, CompoundingImprovementResult } from "./compounding.js";
