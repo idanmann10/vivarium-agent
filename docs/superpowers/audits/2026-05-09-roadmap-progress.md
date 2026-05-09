@@ -14,6 +14,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` local Phase 2 Dream slice committed at `e3f4d5e`.
 - `the-agent` local Phase 3 world-integration slice committed at `6733564`.
 - `the-agent` SQLite persistence slice committed after Phase 3.
+- `the-agent` provider adapter slice committed after SQLite persistence.
 - `the-world` Phase 0 committed at `81b28a2`.
 - `the-world` Phase 3 maintenance scripts committed at `866c121`.
 - Superpowers and GStack URLs are recorded in Phase 0 plan and seed skill lineage.
@@ -22,9 +23,9 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 
 `the-agent`:
 
-- `bun run lint`: scanned 120 TypeScript files.
+- `bun run lint`: scanned 122 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 33 tests passed, 0 failed.
+- `bun run test`: 36 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 `the-world`:
@@ -44,13 +45,13 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 | Use Superpowers | Superpowers skills used during execution; URL cited in plan and seed lineage | Complete |
 | Use GStack | URL cited in plan and seed lineage for role/command-shaped review patterns | Complete |
 | Phase 0 bootstrap | Two local repos, tooling, core types/math/kernel, world seed content, validators | Complete locally |
-| Phase 1 agent works alone | Offline deterministic runtime, state, SQLite persistence, local provider, self-tools, safety, world read, CLI helpers, e2e run/recover | Local slice complete |
+| Phase 1 agent works alone | Offline deterministic runtime, state, SQLite persistence, local provider, Anthropic/OpenAI/OpenAI-compatible HTTP adapters, self-tools, safety, world read, CLI helpers, e2e run/recover | Local slice complete |
 | Phase 2 Dream | Offline deterministic Dream, promotion/pruning/habits/identity/confidence/anonymizer/eval/e2e | Local slice complete |
 | Phase 3 world integration | Local proposal/publish, multi-world retrieval, world maintenance scripts, cultural transmission e2e | Local slice complete |
 
 ## Remaining Blockers For Full Roadmap Completion
 
-- Real Anthropic/OpenAI/OpenRouter provider calls require API keys and live provider configuration.
+- Anthropic/OpenAI/OpenRouter-compatible adapters are implemented and tested with mocked fetch; live calls still require API keys and runtime configuration.
 - Drizzle migrations are not implemented; durable SQLite persistence exists through `SQLiteStateRepository` using `bun:sqlite`.
 - GitHub API PR creation, auto-merge, Discussions, maintainer review queues, and remote repository settings require actual GitHub remotes and credentials.
 - End-to-end cultural transmission is verified locally, not across two distinct real installs pulling from a canonical GitHub world.
