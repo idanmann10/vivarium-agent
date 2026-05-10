@@ -2322,6 +2322,43 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("v1.twoWeekImprovement:missing");
   });
 
+  test("requires v1 GitHub evidence URLs to target the configured canonical world repo", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-canonical-github-urls-"));
+    const { evidencePath } = writeLiveReadyFiles(root);
+    const manifest = JSON.parse(readFileSync(evidencePath, "utf8")) as {
+      publicContribution: {
+        publicSkillPr: string;
+        autoMerge: string;
+        canonicalSkill: string;
+      };
+      twoWeekImprovement: {
+        competingDiscussion: string;
+      };
+    };
+    manifest.publicContribution.publicSkillPr = "https://github.com/other/wrong-world/pull/1";
+    manifest.publicContribution.autoMerge = "https://github.com/other/wrong-world/actions/runs/1";
+    manifest.publicContribution.canonicalSkill = "https://github.com/other/wrong-world/blob/main/domains/coding/skills/public/SKILL.md";
+    manifest.twoWeekImprovement.competingDiscussion = "https://github.com/other/wrong-world/discussions/2";
+    writeFileSync(evidencePath, `${JSON.stringify(manifest)}\n`, "utf8");
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_V1_EVIDENCE_PATH: evidencePath,
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.publicContribution:missing");
+    expect(result.checks).toContain("v1.twoWeekImprovement:missing");
+  });
+
   test("reports missing GitHub target metadata as live readiness blockers", () => {
     const result = doctorCommand({
       mode: "live-readiness",

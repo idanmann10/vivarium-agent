@@ -24,6 +24,10 @@ interface V1EvidenceReferenceContext {
   readonly agentRoot: string;
   readonly worldRoot: string;
   readonly manifestDir: string;
+  readonly canonicalGitHubRepo?: {
+    readonly owner: string;
+    readonly repo: string;
+  };
 }
 
 export interface DoctorCommandRun {
@@ -329,41 +333,84 @@ function worldSubscriptionReference(value: unknown): string | undefined {
   return undefined;
 }
 
-function githubDiscussionReference(value: unknown): string | undefined {
+function githubUrlReference(value: unknown): { readonly text: string; readonly owner: string; readonly repo: string; readonly parts: readonly string[] } | undefined {
   const text = textValue(value);
   if (text === undefined) {
     return undefined;
   }
 
-  return /^https:\/\/github\.com\/[^/]+\/[^/]+\/discussions\/\d+(?:[/?#].*)?$/.test(text) ? text : undefined;
+  try {
+    const url = new URL(text);
+    if (url.protocol !== "https:" || url.hostname !== "github.com") {
+      return undefined;
+    }
+
+    const parts = url.pathname.split("/").filter((part) => part.length > 0);
+    const [owner, repo] = parts;
+    return owner !== undefined && repo !== undefined ? { text, owner, repo, parts } : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
-function githubPullRequestReference(value: unknown): string | undefined {
-  const text = textValue(value);
-  if (text === undefined) {
-    return undefined;
+function matchesCanonicalGitHubRepo(
+  reference: { readonly owner: string; readonly repo: string },
+  context: V1EvidenceReferenceContext,
+): boolean {
+  const repo = context.canonicalGitHubRepo;
+  if (repo === undefined) {
+    return true;
   }
 
-  return /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+(?:[/?#].*)?$/.test(text) ? text : undefined;
+  return reference.owner === repo.owner && reference.repo === repo.repo;
 }
 
-function githubActionsRunReference(value: unknown): string | undefined {
-  const text = textValue(value);
-  if (text === undefined) {
+function githubDiscussionReference(value: unknown, context: V1EvidenceReferenceContext): string | undefined {
+  const reference = githubUrlReference(value);
+  if (reference === undefined || !matchesCanonicalGitHubRepo(reference, context)) {
     return undefined;
   }
 
-  return /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions\/runs\/\d+(?:[/?#].*)?$/.test(text) ? text : undefined;
+  return reference.parts[2] === "discussions" && /^\d+$/.test(reference.parts[3] ?? "") && reference.parts.length === 4
+    ? reference.text
+    : undefined;
 }
 
-function githubCanonicalSkillReference(value: unknown): string | undefined {
-  const text = textValue(value);
-  if (text === undefined) {
+function githubPullRequestReference(value: unknown, context: V1EvidenceReferenceContext): string | undefined {
+  const reference = githubUrlReference(value);
+  if (reference === undefined || !matchesCanonicalGitHubRepo(reference, context)) {
     return undefined;
   }
 
-  return /^https:\/\/github\.com\/[^/]+\/[^/]+\/blob\/[^/]+\/domains\/[^/]+\/skills\/[^/]+\/SKILL\.md(?:[/?#].*)?$/.test(text)
-    ? text
+  return reference.parts[2] === "pull" && /^\d+$/.test(reference.parts[3] ?? "") && reference.parts.length === 4 ? reference.text : undefined;
+}
+
+function githubActionsRunReference(value: unknown, context: V1EvidenceReferenceContext): string | undefined {
+  const reference = githubUrlReference(value);
+  if (reference === undefined || !matchesCanonicalGitHubRepo(reference, context)) {
+    return undefined;
+  }
+
+  return reference.parts[2] === "actions" &&
+    reference.parts[3] === "runs" &&
+    /^\d+$/.test(reference.parts[4] ?? "") &&
+    reference.parts.length === 5
+    ? reference.text
+    : undefined;
+}
+
+function githubCanonicalSkillReference(value: unknown, context: V1EvidenceReferenceContext): string | undefined {
+  const reference = githubUrlReference(value);
+  if (reference === undefined || !matchesCanonicalGitHubRepo(reference, context)) {
+    return undefined;
+  }
+
+  return reference.parts[2] === "blob" &&
+    reference.parts.length === 9 &&
+    reference.parts[4] === "domains" &&
+    reference.parts[6] === "skills" &&
+    reference.parts[8] === "SKILL.md"
+    ? reference.text
     : undefined;
 }
 
@@ -377,7 +424,7 @@ function isSkillArtifactPath(path: string): boolean {
 }
 
 function canonicalSkillReference(value: unknown, context: V1EvidenceReferenceContext): string | undefined {
-  const githubReference = githubCanonicalSkillReference(value);
+  const githubReference = githubCanonicalSkillReference(value, context);
   if (githubReference !== undefined) {
     return githubReference;
   }
@@ -403,6 +450,12 @@ function dateMillis(value: unknown): number | undefined {
 
 function v1Check(label: string, configured: boolean): string {
   return `v1.${label}:${configured ? "configured" : "missing"}`;
+}
+
+function canonicalGitHubRepo(env: Readonly<Record<string, string | undefined>>): V1EvidenceReferenceContext["canonicalGitHubRepo"] {
+  const owner = textValue(env[githubOwnerEnv]);
+  const repo = textValue(env[worldRepoNameEnv]);
+  return owner !== undefined && repo !== undefined && repo !== "the-world" ? { owner, repo } : undefined;
 }
 
 function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, context: V1EvidenceReferenceContext): readonly string[] {
@@ -541,9 +594,9 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
     ),
     v1Check(
       "publicContribution",
-      githubPullRequestReference(publicContribution?.publicSkillPr) !== undefined &&
+      githubPullRequestReference(publicContribution?.publicSkillPr, context) !== undefined &&
         evidenceReference(publicContribution?.mathGate, context) &&
-        githubActionsRunReference(publicContribution?.autoMerge) !== undefined &&
+        githubActionsRunReference(publicContribution?.autoMerge, context) !== undefined &&
         canonicalSkillReference(publicContribution?.canonicalSkill, context) !== undefined &&
         publicContributionContributorAgent !== undefined &&
         !publicContributionPositiveSignalAgents.has(publicContributionContributorAgent) &&
@@ -586,7 +639,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         twoWeekFollowupMetric < twoWeekBaselineMetric &&
         (twoWeekImprovementPercent ?? 0) > 0 &&
         evidenceReference(twoWeekImprovement?.contributorProfile, context) &&
-        githubDiscussionReference(twoWeekImprovement?.competingDiscussion) !== undefined &&
+        githubDiscussionReference(twoWeekImprovement?.competingDiscussion, context) !== undefined &&
         twoWeekCompetingSkillReferenceCount >= 2 &&
         evidenceReference(twoWeekImprovement?.similarGoalsEvidence, context) &&
         twoWeekContributorAgent !== undefined &&
@@ -624,7 +677,10 @@ function v1EvidenceChecks(
       return ["v1.evidencePath:invalid"];
     }
 
-    return ["v1.evidencePath:configured", ...v1EvidenceDetailChecks(manifest, { ...context, manifestDir: dirname(value) })];
+    const repo = canonicalGitHubRepo(env);
+    const referenceContext: V1EvidenceReferenceContext =
+      repo === undefined ? { ...context, manifestDir: dirname(value) } : { ...context, manifestDir: dirname(value), canonicalGitHubRepo: repo };
+    return ["v1.evidencePath:configured", ...v1EvidenceDetailChecks(manifest, referenceContext)];
   } catch {
     return ["v1.evidencePath:invalid"];
   }
