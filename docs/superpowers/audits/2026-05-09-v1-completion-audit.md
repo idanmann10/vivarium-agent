@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, and provider-backed anonymizer fallback, but the audit still finds uncovered v1 requirements in Phase 1, Phase 2, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, and a daemon-owned Dream scheduler loop, but the audit still finds uncovered v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -35,12 +35,12 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 1 all 8 primitives implemented | Plan, Predict, Execute, Monitor, Recover, Validate, Reflect, and Dream have metadata; lifecycle primitives have modules and tests; orchestrator delegates to lifecycle modules | Complete locally |
 | Phase 1 attention budget enforcement | `applyAttentionLimits` caps skills, traces, tools, and recent episodes, enforces `maxWorkingTokens`, and returns budget metadata; orchestrator uses attention-limited world context before Plan | Complete locally |
 | Phase 1 read-only world paths | Local reader, retrieval, and multi-world search tests exist | Partially complete |
-| Phase 1 daemon | Daemon service and HTTP lifecycle transport exist with tests | Partially complete |
+| Phase 1 daemon | Daemon service, HTTP lifecycle transport, MCP manifest, and daemon-owned Dream scheduler loop exist with tests | Complete locally; deployment supervisor unverified |
 | Phase 1 CLI | `init`, `run`, `credentials`, `skills`, `world`, `status`, and `doctor` helpers exist; init runs migrations, installs starter skills, discovers starter traces/curriculum, and returns provider/credential prompts; no interactive parser UX yet | Complete locally |
 | Phase 1 e2e run/recover | `tests/e2e-run.test.ts` and `tests/e2e-recover.test.ts` pass in current test suite | Complete locally |
 | Phase 1 done scenario | A developer can run a synthetic local goal; real provider config, credential use, anti-pattern automatic lookup, and full CLI install flow are not verified | Incomplete |
 | Phase 2 Dream primitive | Deterministic `runDream` exists with promotion/pruning/habituation/identity/confidence behavior and now returns generated anti-pattern/trace candidate IDs | Partially complete |
-| Phase 2 scheduler | `shouldRunDream` helper exists; real nightly firing loop is not implemented | Partially complete |
+| Phase 2 scheduler | `shouldRunDream` helper and `createDreamScheduler` start/stop interval loop exist with deterministic tests | Complete locally; process-manager persistence unverified |
 | Phase 2 candidate pipelines | Skill candidate handling exists; Dream now generates anti-pattern candidates from failed/low-score runs and annotated trace candidates from successful high-score runs, with in-memory and SQLite persistence | Complete locally |
 | Phase 2 confidence storage | In-memory and SQLite confidence buckets exist | Complete locally |
 | Phase 2 compounding eval | `packages/eval/src/compounding.ts` and e2e Dream test exist | Partially complete |
@@ -61,7 +61,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 ## Fresh Evidence Used
 
 - `sed -n '1882,2085p' goal.md`: phase, v1 done, and out-of-scope criteria.
-- `git -C the-agent status --short`: clean before the safety slice; safety, Dream candidate-generation, attention token-budget, and provider anonymizer changes are tracked in follow-up commits.
+- `git -C the-agent status --short`: clean before the safety slice; safety, Dream candidate-generation, attention token-budget, provider anonymizer, and daemon scheduler changes are tracked in follow-up commits.
 - `git -C the-world status --short`: clean.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
@@ -69,17 +69,18 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun test packages/state/src/repository.test.ts packages/state/src/sqlite-repository.test.ts packages/state/src/storage/migrations.test.ts packages/runtime/src/primitives/dream/primitive.test.ts`: 10 tests passed, including Dream candidate queues and extraction.
 - `bun test packages/runtime/src/attention.test.ts`: 2 tests passed, including working-token budget enforcement.
 - `bun test packages/tools/src/anonymizer/pipeline.test.ts packages/providers/src/router.test.ts`: 5 tests passed, including provider anonymizer fallback.
+- `bun test apps/daemon/src/scheduler.test.ts`: 4 tests passed, including daemon Dream scheduler start/stop behavior.
 - `bun run lint`: scanned 167 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 73 tests passed, 0 failed.
+- `bun run test`: 75 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value remaining gap after the provider anonymizer slice is daemon ownership and live external verification:
+The highest-value remaining gap after the daemon scheduler slice is live external verification:
 
-1. Decide whether the local scheduler helper should become a real long-running daemon loop in this repo or stay deployment-supervisor-owned.
-2. Verify live provider credentials and live GitHub remotes once the required user decisions are available.
+1. Verify live provider credentials and live model calls once credential names and values are available.
+2. Verify live GitHub remotes, Discussions, PR creation, and auto-merge settings once repository targets and credentials are available.
 3. Run a real cross-install/canonical-world contribution loop after remotes and credentials exist.
 
 Live provider credentials, real GitHub remotes, real GitHub Discussions, cross-install cultural transmission, and deployment supervision still require user-provided decisions or external access.
