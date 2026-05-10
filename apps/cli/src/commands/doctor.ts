@@ -798,13 +798,14 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.dreamArtifacts":
       return {
         check,
-        action: "Record nightly Dream evidence for two skill candidates, one anti-pattern, and one trace.",
+        action: "Record nightly Dream evidence for two skill candidates, internal and public skills, one anti-pattern, and one trace.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.publicContribution":
       return {
         check,
-        action: "Record public skill PR, K=5 positive signals, auto-merge, canonical landing, and external pull evidence.",
+        action:
+          "Record public skill PR, math gate, contributor trust, K=5 positive signals, auto-merge, canonical landing, and external pull evidence.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.publishedArtifacts":
@@ -816,13 +817,14 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.curationStats":
       return {
         check,
-        action: "Record featured pick and STATS.md concentration evidence.",
+        action: "Record featured pick and STATS.md evidence showing at least 30% top-five contributor concentration.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.twoWeekImprovement":
       return {
         check,
-        action: "Record the two-week follow-up measurement, contributor profile, and competing Discussion evidence.",
+        action:
+          "Record the two-week follow-up at least fourteen days after the last goal, improvement metrics, contributor profile counts/trust, and competing Discussion evidence.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     default:

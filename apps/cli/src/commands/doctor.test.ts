@@ -382,6 +382,28 @@ describe("doctorCommand", () => {
     }
   });
 
+  test("describes detailed v1 evidence requirements in next actions", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-next-actions-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    writeFileSync(evidencePath, "{}\n", "utf8");
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { GH_PAGER: "cat", VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+    const actions = new Map((result.nextActions ?? []).map((action) => [action.check, action.action]));
+
+    expect(actions.get("v1.dreamArtifacts:missing")).toContain("internal and public skills");
+    expect(actions.get("v1.publicContribution:missing")).toContain("math gate");
+    expect(actions.get("v1.publicContribution:missing")).toContain("contributor trust");
+    expect(actions.get("v1.curationStats:missing")).toContain("30%");
+    expect(actions.get("v1.twoWeekImprovement:missing")).toContain("fourteen days");
+    expect(actions.get("v1.twoWeekImprovement:missing")).toContain("profile counts");
+    expect(actions.get("v1.publishedArtifacts:missing")).toContain("trace and run Plan-read evidence");
+  });
+
   test("reports placeholder repo names as live readiness blockers", () => {
     const result = doctorCommand({
       mode: "live-readiness",
