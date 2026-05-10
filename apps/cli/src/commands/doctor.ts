@@ -376,7 +376,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
       "curationStats",
       evidenceReference(curationStats?.featuredPick, context) &&
         evidenceReference(curationStats?.stats, context) &&
-        (numberValue(curationStats?.top5SkillSharePercent) ?? 0) > 0,
+        (numberValue(curationStats?.top5SkillSharePercent) ?? 0) >= 30,
     ),
     v1Check(
       "twoWeekImprovement",

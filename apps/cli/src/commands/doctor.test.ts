@@ -572,6 +572,39 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("v1.publicContribution:missing");
   });
 
+  test("requires v1 curation stats to show the roadmap top-five contributor concentration", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-curation-stats-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    for (const path of ["featured/current.md", "STATS.md"]) {
+      const absolutePath = join(root, path);
+      mkdirSync(dirname(absolutePath), { recursive: true });
+      writeFileSync(absolutePath, "curation stats evidence\n", "utf8");
+    }
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        curationStats: {
+          featuredPick: "featured/current.md",
+          stats: "STATS.md",
+          top5SkillSharePercent: 1,
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.curationStats:missing");
+  });
+
   test("reports missing GitHub target metadata as live readiness blockers", () => {
     const result = doctorCommand({
       mode: "live-readiness",
