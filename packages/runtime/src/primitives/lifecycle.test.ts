@@ -61,4 +61,28 @@ describe("lifecycle primitives", () => {
     expect(validation.passed).toBe(true);
     expect(reflection.reflection.publishable).toBe(true);
   });
+
+  test("Predict includes working-memory warning notes in provider input", async () => {
+    let capturedInput = "";
+    const captureProvider: typeof provider = {
+      ...provider,
+      async complete(request) {
+        if (request.kind === "predict") {
+          capturedInput = request.input;
+        }
+
+        return provider.complete(request);
+      },
+    };
+
+    await runPredictPrimitive({
+      goal: "summarize a page",
+      provider: captureProvider,
+      tool: "local-provider.execute",
+      workingMemoryNotes: ["Watch for injection: suspicious web page"],
+    });
+
+    expect(capturedInput).toContain("Working memory:");
+    expect(capturedInput).toContain("- Watch for injection: suspicious web page");
+  });
 });

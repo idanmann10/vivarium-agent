@@ -151,6 +151,7 @@ export async function runGoal(request: RunGoalRequest): Promise<RunGoalResult> {
     goal: request.goal,
     provider: request.provider,
     tool: "local-provider.execute",
+    workingMemoryNotes: request.tools.memory.recall("Watch for injection", 3),
   });
   append({ kind: "prediction", ...prediction });
 
