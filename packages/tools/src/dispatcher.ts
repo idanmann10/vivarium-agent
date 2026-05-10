@@ -6,7 +6,7 @@ import {
   type ExternalToolResult,
   type HttpMethod,
 } from "./external/index.js";
-import { evaluateHttpSafety } from "./safety/pipeline.js";
+import { evaluateHttpSafety, scanToolOutputForPromptInjection } from "./safety/pipeline.js";
 
 export interface ToolDispatchRequest {
   readonly name: string;
@@ -17,6 +17,7 @@ export type ToolDispatchResult =
   | {
       readonly ok: true;
       readonly value: unknown;
+      readonly warnings?: readonly string[];
     }
   | {
       readonly ok: false;
@@ -164,7 +165,9 @@ function emit(options: ToolDispatcherOptions, event: ToolDispatchEvent): void {
 
 function dispatchEvent(name: string, result: ToolDispatchResult): ToolDispatchEvent {
   if (result.ok) {
-    return { name, status: "ok" };
+    return result.warnings === undefined || result.warnings.length === 0
+      ? { name, status: "ok" }
+      : { name, status: "ok", reason: result.warnings.join("; ") };
   }
 
   return {
@@ -176,7 +179,8 @@ function dispatchEvent(name: string, result: ToolDispatchResult): ToolDispatchEv
 
 function fromExternalResult(result: ExternalToolResult): ToolDispatchResult {
   if (result.ok) {
-    return result;
+    const warnings = scanToolOutputForPromptInjection(result.value).map((finding) => finding.reason);
+    return warnings.length === 0 ? result : { ...result, warnings };
   }
 
   return { ok: false, error: result.error };

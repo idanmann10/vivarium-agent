@@ -3,6 +3,10 @@ export interface SafetyDecision {
   readonly reason: string;
 }
 
+export interface OutputSafetyFinding {
+  readonly reason: string;
+}
+
 export interface HttpSafetyRequest {
   readonly url: string;
   readonly method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -23,4 +27,22 @@ export function evaluateHttpSafety(request: HttpSafetyRequest): SafetyDecision {
   }
 
   return { allowed: true, reason: "Request passed safety checks" };
+}
+
+const promptInjectionPatterns = [
+  { pattern: /ignore previous instructions/i, label: "ignore previous instructions" },
+  { pattern: /you are now/i, label: "you are now" },
+  { pattern: /call\s+[a-z0-9_.-]+\s*run/i, label: "suspicious tool-use suggestion" },
+  { pattern: /override (the )?(system|developer) prompt/i, label: "prompt override instruction" },
+] as const;
+
+function textFromValue(value: unknown): string {
+  return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+export function scanToolOutputForPromptInjection(value: unknown): readonly OutputSafetyFinding[] {
+  const text = textFromValue(value);
+  return promptInjectionPatterns
+    .filter(({ pattern }) => pattern.test(text))
+    .map(({ label }) => ({ reason: `Tool output may contain prompt injection: ${label}` }));
 }
