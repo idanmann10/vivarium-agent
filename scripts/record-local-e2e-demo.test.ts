@@ -31,7 +31,7 @@ describe("local e2e demo recorder", () => {
     expect(existsSync(output)).toBe(true);
 
     const [headerLine, ...eventLines] = readFileSync(output, "utf8").trim().split("\n");
-    expect(JSON.parse(headerLine ?? "")).toMatchObject({ version: 2, width: 120, height: 36 });
+    expect(JSON.parse(headerLine ?? "")).toMatchObject({ version: 2, width: 120, height: 36, timestamp: 0 });
 
     const text = eventLines.map((line) => JSON.parse(line)[2]).join("");
     expect(text).toContain("$ bun apps/cli/src/index.ts init");
@@ -40,5 +40,11 @@ describe("local e2e demo recorder", () => {
     expect(text).toContain("$ bun run verify:sqlite-stack");
     expect(text).toContain('"ok": true');
     expect(text).toContain('"engine":"better-sqlite3"');
+    expect(text).toContain("<demo-state.db>");
+    expect(text).toContain("<demo-world-second-install>");
+    expect(text).toContain("run-demo-000");
+    expect(text).not.toContain(statePath);
+    expect(text).not.toContain(pulledWorld);
+    expect(text).not.toContain(root);
   });
 });

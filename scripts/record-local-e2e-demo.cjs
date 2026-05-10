@@ -23,12 +23,23 @@ function event(time, text) {
   return JSON.stringify([Number(time.toFixed(3)), "o", text]);
 }
 
+function replaceAll(text, search, replacement) {
+  return text.split(search).join(replacement);
+}
+
 const repoRoot = resolve(__dirname, "..");
 const demoRoot = mkdtempSync(join(tmpdir(), "vivarium-local-e2e-demo-"));
 const output = resolve(repoRoot, readFlag("output") ?? "docs/demos/local-e2e.cast");
 const worldRoot = resolve(repoRoot, readFlag("world-root") ?? "../the-world");
 const statePath = resolve(repoRoot, readFlag("state-path") ?? join(demoRoot, "state.db"));
 const pullDestination = resolve(repoRoot, readFlag("pull-destination") ?? join(demoRoot, "world-second-install"));
+
+function sanitize(text) {
+  return replaceAll(replaceAll(text, statePath, "<demo-state.db>"), pullDestination, "<demo-world-second-install>").replace(
+    /run-\d+-\d+/g,
+    "run-demo-000",
+  );
+}
 
 const steps = [
   {
@@ -94,20 +105,20 @@ const lines = [
     version: 2,
     width: 120,
     height: 36,
-    timestamp: Math.floor(Date.now() / 1000),
+    timestamp: 0,
     env: { SHELL: "/bin/zsh", TERM: "xterm-256color" },
   }),
 ];
 
 let time = 0;
 for (const step of steps) {
-  lines.push(event(time, `$ ${commandText(step.command, step.args)}\n`));
+  lines.push(event(time, sanitize(`$ ${commandText(step.command, step.args)}\n`)));
   time += 0.08;
 
   const result = spawnSync(step.command, step.args, { cwd: repoRoot, encoding: "utf8" });
   const outputText = `${result.stderr}${result.stdout}`;
   if (outputText.length > 0) {
-    lines.push(event(time, outputText.endsWith("\n") ? outputText : `${outputText}\n`));
+    lines.push(event(time, sanitize(outputText.endsWith("\n") ? outputText : `${outputText}\n`)));
     time += 0.12;
   }
   if (result.status !== 0) {
