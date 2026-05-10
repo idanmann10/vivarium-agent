@@ -373,7 +373,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
       evidenceReference(publishedArtifacts?.antiPattern, context) &&
         evidenceReference(publishedArtifacts?.trace, context) &&
         evidenceReference(publishedArtifacts?.run, context) &&
-        evidenceReference(publishedArtifacts?.secondInstallRead, context),
+        evidenceReference(publishedArtifacts?.tracePlanRead, context) &&
+        evidenceReference(publishedArtifacts?.runPlanRead, context),
     ),
     v1Check(
       "curationStats",

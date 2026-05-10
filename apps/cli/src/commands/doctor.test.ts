@@ -156,7 +156,8 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
     "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
     "domains/coding/traces/workflow/TRACE.md",
     "runs/run-live-001/RUN.md",
-    "docs/live/second-install-read.md",
+    "docs/live/trace-plan-read.md",
+    "docs/live/run-plan-read.md",
     "featured/current.md",
     "STATS.md",
     "contributors/live-agent.json",
@@ -249,7 +250,8 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
         antiPattern: "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
         trace: "domains/coding/traces/workflow/TRACE.md",
         run: "runs/run-live-001/RUN.md",
-        secondInstallRead: "docs/live/second-install-read.md",
+        tracePlanRead: "docs/live/trace-plan-read.md",
+        runPlanRead: "docs/live/run-plan-read.md",
       },
       curationStats: {
         featuredPick: "featured/current.md",
@@ -633,6 +635,46 @@ describe("doctorCommand", () => {
     expect(result.ok).toBe(false);
     expect(result.checks).toContain("v1.evidencePath:configured");
     expect(result.checks).toContain("v1.publicContribution:missing");
+  });
+
+  test("requires v1 published trace and run to be read during another agent plan", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-published-plan-read-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    const localEvidencePaths = [
+      "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
+      "domains/coding/traces/workflow/TRACE.md",
+      "runs/run-live-001/RUN.md",
+      "docs/live/second-install-read.md",
+    ];
+    for (const path of localEvidencePaths) {
+      const absolutePath = join(root, path);
+      mkdirSync(dirname(absolutePath), { recursive: true });
+      writeFileSync(absolutePath, "published artifact evidence\n", "utf8");
+    }
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        publishedArtifacts: {
+          antiPattern: "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
+          trace: "domains/coding/traces/workflow/TRACE.md",
+          run: "runs/run-live-001/RUN.md",
+          secondInstallRead: "docs/live/second-install-read.md",
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.publishedArtifacts:missing");
   });
 
   test("requires v1 curation stats to show the roadmap top-five contributor concentration", () => {
