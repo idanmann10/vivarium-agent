@@ -79,6 +79,7 @@ const privateOaiCompatModelEnv = "VIVARIUM_OAI_COMPAT_MODEL";
 const credentialsPathEnv = "VIVARIUM_CREDENTIALS_PATH";
 const credentialsMasterKeyEnv = "VIVARIUM_CREDENTIALS_MASTER_KEY";
 const internalApiCredentialNameEnv = "VIVARIUM_INTERNAL_API_CREDENTIAL_NAME";
+const internalApiCredentialValueEnv = "VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE";
 const internalApiHealthUrlEnv = "VIVARIUM_INTERNAL_API_HEALTH_URL";
 const v1EvidencePathEnv = "VIVARIUM_V1_EVIDENCE_PATH";
 type EnvValueStatus = "missing" | "placeholder" | "configured";
@@ -993,7 +994,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         env: [credentialsPathEnv],
         command: cliCommand(
           context,
-          'credentials add --path "$VIVARIUM_CREDENTIALS_PATH" --master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY" --kind bearer --name INTERNAL_API_TOKEN --purpose "Call internal API" --value <redacted>',
+          'credentials add --path "$VIVARIUM_CREDENTIALS_PATH" --master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY" --kind bearer --name "$VIVARIUM_INTERNAL_API_CREDENTIAL_NAME" --purpose "Call internal API" --value "$VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE"',
         ),
         guide: `${guide}#internal-api-credential`,
       };
@@ -1009,6 +1010,13 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: "Export the encrypted credential name used for the internal API smoke test.",
         env: [internalApiCredentialNameEnv],
+        guide: `${guide}#internal-api-credential`,
+      };
+    case "internalApi.credentialValue":
+      return {
+        check,
+        action: "Export the internal API credential value used to create the encrypted credential.",
+        env: [internalApiCredentialValueEnv],
         guide: `${guide}#internal-api-credential`,
       };
     case "internalApi.healthUrl":
@@ -1185,6 +1193,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     requiredFileCheck(env, credentialsPathEnv, "credentials.path"),
     requiredEnvCheck(env, credentialsMasterKeyEnv, "credentials.masterKey"),
     requiredEnvCheck(env, internalApiCredentialNameEnv, "internalApi.credentialName"),
+    requiredEnvCheck(env, internalApiCredentialValueEnv, "internalApi.credentialValue"),
     requiredEnvCheck(env, internalApiHealthUrlEnv, "internalApi.healthUrl"),
     githubEnvCheck(env),
     requiredEnvCheck(env, githubOwnerEnv, "github.owner"),

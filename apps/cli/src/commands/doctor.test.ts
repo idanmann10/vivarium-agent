@@ -551,6 +551,7 @@ describe("doctorCommand", () => {
         VIVARIUM_OAI_COMPAT_BASE_URL: "<private-oai-compatible-base-url>",
         VIVARIUM_OAI_COMPAT_MODEL: "<private-fine-tune-model>",
         VIVARIUM_CREDENTIALS_MASTER_KEY: "<local-master-key>",
+        VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE: "<redacted-internal-api-token>",
         VIVARIUM_INTERNAL_API_HEALTH_URL: "<internal-api-health-url>",
         GITHUB_TOKEN: "<redacted-github-token>",
       },
@@ -569,6 +570,7 @@ describe("doctorCommand", () => {
         "provider.openrouter:placeholder",
         "provider.privateOaiCompat:placeholder",
         "credentials.masterKey:placeholder",
+        "internalApi.credentialValue:placeholder",
         "internalApi.healthUrl:placeholder",
         "github.env:placeholder",
         "github.owner:placeholder",
@@ -2649,6 +2651,7 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("credentials.path:missing");
     expect(result.checks).toContain("credentials.masterKey:missing");
     expect(result.checks).toContain("internalApi.credentialName:missing");
+    expect(result.checks).toContain("internalApi.credentialValue:missing");
     expect(result.checks).toContain("internalApi.healthUrl:missing");
   });
 
@@ -2907,6 +2910,7 @@ describe("doctorCommand", () => {
         VIVARIUM_CREDENTIALS_PATH: files.credentialsPath,
         VIVARIUM_CREDENTIALS_MASTER_KEY: "configured",
         VIVARIUM_INTERNAL_API_CREDENTIAL_NAME: "INTERNAL_API_TOKEN",
+        VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE: "configured",
         VIVARIUM_INTERNAL_API_HEALTH_URL: "https://internal.example/health",
         VIVARIUM_V1_EVIDENCE_PATH: files.evidencePath,
         GITHUB_TOKEN: "configured",

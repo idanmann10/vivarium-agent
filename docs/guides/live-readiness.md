@@ -168,7 +168,7 @@ bun apps/cli/src/index.ts credentials add \
   --kind bearer \
   --name "$VIVARIUM_INTERNAL_API_CREDENTIAL_NAME" \
   --purpose "Call internal API" \
-  --value <redacted>
+  --value "$VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE"
 
 bun apps/cli/src/index.ts credentials smoke \
   --path "$VIVARIUM_CREDENTIALS_PATH" \
@@ -186,10 +186,11 @@ Export the stable credential metadata for `doctor --live`:
 export VIVARIUM_CREDENTIALS_PATH=/tmp/vivarium-credentials.enc
 export VIVARIUM_CREDENTIALS_MASTER_KEY=<local-master-key>
 export VIVARIUM_INTERNAL_API_CREDENTIAL_NAME=INTERNAL_API_TOKEN
+export VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE=<redacted-internal-api-token>
 export VIVARIUM_INTERNAL_API_HEALTH_URL=<internal-health-url>
 ```
 
-`doctor --live` expects `VIVARIUM_CREDENTIALS_PATH` to point at the encrypted file created by `credentials add`, and it expects `VIVARIUM_CREDENTIALS_MASTER_KEY` to be exported so the follow-up smoke command can read it.
+`doctor --live` expects `VIVARIUM_CREDENTIALS_PATH` to point at the encrypted file created by `credentials add`, and it expects the master key, credential name, credential value, and health URL to be exported so the credential add and smoke commands can run from the same filled local env file.
 
 ## GitHub Auth
 

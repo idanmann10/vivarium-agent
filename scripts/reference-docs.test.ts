@@ -187,6 +187,7 @@ const guideDocs = {
     "chmod 600 live-readiness.local.env",
     "source live-readiness.local.env",
     "VIVARIUM_CREDENTIALS_MASTER_KEY",
+    "VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE",
     "Naming Gate",
     "Git Remotes",
     "Provider Environment",
@@ -216,6 +217,7 @@ const liveReadinessEnvVars = [
   "VIVARIUM_CREDENTIALS_PATH",
   "VIVARIUM_CREDENTIALS_MASTER_KEY",
   "VIVARIUM_INTERNAL_API_CREDENTIAL_NAME",
+  "VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE",
   "VIVARIUM_INTERNAL_API_HEALTH_URL",
   "VIVARIUM_V1_EVIDENCE_PATH",
   "GITHUB_TOKEN",
@@ -410,6 +412,7 @@ describe("reference docs", () => {
       '--path "$VIVARIUM_CREDENTIALS_PATH"',
       '--master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY"',
       '--name "$VIVARIUM_INTERNAL_API_CREDENTIAL_NAME"',
+      '--value "$VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE"',
       '--url "$VIVARIUM_INTERNAL_API_HEALTH_URL"',
     ]) {
       expect(body).toContain(term);
