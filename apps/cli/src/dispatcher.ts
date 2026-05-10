@@ -193,8 +193,18 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
       usage('Unknown world subcommand. Use "search" or "pull".');
     case "status":
       return output(command, statusCommand());
-    case "doctor":
-      return output(command, doctorCommand());
+    case "doctor": {
+      const agentRoot = value(flags, "agent-root");
+      const worldRoot = value(flags, "world-root");
+      return output(
+        command,
+        doctorCommand({
+          ...(booleanFlag(flags, "live") ? { mode: "live-readiness" } : {}),
+          ...(agentRoot === undefined ? {} : { agentRoot }),
+          ...(worldRoot === undefined ? {} : { worldRoot }),
+        }),
+      );
+    }
     default:
       usage(`Unknown command "${command}"`);
   }

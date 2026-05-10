@@ -38,6 +38,20 @@ describe("dispatchCliCommand", () => {
       command: "doctor",
       result: { ok: true },
     });
+    await expect(dispatchCliCommand(["doctor", "--live", "--agent-root", "/agent", "--world-root", "/world"])).resolves.toMatchObject({
+      command: "doctor",
+      result: {
+        checks: expect.arrayContaining([
+          expect.stringMatching(/^agent\.remote:/),
+          expect.stringMatching(/^world\.remote:/),
+          expect.stringMatching(/^provider\.env:/),
+          expect.stringMatching(/^github\.env:/),
+          expect.stringMatching(/^github\.auth:/),
+          expect.stringMatching(/^docker:/),
+          expect.stringMatching(/^docker\.compose:/),
+        ]),
+      },
+    });
   });
 
   test("routes init, skills, and world commands with explicit paths", async () => {
