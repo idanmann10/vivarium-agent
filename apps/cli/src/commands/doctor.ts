@@ -235,6 +235,9 @@ function liveEnvFilePermissionChecks(envFilePath: string | undefined): readonly 
   if (envFilePath === undefined) {
     return [];
   }
+  if (envFilePath.endsWith(".env.example")) {
+    return [];
+  }
 
   try {
     const stat = statSync(envFilePath);

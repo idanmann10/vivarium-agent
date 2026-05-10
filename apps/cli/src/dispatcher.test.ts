@@ -146,6 +146,29 @@ describe("dispatchCliCommand", () => {
     expect(checks).toContain("liveEnvFile.permissions:insecure");
   });
 
+  test("does not require restrictive permissions for env example templates", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-env-example-"));
+    const envPath = join(root, "live-readiness.env.example");
+    write(
+      envPath,
+      [
+        "# Copyable template only; no filled secrets.",
+        'export VIVARIUM_AGENT_REPO_NAME="<final-agent-repo>"',
+        'export VIVARIUM_WORLD_REPO_NAME="<final-world-repo>"',
+        'export ANTHROPIC_API_KEY="<redacted-anthropic-key>"',
+        'export GITHUB_TOKEN="<redacted-github-token>"',
+      ].join("\n"),
+    );
+    chmodSync(envPath, 0o644);
+
+    const result = await dispatchCliCommand(["doctor", "--live", "--env-file", envPath, "--agent-root", "/agent", "--world-root", "/world"], {
+      doctorRunner: deterministicDoctorRunner,
+    });
+    const checks = (result.result as { checks: readonly string[] }).checks;
+
+    expect(checks).not.toContain("liveEnvFile.permissions:insecure");
+  });
+
   test("passes copied env file values to live doctor probes", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-probe-env-"));
     const envPath = join(root, "live-readiness.local.env");
