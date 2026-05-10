@@ -23,6 +23,11 @@ When the world subscription registry exists, canonical/private world refs also r
 For live-readiness mode, the JSON result also includes `nextActions` for every non-passing check. Each action names the failed check, the env vars or command needed to clear it, and the guide section to read before making live changes.
 
 Use `docs/live-readiness.env.example` as a copyable environment skeleton. Copy it to `live-readiness.local.env` before filling values, then pass it to `doctor --live` with `--env-file live-readiness.local.env`; that filename is ignored because filled copies contain provider keys, GitHub tokens, and internal API metadata.
+The setup commands below use shell variables from that same file. Before running those commands, load the filled file into a trusted local shell:
+
+```bash
+source live-readiness.local.env
+```
 
 ## Naming Gate
 

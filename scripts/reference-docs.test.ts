@@ -184,6 +184,7 @@ const guideDocs = {
   "live-readiness": [
     "doctor --live",
     "--env-file live-readiness.local.env",
+    "source live-readiness.local.env",
     "Naming Gate",
     "Git Remotes",
     "Provider Environment",
@@ -368,6 +369,7 @@ describe("reference docs", () => {
     const body = existsSync(path) ? readFileSync(path, "utf8") : "";
     expect(body).toContain("doctor --live");
     expect(body).toContain("--env-file live-readiness.local.env");
+    expect(body).toContain("source live-readiness.local.env");
     expect(body).toContain("Do not commit");
     expect(body).toContain("live-readiness.local.env");
     for (const envVar of liveReadinessEnvVars) {
