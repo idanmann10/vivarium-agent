@@ -2424,6 +2424,44 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("v1.twoWeekImprovement:missing");
   });
 
+  test("rejects future-dated v1 real goals and follow-up evidence", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-future-dates-"));
+    const { evidencePath } = writeLiveReadyFiles(root);
+    const manifest = JSON.parse(readFileSync(evidencePath, "utf8")) as {
+      realGoals: Array<{ date: string }>;
+      twoWeekImprovement: {
+        followupDate: string;
+      };
+    };
+    manifest.realGoals = [
+      { ...manifest.realGoals[0], date: "2026-06-01" },
+      { ...manifest.realGoals[1], date: "2026-06-02" },
+      { ...manifest.realGoals[2], date: "2026-06-04" },
+      { ...manifest.realGoals[3], date: "2026-06-06" },
+      { ...manifest.realGoals[4], date: "2026-06-08" },
+    ];
+    manifest.twoWeekImprovement.followupDate = "2026-06-22";
+    writeFileSync(evidencePath, `${JSON.stringify(manifest)}\n`, "utf8");
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      nowMillis: Date.parse("2026-05-10T00:00:00.000Z"),
+      env: {
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_V1_EVIDENCE_PATH: evidencePath,
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.realGoals:missing");
+    expect(result.checks).toContain("v1.twoWeekImprovement:missing");
+  });
+
   test("reports missing GitHub target metadata as live readiness blockers", () => {
     const result = doctorCommand({
       mode: "live-readiness",
@@ -2727,6 +2765,7 @@ describe("doctorCommand", () => {
       mode: "live-readiness",
       agentRoot: "/agent",
       worldRoot: "/world",
+      nowMillis: Date.parse("2026-05-23T00:00:00.000Z"),
       env: {
         VIVARIUM_AGENT_REPO_NAME: "agent-final",
         VIVARIUM_WORLD_REPO_NAME: "world-final",

@@ -24,6 +24,7 @@ interface V1EvidenceReferenceContext {
   readonly agentRoot: string;
   readonly worldRoot: string;
   readonly manifestDir: string;
+  readonly nowMillis: number;
   readonly canonicalGitHubRepo?: {
     readonly owner: string;
     readonly repo: string;
@@ -49,6 +50,7 @@ export interface DoctorCommandOptions {
   readonly mode?: "offline-local" | "live-readiness";
   readonly agentRoot?: string;
   readonly worldRoot?: string;
+  readonly nowMillis?: number;
   readonly env?: Readonly<Record<string, string | undefined>>;
   readonly runner?: DoctorCommandRunner;
 }
@@ -454,6 +456,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
     const millis = dateMillis(goal.date);
     return millis === undefined ? [] : [millis];
   });
+  const realGoalDatesAreNotFuture = realGoalDates.length > 0 && realGoalDates.every((millis) => millis <= context.nowMillis);
   const firstGoal = realGoalDates.length === 0 ? undefined : Math.min(...realGoalDates);
   const lastGoal = realGoalDates.length === 0 ? undefined : Math.max(...realGoalDates);
   const providerSmokes = asRecord(manifest.providerSmokes);
@@ -532,6 +535,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
             dateMillis(goal.date) !== undefined &&
             evidenceReference(goal.evidence, context),
         ) &&
+        realGoalDatesAreNotFuture &&
         firstGoal !== undefined &&
         lastGoal !== undefined &&
         lastGoal - firstGoal >= 7 * 24 * 60 * 60 * 1000,
@@ -616,6 +620,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
     v1Check(
       "twoWeekImprovement",
       followupMillis !== undefined &&
+        followupMillis <= context.nowMillis &&
         lastGoal !== undefined &&
         followupMillis - lastGoal >= 14 * 24 * 60 * 60 * 1000 &&
         twoWeekBaselineMetric !== undefined &&
@@ -644,7 +649,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
 
 function v1EvidenceChecks(
   env: Readonly<Record<string, string | undefined>>,
-  context: Pick<V1EvidenceReferenceContext, "agentRoot" | "worldRoot">,
+  context: Pick<V1EvidenceReferenceContext, "agentRoot" | "worldRoot" | "nowMillis">,
 ): readonly string[] {
   const value = env[v1EvidencePathEnv]?.trim();
   if (value === undefined || value.length === 0) {
@@ -1012,7 +1017,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.realGoals":
       return {
         check,
-        action: "Record at least five distinct named real coding goals spanning a week, with domain and distinct evidence for each run.",
+        action:
+          "Record at least five distinct named real coding goals spanning a week, with domain, distinct evidence for each run, and dates that are not in the future.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.providerSmokes":
@@ -1072,7 +1078,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record the two-week follow-up at least fourteen days after the last goal, faster follow-up metrics on similar goals, contributor profile counts/trust, contributor agent identity, a competing GitHub Discussion URL, two distinct live competing skill variant references, similar-goal comparison evidence, and two distinct other-agent refinement agent/evidence records excluding the contributor.",
+          "Record the two-week follow-up at least fourteen days after the last goal with a date that is not in the future, faster follow-up metrics on similar goals, contributor profile counts/trust, contributor agent identity, a competing GitHub Discussion URL, two distinct live competing skill variant references, similar-goal comparison evidence, and two distinct other-agent refinement agent/evidence records excluding the contributor.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     default:
@@ -1089,6 +1095,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
   const env = options.env ?? process.env;
   const agentRoot = options.agentRoot ?? process.cwd();
   const worldRoot = options.worldRoot ?? process.cwd();
+  const nowMillis = options.nowMillis ?? Date.now();
   const worldRefs = worldSubscriptionRefs(env);
   const profiles = providerProfileNames(env);
   const checks = [
@@ -1116,7 +1123,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     requiredEnvCheck(env, githubDiscussionCategoryIdEnv, "github.discussionCategoryId"),
     githubAuthCheck(runner, env),
     ...dockerCheck(runner, env),
-    ...v1EvidenceChecks(env, { agentRoot, worldRoot }),
+    ...v1EvidenceChecks(env, { agentRoot, worldRoot, nowMillis }),
   ];
 
   return {
