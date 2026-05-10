@@ -1,5 +1,6 @@
 import type { CredentialKind } from "../../../packages/core/src/index.js";
-import { addCredentialCommand, listCredentialsCommand } from "./commands/credentials.js";
+import type { HttpMethod } from "../../../packages/tools/src/external/index.js";
+import { addCredentialCommand, credentialSmokeCommand, listCredentialsCommand } from "./commands/credentials.js";
 import { daemonSmokeCommand } from "./commands/daemon.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand, githubWorkflowRunsCommand } from "./commands/github.js";
@@ -159,7 +160,23 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
         );
       }
 
-      usage('Unknown credentials subcommand. Use "add" or "list".');
+      if (subcommand === "smoke") {
+        const method = value(flags, "method") as HttpMethod | undefined;
+        const body = value(flags, "body");
+        return output(
+          command,
+          await credentialSmokeCommand({
+            credentialsPath: required(flags, "path"),
+            masterKey: required(flags, "master-key"),
+            name: required(flags, "name"),
+            url: required(flags, "url"),
+            ...(method === undefined ? {} : { method }),
+            ...(body === undefined ? {} : { body }),
+          }),
+        );
+      }
+
+      usage('Unknown credentials subcommand. Use "add", "list", or "smoke".');
     }
     case "skills":
       if (subcommand !== "list") {

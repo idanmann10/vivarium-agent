@@ -25,10 +25,12 @@ export { runCommand } from "./commands/run.js";
 export type { RunCommandOptions, RunCommandResult, RunProviderKind } from "./commands/run.js";
 export { statusCommand } from "./commands/status.js";
 export { doctorCommand } from "./commands/doctor.js";
-export { addCredentialCommand, listCredentialsCommand } from "./commands/credentials.js";
+export { addCredentialCommand, credentialSmokeCommand, listCredentialsCommand } from "./commands/credentials.js";
 export type {
   AddCredentialCommandOptions,
   AddCredentialCommandResult,
+  CredentialSmokeCommandOptions,
+  CredentialSmokeCommandResult,
   CredentialStoreCommandOptions,
   ListedCredential,
   ListCredentialsCommandResult,

@@ -226,11 +226,30 @@ describe("dispatchCliCommand", () => {
       "--master-key",
       "dispatch-secret",
     ]);
+    const smoked = await dispatchCliCommand([
+      "credentials",
+      "smoke",
+      "--path",
+      credentialsPath,
+      "--master-key",
+      "dispatch-secret",
+      "--name",
+      "OPENAI_API_KEY",
+      "--url",
+      "https://api.example.test/health",
+      "--method",
+      "GET",
+    ]);
 
     expect(run.result).toMatchObject({ success: true });
     expect(added.result).toEqual({ stored: true, name: "OPENAI_API_KEY", kind: "api_key" });
     expect(listed.result).toEqual({
       credentials: [{ name: "OPENAI_API_KEY", kind: "api_key", purpose: "provider", scopes: ["model:chat"] }],
+    });
+    expect(smoked.result).toMatchObject({
+      ok: false,
+      credentialName: "OPENAI_API_KEY",
+      error: "Missing external adapter for http.request",
     });
   });
 

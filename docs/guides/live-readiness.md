@@ -78,6 +78,29 @@ bun apps/cli/src/index.ts run \
 
 Use `--provider-kind openai` or `--provider-kind anthropic` without `--provider-base-url` for first-party providers.
 
+## Internal API Credential
+
+After adding an internal API credential, smoke it through the encrypted keychain and HTTP dispatcher:
+
+```bash
+bun apps/cli/src/index.ts credentials add \
+  --path /tmp/vivarium-credentials.enc \
+  --master-key <local-master-key> \
+  --kind bearer \
+  --name INTERNAL_API_TOKEN \
+  --purpose "Call internal API" \
+  --value <redacted>
+
+bun apps/cli/src/index.ts credentials smoke \
+  --path /tmp/vivarium-credentials.enc \
+  --master-key <local-master-key> \
+  --name INTERNAL_API_TOKEN \
+  --url <internal-health-url> \
+  --method GET
+```
+
+The smoke result reports status and a response preview without returning the secret value.
+
 ## GitHub Auth
 
 GitHub writes need a valid authenticated CLI session or token environment. Use one of these paths:
@@ -211,11 +234,12 @@ After the external prerequisites are configured:
 1. Re-run `doctor --live`.
 2. Run `providers smoke` for one configured provider.
 3. Run `run` with `--provider-kind`, `--provider-api-key-env`, and `--provider-model` against a small real goal.
-4. Run `github smoke` for the canonical world remote.
-5. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.
-6. Create a live world contribution PR from a generated artifact with `github pull-request --confirm-write`.
-7. Verify the world workflows and trust gates on GitHub with `github workflow-runs`.
-8. Pull the accepted contribution into a second local install with `world transmission-smoke`.
-9. Run the Compose daemon and verify `/status` with `daemon smoke`.
+4. Add and smoke one internal API credential with `credentials add` and `credentials smoke`.
+5. Run `github smoke` for the canonical world remote.
+6. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.
+7. Create a live world contribution PR from a generated artifact with `github pull-request --confirm-write`.
+8. Verify the world workflows and trust gates on GitHub with `github workflow-runs`.
+9. Pull the accepted contribution into a second local install with `world transmission-smoke`.
+10. Run the Compose daemon and verify `/status` with `daemon smoke`.
 
 Record the resulting command output in `docs/superpowers/audits/2026-05-09-v1-completion-audit.md`.
