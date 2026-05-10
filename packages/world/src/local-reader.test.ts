@@ -45,6 +45,38 @@ describe("local world reader", () => {
     expect(stale?.score).toBeLessThan(fresh?.score ?? 0);
   });
 
+  test("filters skills by conditional tool availability", () => {
+    const root = mkdtempSync(join(tmpdir(), "world-reader-conditional-"));
+    const requiredDirectory = join(root, "domains", "research", "skills", "paid-web-search");
+    const fallbackDirectory = join(root, "domains", "research", "skills", "duckduckgo-search");
+    mkdirSync(requiredDirectory, { recursive: true });
+    mkdirSync(fallbackDirectory, { recursive: true });
+    writeFileSync(
+      join(requiredDirectory, "SKILL.md"),
+      "---\nname: Paid Web Search\ndescription: web search\nrequires_toolsets: [web]\nrequires_tools: [web.search]\n---\n\n# Paid Web Search\n\nUse web search.\n",
+    );
+    writeFileSync(
+      join(fallbackDirectory, "SKILL.md"),
+      "---\nname: DuckDuckGo Search\ndescription: web search\nfallback_for_toolsets: [web]\nfallback_for_tools: [web.search]\n---\n\n# DuckDuckGo Search\n\nUse web search.\n",
+    );
+
+    const reader = createLocalWorldReader({ root });
+
+    expect(reader.search({ domain: "research", query: "web search" }).map((result) => result.title)).toEqual([
+      "DuckDuckGo Search",
+    ]);
+    expect(
+      reader
+        .search({
+          domain: "research",
+          query: "web search",
+          availableToolsets: ["web"],
+          availableTools: ["web.search"],
+        })
+        .map((result) => result.title),
+    ).toEqual(["Paid Web Search"]);
+  });
+
   test("retrieves published runs by domain and query", () => {
     const root = mkdtempSync(join(tmpdir(), "world-reader-runs-"));
     publishRun({

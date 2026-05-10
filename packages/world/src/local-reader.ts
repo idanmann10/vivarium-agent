@@ -7,6 +7,8 @@ export interface LocalWorldSearchRequest {
   readonly domain: string;
   readonly query: string;
   readonly limit?: number;
+  readonly availableToolsets?: readonly string[];
+  readonly availableTools?: readonly string[];
 }
 
 export interface LocalWorldSearchResult {
@@ -69,8 +71,39 @@ function metaValue(text: string, key: string): string | undefined {
     .trim();
 }
 
+function metaList(text: string, key: string): readonly string[] {
+  const value = metaValue(text, key);
+  if (value === undefined) {
+    return [];
+  }
+
+  return value
+    .replace(/^\[/, "")
+    .replace(/\]$/, "")
+    .split(",")
+    .map((item) => item.trim().replace(/^["']|["']$/g, ""))
+    .filter((item) => item.length > 0);
+}
+
 function staleSkillPenalty(kind: LocalWorldArtifactKind, text: string): number {
   return kind === "skill" && metaValue(text, "stale") === "true" ? -0.5 : 0;
+}
+
+function skillConditionMatches(
+  text: string,
+  available: { readonly toolsets: ReadonlySet<string>; readonly tools: ReadonlySet<string> },
+): boolean {
+  const requiredToolsets = metaList(text, "requires_toolsets");
+  const requiredTools = metaList(text, "requires_tools");
+  const fallbackToolsets = metaList(text, "fallback_for_toolsets");
+  const fallbackTools = metaList(text, "fallback_for_tools");
+
+  return (
+    requiredToolsets.every((toolset) => available.toolsets.has(toolset)) &&
+    requiredTools.every((tool) => available.tools.has(tool)) &&
+    fallbackToolsets.every((toolset) => !available.toolsets.has(toolset)) &&
+    fallbackTools.every((tool) => !available.tools.has(tool))
+  );
 }
 
 function runTitle(text: string, fallback: string): string {
@@ -80,7 +113,8 @@ function runTitle(text: string, fallback: string): string {
 
 export function createLocalWorldReader({ root }: LocalWorldReaderOptions): LocalWorldReader {
   return {
-    search({ domain, query, limit = 8 }) {
+    search({ domain, query, limit = 8, availableToolsets = [], availableTools = [] }) {
+      const available = { toolsets: new Set(availableToolsets), tools: new Set(availableTools) };
       const domainRoot = join(root, "domains", domain);
       const proposalRoots = [
         join(root, "proposals", "skills", domain),
@@ -118,6 +152,7 @@ export function createLocalWorldReader({ root }: LocalWorldReaderOptions): Local
             score: scoreText(text, query) + (kind === "anti-pattern" ? 0.5 : 0) + staleSkillPenalty(kind, text),
           };
         })
+        .filter((result) => result.kind !== "skill" || skillConditionMatches(readFileSync(result.path, "utf8"), available))
         .filter((result) => result.score > 0 || result.kind === "anti-pattern" || result.kind === "trace")
         .sort((left, right) => right.score - left.score)
         .slice(0, limit);
