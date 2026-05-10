@@ -23,6 +23,7 @@ Not complete. Local implementation and local test gates are strong, including ag
 | Phase 1: installed agent can run a real goal with providers and credential | CLI/provider/credential paths are implemented and tested with local/mocked adapters; no Anthropic/OpenRouter/private OAI-compatible credentials or internal API target are configured | Incomplete externally |
 | Phase 1: anti-pattern lookup, curriculum advance, confidence buckets | Covered by local runtime, init, self-tool, CLI command, and Dream/state tests in existing audit evidence | Complete locally |
 | Phase 1: roadmap CLI file-tree command groups | `cliCommands` advertised `dream`, `identity`, `curriculum`, and `publish`; dispatcher now routes `dream run`, `identity summary/stage/history`, `curriculum read/progress/advance`, and `publish list/run/trace` through real SQLite/runtime/world helpers. `apps/cli/src/dispatcher.test.ts` covers the previously advertised-but-unrouted command groups | Complete locally |
+| Phase 1: CLI app public API exports | `apps/cli/src/index.ts` now exports the implemented world pull and transmission-smoke command helpers as well as subscription/search helpers; `apps/cli/src/index.test.ts` guards the public API surface | Complete locally |
 | Phase 2: Dream produces anti-pattern, trace, publishable run, compounding eval | Covered by local Dream/eval tests in existing audit evidence | Complete locally |
 | Phase 3: public/private world subscriptions and cross-install cultural transmission | Local transmission smoke and subscription registry paths exist; no canonical/private remote refs are configured | Incomplete externally |
 | Phase 3: public skill PR, validator signals, auto-merge, other agents pull/use it | GitHub client, PR helper, signal, trust, proposal validation, full-checkpoint auto-merge workflow logic, and full-gate contribution templates are locally tested; no live GitHub PR/workflow/auto-merge run exists | Incomplete externally |
@@ -43,14 +44,15 @@ Not complete. Local implementation and local test gates are strong, including ag
 - `bun apps/cli/src/index.ts doctor --live --env-file docs/live-readiness.env.example --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false` with copied template values classified as `:placeholder` or unavailable, not live-ready.
 - `bun apps/cli/src/index.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false`, now including `v1.evidencePath:missing` so setup readiness cannot be confused with v1 loop verification.
 - `bun run typecheck` in `the-agent`: TypeScript passed.
-- `bun run test` in `the-agent`: 229 tests passed, 0 failed, 1215 assertions.
-- `bun run lint` in `the-agent`: repo lint scanned 191 TypeScript files, and Oxlint found 0 warnings and 0 errors.
+- `bun run test` in `the-agent`: 231 tests passed, 0 failed, 1226 assertions.
+- `bun run lint` in `the-agent`: repo lint scanned 196 TypeScript files, and Oxlint found 0 warnings and 0 errors.
 - `bun run format:check` in `the-agent`: all matched package/config/tooling files use the expected Oxfmt format.
 - `bun run build` in `the-agent`: 9 entrypoints present.
 - `bun run knip` in `the-agent`: exits 0 for dependency, unlisted, and unresolved dependency checks.
 - `bun test apps/cli/src/dispatcher.test.ts -t "routes advertised dream, identity, curriculum, and publish commands"` first failed on `Unknown command "identity"` after reproducing `Unknown command "dream"`, then passed after dispatcher routing was added.
 - `bun test apps/cli/src/dispatcher.test.ts apps/cli/src/commands/init.test.ts`: 23 tests passed, 0 failed, 57 assertions.
 - `bun run test` in `the-agent` after the CLI routing fix: 230 tests passed, 0 failed, 1221 assertions.
+- `bun test apps/cli/src/index.test.ts` first failed because `pullWorldCommand` was undefined in the CLI public API, then passed after exporting `pullWorldCommand` and `verifyWorldTransmissionCommand`.
 - `bun run lint` in `the-world`: world validator reports 3 domains, 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, and 1 contributor.
 - `bun run typecheck` in `the-world`: TypeScript passed.
 - `bun run test` in `the-world`: 26 tests passed, 0 failed, 208 assertions.
