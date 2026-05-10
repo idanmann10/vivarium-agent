@@ -72,9 +72,26 @@ function run(runner: DoctorCommandRunner, command: string, args: readonly string
   return runner(cwd === undefined ? { command, args } : { command, args, cwd });
 }
 
-function hasRemote(runner: DoctorCommandRunner, cwd: string): boolean {
+function remoteCheck(
+  runner: DoctorCommandRunner,
+  cwd: string,
+  env: Readonly<Record<string, string | undefined>>,
+  repoNameEnv: string,
+  placeholder: string,
+  label: string,
+): string {
   const result = run(runner, "git", ["remote", "-v"], cwd);
-  return result.exitCode === 0 && result.stdout.trim().length > 0;
+  if (result.exitCode !== 0 || result.stdout.trim().length === 0) {
+    return `${label}.remote:missing`;
+  }
+
+  const owner = env[githubOwnerEnv]?.trim();
+  const repo = env[repoNameEnv]?.trim();
+  if (owner === undefined || owner.length === 0 || repo === undefined || repo.length === 0 || repo === placeholder) {
+    return `${label}.remote:configured`;
+  }
+
+  return result.stdout.includes(`${owner}/${repo}`) ? `${label}.remote:configured` : `${label}.remote:mismatch`;
 }
 
 function hasProviderEnv(env: Readonly<Record<string, string | undefined>>): boolean {
@@ -189,8 +206,8 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
   const checks = [
     repoNameCheck(env, agentRepoNameEnv, "the-agent", "agent"),
     repoNameCheck(env, worldRepoNameEnv, "the-world", "world"),
-    hasRemote(runner, agentRoot) ? "agent.remote:configured" : "agent.remote:missing",
-    hasRemote(runner, worldRoot) ? "world.remote:configured" : "world.remote:missing",
+    remoteCheck(runner, agentRoot, env, agentRepoNameEnv, "the-agent", "agent"),
+    remoteCheck(runner, worldRoot, env, worldRepoNameEnv, "the-world", "world"),
     requiredFileCheck(env, worldSubscriptionsPathEnv, "world.subscriptionsPath"),
     requiredEnvCheck(env, canonicalWorldRefEnv, "world.canonicalRef"),
     requiredEnvCheck(env, privateWorldRefEnv, "world.privateForkRef"),

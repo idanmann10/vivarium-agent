@@ -35,6 +35,27 @@ const blockedRunner: DoctorCommandRunner = ({ command, args, cwd }) => {
   return { exitCode: 127, stdout: "", stderr: `unexpected command: ${text}` };
 };
 
+const mismatchedRemoteRunner: DoctorCommandRunner = (run) => {
+  const text = [run.command, ...run.args].join(" ");
+  if (text === "git remote -v" && run.cwd === "/agent") {
+    return {
+      exitCode: 0,
+      stdout: "origin\tgit@github.com:owner/wrong-agent.git (fetch)\norigin\tgit@github.com:owner/wrong-agent.git (push)\n",
+      stderr: "",
+    };
+  }
+
+  if (text === "git remote -v" && run.cwd === "/world") {
+    return {
+      exitCode: 0,
+      stdout: "origin\thttps://github.com/other/world-final.git (fetch)\norigin\thttps://github.com/other/world-final.git (push)\n",
+      stderr: "",
+    };
+  }
+
+  return blockedRunner(run);
+};
+
 describe("doctorCommand", () => {
   test("keeps the default offline-local checks stable", () => {
     expect(doctorCommand()).toEqual({
@@ -309,5 +330,27 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("provider.anthropicProfile:unavailable");
     expect(result.checks).toContain("provider.openrouterProfile:unavailable");
     expect(result.checks).toContain("provider.privateOaiCompatProfile:unavailable");
+  });
+
+  test("reports remotes that do not match configured owner and repo names", () => {
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        OPENROUTER_API_KEY: "configured",
+        GITHUB_TOKEN: "configured",
+      },
+      runner: mismatchedRemoteRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("agent.remote:mismatch");
+    expect(result.checks).toContain("world.remote:mismatch");
   });
 });

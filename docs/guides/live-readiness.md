@@ -57,6 +57,9 @@ git -C /Users/idanmann/Vivarium/the-world remote -v
 ```
 
 Replace `<agent-repo>` and `<world-repo>` with the names chosen in the naming gate.
+After `VIVARIUM_GITHUB_OWNER`, `VIVARIUM_AGENT_REPO_NAME`, and `VIVARIUM_WORLD_REPO_NAME` are set,
+`doctor --live` reports `agent.remote:mismatch` or `world.remote:mismatch` when a configured remote
+does not point at the expected `<owner>/<repo>` target.
 
 ## Provider Environment
 
