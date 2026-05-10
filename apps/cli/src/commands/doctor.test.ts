@@ -425,6 +425,7 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.curationStats:missing")).toContain("30%");
     expect(actions.get("v1.realGoals:missing")).toContain("distinct");
     expect(actions.get("v1.starterPack:missing")).toContain("distinct installed");
+    expect(actions.get("v1.providerSmokes:missing")).toContain("distinct");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("fourteen days");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("profile counts");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("other-agent refinement evidence");
@@ -666,6 +667,37 @@ describe("doctorCommand", () => {
         worldSubscriptions: {
           canonical: "git@github.com:owner/world-final.git",
           privateFork: "git@github.com:team/world-private.git",
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.providerSmokes:missing");
+  });
+
+  test("requires v1 provider smoke evidence to be distinct per provider", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-provider-smoke-distinct-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    const providerSmokePath = join(root, "docs/live/provider-smoke.md");
+    mkdirSync(dirname(providerSmokePath), { recursive: true });
+    writeFileSync(providerSmokePath, "one combined smoke artifact\n", "utf8");
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        providerSmokes: {
+          anthropic: "docs/live/provider-smoke.md",
+          openRouter: "docs/live/provider-smoke.md",
+          privateOaiCompat: "docs/live/provider-smoke.md",
         },
       })}\n`,
       "utf8",

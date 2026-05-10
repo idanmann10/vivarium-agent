@@ -327,6 +327,11 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const firstGoal = realGoalDates.length === 0 ? undefined : Math.min(...realGoalDates);
   const lastGoal = realGoalDates.length === 0 ? undefined : Math.max(...realGoalDates);
   const providerSmokes = asRecord(manifest.providerSmokes);
+  const providerSmokeEvidenceCount = new Set(
+    [providerSmokes?.anthropic, providerSmokes?.openRouter, providerSmokes?.privateOaiCompat].flatMap(
+      (reference) => evidenceReferenceIdentity(reference, context) ?? [],
+    ),
+  ).size;
   const worldSubscriptions = asRecord(manifest.worldSubscriptions);
   const canonicalWorldSubscription = worldSubscriptionReference(worldSubscriptions?.canonical);
   const privateForkWorldSubscription = worldSubscriptionReference(worldSubscriptions?.privateFork);
@@ -366,9 +371,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
     ),
     v1Check(
       "providerSmokes",
-      evidenceReference(providerSmokes?.anthropic, context) &&
-        evidenceReference(providerSmokes?.openRouter, context) &&
-        evidenceReference(providerSmokes?.privateOaiCompat, context),
+      providerSmokeEvidenceCount === 3,
     ),
     v1Check("internalCredentialSmoke", evidenceReference(manifest.internalCredentialSmoke, context)),
     v1Check(
@@ -815,7 +818,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.providerSmokes":
       return {
         check,
-        action: "Record successful Anthropic, OpenRouter, and private OpenAI-compatible provider smoke evidence.",
+        action: "Record distinct successful Anthropic, OpenRouter, and private OpenAI-compatible provider smoke evidence.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.internalCredentialSmoke":
