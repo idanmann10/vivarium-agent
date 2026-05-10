@@ -93,6 +93,33 @@ export interface WorldReportRegressionResult {
   readonly issue?: NumberedGitHubUrl;
 }
 
+export interface AttentionToolLimits {
+  readonly maxSkillsInContext: number;
+  readonly maxToolsActive: number;
+  readonly maxWorkingTokens: number;
+  readonly maxEpisodesInContext: number;
+}
+
+export interface AttentionToolUsage {
+  readonly skillsInContext: number;
+  readonly toolsActive: number;
+  readonly workingTokens: number;
+  readonly episodesInContext: number;
+}
+
+export interface AttentionFocusRequest {
+  readonly skillsMax?: number;
+  readonly toolsMax?: number;
+  readonly tokensMax?: number;
+  readonly episodesMax?: number;
+}
+
+export interface AttentionToolStatus {
+  readonly focused: boolean;
+  readonly limits: AttentionToolLimits;
+  readonly usage: AttentionToolUsage;
+}
+
 export interface WorldContributorSummary {
   readonly handle: string;
   readonly domains: readonly string[];
@@ -153,6 +180,11 @@ export interface SelfTools {
   readonly curriculum: {
     advance(domain: string, stepIndex: number): void;
   };
+  readonly attention: {
+    focus(request: AttentionFocusRequest): AttentionToolStatus;
+    defocus(): AttentionToolStatus;
+    status(): AttentionToolStatus;
+  };
   readonly confidence: {
     record(confidence: number, correct: boolean): void;
   };
@@ -164,6 +196,28 @@ export interface SelfTools {
 
 function factId(domain: string, count: number): string {
   return `fact-${domain}-${count + 1}`;
+}
+
+const defaultAttentionToolLimits: AttentionToolLimits = {
+  maxSkillsInContext: 8,
+  maxToolsActive: 20,
+  maxWorkingTokens: 12_000,
+  maxEpisodesInContext: 5,
+};
+
+const emptyAttentionUsage: AttentionToolUsage = {
+  skillsInContext: 0,
+  toolsActive: 0,
+  workingTokens: 0,
+  episodesInContext: 0,
+};
+
+function normalizeLimit(value: number | undefined, fallback: number): number {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  return Math.max(1, Math.floor(value));
 }
 
 function latestRunId(state: StateRepository, domain?: string): RunId | undefined {
@@ -369,6 +423,14 @@ function featuredIds(root: string): readonly string[] {
 }
 
 export function createSelfTools({ state, world, github, worldRoot, worldSubscriptionsPath }: SelfToolsDependencies): SelfTools {
+  let attentionLimits = defaultAttentionToolLimits;
+  let attentionFocused = false;
+  const attentionStatus = (): AttentionToolStatus => ({
+    focused: attentionFocused,
+    limits: attentionLimits,
+    usage: emptyAttentionUsage,
+  });
+
   return {
     memory: {
       write(request) {
@@ -668,6 +730,24 @@ export function createSelfTools({ state, world, github, worldRoot, worldSubscrip
       advance(domain, stepIndex) {
         state.advanceCurriculum(domain, stepIndex);
       },
+    },
+    attention: {
+      focus(request) {
+        attentionLimits = {
+          maxSkillsInContext: normalizeLimit(request.skillsMax, attentionLimits.maxSkillsInContext),
+          maxToolsActive: normalizeLimit(request.toolsMax, attentionLimits.maxToolsActive),
+          maxWorkingTokens: normalizeLimit(request.tokensMax, attentionLimits.maxWorkingTokens),
+          maxEpisodesInContext: normalizeLimit(request.episodesMax, attentionLimits.maxEpisodesInContext),
+        };
+        attentionFocused = true;
+        return attentionStatus();
+      },
+      defocus() {
+        attentionLimits = defaultAttentionToolLimits;
+        attentionFocused = false;
+        return attentionStatus();
+      },
+      status: attentionStatus,
     },
     confidence: {
       record(confidence, correct) {

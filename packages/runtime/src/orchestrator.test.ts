@@ -92,6 +92,24 @@ describe("runGoal", () => {
     expect(plan?.plan).toContain("Habitual Branch Cleanup");
   });
 
+  test("uses focused attention limits from self-tools", async () => {
+    const harness = createHarness();
+    harness.tools.attention.focus({ skillsMax: 1 });
+
+    const result = await runGoal({
+      goal: "write a test before implementation",
+      domain: "coding",
+      agentName: "local-agent",
+      provider: harness.provider,
+      tools: harness.tools,
+    });
+
+    const plan = harness.state.listEpisodes(result.runId).find((episode) => episode.kind === "plan");
+
+    expect(result.success).toBe(true);
+    expect(plan?.kind === "plan" ? plan.skillsLoaded.length : 0).toBe(1);
+  });
+
   test("records monitor and recovery episodes after a forced failure", async () => {
     const harness = createHarness();
     const result = await runGoal({

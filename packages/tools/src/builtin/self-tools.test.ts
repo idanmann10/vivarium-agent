@@ -51,6 +51,45 @@ describe("self-tools", () => {
     expect(state.getCurriculumProgress("coding")?.completedSteps).toEqual([0]);
   });
 
+  test("narrows and restores attention limits", () => {
+    const state = new InMemoryStateRepository();
+    const tools = createSelfTools({
+      state,
+      world: createLocalWorldReader({ root: "../the-world" }),
+    });
+
+    expect(tools.attention.status()).toMatchObject({
+      focused: false,
+      limits: {
+        maxSkillsInContext: 8,
+        maxToolsActive: 20,
+        maxWorkingTokens: 12_000,
+        maxEpisodesInContext: 5,
+      },
+    });
+
+    expect(tools.attention.focus({ skillsMax: 2, toolsMax: 3, tokensMax: 500 })).toMatchObject({
+      focused: true,
+      limits: {
+        maxSkillsInContext: 2,
+        maxToolsActive: 3,
+        maxWorkingTokens: 500,
+        maxEpisodesInContext: 5,
+      },
+    });
+    expect(tools.attention.status().focused).toBe(true);
+
+    expect(tools.attention.defocus()).toMatchObject({
+      focused: false,
+      limits: {
+        maxSkillsInContext: 8,
+        maxToolsActive: 20,
+        maxWorkingTokens: 12_000,
+        maxEpisodesInContext: 5,
+      },
+    });
+  });
+
   test("persists world subscriptions through self-tools", () => {
     const root = mkdtempSync(join(tmpdir(), "self-tools-worlds-"));
     const subscriptionsPath = join(root, "subscriptions.json");

@@ -126,9 +126,10 @@ export async function runGoal(request: RunGoalRequest): Promise<RunGoalResult> {
     tools: ["local-provider.execute"],
     episodes: request.tools.episodes.list(id),
   };
-  const attention = applyAttentionLimits(
-    request.attentionLimits === undefined ? attentionRequest : { ...attentionRequest, limits: request.attentionLimits },
-  );
+  const attention = applyAttentionLimits({
+    ...attentionRequest,
+    limits: request.attentionLimits ?? request.tools.attention.status().limits,
+  });
   append({
     kind: "plan",
     ...(await runPlanPrimitive({
