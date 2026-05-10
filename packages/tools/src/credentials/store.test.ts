@@ -44,4 +44,40 @@ describe("credential stores", () => {
       value: "secret_notion_token",
     });
   });
+
+  test("persists OAuth scopes and service-account file credentials", () => {
+    const path = join(mkdtempSync(join(tmpdir(), "credentials-kinds-")), "credentials.enc");
+    const store = createEncryptedFileCredentialStore({ path, masterKey: "local-test-master-key" });
+
+    store.set({
+      kind: "oauth",
+      name: "GMAIL_OAUTH",
+      purpose: "Read mail",
+      scopes: ["https://www.googleapis.com/auth/gmail.readonly"],
+      value: "oauth-refresh-token",
+    });
+    store.set({
+      kind: "service_account",
+      name: "GCP_SERVICE_ACCOUNT",
+      purpose: "Read internal project metadata",
+      file: true,
+      value: "{\"client_email\":\"agent@example.test\"}",
+    });
+
+    const reopened = createEncryptedFileCredentialStore({ path, masterKey: "local-test-master-key" });
+
+    expect(reopened.get("GMAIL_OAUTH")).toMatchObject({
+      kind: "oauth",
+      scopes: ["https://www.googleapis.com/auth/gmail.readonly"],
+      value: "oauth-refresh-token",
+    });
+    expect(reopened.get("GCP_SERVICE_ACCOUNT")).toMatchObject({
+      kind: "service_account",
+      file: true,
+      value: "{\"client_email\":\"agent@example.test\"}",
+    });
+    const encrypted = readFileSync(path, "utf8");
+    expect(encrypted).not.toContain("oauth-refresh-token");
+    expect(encrypted).not.toContain("agent@example.test");
+  });
 });

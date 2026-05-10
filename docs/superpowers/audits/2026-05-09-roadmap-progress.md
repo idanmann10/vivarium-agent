@@ -57,7 +57,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 
 - `bun run lint`: scanned 173 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 106 tests passed, 0 failed.
+- `bun run test`: 107 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 `the-world`:

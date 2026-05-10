@@ -30,7 +30,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 1 providers | OpenAI, Anthropic, OpenAI-compatible adapters and router exist with mocked HTTP tests | Complete locally; live credentials unverified |
 | Phase 1 builtin self-tools | `createSelfTools` covers memory, skills, anti-pattern candidates, trace candidates, runs, episodes, world search, curriculum, and confidence against the shared state repository shape, including SQLite | Complete locally |
 | Phase 1 external tools | Typed router supports web fetch/read/search, HTTP, file read/write/edit, terminal, code, and MCP-style calls through injected adapters | Complete locally |
-| Phase 1 encrypted keychain | `createEncryptedFileCredentialStore` persists AES-256-GCM encrypted credential records and tests verify no plaintext secret leakage | Complete locally; OS keychain/OAuth UX missing |
+| Phase 1 encrypted keychain | `createEncryptedFileCredentialStore` persists AES-256-GCM encrypted credential records; tests verify no plaintext leakage plus OAuth scopes and service-account file records | Complete locally; live credential use unverified |
 | Phase 1 safety | HTTP safety pipeline is enforced by `createToolDispatcher`; dispatcher surfaces prompt-injection warnings from external tool output, blocks configured per-run and persistent per-day rate-limit overages, rejects credential-like strings in external tool arguments, and requires confirmation for system-level computer-use click/type actions; `runGoal` refuses harmful goals before planning and escalates destructive goals until confirmed | Complete locally; live computer-use backend target metadata unverified |
 | Phase 1 all 8 primitives implemented | Plan, Predict, Execute, Monitor, Recover, Validate, Reflect, and Dream have metadata; lifecycle primitives have modules and tests; orchestrator delegates to lifecycle modules | Complete locally |
 | Phase 1 attention budget enforcement | `applyAttentionLimits` caps skills, traces, tools, and recent episodes, enforces `maxWorkingTokens`, and returns budget metadata; orchestrator uses attention-limited world context before Plan | Complete locally |
@@ -40,7 +40,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 1 e2e run/recover | `tests/e2e-run.test.ts` and `tests/e2e-recover.test.ts` pass in current test suite | Complete locally |
 | Phase 1 done scenario | A developer can run a synthetic local goal; runtime tests verify anti-patterns are loaded into Plan before execution; e2e tests verify local `init` then `run` against one SQLite state file; real provider config and credential use are not verified | Incomplete |
 | Phase 2 Dream primitive | Deterministic `runDream` exists with promotion/pruning/habituation/identity/confidence behavior, generated anti-pattern/trace candidate IDs, and a SQLite-backed StateRepository regression test | Complete locally |
-| Phase 2 scheduler | `shouldRunDream` helper and `createDreamScheduler` start/stop interval loop exist with deterministic tests | Complete locally; process-manager persistence unverified |
+| Phase 2 scheduler | `shouldRunDream` helper and `createDreamScheduler` start/stop interval loop exist with deterministic tests; daemon Compose supervisor artifacts provide local restart policy | Complete locally; Compose execution unverified |
 | Phase 2 candidate pipelines | Skill candidate handling exists; Dream now generates anti-pattern candidates from failed/low-score runs and annotated trace candidates from successful high-score runs, with in-memory and SQLite persistence | Complete locally |
 | Phase 2 confidence storage | In-memory and SQLite confidence buckets exist | Complete locally |
 | Phase 2 compounding eval | `packages/eval/src/compounding.ts` scores aggregate synthetic before/after benchmark cases with per-case deltas; `tests/e2e-dream.test.ts` feeds Dream promotion output into the aggregate evaluator | Complete locally |
@@ -78,6 +78,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `docker compose config`: blocked by missing Docker Compose subcommand; `docker-compose config`: blocked because `docker-compose` is not installed.
 - Ruby YAML parse of `docker-compose.yml`: passed and confirmed the `vivarium-daemon` service and `restart: unless-stopped` setting.
 - `bun test apps/cli/src/dispatcher.test.ts`: 4 tests passed, including CLI parser routing for local commands.
+- `bun test packages/tools/src/credentials/store.test.ts`: 3 tests passed, including encrypted bearer, OAuth scopes, and service-account file credential records without plaintext leakage.
 - `bun test packages/tools/src/builtin/self-tools.test.ts`: 2 tests passed, including SQLite-backed roadmap self-tools.
 - `bun test packages/runtime/src/orchestrator.test.ts packages/tools/src/builtin/self-tools.test.ts`: 8 tests passed, including anonymized publishable run queueing.
 - `bun test packages/tools/src/dispatcher.test.ts packages/tools/src/safety/pipeline.test.ts`: 9 tests passed, including tool-output prompt-injection warnings, per-run rate-limit blocking, and credential-argument blocking.
@@ -91,7 +92,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `the-world bun run build`: 8 required files present.
 - `bun run lint`: scanned 173 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 106 tests passed, 0 failed.
+- `bun run test`: 107 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
