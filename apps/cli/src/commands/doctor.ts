@@ -368,6 +368,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const twoWeekBaselineMetric = numberValue(twoWeekImprovement?.baselineMetric);
   const twoWeekFollowupMetric = numberValue(twoWeekImprovement?.followupMetric);
   const twoWeekImprovementPercent = numberValue(twoWeekImprovement?.improvementPercent);
+  const twoWeekCompetingSkillReferenceCount = distinctEvidenceReferenceCount(twoWeekImprovement?.competingSkillReferences, context);
 
   return [
     v1Check(
@@ -462,6 +463,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         (twoWeekImprovementPercent ?? 0) > 0 &&
         evidenceReference(twoWeekImprovement?.contributorProfile, context) &&
         githubDiscussionReference(twoWeekImprovement?.competingDiscussion) !== undefined &&
+        twoWeekCompetingSkillReferenceCount >= 2 &&
         evidenceReference(twoWeekImprovement?.refinementEvidence, context) &&
         (numberValue(contributorProfileSummary?.publicSkills) ?? 0) >= 1 &&
         (numberValue(contributorProfileSummary?.antiPatterns) ?? 0) >= 1 &&
@@ -897,7 +899,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record the two-week follow-up at least fourteen days after the last goal, faster follow-up metrics, contributor profile counts/trust, a competing GitHub Discussion URL, and other-agent refinement evidence.",
+          "Record the two-week follow-up at least fourteen days after the last goal, faster follow-up metrics, contributor profile counts/trust, a competing GitHub Discussion URL, two distinct live competing skill variant references, and other-agent refinement evidence.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     default:
