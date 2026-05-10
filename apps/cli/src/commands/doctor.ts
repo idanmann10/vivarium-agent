@@ -354,6 +354,9 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const twoWeekImprovement = asRecord(manifest.twoWeekImprovement);
   const contributorProfileSummary = asRecord(twoWeekImprovement?.contributorProfileSummary);
   const followupMillis = dateMillis(twoWeekImprovement?.followupDate);
+  const twoWeekBaselineMetric = numberValue(twoWeekImprovement?.baselineMetric);
+  const twoWeekFollowupMetric = numberValue(twoWeekImprovement?.followupMetric);
+  const twoWeekImprovementPercent = numberValue(twoWeekImprovement?.improvementPercent);
 
   return [
     v1Check(
@@ -441,9 +444,10 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
       followupMillis !== undefined &&
         lastGoal !== undefined &&
         followupMillis - lastGoal >= 14 * 24 * 60 * 60 * 1000 &&
-        numberValue(twoWeekImprovement?.baselineMetric) !== undefined &&
-        numberValue(twoWeekImprovement?.followupMetric) !== undefined &&
-        (numberValue(twoWeekImprovement?.improvementPercent) ?? 0) > 0 &&
+        twoWeekBaselineMetric !== undefined &&
+        twoWeekFollowupMetric !== undefined &&
+        twoWeekFollowupMetric < twoWeekBaselineMetric &&
+        (twoWeekImprovementPercent ?? 0) > 0 &&
         evidenceReference(twoWeekImprovement?.contributorProfile, context) &&
         evidenceReference(twoWeekImprovement?.competingDiscussion, context) &&
         evidenceReference(twoWeekImprovement?.refinementEvidence, context) &&
@@ -881,7 +885,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record the two-week follow-up at least fourteen days after the last goal, improvement metrics, contributor profile counts/trust, competing Discussion evidence, and other-agent refinement evidence.",
+          "Record the two-week follow-up at least fourteen days after the last goal, faster follow-up metrics, contributor profile counts/trust, competing Discussion evidence, and other-agent refinement evidence.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     default:
