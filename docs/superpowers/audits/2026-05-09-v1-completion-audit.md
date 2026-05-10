@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, SQLite-backed self-tools, read-only world pull/search paths, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, computer-use click/type confirmation safety, and independent validator machine-fingerprint trust gates, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, SQLite-backed self-tools, read-only world pull/search paths, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, computer-use click/type confirmation safety, concrete world maintenance workflows, and independent validator machine-fingerprint trust gates, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -49,7 +49,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 2 done scenario | Dream primitive tests verify first anti-pattern generation and first trace extraction with annotations from local run history; orchestrator tests verify first publishable run queued locally | Complete locally |
 | Phase 3 GitHub write paths | GitHub client can create PRs/issues/Discussions using mocked fetch | Complete locally; live GitHub unverified |
 | Phase 3 multi-world subscriptions | Multi-world retrieval test exists | Complete locally |
-| Phase 3 world workflows | Auto-merge, validation, archive, nightly stats, stale workflows exist in `the-world/.github/workflows/` | Partially complete |
+| Phase 3 world workflows | Auto-merge, validation, archive-regression, nightly stats, and stale workflows exist in `the-world/.github/workflows/`; tests reject placeholder workflow bodies and require concrete archive/auto-merge commands | Complete locally; live GitHub execution unverified |
 | Phase 3 anti-gaming and trust gates | Trust scripts, held-review listing, and independent positive validator machine-fingerprint counting exist with tests | Complete locally; live reviewer identity unverified |
 | Phase 3 done scenario | No canonical remote world, second install, live PR, auto-merge, cross-install pull, featured maintainer pick, or recognizable live STATS loop verified | Incomplete externally |
 | v1 starter pack init | `runInitCommand` discovers starter skills/traces, installs starter skills in SQLite, records migrations, returns curriculum path and prompts; `dispatchCliCommand` routes init argv; actual 20-30 skill availability still depends on selected world/domain content | Partially complete |
@@ -62,7 +62,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 
 - `sed -n '1882,2085p' goal.md`: phase, v1 done, and out-of-scope criteria.
 - `git -C the-agent status --short`: clean after the world pull read-path commit; prior safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, CLI dispatcher, SQLite self-tools, publishable run queue, tool-output warning, credential-argument safety, persistent daily rate-limit, and computer-use confirmation changes are tracked in follow-up commits.
-- `git -C the-world status --short`: clean.
+- `git -C the-world status --short`: clean after concrete maintenance workflow commit.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
 - `bun test packages/runtime/src/orchestrator.test.ts`: 5 tests passed, including harmful refusal and destructive confirmation behavior.
@@ -77,7 +77,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun test apps/cli/src/commands/init.test.ts packages/tools/src/dispatcher.test.ts packages/state/src/repository.test.ts packages/state/src/sqlite-repository.test.ts packages/state/src/storage/migrations.test.ts`: 17 tests passed, including persistent daily tool usage counts, migration `0004_tool_usage`, and dispatcher per-day rate-limit blocking.
 - `bun test packages/tools/src/external/index.test.ts packages/tools/src/dispatcher.test.ts packages/tools/src/safety/pipeline.test.ts`: 18 tests passed, including computer-use adapter routing and click/type confirmation safety.
 - `bun test packages/world/src/pull.test.ts apps/cli/src/commands/world.test.ts apps/cli/src/dispatcher.test.ts`: 10 tests passed, including injectable git clone/update, non-git destination rejection, `world pull` command helper, and CLI routing against a local git remote.
-- `the-world bun test scripts`: 8 tests passed, including independent validator machine-fingerprint counting.
+- `the-world bun test scripts`: 9 tests passed, including independent validator machine-fingerprint counting and concrete workflow command checks.
 - `bun run lint`: scanned 170 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
 - `bun run test`: 97 tests passed, 0 failed.
