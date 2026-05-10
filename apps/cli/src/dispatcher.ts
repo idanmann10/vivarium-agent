@@ -5,7 +5,7 @@ import { runInitCommand } from "./commands/init.js";
 import { runCommand } from "./commands/run.js";
 import { listSkillsCommand } from "./commands/skills.js";
 import { statusCommand } from "./commands/status.js";
-import { searchWorldCommand } from "./commands/world.js";
+import { pullWorldCommand, searchWorldCommand } from "./commands/world.js";
 import type { CliCommand } from "./index.js";
 
 export interface CliDispatchResult {
@@ -163,10 +163,19 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
         );
       }
     case "world":
-      if (subcommand !== "search") {
-        usage('Unknown world subcommand. Use "search".');
+      if (subcommand === "pull") {
+        const ref = value(flags, "ref");
+        return output(
+          command,
+          await pullWorldCommand({
+            remote: required(flags, "remote"),
+            destination: required(flags, "destination"),
+            ...(ref === undefined ? {} : { ref }),
+          }),
+        );
       }
-      {
+
+      if (subcommand === "search") {
         const limit = integerFlag(flags, "limit");
         return output(
           command,
@@ -178,6 +187,8 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
           }),
         );
       }
+
+      usage('Unknown world subcommand. Use "search" or "pull".');
     case "status":
       return output(command, statusCommand());
     case "doctor":

@@ -1,10 +1,10 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { searchWorldCommand } from "./world.js";
+import { pullWorldCommand, searchWorldCommand } from "./world.js";
 
 function write(path: string, content: string): void {
   mkdirSync(dirname(path), { recursive: true });
@@ -19,5 +19,27 @@ describe("world commands", () => {
     expect(searchWorldCommand({ worldRoot, domain: "coding", query: "coding", limit: 1 }).results).toEqual([
       expect.objectContaining({ kind: "skill", title: "Testing" }),
     ]);
+  });
+
+  test("pulls a world through an injected git runner", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-world-pull-"));
+    const destination = join(root, "canonical");
+    const commands: { readonly args: readonly string[]; readonly cwd?: string }[] = [];
+
+    const result = await pullWorldCommand({
+      remote: "https://example.test/world.git",
+      destination,
+      ref: "main",
+      runner: async (command) => {
+        commands.push(command);
+        if (command.args[0] === "clone") {
+          mkdirSync(join(destination, ".git"), { recursive: true });
+        }
+      },
+    });
+
+    expect(result.mode).toBe("cloned");
+    expect(commands[0]).toEqual({ args: ["clone", "https://example.test/world.git", destination] });
+    expect(existsSync(join(destination, ".git"))).toBe(true);
   });
 });

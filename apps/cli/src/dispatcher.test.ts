@@ -18,6 +18,16 @@ function createWorldFixture(): string {
   return root;
 }
 
+function runGit(args: readonly string[], cwd?: string): void {
+  const result =
+    cwd === undefined
+      ? Bun.spawnSync(["git", ...args], { stdout: "pipe", stderr: "pipe" })
+      : Bun.spawnSync(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });
+  if (result.exitCode !== 0) {
+    throw new Error(result.stderr?.toString() ?? "git command failed");
+  }
+}
+
 describe("dispatchCliCommand", () => {
   test("routes status and doctor commands", async () => {
     await expect(dispatchCliCommand(["status"])).resolves.toMatchObject({
@@ -68,6 +78,24 @@ describe("dispatchCliCommand", () => {
     });
     expect(skills.result).toMatchObject({ skills: [{ name: "Red Green", domain: "coding" }] });
     expect(world.result).toMatchObject({ results: [{ title: "Red Green" }] });
+  });
+
+  test("routes world pull with a local git remote", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-world-pull-"));
+    const remote = join(root, "remote.git");
+    const destination = join(root, "canonical");
+    runGit(["init", "--bare", remote]);
+
+    const pulled = await dispatchCliCommand([
+      "world",
+      "pull",
+      "--remote",
+      remote,
+      "--destination",
+      destination,
+    ]);
+
+    expect(pulled.result).toMatchObject({ mode: "cloned", remote, destination });
   });
 
   test("routes run and credentials commands", async () => {

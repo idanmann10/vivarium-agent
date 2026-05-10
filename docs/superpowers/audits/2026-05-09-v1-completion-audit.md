@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, SQLite-backed self-tools, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, computer-use click/type confirmation safety, and independent validator machine-fingerprint trust gates, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, SQLite-backed self-tools, read-only world pull/search paths, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, computer-use click/type confirmation safety, and independent validator machine-fingerprint trust gates, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -34,9 +34,9 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 1 safety | HTTP safety pipeline is enforced by `createToolDispatcher`; dispatcher surfaces prompt-injection warnings from external tool output, blocks configured per-run and persistent per-day rate-limit overages, rejects credential-like strings in external tool arguments, and requires confirmation for system-level computer-use click/type actions; `runGoal` refuses harmful goals before planning and escalates destructive goals until confirmed | Complete locally; live computer-use backend target metadata unverified |
 | Phase 1 all 8 primitives implemented | Plan, Predict, Execute, Monitor, Recover, Validate, Reflect, and Dream have metadata; lifecycle primitives have modules and tests; orchestrator delegates to lifecycle modules | Complete locally |
 | Phase 1 attention budget enforcement | `applyAttentionLimits` caps skills, traces, tools, and recent episodes, enforces `maxWorkingTokens`, and returns budget metadata; orchestrator uses attention-limited world context before Plan | Complete locally |
-| Phase 1 read-only world paths | Local reader, retrieval, and multi-world search tests exist | Partially complete |
+| Phase 1 read-only world paths | Local reader, retrieval, multi-world search, and injectable git clone/update pull tests exist; CLI routes `world pull` against a local git remote | Complete locally |
 | Phase 1 daemon | Daemon service, HTTP lifecycle transport, MCP manifest, and daemon-owned Dream scheduler loop exist with tests | Complete locally; deployment supervisor unverified |
-| Phase 1 CLI | `dispatchCliCommand` routes `init`, `run`, `credentials add/list`, `skills list`, `world search`, `status`, and `doctor`; init runs migrations, installs starter skills, discovers starter traces/curriculum, and returns provider/credential prompts | Complete locally |
+| Phase 1 CLI | `dispatchCliCommand` routes `init`, `run`, `credentials add/list`, `skills list`, `world search`, `world pull`, `status`, and `doctor`; init runs migrations, installs starter skills, discovers starter traces/curriculum, and returns provider/credential prompts | Complete locally |
 | Phase 1 e2e run/recover | `tests/e2e-run.test.ts` and `tests/e2e-recover.test.ts` pass in current test suite | Complete locally |
 | Phase 1 done scenario | A developer can run a synthetic local goal; real provider config, credential use, anti-pattern automatic lookup, and full CLI install flow are not verified | Incomplete |
 | Phase 2 Dream primitive | Deterministic `runDream` exists with promotion/pruning/habituation/identity/confidence behavior and now returns generated anti-pattern/trace candidate IDs | Partially complete |
@@ -61,7 +61,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 ## Fresh Evidence Used
 
 - `sed -n '1882,2085p' goal.md`: phase, v1 done, and out-of-scope criteria.
-- `git -C the-agent status --short`: clean after the computer-use confirmation safety commit; prior safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, CLI dispatcher, SQLite self-tools, publishable run queue, tool-output warning, credential-argument safety, and persistent daily rate-limit changes are tracked in follow-up commits.
+- `git -C the-agent status --short`: clean after the world pull read-path commit; prior safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, CLI dispatcher, SQLite self-tools, publishable run queue, tool-output warning, credential-argument safety, persistent daily rate-limit, and computer-use confirmation changes are tracked in follow-up commits.
 - `git -C the-world status --short`: clean.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
@@ -76,15 +76,16 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun test packages/tools/src/dispatcher.test.ts packages/tools/src/safety/pipeline.test.ts`: 9 tests passed, including tool-output prompt-injection warnings, per-run rate-limit blocking, and credential-argument blocking.
 - `bun test apps/cli/src/commands/init.test.ts packages/tools/src/dispatcher.test.ts packages/state/src/repository.test.ts packages/state/src/sqlite-repository.test.ts packages/state/src/storage/migrations.test.ts`: 17 tests passed, including persistent daily tool usage counts, migration `0004_tool_usage`, and dispatcher per-day rate-limit blocking.
 - `bun test packages/tools/src/external/index.test.ts packages/tools/src/dispatcher.test.ts packages/tools/src/safety/pipeline.test.ts`: 18 tests passed, including computer-use adapter routing and click/type confirmation safety.
+- `bun test packages/world/src/pull.test.ts apps/cli/src/commands/world.test.ts apps/cli/src/dispatcher.test.ts`: 10 tests passed, including injectable git clone/update, non-git destination rejection, `world pull` command helper, and CLI routing against a local git remote.
 - `the-world bun test scripts`: 8 tests passed, including independent validator machine-fingerprint counting.
-- `bun run lint`: scanned 169 TypeScript files.
+- `bun run lint`: scanned 170 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 92 tests passed, 0 failed.
+- `bun run test`: 97 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value remaining gaps after the persistent daily rate-limit safety slice are live external verification and deployment decisions:
+The highest-value remaining gaps after the world pull read-path slice are live external verification and deployment decisions:
 
 1. Verify live provider credentials and live model calls once credential names and values are available.
 2. Verify live GitHub remotes, Discussions, PR creation, and auto-merge settings once repository targets and credentials are available.
