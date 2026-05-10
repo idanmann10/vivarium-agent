@@ -60,6 +60,10 @@ export interface SelfTools {
   readonly confidence: {
     record(confidence: number, correct: boolean): void;
   };
+  readonly publishables: {
+    queue(artifact: { readonly kind: "run" | "trace" | "skill" | "anti-pattern"; readonly path: string; readonly body: string }): void;
+    list(): readonly { readonly kind: "run" | "trace" | "skill" | "anti-pattern"; readonly path: string; readonly body: string }[];
+  };
 }
 
 function factId(domain: string, count: number): string {
@@ -231,6 +235,14 @@ export function createSelfTools({ state, world }: SelfToolsDependencies): SelfTo
     confidence: {
       record(confidence, correct) {
         state.recordPredictionOutcome({ confidence, correct });
+      },
+    },
+    publishables: {
+      queue(artifact) {
+        state.queuePublishableArtifact(artifact);
+      },
+      list() {
+        return state.listPublishableArtifacts();
       },
     },
   };

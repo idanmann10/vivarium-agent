@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, SQLite-backed self-tools, and independent validator machine-fingerprint trust gates, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, SQLite-backed self-tools, anonymized publishable run queueing, and independent validator machine-fingerprint trust gates, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -45,8 +45,8 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 2 confidence storage | In-memory and SQLite confidence buckets exist | Complete locally |
 | Phase 2 compounding eval | `packages/eval/src/compounding.ts` and e2e Dream test exist | Partially complete |
 | Phase 2 anonymizer | Regex anonymizer exists with tests; provider-backed scrubber path redacts before and after provider calls and falls back deterministically on provider failure | Complete locally; live provider credentials unverified |
-| Phase 2 publishability queue | Publishable artifacts and Dream candidate queues are stored locally | Partially complete |
-| Phase 2 done scenario | Dream primitive tests verify first anti-pattern generation and first trace extraction with annotations from local run history | Complete locally |
+| Phase 2 publishability queue | Reflect-marked publishable runs are anonymized and queued locally; publishable artifacts and Dream candidate queues are stored locally | Complete locally |
+| Phase 2 done scenario | Dream primitive tests verify first anti-pattern generation and first trace extraction with annotations from local run history; orchestrator tests verify first publishable run queued locally | Complete locally |
 | Phase 3 GitHub write paths | GitHub client can create PRs/issues/Discussions using mocked fetch | Complete locally; live GitHub unverified |
 | Phase 3 multi-world subscriptions | Multi-world retrieval test exists | Complete locally |
 | Phase 3 world workflows | Auto-merge, validation, archive, nightly stats, stale workflows exist in `the-world/.github/workflows/` | Partially complete |
@@ -61,7 +61,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 ## Fresh Evidence Used
 
 - `sed -n '1882,2085p' goal.md`: phase, v1 done, and out-of-scope criteria.
-- `git -C the-agent status --short`: clean before the safety slice; safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, CLI dispatcher, and SQLite self-tools changes are tracked in follow-up commits.
+- `git -C the-agent status --short`: clean before the safety slice; safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, CLI dispatcher, SQLite self-tools, and publishable run queue changes are tracked in follow-up commits.
 - `git -C the-world status --short`: clean.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
@@ -72,10 +72,11 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun test apps/daemon/src/scheduler.test.ts`: 4 tests passed, including daemon Dream scheduler start/stop behavior.
 - `bun test apps/cli/src/dispatcher.test.ts`: 4 tests passed, including CLI parser routing for local commands.
 - `bun test packages/tools/src/builtin/self-tools.test.ts`: 2 tests passed, including SQLite-backed roadmap self-tools.
+- `bun test packages/runtime/src/orchestrator.test.ts packages/tools/src/builtin/self-tools.test.ts`: 8 tests passed, including anonymized publishable run queueing.
 - `the-world bun test scripts`: 8 tests passed, including independent validator machine-fingerprint counting.
 - `bun run lint`: scanned 169 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 80 tests passed, 0 failed.
+- `bun run test`: 81 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work

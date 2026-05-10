@@ -118,4 +118,28 @@ describe("runGoal", () => {
     expect(kinds).toContain("validation");
     expect(kinds).toContain("reflection");
   });
+
+  test("queues anonymized publishable run artifacts when reflection allows publication", async () => {
+    const harness = createHarness();
+    const result = await runGoal({
+      goal: "summarize idan@example.com with Bearer sk-secret-token",
+      domain: "coding",
+      agentName: "local-agent",
+      provider: harness.provider,
+      tools: harness.tools,
+      surprises: ["unexpectedly reusable workflow"],
+    });
+
+    const run = harness.state.getRun(result.runId);
+    const artifacts = harness.state.listPublishableArtifacts();
+
+    expect(result.success).toBe(true);
+    expect(run?.publishable).toBe(true);
+    expect(artifacts).toHaveLength(1);
+    expect(artifacts[0]).toMatchObject({ kind: "run", path: `runs/${String(result.runId)}` });
+    expect(artifacts[0]?.body).toContain("[REDACTED_EMAIL]");
+    expect(artifacts[0]?.body).toContain("Bearer [REDACTED_TOKEN]");
+    expect(artifacts[0]?.body).not.toContain("idan@example.com");
+    expect(artifacts[0]?.body).not.toContain("sk-secret-token");
+  });
 });

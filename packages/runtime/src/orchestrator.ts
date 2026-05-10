@@ -6,7 +6,7 @@ import {
   type RunId,
 } from "../../core/src/index.js";
 import type { LocalProvider } from "../../providers/src/index.js";
-import type { SelfTools } from "../../tools/src/index.js";
+import { anonymizeText, type SelfTools } from "../../tools/src/index.js";
 import { applyAttentionLimits, type AttentionLimits } from "./attention.js";
 import { runExecutePrimitive } from "./primitives/execute/index.js";
 import { runMonitorPrimitive } from "./primitives/monitor/index.js";
@@ -28,6 +28,7 @@ export interface RunGoalRequest {
   readonly forceFailure?: boolean;
   readonly attentionLimits?: AttentionLimits;
   readonly destructiveConfirmed?: boolean;
+  readonly surprises?: readonly string[];
 }
 
 export interface RunGoalResult {
@@ -165,12 +166,32 @@ export async function runGoal(request: RunGoalRequest): Promise<RunGoalResult> {
   request.tools.confidence.record(prediction.prediction.confidence, true);
   request.tools.curriculum.advance(request.domain, 0);
 
-  append({ kind: "reflection", ...runReflectPrimitive({ validationScore: validation.score }) });
+  const reflectionRequest =
+    request.surprises === undefined
+      ? { validationScore: validation.score }
+      : { validationScore: validation.score, surprises: request.surprises };
+  const reflection = runReflectPrimitive(reflectionRequest);
+  append({ kind: "reflection", ...reflection });
   append({ kind: "run_end", success: true, score: 0.8 });
 
   const run = request.tools.runs.get(id);
   if (run !== undefined) {
-    request.tools.runs.update({ ...run, endedAt: now(), success: true, score: 0.8, notes: "Completed local runtime slice" });
+    const completedRun = {
+      ...run,
+      endedAt: now(),
+      success: true,
+      score: 0.8,
+      notes: "Completed local runtime slice",
+      publishable: reflection.reflection.publishable,
+    };
+    request.tools.runs.update(completedRun);
+    if (reflection.reflection.publishable) {
+      request.tools.publishables.queue({
+        kind: "run",
+        path: `runs/${String(id)}`,
+        body: anonymizeText(JSON.stringify({ run: completedRun, reflection: reflection.reflection }, null, 2)),
+      });
+    }
   }
 
   return { runId: id, success: true };
