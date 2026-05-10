@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, isAbsolute, join } from "node:path";
+import { dirname, extname, isAbsolute, join } from "node:path";
 
 export interface DoctorResult {
   readonly ok: boolean;
@@ -247,7 +247,7 @@ function isUrlReference(value: string): boolean {
 }
 
 function isPathLikeReference(value: string): boolean {
-  return isAbsolute(value) || value.startsWith(".") || value.includes("/") || value.includes("\\");
+  return isAbsolute(value) || value.startsWith(".") || value.includes("/") || value.includes("\\") || extname(value).length > 0;
 }
 
 function evidenceReference(value: unknown, context: V1EvidenceReferenceContext): boolean {
@@ -259,7 +259,7 @@ function evidenceReference(value: unknown, context: V1EvidenceReferenceContext):
     return true;
   }
   if (!isPathLikeReference(text)) {
-    return true;
+    return false;
   }
 
   const candidates = isAbsolute(text) ? [text] : [join(context.manifestDir, text), join(context.agentRoot, text), join(context.worldRoot, text)];

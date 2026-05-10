@@ -11,7 +11,7 @@ Continue following `/Users/idanmann/Vivarium/goal.md` until the project is genui
 
 ## Current Status
 
-Not complete. Local implementation and local test gates are strong, including agent dependency gates, world CI/revalidation build coverage, anti-pattern validation coverage, domain learning artifact validation coverage, contribution proposal validation coverage, auto-merge checkpoint coverage, generated-maintenance-PR checkpoint coverage, full-gate PR template guidance, and live v1 evidence-manifest gating with local artifact reference checks, but the v1 loop still lacks live external proof. The current blockers are not proxy signals; they are direct failures from `doctor --live` and direct empty Git remote inspections.
+Not complete. Local implementation and local test gates are strong, including agent dependency gates, world CI/revalidation build coverage, anti-pattern validation coverage, domain learning artifact validation coverage, contribution proposal validation coverage, auto-merge checkpoint coverage, generated-maintenance-PR checkpoint coverage, full-gate PR template guidance, and live v1 evidence-manifest gating with URL-or-local-path evidence reference checks, but the v1 loop still lacks live external proof. The current blockers are not proxy signals; they are direct failures from `doctor --live` and direct empty Git remote inspections.
 
 ## Prompt-To-Artifact Checklist
 
@@ -29,7 +29,7 @@ Not complete. Local implementation and local test gates are strong, including ag
 | Phase 3: featured pick and STATS concentration | World scripts, checked-in stats, CI build gate, manual revalidation build gate, and generated maintenance PR post-mutation gates are locally verified; live maintainer workflow execution and live telemetry are unverified | Complete locally, incomplete live |
 | V1 done: five real goals over a week and two-week measurable improvement | Synthetic/local tests only | Incomplete externally |
 | Naming decision | `goal.md` still says `the-agent` and `the-world` are temporary names; `doctor --live` reports `agent.name:missing` and `world.name:missing` | Incomplete; requires user decision |
-| Live readiness handoff | `docs/live-readiness.env.example`, `docs/guides/live-readiness.md`, `doctor --live --env-file`, structured `nextActions`, and v1 evidence manifest checks exist; copied `<...>` values, missing live-loop evidence, and missing path-like local evidence references now report as blockers | Complete locally |
+| Live readiness handoff | `docs/live-readiness.env.example`, `docs/guides/live-readiness.md`, `doctor --live --env-file`, structured `nextActions`, and v1 evidence manifest checks exist; copied `<...>` values, missing live-loop evidence, bare evidence IDs, and missing local evidence references now report as blockers | Complete locally |
 
 ## Fresh Evidence
 

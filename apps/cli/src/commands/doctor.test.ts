@@ -131,6 +131,14 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
     "docs/live/provider-openrouter.md",
     "docs/live/provider-private.md",
     "docs/live/internal-api-smoke.md",
+    "docs/live/anti-pattern-avoided.md",
+    "docs/live/trace-a.md",
+    "docs/live/trace-b.md",
+    "docs/live/recover-replan.md",
+    "docs/live/destructive-hold.md",
+    "docs/live/refusal.md",
+    "docs/live/skill-candidate-a.md",
+    "docs/live/skill-candidate-b.md",
     "proposals/skills/coding/internal/SKILL.md",
     "proposals/skills/coding/public/SKILL.md",
     "proposals/anti-patterns/coding/failure/ANTI-PATTERN.md",
@@ -200,14 +208,14 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
         privateFork: "git@github.com:team/world-private.git",
       },
       behaviorLoop: {
-        antiPatternAvoided: "run-anti-pattern",
-        tracesRead: ["trace-a", "trace-b"],
-        recoverReplan: "run-recover",
-        destructiveHold: "run-destructive-hold",
-        refusal: "run-refusal",
+        antiPatternAvoided: "docs/live/anti-pattern-avoided.md",
+        tracesRead: ["docs/live/trace-a.md", "docs/live/trace-b.md"],
+        recoverReplan: "docs/live/recover-replan.md",
+        destructiveHold: "docs/live/destructive-hold.md",
+        refusal: "docs/live/refusal.md",
       },
       dreamArtifacts: {
-        skillCandidates: ["skill-a", "skill-b"],
+        skillCandidates: ["docs/live/skill-candidate-a.md", "docs/live/skill-candidate-b.md"],
         internalSkill: "proposals/skills/coding/internal/SKILL.md",
         publicSkill: "proposals/skills/coding/public/SKILL.md",
         antiPattern: "proposals/anti-patterns/coding/failure/ANTI-PATTERN.md",
@@ -485,6 +493,36 @@ describe("doctorCommand", () => {
     expect(result.ok).toBe(false);
     expect(result.checks).toContain("v1.evidencePath:configured");
     expect(result.checks).toContain("v1.providerSmokes:missing");
+  });
+
+  test("rejects opaque v1 evidence strings that are not URLs or local artifact paths", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-opaque-evidence-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        behaviorLoop: {
+          antiPatternAvoided: "run-anti-pattern",
+          tracesRead: ["trace-a", "trace-b"],
+          recoverReplan: "run-recover",
+          destructiveHold: "run-destructive-hold",
+          refusal: "run-refusal",
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.behaviorLoop:missing");
   });
 
   test("reports missing GitHub target metadata as live readiness blockers", () => {
