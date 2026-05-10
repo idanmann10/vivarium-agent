@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import { doctorCommand, type DoctorCommandRunner } from "./doctor.js";
 
@@ -120,6 +120,30 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
   const profilesPath = join(root, "provider-profiles.json");
   const credentialsPath = join(root, "credentials.enc");
   const evidencePath = join(root, "v1-evidence.json");
+  const localEvidencePaths = [
+    "domains/coding/curriculum.md",
+    "docs/live/goal-1.md",
+    "docs/live/goal-2.md",
+    "docs/live/goal-3.md",
+    "docs/live/goal-4.md",
+    "docs/live/goal-5.md",
+    "docs/live/provider-anthropic.md",
+    "docs/live/provider-openrouter.md",
+    "docs/live/provider-private.md",
+    "docs/live/internal-api-smoke.md",
+    "proposals/skills/coding/internal/SKILL.md",
+    "proposals/skills/coding/public/SKILL.md",
+    "proposals/anti-patterns/coding/failure/ANTI-PATTERN.md",
+    "proposals/traces/coding/workflow/TRACE.md",
+    "domains/coding/skills/public/SKILL.md",
+    "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
+    "domains/coding/traces/workflow/TRACE.md",
+    "runs/run-live-001/RUN.md",
+    "docs/live/second-install-read.md",
+    "featured/current.md",
+    "STATS.md",
+    "contributors/live-agent.json",
+  ];
 
   writeFileSync(
     subscriptionsPath,
@@ -149,6 +173,11 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
     "utf8",
   );
   writeFileSync(credentialsPath, "encrypted credential bytes\n", "utf8");
+  for (const path of localEvidencePaths) {
+    const absolutePath = join(root, path);
+    mkdirSync(dirname(absolutePath), { recursive: true });
+    writeFileSync(absolutePath, "live evidence placeholder\n", "utf8");
+  }
   writeFileSync(
     evidencePath,
     `${JSON.stringify({
@@ -385,6 +414,9 @@ describe("doctorCommand", () => {
   test("reports missing v1 loop evidence from an incomplete evidence manifest", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-evidence-incomplete-"));
     const evidencePath = join(root, "v1-evidence.json");
+    const curriculumPath = join(root, "domains/coding/curriculum.md");
+    mkdirSync(dirname(curriculumPath), { recursive: true });
+    writeFileSync(curriculumPath, "coding curriculum evidence\n", "utf8");
     writeFileSync(
       evidencePath,
       `${JSON.stringify({
@@ -412,6 +444,47 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("v1.providerSmokes:missing");
     expect(result.checks).toContain("v1.publicContribution:missing");
     expect(result.checks).toContain("v1.twoWeekImprovement:missing");
+  });
+
+  test("rejects v1 manifest sections that reference missing local evidence artifacts", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-evidence-links-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        starterPack: { primaryDomain: "coding", skillCount: 20, traceCount: 3, curriculum: "domains/coding/curriculum.md" },
+        realGoals: [
+          { id: "goal-1", date: "2026-05-01", evidence: "docs/live/goal-1.md" },
+          { id: "goal-2", date: "2026-05-02", evidence: "docs/live/goal-2.md" },
+          { id: "goal-3", date: "2026-05-04", evidence: "docs/live/goal-3.md" },
+          { id: "goal-4", date: "2026-05-06", evidence: "docs/live/goal-4.md" },
+          { id: "goal-5", date: "2026-05-08", evidence: "docs/live/goal-5.md" },
+        ],
+        providerSmokes: {
+          anthropic: "docs/live/missing-provider-anthropic.md",
+          openRouter: "https://github.com/owner/world/actions/runs/2",
+          privateOaiCompat: "https://github.com/owner/world/actions/runs/3",
+        },
+        internalCredentialSmoke: "https://github.com/owner/world/actions/runs/4",
+        worldSubscriptions: {
+          canonical: "git@github.com:owner/world-final.git",
+          privateFork: "git@github.com:team/world-private.git",
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.providerSmokes:missing");
   });
 
   test("reports missing GitHub target metadata as live readiness blockers", () => {

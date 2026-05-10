@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, isAbsolute, join } from "node:path";
 
 export interface DoctorResult {
   readonly ok: boolean;
@@ -18,6 +18,12 @@ export interface DoctorNextAction {
 interface DoctorNextActionContext {
   readonly agentRoot: string;
   readonly worldRoot: string;
+}
+
+interface V1EvidenceReferenceContext {
+  readonly agentRoot: string;
+  readonly worldRoot: string;
+  readonly manifestDir: string;
 }
 
 export interface DoctorCommandRun {
@@ -236,6 +242,34 @@ function textArray(value: unknown): readonly string[] {
     : [];
 }
 
+function isUrlReference(value: string): boolean {
+  return /^https?:\/\//.test(value);
+}
+
+function isPathLikeReference(value: string): boolean {
+  return isAbsolute(value) || value.startsWith(".") || value.includes("/") || value.includes("\\");
+}
+
+function evidenceReference(value: unknown, context: V1EvidenceReferenceContext): boolean {
+  const text = textValue(value);
+  if (text === undefined) {
+    return false;
+  }
+  if (isUrlReference(text)) {
+    return true;
+  }
+  if (!isPathLikeReference(text)) {
+    return true;
+  }
+
+  const candidates = isAbsolute(text) ? [text] : [join(context.manifestDir, text), join(context.agentRoot, text), join(context.worldRoot, text)];
+  return candidates.some((candidate) => existsSync(candidate));
+}
+
+function evidenceReferenceArray(value: unknown, context: V1EvidenceReferenceContext): readonly string[] {
+  return textArray(value).filter((item) => evidenceReference(item, context));
+}
+
 function dateMillis(value: unknown): number | undefined {
   const text = textValue(value);
   if (text === undefined) {
@@ -250,7 +284,7 @@ function v1Check(label: string, configured: boolean): string {
   return `v1.${label}:${configured ? "configured" : "missing"}`;
 }
 
-function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>): readonly string[] {
+function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, context: V1EvidenceReferenceContext): readonly string[] {
   const starterPack = asRecord(manifest.starterPack);
   const skillCount = numberValue(starterPack?.skillCount);
   const traceCount = numberValue(starterPack?.traceCount);
@@ -286,62 +320,62 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>): re
         traceCount !== undefined &&
         traceCount >= 3 &&
         traceCount <= 5 &&
-        textValue(starterPack?.curriculum) !== undefined,
+        evidenceReference(starterPack?.curriculum, context),
     ),
     v1Check(
       "realGoals",
       realGoals.length >= 5 &&
-        realGoals.every((goal) => textValue(goal.id) !== undefined && dateMillis(goal.date) !== undefined && textValue(goal.evidence) !== undefined) &&
+        realGoals.every((goal) => textValue(goal.id) !== undefined && dateMillis(goal.date) !== undefined && evidenceReference(goal.evidence, context)) &&
         firstGoal !== undefined &&
         lastGoal !== undefined &&
         lastGoal - firstGoal >= 7 * 24 * 60 * 60 * 1000,
     ),
     v1Check(
       "providerSmokes",
-      textValue(providerSmokes?.anthropic) !== undefined &&
-        textValue(providerSmokes?.openRouter) !== undefined &&
-        textValue(providerSmokes?.privateOaiCompat) !== undefined,
+      evidenceReference(providerSmokes?.anthropic, context) &&
+        evidenceReference(providerSmokes?.openRouter, context) &&
+        evidenceReference(providerSmokes?.privateOaiCompat, context),
     ),
-    v1Check("internalCredentialSmoke", textValue(manifest.internalCredentialSmoke) !== undefined),
+    v1Check("internalCredentialSmoke", evidenceReference(manifest.internalCredentialSmoke, context)),
     v1Check(
       "worldSubscriptions",
       textValue(worldSubscriptions?.canonical) !== undefined && textValue(worldSubscriptions?.privateFork) !== undefined,
     ),
     v1Check(
       "behaviorLoop",
-      textValue(behaviorLoop?.antiPatternAvoided) !== undefined &&
-        textArray(behaviorLoop?.tracesRead).length >= 2 &&
-        textValue(behaviorLoop?.recoverReplan) !== undefined &&
-        textValue(behaviorLoop?.destructiveHold) !== undefined &&
-        textValue(behaviorLoop?.refusal) !== undefined,
+      evidenceReference(behaviorLoop?.antiPatternAvoided, context) &&
+        evidenceReferenceArray(behaviorLoop?.tracesRead, context).length >= 2 &&
+        evidenceReference(behaviorLoop?.recoverReplan, context) &&
+        evidenceReference(behaviorLoop?.destructiveHold, context) &&
+        evidenceReference(behaviorLoop?.refusal, context),
     ),
     v1Check(
       "dreamArtifacts",
-      textArray(dreamArtifacts?.skillCandidates).length >= 2 &&
-        textValue(dreamArtifacts?.internalSkill) !== undefined &&
-        textValue(dreamArtifacts?.publicSkill) !== undefined &&
-        textValue(dreamArtifacts?.antiPattern) !== undefined &&
-        textValue(dreamArtifacts?.trace) !== undefined,
+      evidenceReferenceArray(dreamArtifacts?.skillCandidates, context).length >= 2 &&
+        evidenceReference(dreamArtifacts?.internalSkill, context) &&
+        evidenceReference(dreamArtifacts?.publicSkill, context) &&
+        evidenceReference(dreamArtifacts?.antiPattern, context) &&
+        evidenceReference(dreamArtifacts?.trace, context),
     ),
     v1Check(
       "publicContribution",
-      textValue(publicContribution?.publicSkillPr) !== undefined &&
-        textValue(publicContribution?.autoMerge) !== undefined &&
-        textValue(publicContribution?.canonicalSkill) !== undefined &&
+      evidenceReference(publicContribution?.publicSkillPr, context) &&
+        evidenceReference(publicContribution?.autoMerge, context) &&
+        evidenceReference(publicContribution?.canonicalSkill, context) &&
         (numberValue(publicContribution?.positiveSignals) ?? 0) >= 5 &&
         (numberValue(publicContribution?.externalPulls) ?? 0) >= 3,
     ),
     v1Check(
       "publishedArtifacts",
-      textValue(publishedArtifacts?.antiPattern) !== undefined &&
-        textValue(publishedArtifacts?.trace) !== undefined &&
-        textValue(publishedArtifacts?.run) !== undefined &&
-        textValue(publishedArtifacts?.secondInstallRead) !== undefined,
+      evidenceReference(publishedArtifacts?.antiPattern, context) &&
+        evidenceReference(publishedArtifacts?.trace, context) &&
+        evidenceReference(publishedArtifacts?.run, context) &&
+        evidenceReference(publishedArtifacts?.secondInstallRead, context),
     ),
     v1Check(
       "curationStats",
-      textValue(curationStats?.featuredPick) !== undefined &&
-        textValue(curationStats?.stats) !== undefined &&
+      evidenceReference(curationStats?.featuredPick, context) &&
+        evidenceReference(curationStats?.stats, context) &&
         (numberValue(curationStats?.top5SkillSharePercent) ?? 0) > 0,
     ),
     v1Check(
@@ -352,13 +386,16 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>): re
         numberValue(twoWeekImprovement?.baselineMetric) !== undefined &&
         numberValue(twoWeekImprovement?.followupMetric) !== undefined &&
         (numberValue(twoWeekImprovement?.improvementPercent) ?? 0) > 0 &&
-        textValue(twoWeekImprovement?.contributorProfile) !== undefined &&
-        textValue(twoWeekImprovement?.competingDiscussion) !== undefined,
+        evidenceReference(twoWeekImprovement?.contributorProfile, context) &&
+        evidenceReference(twoWeekImprovement?.competingDiscussion, context),
     ),
   ];
 }
 
-function v1EvidenceChecks(env: Readonly<Record<string, string | undefined>>): readonly string[] {
+function v1EvidenceChecks(
+  env: Readonly<Record<string, string | undefined>>,
+  context: Pick<V1EvidenceReferenceContext, "agentRoot" | "worldRoot">,
+): readonly string[] {
   const value = env[v1EvidencePathEnv]?.trim();
   if (value === undefined || value.length === 0) {
     return ["v1.evidencePath:missing"];
@@ -376,7 +413,7 @@ function v1EvidenceChecks(env: Readonly<Record<string, string | undefined>>): re
       return ["v1.evidencePath:invalid"];
     }
 
-    return ["v1.evidencePath:configured", ...v1EvidenceDetailChecks(manifest)];
+    return ["v1.evidencePath:configured", ...v1EvidenceDetailChecks(manifest, { ...context, manifestDir: dirname(value) })];
   } catch {
     return ["v1.evidencePath:invalid"];
   }
@@ -819,7 +856,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     requiredEnvCheck(env, githubDiscussionCategoryIdEnv, "github.discussionCategoryId"),
     githubAuthCheck(runner, env),
     ...dockerCheck(runner, env),
-    ...v1EvidenceChecks(env),
+    ...v1EvidenceChecks(env, { agentRoot, worldRoot }),
   ];
 
   return {
