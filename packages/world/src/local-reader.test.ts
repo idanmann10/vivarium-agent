@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { createLocalWorldReader } from "./local-reader.js";
-import { proposeAntiPattern } from "./push.js";
+import { proposeAntiPattern, proposeTrace } from "./push.js";
 import { publishRun } from "./runs.js";
 
 describe("local world reader", () => {
@@ -73,6 +73,35 @@ describe("local world reader", () => {
         kind: "anti-pattern",
         id: "proposals/anti-patterns/coding/retrying-without-new-evidence/ANTI-PATTERN.md",
         title: "Retrying Without New Evidence",
+      }),
+    ]);
+  });
+
+  test("retrieves proposed traces by domain and query", () => {
+    const root = mkdtempSync(join(tmpdir(), "world-reader-trace-proposal-"));
+    proposeTrace({
+      worldRoot: root,
+      domain: "coding",
+      slug: "trace-from-dream",
+      title: "Trace From Dream",
+      contributor: "agent-a",
+      steps: [
+        { action: "Frame the failure", annotation: "Name the expected behavior before editing." },
+        { action: "Validate the fix", annotation: "Run the command that would have caught the bug." },
+      ],
+      evidenceRunId: "run-instructive",
+    });
+
+    const results = createLocalWorldReader({ root }).search({
+      domain: "coding",
+      query: "expected behavior editing",
+    });
+
+    expect(results).toEqual([
+      expect.objectContaining({
+        kind: "trace",
+        id: "proposals/traces/coding/trace-from-dream/TRACE.md",
+        title: "Trace From Dream",
       }),
     ]);
   });

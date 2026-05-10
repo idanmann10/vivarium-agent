@@ -37,6 +37,11 @@ function walk(directory: string): string[] {
 }
 
 function titleFromMarkdown(text: string, fallback: string): string {
+  const metadataTitle = metaValue(text, "title") ?? metaValue(text, "name");
+  if (metadataTitle !== undefined && metadataTitle.length > 0) {
+    return metadataTitle;
+  }
+
   const heading = text
     .split("\n")
     .find((line) => line.startsWith("# "))

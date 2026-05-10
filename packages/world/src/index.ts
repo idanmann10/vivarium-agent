@@ -14,12 +14,14 @@ export type {
 export { worldOperations } from "./operations.js";
 export { pullWorld } from "./pull.js";
 export type { GitCommand, GitCommandRunner, PullWorldRequest, PullWorldResult } from "./pull.js";
-export { proposeAntiPattern, proposeSkill, proposeSkillPullRequest } from "./push.js";
+export { proposeAntiPattern, proposeSkill, proposeSkillPullRequest, proposeTrace } from "./push.js";
 export type {
   ProposeAntiPatternRequest,
   ProposeSkillPullRequestRequest,
   ProposeSkillPullRequestResult,
   ProposeSkillRequest,
+  ProposeTraceRequest,
+  ProposeTraceStep,
   SkillPushGateEvidence,
 } from "./push.js";
 export { searchWorlds } from "./retrieve.js";

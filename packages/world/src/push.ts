@@ -28,6 +28,21 @@ export interface ProposeAntiPatternRequest {
   readonly evidenceRunIds?: readonly string[];
 }
 
+export interface ProposeTraceStep {
+  readonly action: string;
+  readonly annotation: string;
+}
+
+export interface ProposeTraceRequest {
+  readonly worldRoot: string;
+  readonly domain: string;
+  readonly slug: string;
+  readonly title: string;
+  readonly contributor: string;
+  readonly steps: readonly ProposeTraceStep[];
+  readonly evidenceRunId?: string;
+}
+
 export interface SkillPushGateEvidence {
   readonly lowerBound: number;
   readonly uses: number;
@@ -79,6 +94,29 @@ export function proposeAntiPattern(request: ProposeAntiPatternRequest): string {
   writeFileSync(
     path,
     `---\nid: ${request.domain}.${request.slug}\nname: ${request.name}\ndomain: ${request.domain}\nvisibility: public\ncontributor: ${request.contributor}\n---\n\n# ${request.name}\n\n## What Not To Do\n\n${request.description}\n\n## Why\n\n${request.why}\n\n## Instead Do\n\n${request.insteadDo}\n\n## Evidence\n\n${evidenceMarkdown(request.evidenceRunIds)}\n\n# Provenance\n\nProposed locally by ${request.contributor}.\n`,
+  );
+  return path;
+}
+
+export function proposeTrace(request: ProposeTraceRequest): string {
+  const directory = join(request.worldRoot, "proposals", "traces", request.domain, request.slug);
+  mkdirSync(directory, { recursive: true });
+  const path = join(directory, "TRACE.md");
+  writeFileSync(
+    path,
+    `---\nid: ${request.domain}.${request.slug}\ntitle: ${request.title}\ndomain: ${request.domain}\nvisibility: public\ncontributor: ${request.contributor}\n---\n\n# Goal\n\n${request.title}\n\n${request.steps
+      .map((step, index) => `## Step ${index + 1}\n\n${step.action}\n\nAnnotation: ${step.annotation}`)
+      .join("\n\n")}\n\n# Provenance\n\nProposed locally by ${request.contributor}.\n`,
+  );
+  writeFileSync(
+    join(directory, "steps.jsonl"),
+    request.steps
+      .map((step, index) => JSON.stringify({ index: index + 1, action: step.action, annotation: step.annotation }))
+      .join("\n") + "\n",
+  );
+  writeFileSync(
+    join(directory, "meta.yaml"),
+    `domain: ${request.domain}\nvisibility: public\ncontributor: ${request.contributor}\n${request.evidenceRunId === undefined ? "" : `evidence_run_id: ${request.evidenceRunId}\n`}`,
   );
   return path;
 }

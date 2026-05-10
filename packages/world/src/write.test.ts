@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { proposeAntiPattern, proposeSkill, proposeSkillPullRequest } from "./push.js";
+import { proposeAntiPattern, proposeSkill, proposeSkillPullRequest, proposeTrace } from "./push.js";
 import { publishRun } from "./runs.js";
 import { publishTrace } from "./traces.js";
 
@@ -62,6 +62,34 @@ describe("local world writes", () => {
     expect(readFileSync(path, "utf8")).toContain("contributor: agent-a");
     expect(readFileSync(path, "utf8")).toContain("## What Not To Do\n\nRepeating the same failing action without new evidence");
     expect(readFileSync(path, "utf8")).toContain("## Evidence\n\n- run-failed-retry");
+  });
+
+  test("proposes a trace artifact with annotated steps", () => {
+    const root = mkdtempSync(join(tmpdir(), "world-write-trace-proposal-"));
+
+    const path = proposeTrace({
+      worldRoot: root,
+      domain: "coding",
+      slug: "trace-from-dream",
+      title: "Trace From Dream",
+      contributor: "agent-a",
+      steps: [
+        { action: "Frame the failure", annotation: "Name the expected behavior before editing." },
+        { action: "Validate the fix", annotation: "Run the command that would have caught the bug." },
+      ],
+      evidenceRunId: "run-instructive",
+    });
+
+    expect(path).toBe(join(root, "proposals", "traces", "coding", "trace-from-dream", "TRACE.md"));
+    expect(readFileSync(path, "utf8")).toContain("id: coding.trace-from-dream");
+    expect(readFileSync(path, "utf8")).toContain("contributor: agent-a");
+    expect(readFileSync(path, "utf8")).toContain("## Step 1\n\nFrame the failure\n\nAnnotation: Name the expected behavior before editing.");
+    expect(readFileSync(join(root, "proposals", "traces", "coding", "trace-from-dream", "steps.jsonl"), "utf8")).toContain(
+      '"annotation":"Run the command that would have caught the bug."',
+    );
+    expect(readFileSync(join(root, "proposals", "traces", "coding", "trace-from-dream", "meta.yaml"), "utf8")).toContain(
+      "evidence_run_id: run-instructive",
+    );
   });
 
   test("opens a skill proposal pull request when the push gate passes", async () => {
