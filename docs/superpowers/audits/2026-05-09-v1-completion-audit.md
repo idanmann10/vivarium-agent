@@ -115,6 +115,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun test scripts/reference-docs.test.ts`: 11 tests passed after first failing on thin top-level docs, verifying `docs/README.md`, `docs/thesis.md`, and `docs/demos/README.md` cover navigation, thesis grounding, and the recorded demo command path.
 - `bun test scripts/reference-docs.test.ts`: 11 tests passed with 406 assertions after first failing on missing `memory.write(request)`, verifying every implemented `SelfTools` group method is named in `docs/reference/tools/*`.
 - `bun test scripts/reference-docs.test.ts`: 12 tests passed with 432 assertions after first failing on missing `docs/live-readiness.env.example`, verifying the live-readiness environment template names every `doctor --live` env var and is linked from `docs/README.md`.
+- `bun test scripts/reference-docs.test.ts`: 13 tests passed with 436 assertions after first failing on missing `live-readiness.local.env` instructions and ignore patterns, verifying filled live-readiness env files are gitignored while the example remains tracked.
 - `bun test scripts/workflows.test.ts`: 2 tests passed, verifying agent CI runs the full phase checkpoint and release/changeset workflows are not placeholders.
 - `bun test scripts/record-local-e2e-demo.test.ts`: verifies the local asciinema demo recorder creates a valid cast with init, run, world transmission-smoke, and SQLite stack verification.
 - `docs/demos/local-e2e.cast`: recorded local end-to-end asciinema v2 demo generated from real command output.
@@ -172,7 +173,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun run lint`: scanned 191 TypeScript files, then Oxlint reported 0 warnings and 0 errors with the configured no-explicit-any rule.
 - `bun run format:check`: Oxfmt reports all 9 matched root package/config and tooling test files use the correct format.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 219 tests passed, 0 failed, with 1130 assertions including Recover no-path escalation, runtime prompt-injection warning surfacing, later Predict injection-memory recall, credential safety surprise emission/episode bridging, implemented self-tool method docs, config schema, core artifact reference, top-level docs, architecture docs, concept docs, guide docs, app/package README ownership docs, math docs coverage, live-readiness doctor next actions, live-readiness guide-anchor validation, live-readiness env template coverage, and deterministic dispatcher-level doctor probes.
+- `bun run test`: 220 tests passed, 0 failed, with 1134 assertions including Recover no-path escalation, runtime prompt-injection warning surfacing, later Predict injection-memory recall, credential safety surprise emission/episode bridging, implemented self-tool method docs, config schema, core artifact reference, top-level docs, architecture docs, concept docs, guide docs, app/package README ownership docs, math docs coverage, live-readiness doctor next actions, live-readiness guide-anchor validation, live-readiness env template coverage, ignored live-readiness secret copies, and deterministic dispatcher-level doctor probes.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work

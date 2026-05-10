@@ -367,9 +367,18 @@ describe("reference docs", () => {
     const body = existsSync(path) ? readFileSync(path, "utf8") : "";
     expect(body).toContain("doctor --live");
     expect(body).toContain("Do not commit");
+    expect(body).toContain("live-readiness.local.env");
     for (const envVar of liveReadinessEnvVars) {
       expect(body).toContain(`export ${envVar}=`);
     }
+  });
+
+  test("ignores filled live-readiness environment files", () => {
+    const gitignore = readFileSync(".gitignore", "utf8");
+    for (const pattern of ["live-readiness.local.env", "docs/live-readiness.local.env"]) {
+      expect(gitignore).toContain(pattern);
+    }
+    expect(gitignore).toContain("!docs/live-readiness.env.example");
   });
 
   test("documents app and package ownership readmes", () => {
