@@ -21,6 +21,7 @@ const documentedMethods = {
   curriculum: ["read(domain)", "progress(domain)", "advance(domain, stepIndex)"],
   identity: ["summary()", "stage(domain)", "history(limit?)"],
   attention: ["focus(request)", "defocus()", "status()"],
+  episodes: ["note(request)", "surprise(request)", "recallRun(runId)"],
 } as const;
 
 describe("reference docs", () => {

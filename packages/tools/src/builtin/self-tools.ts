@@ -1,8 +1,16 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { RunId, SkillId } from "../../../core/src/ids.js";
-import type { CurriculumProgress, DevStage, Episode, Run, TraceStep, Visibility } from "../../../core/src/index.js";
+import { episodeId, type AgentId, type RunId, type SkillId } from "../../../core/src/ids.js";
+import type {
+  CurriculumProgress,
+  DevStage,
+  Episode,
+  Prediction,
+  Run,
+  TraceStep,
+  Visibility,
+} from "../../../core/src/index.js";
 import type { LocalSkillRecord, StateRepository } from "../../../state/src/index.js";
 import {
   listWorldSubscriptions,
@@ -129,6 +137,27 @@ export interface IdentityHistoryItem {
   readonly notes: string;
 }
 
+export interface EpisodeNoteRequest {
+  readonly runId: RunId;
+  readonly agentId: AgentId;
+  readonly observation: unknown;
+  readonly tags?: readonly string[];
+}
+
+export interface EpisodeSurpriseRequest {
+  readonly runId: RunId;
+  readonly agentId: AgentId;
+  readonly predicted: Prediction;
+  readonly actual: string;
+  readonly magnitude: number;
+  readonly notes?: string;
+  readonly tags?: readonly string[];
+}
+
+export interface EpisodeWriteResult {
+  readonly id: string;
+}
+
 export interface WorldContributorSummary {
   readonly handle: string;
   readonly domains: readonly string[];
@@ -171,6 +200,9 @@ export interface SelfTools {
   readonly episodes: {
     append(episode: Episode): void;
     list(runId: RunId): readonly Episode[];
+    note(request: EpisodeNoteRequest): EpisodeWriteResult;
+    surprise(request: EpisodeSurpriseRequest): EpisodeWriteResult;
+    recallRun(runId: RunId): readonly Episode[];
   };
   readonly world: {
     search(request: LocalWorldSearchRequest): readonly LocalWorldSearchResult[];
@@ -212,6 +244,10 @@ export interface SelfTools {
 
 function factId(domain: string, count: number): string {
   return `fact-${domain}-${count + 1}`;
+}
+
+function nextEpisodeId(state: StateRepository, runId: RunId): ReturnType<typeof episodeId> {
+  return episodeId(`${String(runId)}-self-${state.listEpisodes(runId).length + 1}`);
 }
 
 const defaultAttentionToolLimits: AttentionToolLimits = {
@@ -603,6 +639,38 @@ export function createSelfTools({ state, world, github, worldRoot, worldSubscrip
         state.appendEpisode(episode);
       },
       list(runId) {
+        return state.listEpisodes(runId);
+      },
+      note(request) {
+        const id = nextEpisodeId(state, request.runId);
+        state.appendEpisode({
+          id,
+          runId: request.runId,
+          agentId: request.agentId,
+          timestamp: new Date().toISOString(),
+          tags: request.tags ?? [],
+          kind: "observation",
+          content: request.observation,
+        });
+        return { id: String(id) };
+      },
+      surprise(request) {
+        const id = nextEpisodeId(state, request.runId);
+        state.appendEpisode({
+          id,
+          runId: request.runId,
+          agentId: request.agentId,
+          timestamp: new Date().toISOString(),
+          tags: request.tags ?? [],
+          kind: "surprise",
+          prediction: request.predicted,
+          actual: request.actual,
+          magnitude: request.magnitude,
+          ...(request.notes === undefined ? {} : { notes: request.notes }),
+        });
+        return { id: String(id) };
+      },
+      recallRun(runId) {
         return state.listEpisodes(runId);
       },
     },

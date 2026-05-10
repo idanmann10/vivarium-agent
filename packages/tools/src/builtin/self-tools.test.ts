@@ -51,6 +51,46 @@ describe("self-tools", () => {
     expect(state.getCurriculumProgress("coding")?.completedSteps).toEqual([0]);
   });
 
+  test("records named episode notes and surprises", () => {
+    const state = new InMemoryStateRepository();
+    const tools = createSelfTools({
+      state,
+      world: createLocalWorldReader({ root: "../the-world" }),
+    });
+    const id = runId("run-episode-tools");
+    const localAgent = agentId("agent-tools");
+    tools.runs.create({
+      id,
+      agentId: localAgent,
+      domain: "coding",
+      goal: "capture surprises",
+      startedAt: "local",
+      endedAt: null,
+      success: null,
+      score: null,
+      notes: "",
+      publishable: false,
+      published: false,
+      publishedAt: null,
+      visibility: "private",
+    });
+
+    const note = tools.episodes.note({ runId: id, agentId: localAgent, observation: "Observed a useful clue." });
+    const surprise = tools.episodes.surprise({
+      runId: id,
+      agentId: localAgent,
+      predicted: { about: "test", expected: "pass", confidence: 0.8 },
+      actual: "failed",
+      magnitude: 0.6,
+      notes: "Unexpected failure.",
+    });
+
+    expect(tools.episodes.recallRun(id).map((episode) => episode.kind)).toEqual(["observation", "surprise"]);
+    expect(note.id).not.toBe(surprise.id);
+    expect(tools.episodes.recallRun(id)[0]).toMatchObject({ kind: "observation", content: "Observed a useful clue." });
+    expect(tools.episodes.recallRun(id)[1]).toMatchObject({ kind: "surprise", actual: "failed", magnitude: 0.6 });
+  });
+
   test("narrows and restores attention limits", () => {
     const state = new InMemoryStateRepository();
     const tools = createSelfTools({
