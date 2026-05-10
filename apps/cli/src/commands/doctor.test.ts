@@ -545,6 +545,7 @@ describe("doctorCommand", () => {
       expect.objectContaining({
         check: "v1.evidencePath:missing",
         env: expect.arrayContaining(["VIVARIUM_V1_EVIDENCE_PATH"]),
+        command: expect.stringContaining('live evidence-init --path "$VIVARIUM_V1_EVIDENCE_PATH"'),
         guide: "docs/guides/live-readiness.md#v1-evidence-manifest",
       }),
     );

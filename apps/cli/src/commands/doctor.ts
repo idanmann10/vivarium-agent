@@ -1488,6 +1488,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: "Create the v1 evidence manifest and export its path before claiming live v1 verification.",
         env: [v1EvidencePathEnv],
+        command: cliCommand(context, 'live evidence-init --path "$VIVARIUM_V1_EVIDENCE_PATH"'),
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.starterPack":
