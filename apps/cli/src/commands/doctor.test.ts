@@ -419,6 +419,7 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.publicContribution:missing")).toContain("contributor trust");
     expect(actions.get("v1.publicContribution:missing")).toContain("distinct");
     expect(actions.get("v1.curationStats:missing")).toContain("30%");
+    expect(actions.get("v1.realGoals:missing")).toContain("distinct");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("fourteen days");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("profile counts");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("other-agent refinement evidence");
@@ -557,6 +558,39 @@ describe("doctorCommand", () => {
     expect(result.ok).toBe(false);
     expect(result.checks).toContain("v1.evidencePath:configured");
     expect(result.checks).toContain("v1.starterPack:missing");
+  });
+
+  test("requires v1 real goals to use distinct goal IDs and run evidence", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-distinct-real-goals-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    const goalPath = join(root, "docs/live/goal.md");
+    mkdirSync(dirname(goalPath), { recursive: true });
+    writeFileSync(goalPath, "goal evidence\n", "utf8");
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        realGoals: [
+          { id: "goal-1", date: "2026-05-01", evidence: "docs/live/goal.md" },
+          { id: "goal-1", date: "2026-05-02", evidence: "docs/live/goal.md" },
+          { id: "goal-1", date: "2026-05-04", evidence: "docs/live/goal.md" },
+          { id: "goal-1", date: "2026-05-06", evidence: "docs/live/goal.md" },
+          { id: "goal-1", date: "2026-05-08", evidence: "docs/live/goal.md" },
+        ],
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.realGoals:missing");
   });
 
   test("rejects v1 manifest sections that reference missing local evidence artifacts", () => {

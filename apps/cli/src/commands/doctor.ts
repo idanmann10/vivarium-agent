@@ -316,6 +316,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         return record === undefined ? [] : [record];
       })
     : [];
+  const realGoalIds = new Set(realGoals.flatMap((goal) => textValue(goal.id) ?? []));
+  const realGoalEvidenceCount = new Set(realGoals.flatMap((goal) => evidenceReferenceIdentity(goal.evidence, context) ?? [])).size;
   const realGoalDates = realGoals.flatMap((goal) => {
     const millis = dateMillis(goal.date);
     return millis === undefined ? [] : [millis];
@@ -351,6 +353,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
     v1Check(
       "realGoals",
       realGoals.length >= 5 &&
+        realGoalIds.size >= 5 &&
+        realGoalEvidenceCount >= 5 &&
         realGoals.every((goal) => textValue(goal.id) !== undefined && dateMillis(goal.date) !== undefined && evidenceReference(goal.evidence, context)) &&
         firstGoal !== undefined &&
         lastGoal !== undefined &&
@@ -800,7 +804,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.realGoals":
       return {
         check,
-        action: "Record at least five real coding goals spanning a week, with evidence for each run.",
+        action: "Record at least five distinct real coding goals spanning a week, with distinct evidence for each run.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.providerSmokes":
