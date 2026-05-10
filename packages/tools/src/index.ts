@@ -1,12 +1,15 @@
 export { builtinToolsets } from "./builtin/index.js";
 export { createSelfTools } from "./builtin/self-tools.js";
 export type { SelfTools, SelfToolsDependencies } from "./builtin/self-tools.js";
-export { createAllowlistedFileAdapter, dispatchExternalTool, externalToolsets } from "./external/index.js";
+export { createAllowlistedFileAdapter, createDockerTerminalAdapter, dispatchExternalTool, externalToolsets } from "./external/index.js";
 export type {
   AnthropicNativeAdapter,
   AnthropicNativeMessage,
   AnthropicNativeMessagesCreateToolRequest,
   ComputerUseAdapter,
+  DockerProcessCommand,
+  DockerProcessRunner,
+  DockerTerminalAdapterOptions,
   ExternalToolAdapters,
   ExternalToolRequest,
   ExternalToolResult,

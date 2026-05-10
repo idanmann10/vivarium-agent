@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { createAllowlistedFileAdapter, dispatchExternalTool } from "./index.js";
+import { createAllowlistedFileAdapter, createDockerTerminalAdapter, dispatchExternalTool } from "./index.js";
 
 describe("dispatchExternalTool", () => {
   test("routes Anthropic native message requests through an injected adapter", async () => {
@@ -118,6 +118,37 @@ describe("dispatchExternalTool", () => {
     expect(
       await dispatchExternalTool({ name: "mcp.call", args: { server: "memory", tool: "search", input: { q: "x" } } }, adapters),
     ).toMatchObject({ ok: true, value: { server: "memory", tool: "search" } });
+  });
+
+  test("creates a Docker sandbox terminal adapter", async () => {
+    const root = mkdtempSync(join(tmpdir(), "external-docker-terminal-"));
+    let capturedArgs: readonly string[] = [];
+    const runTerminal = createDockerTerminalAdapter({
+      image: "alpine:3.20",
+      workspaceRoot: root,
+      runner: async (command) => {
+        capturedArgs = command.args;
+        return { exitCode: 0, stdout: "sandboxed\n", stderr: "" };
+      },
+    });
+
+    const result = await dispatchExternalTool({ name: "terminal.run", args: { command: "pwd && ls" } }, { runTerminal });
+
+    expect(result).toEqual({ ok: true, value: { exitCode: 0, stdout: "sandboxed\n", stderr: "" } });
+    expect(capturedArgs).toEqual([
+      "run",
+      "--rm",
+      "--network",
+      "none",
+      "-v",
+      `${root}:/workspace`,
+      "-w",
+      "/workspace",
+      "alpine:3.20",
+      "sh",
+      "-lc",
+      "pwd && ls",
+    ]);
   });
 
   test("routes computer-use requests through an injected adapter", async () => {

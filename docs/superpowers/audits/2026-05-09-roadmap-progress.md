@@ -38,6 +38,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` persistent daily tool rate-limit slice implemented after credential-argument safety.
 - `the-agent` computer-use routing and confirmation safety slice implemented after persistent daily tool rate limits.
 - `the-agent` Anthropic-native external tool routing implemented after computer-use safety, closing the named Phase 1 external toolset gap with injected adapter and credential resolution tests.
+- `the-agent` Docker terminal sandbox adapter implemented after Anthropic-native routing, closing the named Phase 1 `terminal (Docker sandbox)` external tool gap without requiring live Docker execution in tests.
 - `the-agent` world pull read-path slice implemented after computer-use confirmation safety.
 - `the-agent` Dream state repository slice implemented after world pull read paths.
 - `the-agent` compounding benchmark eval slice implemented after Dream state repository execution.
@@ -69,7 +70,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 
 - `bun run lint`: scanned 182 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 133 tests passed, 0 failed.
+- `bun run test`: 134 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 `the-world`:
@@ -96,7 +97,7 @@ Live/external checks:
 - `bun apps/cli/src/index.ts github pull-request ...` without `--confirm-write`: returns a refusal before reading credentials or attempting a GitHub API call.
 - `bun apps/cli/src/index.ts github workflow-runs --owner owner --repo world --token-env VIVARIUM_MISSING_GITHUB_TOKEN --branch main --limit 2`: returns a missing-env result without attempting a GitHub API call.
 - `bun test packages/world/src/pull.test.ts apps/cli/src/commands/world.test.ts apps/cli/src/dispatcher.test.ts`: 19 tests passed, including local second-install world transmission verification.
-- `bun test packages/tools/src/external/index.test.ts packages/tools/src/dispatcher.test.ts packages/tools/src/safety/pipeline.test.ts`: 20 tests passed, including Anthropic-native external adapter routing and credential injection.
+- `bun test packages/tools/src/external/index.test.ts packages/tools/src/dispatcher.test.ts packages/tools/src/safety/pipeline.test.ts`: 21 tests passed, including Anthropic-native external adapter routing, credential injection, and Docker terminal sandbox command construction.
 
 ## Prompt-To-Artifact Checklist
 
@@ -108,7 +109,7 @@ Live/external checks:
 | Use Superpowers | Superpowers skills used during execution; URL cited in plan and seed lineage | Complete |
 | Use GStack | URL cited in plan and seed lineage for role/command-shaped review patterns | Complete |
 | Phase 0 bootstrap | Two local repos, tooling, core types/math/kernel, world seed content, validators | Complete locally |
-| Phase 1 agent works alone | Offline deterministic runtime, state, SQLite persistence, Drizzle schema artifacts, state memory modules for working/episodic/semantic/procedural/identity memory, semantic facts storage with deletion, versioned SQL migration runner, local provider, Anthropic/OpenAI/OpenAI-compatible HTTP adapters, encrypted credential store, typed tool dispatcher, web/HTTP/file/terminal/code/MCP/anthropic-native/computer-use external adapters, SQLite-backed self-tools, HTTP/tool safety with output prompt-injection warnings, per-run and persistent per-day rate limits, credential-argument blocking, computer-use click/type confirmation, run-level harmful refusal and destructive confirmation behavior, automatic anti-pattern loading before execution, world read/search/pull paths, concrete primitive modules, attention-limited world context selection with token-budget accounting, daemon service, HTTP transport lifecycle, daemon-owned Dream scheduler loop, MCP tool manifest, local Compose supervisor artifacts, CLI init/run/credentials/skills/world search/pull/transmission-smoke/status/doctor/providers/github/daemon dispatcher and helpers, shared-state CLI init-to-run flow, live-readiness doctor preflight checks, provider/GitHub/daemon smoke commands, guarded GitHub Discussion and pull-request commands, GitHub workflow-runs check, e2e run/recover | Local slice partially complete |
+| Phase 1 agent works alone | Offline deterministic runtime, state, SQLite persistence, Drizzle schema artifacts, state memory modules for working/episodic/semantic/procedural/identity memory, semantic facts storage with deletion, versioned SQL migration runner, local provider, Anthropic/OpenAI/OpenAI-compatible HTTP adapters, encrypted credential store, typed tool dispatcher, web/HTTP/file/terminal Docker sandbox/code/MCP/anthropic-native/computer-use external adapters, SQLite-backed self-tools, HTTP/tool safety with output prompt-injection warnings, per-run and persistent per-day rate limits, credential-argument blocking, computer-use click/type confirmation, run-level harmful refusal and destructive confirmation behavior, automatic anti-pattern loading before execution, world read/search/pull paths, concrete primitive modules, attention-limited world context selection with token-budget accounting, daemon service, HTTP transport lifecycle, daemon-owned Dream scheduler loop, MCP tool manifest, local Compose supervisor artifacts, CLI init/run/credentials/skills/world search/pull/transmission-smoke/status/doctor/providers/github/daemon dispatcher and helpers, shared-state CLI init-to-run flow, live-readiness doctor preflight checks, provider/GitHub/daemon smoke commands, guarded GitHub Discussion and pull-request commands, GitHub workflow-runs check, e2e run/recover | Local slice partially complete |
 | Phase 2 Dream | Offline deterministic Dream, promotion/pruning/habits/identity/confidence/anonymizer/eval/e2e, StateRepository-backed Dream execution including SQLite, provider-backed anonymizer fallback, anti-pattern candidate generation, annotated trace candidate extraction, SQLite-backed candidate queue, aggregate compounding benchmark eval, and anonymized publishable run queueing from Reflect | Local slice complete |
 | Phase 3 world integration | Local proposal/publish, multi-world retrieval, GitHub PR/issue/Discussion client with mocked tests, world maintenance scripts, concrete archive/auto-merge workflows, trust gates, independent validator machine-fingerprint counting, held-review listing, cultural transmission e2e | Local slice complete |
 

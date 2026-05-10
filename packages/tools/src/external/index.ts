@@ -186,6 +186,19 @@ export interface ProcessToolResult {
   readonly stderr: string;
 }
 
+export interface DockerProcessCommand {
+  readonly args: readonly string[];
+}
+
+export type DockerProcessRunner = (command: DockerProcessCommand) => Promise<ProcessToolResult> | ProcessToolResult;
+
+export interface DockerTerminalAdapterOptions {
+  readonly image?: string;
+  readonly workspaceRoot?: string;
+  readonly network?: "none" | "bridge" | "host";
+  readonly runner?: DockerProcessRunner;
+}
+
 export interface FileEditResult {
   readonly replacements: number;
 }
@@ -294,6 +307,33 @@ export function createAllowlistedFileAdapter(options: AllowlistedFileAdapterOpti
       writeFileSync(path, current.split(search).join(replace), "utf8");
       return { replacements };
     },
+  };
+}
+
+function runDockerProcess(command: DockerProcessCommand): ProcessToolResult {
+  const result = Bun.spawnSync(["docker", ...command.args], { stdout: "pipe", stderr: "pipe" });
+  return {
+    exitCode: result.exitCode,
+    stdout: result.stdout?.toString() ?? "",
+    stderr: result.stderr?.toString() ?? "",
+  };
+}
+
+export function createDockerTerminalAdapter(
+  options: DockerTerminalAdapterOptions = {},
+): NonNullable<ExternalToolAdapters["runTerminal"]> {
+  const image = options.image ?? "alpine:3.20";
+  const network = options.network ?? "none";
+  const runner = options.runner ?? runDockerProcess;
+
+  return async (command) => {
+    const workspaceArgs =
+      options.workspaceRoot === undefined
+        ? []
+        : ["-v", `${resolve(options.workspaceRoot)}:/workspace`, "-w", "/workspace"];
+    return runner({
+      args: ["run", "--rm", "--network", network, ...workspaceArgs, image, "sh", "-lc", command],
+    });
   };
 }
 
