@@ -1,4 +1,4 @@
-import type { Capability, CostClass, Episode } from "../../../../packages/core/src/index.js";
+import type { Capability, CostClass, Episode, Prediction } from "../../../../packages/core/src/index.js";
 import {
   createAnthropicProvider,
   createLocalProvider,
@@ -46,7 +46,34 @@ export interface RunCommandResult {
     readonly model: string | null;
   };
   readonly episodeKinds: readonly Episode["kind"][];
+  readonly transparency: RunTransparencySummary;
   readonly error?: string;
+}
+
+export interface RunValidationSummary {
+  readonly score: number;
+  readonly passed: boolean;
+  readonly reasons: readonly string[];
+}
+
+export interface RunHighSurpriseSummary {
+  readonly about: string;
+  readonly expected: string;
+  readonly confidence: number;
+  readonly actual: string;
+  readonly magnitude: number;
+  readonly notes?: string;
+}
+
+export interface RunTransparencySummary {
+  readonly plan: string | null;
+  readonly prediction: Prediction | null;
+  readonly validation: RunValidationSummary | null;
+  readonly consulted: {
+    readonly skills: readonly string[];
+    readonly traces: readonly string[];
+  };
+  readonly highSurprises: readonly RunHighSurpriseSummary[];
 }
 
 interface ConfiguredRunProvider {
@@ -77,7 +104,67 @@ function providerConfigError(kind: string, id: string, model: string | null | un
     runId: null,
     provider: { kind, id, model: model ?? null },
     episodeKinds: [],
+    transparency: emptyRunTransparency(),
     error,
+  };
+}
+
+function emptyRunTransparency(): RunTransparencySummary {
+  return {
+    plan: null,
+    prediction: null,
+    validation: null,
+    consulted: { skills: [], traces: [] },
+    highSurprises: [],
+  };
+}
+
+function findLatestEpisode<Kind extends Episode["kind"]>(
+  episodes: readonly Episode[],
+  kind: Kind,
+): Extract<Episode, { readonly kind: Kind }> | undefined {
+  for (let index = episodes.length - 1; index >= 0; index -= 1) {
+    const episode = episodes[index];
+    if (episode?.kind === kind) {
+      return episode as Extract<Episode, { readonly kind: Kind }>;
+    }
+  }
+
+  return undefined;
+}
+
+export function summarizeRunEpisodes(episodes: readonly Episode[]): RunTransparencySummary {
+  const plan = findLatestEpisode(episodes, "plan");
+  const prediction = findLatestEpisode(episodes, "prediction");
+  const validation = findLatestEpisode(episodes, "validation");
+  const highSurprises = episodes
+    .filter((episode): episode is Extract<Episode, { readonly kind: "surprise" }> => episode.kind === "surprise")
+    .filter((episode) => episode.magnitude > 0.4)
+    .map((episode) => ({
+      about: episode.prediction.about,
+      expected: episode.prediction.expected,
+      confidence: episode.prediction.confidence,
+      actual: episode.actual,
+      magnitude: episode.magnitude,
+      ...(episode.notes === undefined ? {} : { notes: episode.notes }),
+    }));
+
+  return {
+    plan: plan?.plan ?? null,
+    prediction: prediction?.prediction ?? null,
+    validation:
+      validation === undefined
+        ? null
+        : {
+            score: validation.score,
+            passed: validation.passed,
+            reasons: validation.reasons,
+          },
+    consulted: {
+      skills: plan?.skillsLoaded.map(String) ?? [],
+      traces: plan?.tracesLoaded.map(String) ?? [],
+    },
+    highSurprises,
   };
 }
 
@@ -211,7 +298,9 @@ export async function runCommand(options: RunCommandOptions): Promise<RunCommand
   const result = await runGoal(
     options.forceFailure === undefined ? request : { ...request, forceFailure: options.forceFailure },
   );
-  const episodeKinds = state.listEpisodes(result.runId).map((episode) => episode.kind);
+  const episodes = state.listEpisodes(result.runId);
+  const episodeKinds = episodes.map((episode) => episode.kind);
+  const transparency = summarizeRunEpisodes(episodes);
   if (state instanceof SQLiteStateRepository) {
     state.close();
   }
@@ -221,5 +310,6 @@ export async function runCommand(options: RunCommandOptions): Promise<RunCommand
     runId: String(result.runId),
     provider: selectedProvider.summary,
     episodeKinds,
+    transparency,
   };
 }

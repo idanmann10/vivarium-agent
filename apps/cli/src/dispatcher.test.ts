@@ -401,6 +401,13 @@ describe("dispatchCliCommand", () => {
       runId: null,
       provider: { kind: "openai", id: "run-openai", model: "gpt-test" },
       episodeKinds: [],
+      transparency: {
+        plan: null,
+        prediction: null,
+        validation: null,
+        consulted: { skills: [], traces: [] },
+        highSurprises: [],
+      },
       error: "Missing provider environment variable: VIVARIUM_MISSING_PROVIDER_KEY",
     });
   });
@@ -499,6 +506,13 @@ describe("dispatchCliCommand", () => {
       runId: null,
       provider: { kind: "openai-compat", id: "run-openrouter", model: "openrouter/test-model" },
       episodeKinds: [],
+      transparency: {
+        plan: null,
+        prediction: null,
+        validation: null,
+        consulted: { skills: [], traces: [] },
+        highSurprises: [],
+      },
       error: "Missing provider environment variable: VIVARIUM_MISSING_PROVIDER_KEY",
     });
   });

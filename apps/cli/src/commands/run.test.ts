@@ -3,9 +3,10 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
+import { agentId, episodeId, runId, skillId, traceId, type Episode } from "../../../../packages/core/src/index.js";
 import { SQLiteStateRepository } from "../../../../packages/state/src/index.js";
 import { configureProviderProfileCommand } from "./providers.js";
-import { runCommand } from "./run.js";
+import { runCommand, summarizeRunEpisodes } from "./run.js";
 import { subscribeWorldCommand } from "./world.js";
 
 function write(path: string, content: string): void {
@@ -16,7 +17,10 @@ function write(path: string, content: string): void {
 function createWorldFixture(): string {
   const root = mkdtempSync(join(tmpdir(), "cli-run-world-"));
   write(join(root, "domains", "coding", "curriculum.md"), "# Coding Curriculum\n");
-  write(join(root, "domains", "coding", "skills", "provider-run", "SKILL.md"), "# Provider Run\n\nUse configured providers.");
+  write(
+    join(root, "domains", "coding", "skills", "provider-run", "SKILL.md"),
+    "# Provider Run\n\nUse configured providers for provider-backed tests.",
+  );
   return root;
 }
 
@@ -42,10 +46,90 @@ describe("runCommand", () => {
       success: true,
       provider: { kind: "openai-compat", id: "run-openai-compat", model: "openrouter/test-model" },
       episodeKinds: expect.arrayContaining(["plan", "prediction", "action", "validation", "reflection"]),
+      transparency: {
+        prediction: {
+          about: "local-provider.execute",
+          confidence: 0.72,
+        },
+        validation: {
+          score: 0.8,
+          passed: true,
+        },
+        consulted: {
+          skills: ["domains/coding/skills/provider-run/SKILL.md"],
+          traces: [],
+        },
+      },
     });
+    expect(result.transparency.plan).toContain("Loaded: Provider Run");
+    expect(result.transparency.validation?.reasons[0]).toBe("provider text");
     expect(requests).toHaveLength(4);
     expect(requests[0]?.url).toBe("https://openrouter.example/v1/chat/completions");
     expect(requests[0]?.init.headers).toMatchObject({ authorization: "Bearer provider-secret" });
+  });
+
+  test("summarizes only high-magnitude surprise evidence", () => {
+    const id = runId("run-transparency");
+    const agent = agentId("agent-transparency");
+    const episodes: Episode[] = [
+      {
+        kind: "plan",
+        id: episodeId("episode-plan"),
+        runId: id,
+        agentId: agent,
+        timestamp: "now",
+        tags: [],
+        plan: "Plan: inspect and verify.",
+        skillsLoaded: [skillId("skill-a")],
+        tracesLoaded: [traceId("trace-a")],
+      },
+      {
+        kind: "prediction",
+        id: episodeId("episode-prediction"),
+        runId: id,
+        agentId: agent,
+        timestamp: "now",
+        tags: [],
+        prediction: { about: "tool", expected: "success", confidence: 0.72 },
+      },
+      {
+        kind: "surprise",
+        id: episodeId("episode-low-surprise"),
+        runId: id,
+        agentId: agent,
+        timestamp: "now",
+        tags: [],
+        prediction: { about: "tool", expected: "minor drift", confidence: 0.6 },
+        actual: "minor drift with extra logs",
+        magnitude: 0.2,
+      },
+      {
+        kind: "surprise",
+        id: episodeId("episode-high-surprise"),
+        runId: id,
+        agentId: agent,
+        timestamp: "now",
+        tags: [],
+        prediction: { about: "tool", expected: "success", confidence: 0.8 },
+        actual: "tool failed",
+        magnitude: 0.7,
+        notes: "Unexpected provider failure.",
+      },
+    ];
+
+    expect(summarizeRunEpisodes(episodes)).toMatchObject({
+      plan: "Plan: inspect and verify.",
+      prediction: { expected: "success", confidence: 0.72 },
+      consulted: { skills: ["skill-a"], traces: ["trace-a"] },
+      highSurprises: [
+        {
+          expected: "success",
+          actual: "tool failed",
+          magnitude: 0.7,
+          notes: "Unexpected provider failure.",
+        },
+      ],
+    });
   });
 
   test("runs a goal through a saved provider profile", async () => {
@@ -132,6 +216,13 @@ describe("runCommand", () => {
       runId: null,
       provider: { kind: "openai", id: "run-openai", model: "gpt-test" },
       episodeKinds: [],
+      transparency: {
+        plan: null,
+        prediction: null,
+        validation: null,
+        consulted: { skills: [], traces: [] },
+        highSurprises: [],
+      },
       error: "Missing provider environment variable: OPENAI_API_KEY",
     });
   });
@@ -155,6 +246,13 @@ describe("runCommand", () => {
       runId: null,
       provider: { kind: "ollama", id: "run-ollama", model: "ollama/test" },
       episodeKinds: [],
+      transparency: {
+        plan: null,
+        prediction: null,
+        validation: null,
+        consulted: { skills: [], traces: [] },
+        highSurprises: [],
+      },
       error: "Unsupported --provider-kind: ollama",
     });
   });
