@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand } from "./github.js";
+import { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand, githubWorkflowRunsCommand } from "./github.js";
 
 describe("githubSmokeCommand", () => {
   test("returns a missing-env result without calling GitHub", async () => {
@@ -180,5 +180,87 @@ describe("githubPullRequestCommand", () => {
       head: "agent:add-generated-skill",
       base: "main",
     });
+  });
+});
+
+describe("githubWorkflowRunsCommand", () => {
+  test("returns a missing-env result without calling GitHub", async () => {
+    const result = await githubWorkflowRunsCommand({
+      owner: "owner",
+      repo: "world",
+      tokenEnv: "VIVARIUM_MISSING_GITHUB_TOKEN",
+      env: {},
+      fetch: async () => {
+        throw new Error("fetch should not run without a token");
+      },
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      owner: "owner",
+      repo: "world",
+      error: "Missing GitHub token environment variable: VIVARIUM_MISSING_GITHUB_TOKEN",
+    });
+  });
+
+  test("reports workflow run status metadata", async () => {
+    const requests: Array<{ readonly url: string; readonly init: RequestInit }> = [];
+    const result = await githubWorkflowRunsCommand({
+      owner: "owner",
+      repo: "world",
+      tokenEnv: "GITHUB_TOKEN",
+      branch: "main",
+      limit: 2,
+      env: { GITHUB_TOKEN: "gh-secret" },
+      fetch: async (url, init) => {
+        requests.push({ url: String(url), init });
+        return Response.json({
+          workflow_runs: [
+            {
+              id: 10,
+              name: "validate",
+              status: "completed",
+              conclusion: "success",
+              html_url: "https://github.com/owner/world/actions/runs/10",
+              head_branch: "main",
+            },
+            {
+              id: 11,
+              name: "stats",
+              status: "queued",
+              conclusion: null,
+              html_url: "https://github.com/owner/world/actions/runs/11",
+              head_branch: "main",
+            },
+          ],
+        });
+      },
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      owner: "owner",
+      repo: "world",
+      runs: [
+        {
+          id: 10,
+          name: "validate",
+          status: "completed",
+          conclusion: "success",
+          url: "https://github.com/owner/world/actions/runs/10",
+          headBranch: "main",
+        },
+        {
+          id: 11,
+          name: "stats",
+          status: "queued",
+          conclusion: null,
+          url: "https://github.com/owner/world/actions/runs/11",
+          headBranch: "main",
+        },
+      ],
+    });
+    expect(requests[0]?.url).toBe("https://api.github.com/repos/owner/world/actions/runs?branch=main&per_page=2");
+    expect(requests[0]?.init.headers).toMatchObject({ authorization: "Bearer gh-secret" });
   });
 });

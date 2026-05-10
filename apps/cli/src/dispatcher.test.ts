@@ -258,6 +258,31 @@ describe("dispatchCliCommand", () => {
     });
   });
 
+  test("routes GitHub workflow run checks without credentials", async () => {
+    await expect(
+      dispatchCliCommand([
+        "github",
+        "workflow-runs",
+        "--owner",
+        "owner",
+        "--repo",
+        "world",
+        "--token-env",
+        "VIVARIUM_MISSING_GITHUB_TOKEN",
+        "--branch",
+        "main",
+        "--limit",
+        "2",
+      ]),
+    ).resolves.toMatchObject({
+      command: "github",
+      result: {
+        ok: false,
+        error: "Missing GitHub token environment variable: VIVARIUM_MISSING_GITHUB_TOKEN",
+      },
+    });
+  });
+
   test("routes daemon smoke checks", async () => {
     await expect(dispatchCliCommand(["daemon", "smoke", "--status-url", "http://127.0.0.1:9/status"])).resolves.toMatchObject({
       command: "daemon",

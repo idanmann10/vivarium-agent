@@ -124,6 +124,19 @@ bun apps/cli/src/index.ts github pull-request \
 
 Without `--confirm-write`, the command refuses before reading credentials or calling GitHub.
 
+After the Discussion or PR is open, inspect workflow runs:
+
+```bash
+bun apps/cli/src/index.ts github workflow-runs \
+  --owner <owner> \
+  --repo <world-repo> \
+  --token-env GITHUB_TOKEN \
+  --branch main \
+  --limit 10
+```
+
+Use this to verify the validator, stats, trust-gate, and archive workflows that are relevant to the live contribution.
+
 ## Docker Compose
 
 Daemon supervision needs either the Docker Compose plugin or the standalone `docker-compose` command.
@@ -151,7 +164,7 @@ After the external prerequisites are configured:
 3. Run `github smoke` for the canonical world remote.
 4. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.
 5. Create a live world contribution PR from a generated artifact with `github pull-request --confirm-write`.
-6. Verify the world workflows and trust gates on GitHub.
+6. Verify the world workflows and trust gates on GitHub with `github workflow-runs`.
 7. Pull the accepted contribution into a second local install.
 8. Run the Compose daemon and verify `/status` with `daemon smoke`.
 

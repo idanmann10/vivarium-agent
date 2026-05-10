@@ -2,7 +2,7 @@ import type { CredentialKind } from "../../../packages/core/src/index.js";
 import { addCredentialCommand, listCredentialsCommand } from "./commands/credentials.js";
 import { daemonSmokeCommand } from "./commands/daemon.js";
 import { doctorCommand } from "./commands/doctor.js";
-import { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand } from "./commands/github.js";
+import { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand, githubWorkflowRunsCommand } from "./commands/github.js";
 import { runInitCommand } from "./commands/init.js";
 import { providerSmokeCommand, type ProviderSmokeKind } from "./commands/providers.js";
 import { runCommand } from "./commands/run.js";
@@ -255,7 +255,22 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
         );
       }
 
-      usage('Unknown github subcommand. Use "smoke", "discussion", or "pull-request".');
+      if (subcommand === "workflow-runs") {
+        const branch = value(flags, "branch");
+        const limit = integerFlag(flags, "limit");
+        return output(
+          command,
+          await githubWorkflowRunsCommand({
+            owner: required(flags, "owner"),
+            repo: required(flags, "repo"),
+            tokenEnv: required(flags, "token-env"),
+            ...(branch === undefined ? {} : { branch }),
+            ...(limit === undefined ? {} : { limit }),
+          }),
+        );
+      }
+
+      usage('Unknown github subcommand. Use "smoke", "discussion", "pull-request", or "workflow-runs".');
     }
     case "daemon": {
       if (subcommand !== "smoke") {

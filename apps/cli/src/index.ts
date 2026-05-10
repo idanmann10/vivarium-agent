@@ -34,7 +34,7 @@ export type {
 } from "./commands/credentials.js";
 export { providerSmokeCommand } from "./commands/providers.js";
 export type { ProviderSmokeCommandOptions, ProviderSmokeCommandResult, ProviderSmokeKind } from "./commands/providers.js";
-export { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand } from "./commands/github.js";
+export { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand, githubWorkflowRunsCommand } from "./commands/github.js";
 export type {
   GitHubDiscussionCommandOptions,
   GitHubDiscussionCommandResult,
@@ -43,6 +43,9 @@ export type {
   GitHubRepositoryPermissions,
   GitHubSmokeCommandOptions,
   GitHubSmokeCommandResult,
+  GitHubWorkflowRunSummary,
+  GitHubWorkflowRunsCommandOptions,
+  GitHubWorkflowRunsCommandResult,
 } from "./commands/github.js";
 export { daemonSmokeCommand } from "./commands/daemon.js";
 export type { DaemonSmokeCommandOptions, DaemonSmokeCommandResult, DaemonSmokeFetch } from "./commands/daemon.js";

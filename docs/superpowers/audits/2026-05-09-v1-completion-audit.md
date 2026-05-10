@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation over the shared state repository, aggregate compounding benchmark eval, Drizzle schema artifacts, state memory modules for all five roadmap memory systems, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, CLI live-readiness doctor preflight checks and handoff guide, provider/GitHub/daemon smoke commands, guarded GitHub Discussion and pull-request commands, shared-state CLI init-to-run flow, local Compose daemon supervisor artifacts, SQLite-backed self-tools, read-only world pull/search paths, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, computer-use click/type confirmation safety, concrete world maintenance workflows, independent validator machine-fingerprint trust gates, and coding starter-pack depth, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation over the shared state repository, aggregate compounding benchmark eval, Drizzle schema artifacts, state memory modules for all five roadmap memory systems, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, CLI live-readiness doctor preflight checks and handoff guide, provider/GitHub/daemon smoke commands, guarded GitHub Discussion and pull-request commands, GitHub workflow-runs check, shared-state CLI init-to-run flow, local Compose daemon supervisor artifacts, SQLite-backed self-tools, read-only world pull/search paths, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, computer-use click/type confirmation safety, concrete world maintenance workflows, independent validator machine-fingerprint trust gates, and coding starter-pack depth, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -36,7 +36,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 1 attention budget enforcement | `applyAttentionLimits` caps skills, traces, tools, and recent episodes, enforces `maxWorkingTokens`, and returns budget metadata; orchestrator uses attention-limited world context before Plan | Complete locally |
 | Phase 1 read-only world paths | Local reader, retrieval, multi-world search, and injectable git clone/update pull tests exist; CLI routes `world pull` against a local git remote | Complete locally |
 | Phase 1 daemon | Daemon service, HTTP lifecycle transport, MCP manifest, daemon-owned Dream scheduler loop, executable daemon main, Dockerfile, and Compose supervisor artifacts exist with tests | Complete locally; Compose CLI execution unverified because Docker Compose is unavailable in this workspace |
-| Phase 1 CLI | `dispatchCliCommand` routes `init`, `run`, `credentials add/list`, `skills list`, `world search`, `world pull`, `providers smoke`, `github smoke`, `github discussion`, `github pull-request`, `daemon smoke`, `status`, and `doctor`; init runs migrations, installs starter skills, discovers starter traces/curriculum, returns provider/credential prompts, run can use the initialized SQLite state file, `doctor --live` reports remote/env/GitHub auth/Docker Compose readiness blockers, `providers smoke` can exercise a configured provider adapter, `github smoke` can exercise read access to a configured GitHub world repo, `github discussion` can open the guarded Phase 0 RFC Discussion, `github pull-request` can open a guarded contribution PR, `daemon smoke` can exercise the daemon status endpoint, and `docs/guides/live-readiness.md` documents the required live handoff | Complete locally |
+| Phase 1 CLI | `dispatchCliCommand` routes `init`, `run`, `credentials add/list`, `skills list`, `world search`, `world pull`, `providers smoke`, `github smoke`, `github discussion`, `github pull-request`, `github workflow-runs`, `daemon smoke`, `status`, and `doctor`; init runs migrations, installs starter skills, discovers starter traces/curriculum, returns provider/credential prompts, run can use the initialized SQLite state file, `doctor --live` reports remote/env/GitHub auth/Docker Compose readiness blockers, `providers smoke` can exercise a configured provider adapter, `github smoke` can exercise read access to a configured GitHub world repo, `github discussion` can open the guarded Phase 0 RFC Discussion, `github pull-request` can open a guarded contribution PR, `github workflow-runs` can inspect Actions status, `daemon smoke` can exercise the daemon status endpoint, and `docs/guides/live-readiness.md` documents the required live handoff | Complete locally |
 | Phase 1 e2e run/recover | `tests/e2e-run.test.ts` and `tests/e2e-recover.test.ts` pass in current test suite | Complete locally |
 | Phase 1 done scenario | A developer can run a synthetic local goal; runtime tests verify anti-patterns are loaded into Plan before execution; e2e tests verify local `init` then `run` against one SQLite state file; real provider config and credential use are not verified | Incomplete |
 | Phase 2 Dream primitive | Deterministic `runDream` exists with promotion/pruning/habituation/identity/confidence behavior, generated anti-pattern/trace candidate IDs, and a SQLite-backed StateRepository regression test | Complete locally |
@@ -73,6 +73,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun apps/cli/src/index.ts daemon smoke --status-url http://127.0.0.1:9/status`: returns `ok: false` because no daemon is listening at the test endpoint.
 - `bun apps/cli/src/index.ts github discussion ...` without `--confirm-write`: returns a refusal before reading credentials or attempting a GitHub API call.
 - `bun apps/cli/src/index.ts github pull-request ...` without `--confirm-write`: returns a refusal before reading credentials or attempting a GitHub API call.
+- `bun apps/cli/src/index.ts github workflow-runs --owner owner --repo world --token-env VIVARIUM_MISSING_GITHUB_TOKEN --branch main --limit 2`: returns a missing-env result without attempting a GitHub API call.
 - `docs/guides/live-readiness.md`: records the exact external prerequisites and verification sequence needed to clear the remaining live blockers.
 - `rg --files` and shallow file listings verified `the-agent` app/package skeleton, root metadata, CI workflows, and per-package README/AGENTS files; `the-world` top-level files, templates, and workflows are present.
 - `rg --files` over agent runtime/tools/state/CLI packages.
@@ -91,9 +92,9 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - Ruby YAML parse of `docker-compose.yml`: passed and confirmed the `vivarium-daemon` service and `restart: unless-stopped` setting.
 - `bun test apps/cli/src/commands/doctor.test.ts`: 2 tests passed, including default offline doctor stability and injected live-readiness blocker reporting.
 - `bun test apps/cli/src/commands/providers.test.ts`: 2 tests passed, including missing-env behavior and OpenAI-compatible smoke completion through injected fetch.
-- `bun test apps/cli/src/commands/github.test.ts`: 6 tests passed, including missing-env behavior, GitHub repository metadata parsing, guarded Discussion/PR refusal, and confirmed Discussion/PR creation through injected fetch.
+- `bun test apps/cli/src/commands/github.test.ts`: 8 tests passed, including missing-env behavior, GitHub repository metadata parsing, guarded Discussion/PR refusal, confirmed Discussion/PR creation, and workflow-run parsing through injected fetch.
 - `bun test apps/cli/src/commands/daemon.test.ts`: 2 tests passed, including daemon status parsing and unavailable endpoint handling through injected fetch.
-- `bun test apps/cli/src/dispatcher.test.ts`: 10 tests passed, including CLI parser routing for local commands, `doctor --live`, `providers smoke`, `github smoke`, guarded `github discussion`, guarded `github pull-request`, and `daemon smoke`.
+- `bun test apps/cli/src/dispatcher.test.ts`: 11 tests passed, including CLI parser routing for local commands, `doctor --live`, `providers smoke`, `github smoke`, guarded `github discussion`, guarded `github pull-request`, `github workflow-runs`, and `daemon smoke`.
 - `bun test packages/tools/src/credentials/store.test.ts`: 3 tests passed, including encrypted bearer, OAuth scopes, and service-account file credential records without plaintext leakage.
 - `bun test packages/tools/src/builtin/self-tools.test.ts`: 2 tests passed, including SQLite-backed roadmap self-tools.
 - `bun test packages/runtime/src/orchestrator.test.ts packages/tools/src/builtin/self-tools.test.ts`: 8 tests passed, including anonymized publishable run queueing.
@@ -108,12 +109,12 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `the-world bun run build`: 8 required files present.
 - `bun run lint`: scanned 182 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 125 tests passed, 0 failed.
+- `bun run test`: 128 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value remaining gaps after the guarded GitHub pull-request CLI are live external verification and deployment execution:
+The highest-value remaining gaps after the GitHub workflow-runs CLI are live external verification and deployment execution:
 
 1. Verify live provider credentials and live model calls once credential names and values are available.
 2. Verify live GitHub remotes, Discussions, PR creation, and auto-merge settings once repository targets and credentials are available.
