@@ -63,6 +63,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` CLI multi-world search implemented after Compose verification, exposing repeated `--world-root` / `--world-label` subscriptions for canonical + private-fork retrieval.
 - `the-agent` saved world subscription registry implemented after credential smoke, exposing `world subscribe`, `world subscriptions`, and `world search --subscriptions-path` for reusable canonical + private-fork retrieval.
 - `the-agent` saved provider profile registry implemented after saved world subscriptions, exposing `providers configure`, `providers list`, `providers smoke --profile`, and `run --provider-profile` for reusable Anthropic/OpenRouter/private-compatible configuration.
+- `the-agent` run-level world subscription retrieval implemented after saved provider profiles, letting `run --world-subscriptions-path` load planning context from canonical + private fork registries.
 - `the-agent` proposed anti-pattern retrieval and Node-side `better-sqlite3` migration verifier implemented after the gated proposal PR helper.
 - `the-agent` local end-to-end demo recorder implemented after the SQLite stack verifier; `docs/demos/local-e2e.cast` records init, run, second-install world transmission-smoke, and SQLite stack verification as an asciinema v2 cast.
 - `the-agent` proposed trace proposal/retrieval slice implemented after the local demo recorder, writing annotated trace proposals and retrieving them with frontmatter titles through the local world reader.

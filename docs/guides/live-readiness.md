@@ -234,6 +234,18 @@ bun apps/cli/src/index.ts world search \
   --limit 3
 ```
 
+Use the same saved registry for real runs:
+
+```bash
+bun apps/cli/src/index.ts run \
+  --goal "<small real coding goal>" \
+  --domain coding \
+  --state-path /tmp/vivarium-live-state.db \
+  --world-subscriptions-path /tmp/vivarium-world-subscriptions.json \
+  --provider-profiles-path /tmp/vivarium-provider-profiles.json \
+  --provider-profile openrouter
+```
+
 For one-off checks without writing the registry, repeated roots still work:
 
 ```bash
@@ -289,7 +301,7 @@ After the external prerequisites are configured:
 
 1. Re-run `doctor --live`.
 2. Save a provider profile with `providers configure`, then run `providers smoke --profile`.
-3. Run `run` with `--provider-profiles-path` and `--provider-profile` against a small real goal.
+3. Run `run` with `--provider-profiles-path`, `--provider-profile`, and `--world-subscriptions-path` against a small real goal.
 4. Add and smoke one internal API credential with `credentials add` and `credentials smoke`.
 5. Run `github smoke` for the canonical world remote.
 6. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.

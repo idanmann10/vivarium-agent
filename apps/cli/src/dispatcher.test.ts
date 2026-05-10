@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
+import { SQLiteStateRepository } from "../../../packages/state/src/index.js";
 import { dispatchCliCommand } from "./dispatcher.js";
 
 function write(path: string, content: string): void {
@@ -215,6 +216,60 @@ describe("dispatchCliCommand", () => {
         { source: "public", title: "Public Skill" },
       ],
     });
+  });
+
+  test("routes saved world subscriptions into runs", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-run-subscriptions-"));
+    const publicWorld = join(root, "public");
+    const privateWorld = join(root, "private");
+    const subscriptionsPath = join(root, "subscriptions.json");
+    const statePath = join(root, "state.db");
+    write(join(publicWorld, "domains", "coding", "skills", "public-pattern", "SKILL.md"), "# Public Pattern\n\nShared coding pattern.");
+    write(join(privateWorld, "domains", "coding", "skills", "private-pattern", "SKILL.md"), "# Private Pattern\n\nTeam coding pattern.");
+    await dispatchCliCommand([
+      "world",
+      "subscribe",
+      "--subscriptions-path",
+      subscriptionsPath,
+      "--world-root",
+      publicWorld,
+      "--world-label",
+      "public",
+      "--priority",
+      "1",
+    ]);
+    await dispatchCliCommand([
+      "world",
+      "subscribe",
+      "--subscriptions-path",
+      subscriptionsPath,
+      "--world-root",
+      privateWorld,
+      "--world-label",
+      "private",
+      "--priority",
+      "0",
+    ]);
+    const run = await dispatchCliCommand([
+      "run",
+      "--goal",
+      "use a coding pattern",
+      "--domain",
+      "coding",
+      "--state-path",
+      statePath,
+      "--world-subscriptions-path",
+      subscriptionsPath,
+    ]);
+    const state = new SQLiteStateRepository(statePath);
+    const storedRun = state.listRuns()[0];
+    const plan = storedRun === undefined ? undefined : state.listEpisodes(storedRun.id).find((episode) => episode.kind === "plan");
+
+    expect(run.result).toMatchObject({ success: true });
+    expect(plan).toMatchObject({ kind: "plan" });
+    expect(plan?.plan).toContain("Private Pattern");
+    expect(plan?.plan).toContain("Public Pattern");
+    state.close();
   });
 
   test("routes world transmission smoke with a local git remote", async () => {

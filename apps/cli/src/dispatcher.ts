@@ -125,6 +125,7 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
     case "run": {
       const domain = value(flags, "domain");
       const worldRoot = value(flags, "world-root");
+      const worldSubscriptionsPath = value(flags, "world-subscriptions-path");
       const statePath = value(flags, "state-path");
       const providerKind = value(flags, "provider-kind") as RunProviderKind | undefined;
       const providerApiKeyEnv = value(flags, "provider-api-key-env");
@@ -138,6 +139,7 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
           goal: required(flags, "goal"),
           ...(domain === undefined ? {} : { domain }),
           ...(worldRoot === undefined ? {} : { worldRoot }),
+          ...(worldSubscriptionsPath === undefined ? {} : { worldSubscriptionsPath }),
           ...(statePath === undefined ? {} : { statePath }),
           ...(booleanFlag(flags, "force-failure") ? { forceFailure: true } : {}),
           ...(providerKind === undefined ? {} : { providerKind }),

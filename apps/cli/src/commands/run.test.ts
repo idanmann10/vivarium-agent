@@ -3,8 +3,10 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
+import { SQLiteStateRepository } from "../../../../packages/state/src/index.js";
 import { configureProviderProfileCommand } from "./providers.js";
 import { runCommand } from "./run.js";
+import { subscribeWorldCommand } from "./world.js";
 
 function write(path: string, content: string): void {
   mkdirSync(dirname(path), { recursive: true });
@@ -82,6 +84,34 @@ describe("runCommand", () => {
     expect(requests).toHaveLength(4);
     expect(requests[0]?.url).toBe("https://openrouter.example/v1/chat/completions");
     expect(requests[0]?.init.headers).toMatchObject({ authorization: "Bearer provider-secret" });
+  });
+
+  test("loads planning context from saved world subscriptions", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-run-world-subscriptions-"));
+    const publicWorld = join(root, "public");
+    const privateWorld = join(root, "private");
+    const subscriptionsPath = join(root, "subscriptions.json");
+    const statePath = join(root, "state.db");
+    write(join(publicWorld, "domains", "coding", "skills", "public-pattern", "SKILL.md"), "# Public Pattern\n\nShared coding pattern.");
+    write(join(privateWorld, "domains", "coding", "skills", "private-pattern", "SKILL.md"), "# Private Pattern\n\nTeam coding pattern.");
+    subscribeWorldCommand({ subscriptionsPath, label: "public", root: publicWorld, priority: 1 });
+    subscribeWorldCommand({ subscriptionsPath, label: "private", root: privateWorld, priority: 0 });
+
+    const result = await runCommand({
+      goal: "use a coding pattern",
+      domain: "coding",
+      statePath,
+      worldSubscriptionsPath: subscriptionsPath,
+    });
+    const state = new SQLiteStateRepository(statePath);
+    const run = state.listRuns()[0];
+    const plan = run === undefined ? undefined : state.listEpisodes(run.id).find((episode) => episode.kind === "plan");
+
+    expect(result.success).toBe(true);
+    expect(plan).toMatchObject({ kind: "plan" });
+    expect(plan?.plan).toContain("Private Pattern");
+    expect(plan?.plan).toContain("Public Pattern");
+    state.close();
   });
 
   test("reports missing provider environment before starting a run", async () => {

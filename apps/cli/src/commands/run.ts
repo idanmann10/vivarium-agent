@@ -10,8 +10,9 @@ import {
 import { runGoal } from "../../../../packages/runtime/src/index.js";
 import { InMemoryStateRepository, SQLiteStateRepository, type StateRepository } from "../../../../packages/state/src/index.js";
 import { createSelfTools } from "../../../../packages/tools/src/index.js";
-import { createLocalWorldReader } from "../../../../packages/world/src/index.js";
+import { createLocalWorldReader, searchWorlds, type LocalWorldReader } from "../../../../packages/world/src/index.js";
 import { resolveProviderProfile } from "./providers.js";
+import { listWorldSubscriptionsCommand } from "./world.js";
 
 export type RunProviderKind = "local" | "anthropic" | "openai" | "openai-compat";
 
@@ -19,6 +20,7 @@ export interface RunCommandOptions {
   readonly goal: string;
   readonly domain?: string;
   readonly worldRoot?: string;
+  readonly worldSubscriptionsPath?: string;
   readonly statePath?: string;
   readonly forceFailure?: boolean;
   readonly providerKind?: RunProviderKind;
@@ -175,6 +177,19 @@ function configuredProvider(options: RunCommandOptions): ConfiguredRunProvider |
   );
 }
 
+function createRunWorldReader(options: RunCommandOptions): LocalWorldReader {
+  if (options.worldSubscriptionsPath !== undefined) {
+    const worlds = listWorldSubscriptionsCommand({ subscriptionsPath: options.worldSubscriptionsPath }).subscriptions;
+    return {
+      search(request) {
+        return searchWorlds({ worlds, ...request });
+      },
+    };
+  }
+
+  return createLocalWorldReader({ root: options.worldRoot ?? "../the-world" });
+}
+
 export async function runCommand(options: RunCommandOptions): Promise<RunCommandResult> {
   const selectedProvider = configuredProvider(options);
   if ("success" in selectedProvider) {
@@ -184,7 +199,7 @@ export async function runCommand(options: RunCommandOptions): Promise<RunCommand
   const state: StateRepository = options.statePath === undefined ? new InMemoryStateRepository() : new SQLiteStateRepository(options.statePath);
   const tools = createSelfTools({
     state,
-    world: createLocalWorldReader({ root: options.worldRoot ?? "../the-world" }),
+    world: createRunWorldReader(options),
   });
   const request = {
     goal: options.goal,
