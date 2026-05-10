@@ -425,6 +425,38 @@ function githubCanonicalSkillReferences(value: unknown, context: V1EvidenceRefer
   });
 }
 
+function githubCanonicalWorldArtifactReference(
+  value: unknown,
+  context: V1EvidenceReferenceContext,
+  kind: "antiPattern" | "trace" | "run",
+): string | undefined {
+  const reference = githubUrlReference(value);
+  if (reference === undefined || !matchesCanonicalGitHubRepo(reference, context) || reference.parts[2] !== "blob") {
+    return undefined;
+  }
+
+  const artifactPath = reference.parts.slice(4).join("/");
+  const pattern =
+    kind === "antiPattern"
+      ? /^domains\/[^/]+\/anti-patterns\/[^/]+\/ANTI-PATTERN\.md$/
+      : kind === "trace"
+        ? /^domains\/[^/]+\/traces\/[^/]+\/TRACE\.md$/
+        : /^runs\/[^/]+\/RUN\.md$/;
+  return pattern.test(artifactPath) ? reference.text : undefined;
+}
+
+function publishedWorldArtifactReference(
+  value: unknown,
+  context: V1EvidenceReferenceContext,
+  kind: "antiPattern" | "trace" | "run",
+): string | undefined {
+  if (context.canonicalGitHubRepo === undefined) {
+    return evidenceReferenceIdentity(value, context);
+  }
+
+  return githubCanonicalWorldArtifactReference(value, context, kind);
+}
+
 function dateMillis(value: unknown): number | undefined {
   const text = textValue(value);
   if (text === undefined) {
@@ -500,6 +532,9 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const dreamPublicSkillEvidence = evidenceReferenceIdentity(dreamArtifacts?.publicSkill, context);
   const publishedArtifacts = asRecord(manifest.publishedArtifacts);
   const publishedArtifactsContributorAgent = textValue(publishedArtifacts?.contributorAgent);
+  const publishedAntiPattern = publishedWorldArtifactReference(publishedArtifacts?.antiPattern, context, "antiPattern");
+  const publishedTrace = publishedWorldArtifactReference(publishedArtifacts?.trace, context, "trace");
+  const publishedRun = publishedWorldArtifactReference(publishedArtifacts?.run, context, "run");
   const publishedTracePlanRead = agentEvidenceRecord(publishedArtifacts?.tracePlanRead, context);
   const publishedRunPlanRead = agentEvidenceRecord(publishedArtifacts?.runPlanRead, context);
   const curationStats = asRecord(manifest.curationStats);
@@ -615,9 +650,9 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
     ),
     v1Check(
       "publishedArtifacts",
-      evidenceReference(publishedArtifacts?.antiPattern, context) &&
-        evidenceReference(publishedArtifacts?.trace, context) &&
-        evidenceReference(publishedArtifacts?.run, context) &&
+      publishedAntiPattern !== undefined &&
+        publishedTrace !== undefined &&
+        publishedRun !== undefined &&
         publishedTracePlanRead !== undefined &&
         publishedRunPlanRead !== undefined &&
         publishedArtifactsUsesLoopContributor &&
@@ -1089,7 +1124,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record published anti-pattern, trace, run, the contributor agent identity as the same public contribution contributor, and separate other-agent trace and run Plan-read agent/evidence records.",
+          "Record published anti-pattern, trace, and run canonical-world GitHub blob refs, the contributor agent identity as the same public contribution contributor, and separate other-agent trace and run Plan-read agent/evidence records.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.curationStats":

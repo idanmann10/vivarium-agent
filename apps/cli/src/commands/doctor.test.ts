@@ -304,9 +304,9 @@ function writeLiveReadyFiles(root: string): Readonly<{
       },
       publishedArtifacts: {
         contributorAgent: "live-agent",
-        antiPattern: "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
-        trace: "domains/coding/traces/workflow/TRACE.md",
-        run: "runs/run-live-001/RUN.md",
+        antiPattern: "https://github.com/owner/world-final/blob/main/domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
+        trace: "https://github.com/owner/world-final/blob/main/domains/coding/traces/workflow/TRACE.md",
+        run: "https://github.com/owner/world-final/blob/main/runs/run-live-001/RUN.md",
         tracePlanRead: { agent: "plan-reader-a", evidence: "docs/live/trace-plan-read.md" },
         runPlanRead: { agent: "plan-reader-b", evidence: "docs/live/run-plan-read.md" },
       },
@@ -500,6 +500,7 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("competing skill variant references");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("other-agent refinement agent/evidence");
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("trace and run Plan-read agent/evidence");
+    expect(actions.get("v1.publishedArtifacts:missing")).toContain("canonical-world GitHub blob");
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("contributor agent identity");
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("same public contribution contributor");
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("other-agent");
@@ -1712,6 +1713,39 @@ describe("doctorCommand", () => {
         action: expect.stringContaining("trace and run Plan-read agent/evidence"),
       }),
     );
+  });
+
+  test("requires v1 published artifacts to target the configured canonical world repo", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-published-canonical-world-"));
+    const { evidencePath } = writeLiveReadyFiles(root);
+    const manifest = JSON.parse(readFileSync(evidencePath, "utf8")) as {
+      publishedArtifacts: {
+        antiPattern: string;
+        trace: string;
+        run: string;
+      };
+    };
+    manifest.publishedArtifacts.antiPattern = "domains/coding/anti-patterns/failure/ANTI-PATTERN.md";
+    manifest.publishedArtifacts.trace = "domains/coding/traces/workflow/TRACE.md";
+    manifest.publishedArtifacts.run = "runs/run-live-001/RUN.md";
+    writeFileSync(evidencePath, `${JSON.stringify(manifest)}\n`, "utf8");
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      nowMillis: Date.parse("2026-05-23T00:00:00.000Z"),
+      env: {
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_V1_EVIDENCE_PATH: evidencePath,
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.publishedArtifacts:missing");
   });
 
   test("requires v1 published trace and run Plan-read evidence to be distinct", () => {
