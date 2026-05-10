@@ -115,7 +115,12 @@ function markdownHeadingAnchors(markdown: string): ReadonlySet<string> {
   );
 }
 
-function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
+function writeLiveReadyFiles(root: string): Readonly<{
+  subscriptionsPath: string;
+  profilesPath: string;
+  credentialsPath: string;
+  evidencePath: string;
+}> {
   const subscriptionsPath = join(root, "world-subscriptions.json");
   const profilesPath = join(root, "provider-profiles.json");
   const credentialsPath = join(root, "credentials.enc");
@@ -305,6 +310,7 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
         top5SkillSharePercent: 30,
       },
       twoWeekImprovement: {
+        contributorAgent: "live-agent",
         followupDate: "2026-05-22",
         baselineMetric: 120,
         followupMetric: 90,
@@ -475,6 +481,7 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("similar goals");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("similar-goal comparison evidence");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("profile counts");
+    expect(actions.get("v1.twoWeekImprovement:missing")).toContain("contributor agent identity");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("GitHub Discussion URL");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("competing skill variant references");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("other-agent refinement agent/evidence");
@@ -2227,6 +2234,35 @@ describe("doctorCommand", () => {
       })}\n`,
       "utf8",
     );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.twoWeekImprovement:missing");
+  });
+
+  test("requires v1 two-week refinement agents to differ from the contributor", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-two-week-refinement-contributor-"));
+    const { evidencePath } = writeLiveReadyFiles(root);
+    const manifest = JSON.parse(readFileSync(evidencePath, "utf8")) as {
+      twoWeekImprovement: {
+        contributorAgent?: string;
+        refinementEvidence: { agent: string; evidence: string }[];
+      };
+    };
+    manifest.twoWeekImprovement.contributorAgent = "live-agent";
+    manifest.twoWeekImprovement.refinementEvidence = [
+      { agent: "live-agent", evidence: "docs/live/refinement-1.md" },
+      { agent: "refinement-agent-b", evidence: "docs/live/refinement-2.md" },
+    ];
+    writeFileSync(evidencePath, `${JSON.stringify(manifest)}\n`, "utf8");
 
     const result = doctorCommand({
       mode: "live-readiness",

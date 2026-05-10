@@ -442,6 +442,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const twoWeekFollowupMetric = numberValue(twoWeekImprovement?.followupMetric);
   const twoWeekImprovementPercent = numberValue(twoWeekImprovement?.improvementPercent);
   const twoWeekCompetingSkillReferenceCount = distinctEvidenceReferenceCount(twoWeekImprovement?.competingSkillReferences, context);
+  const twoWeekContributorAgent = textValue(twoWeekImprovement?.contributorAgent);
   const twoWeekRefinements = agentEvidenceRecords(twoWeekImprovement?.refinementEvidence, context);
   const twoWeekRefinementAgents = new Set(twoWeekRefinements.map((refinement) => refinement.agent));
   const twoWeekRefinementEvidence = new Set(twoWeekRefinements.map((refinement) => refinement.evidence));
@@ -566,6 +567,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         githubDiscussionReference(twoWeekImprovement?.competingDiscussion) !== undefined &&
         twoWeekCompetingSkillReferenceCount >= 2 &&
         evidenceReference(twoWeekImprovement?.similarGoalsEvidence, context) &&
+        twoWeekContributorAgent !== undefined &&
+        !twoWeekRefinementAgents.has(twoWeekContributorAgent) &&
         twoWeekRefinementAgents.size >= 2 &&
         twoWeekRefinementEvidence.size >= 2 &&
         (numberValue(contributorProfileSummary?.publicSkills) ?? 0) >= 1 &&
@@ -1005,7 +1008,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record the two-week follow-up at least fourteen days after the last goal, faster follow-up metrics on similar goals, contributor profile counts/trust, a competing GitHub Discussion URL, two distinct live competing skill variant references, similar-goal comparison evidence, and two distinct other-agent refinement agent/evidence records.",
+          "Record the two-week follow-up at least fourteen days after the last goal, faster follow-up metrics on similar goals, contributor profile counts/trust, contributor agent identity, a competing GitHub Discussion URL, two distinct live competing skill variant references, similar-goal comparison evidence, and two distinct other-agent refinement agent/evidence records excluding the contributor.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     default:
