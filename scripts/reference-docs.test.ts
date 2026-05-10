@@ -45,6 +45,31 @@ const referenceFormatFields = {
   "trace-format": ["Trace", "TraceStep", "prerequisites", "pitfalls", "TraceCandidateProposal"],
 } as const;
 
+const architectureDocs = {
+  packages: [
+    "apps/cli",
+    "apps/daemon",
+    "packages/core",
+    "packages/state",
+    "packages/runtime",
+    "packages/tools",
+    "packages/providers",
+    "packages/world",
+    "packages/eval",
+  ],
+  "data-flow": [
+    "Plan",
+    "Predict",
+    "Execute",
+    "Monitor",
+    "Recover",
+    "Validate",
+    "Reflect",
+    "Dream",
+    "world proposal",
+  ],
+} as const;
+
 describe("reference docs", () => {
   test("documents every top-level self-tool group", () => {
     for (const tool of selfToolDocs) {
@@ -89,6 +114,15 @@ describe("reference docs", () => {
       const body = readFileSync(join("docs", "reference", `${doc}.md`), "utf8");
       for (const field of fields) {
         expect(body).toContain(field);
+      }
+    }
+  });
+
+  test("documents architecture package ownership and data flow", () => {
+    for (const [doc, terms] of Object.entries(architectureDocs)) {
+      const body = readFileSync(join("docs", "architecture", `${doc}.md`), "utf8");
+      for (const term of terms) {
+        expect(body).toContain(term);
       }
     }
   });
