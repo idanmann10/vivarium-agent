@@ -22,7 +22,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Use GStack | Phase 0 plan and seed skill lineage cite `https://github.com/garrytan/gstack` | Complete |
 | Two repos | `/Users/idanmann/Vivarium/the-agent`, `/Users/idanmann/Vivarium/the-world` | Complete locally |
 | Clean checkpoints | `git status --short` empty in both repos at audit time | Complete |
-| Phase 0 repo skeleton | `the-agent` has 2 apps + 7 packages; `the-world` has required top-level files and workflows | Mostly complete locally |
+| Phase 0 repo skeleton | `the-agent` has 2 apps + 7 packages, root metadata, workflows, and per-package README/AGENTS files; `the-world` has required top-level files, templates, and workflows | Complete locally; live CI execution unverified |
 | Phase 0 world seed content | World validator reports 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, 1 contributor; coding domain has 20 skills and 3 traces | Complete locally |
 | Phase 0 GitHub Discussion open | `the-world/proposals/0001-phase-0-bootstrap-rfc.md` and `.github/DISCUSSION_TEMPLATE/rfc.yml` exist; no live GitHub Discussion can be verified without a remote | Incomplete externally |
 | Phase 1 state schema/migrations/all memory implementations | `packages/state/src/` includes working, episodic, semantic, procedural, and identity memory modules; `StateRepository` and `SQLiteStateRepository` cover local state, semantic deletion, and versioned migrations | Complete locally; production SQLite stack decision remains |
@@ -63,6 +63,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `sed -n '1882,2085p' goal.md`: phase, v1 done, and out-of-scope criteria.
 - `git -C the-agent status --short`: clean after the Dream state repository, compounding eval, state memory implementation, and audit update commits; prior safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, CLI dispatcher, SQLite self-tools, publishable run queue, tool-output warning, credential-argument safety, persistent daily rate-limit, computer-use confirmation, and world pull read-path changes are tracked in follow-up commits.
 - `git -C the-world status --short`: clean after concrete maintenance workflow and coding starter-pack depth commits.
+- `rg --files` and shallow file listings verified `the-agent` app/package skeleton, root metadata, CI workflows, and per-package README/AGENTS files; `the-world` top-level files, templates, and workflows are present.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
 - `bun test packages/runtime/src/orchestrator.test.ts`: 5 tests passed, including harmful refusal and destructive confirmation behavior.
