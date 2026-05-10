@@ -25,6 +25,7 @@ export { createEncryptedFileCredentialStore, createMemoryCredentialStore } from 
 export type { CredentialRecord, CredentialStore } from "./credentials/store.js";
 export { resolveCredential } from "./credentials/resolver.js";
 export type { CredentialLookup, CredentialResolution } from "./credentials/resolver.js";
-export { anonymizeText, markRequiresAnonymization } from "./anonymizer/pipeline.js";
+export { anonymizeText, anonymizeTextWithProvider, markRequiresAnonymization } from "./anonymizer/pipeline.js";
+export type { ProviderAnonymizationResult } from "./anonymizer/pipeline.js";
 export { evaluateHttpSafety } from "./safety/pipeline.js";
 export type { HttpSafetyRequest, SafetyDecision } from "./safety/pipeline.js";

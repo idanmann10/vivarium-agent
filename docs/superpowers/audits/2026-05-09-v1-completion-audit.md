@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, and attention token-budget accounting, but the audit still finds uncovered v1 requirements in Phase 1, Phase 2, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, and provider-backed anonymizer fallback, but the audit still finds uncovered v1 requirements in Phase 1, Phase 2, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -44,7 +44,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 2 candidate pipelines | Skill candidate handling exists; Dream now generates anti-pattern candidates from failed/low-score runs and annotated trace candidates from successful high-score runs, with in-memory and SQLite persistence | Complete locally |
 | Phase 2 confidence storage | In-memory and SQLite confidence buckets exist | Complete locally |
 | Phase 2 compounding eval | `packages/eval/src/compounding.ts` and e2e Dream test exist | Partially complete |
-| Phase 2 anonymizer | Regex anonymizer exists with tests; LLM scrubber path is not implemented | Partially complete |
+| Phase 2 anonymizer | Regex anonymizer exists with tests; provider-backed scrubber path redacts before and after provider calls and falls back deterministically on provider failure | Complete locally; live provider credentials unverified |
 | Phase 2 publishability queue | Publishable artifacts and Dream candidate queues are stored locally | Partially complete |
 | Phase 2 done scenario | Dream primitive tests verify first anti-pattern generation and first trace extraction with annotations from local run history | Complete locally |
 | Phase 3 GitHub write paths | GitHub client can create PRs/issues/Discussions using mocked fetch | Complete locally; live GitHub unverified |
@@ -61,24 +61,25 @@ Not complete. The roadmap has substantial local implementation complete, includi
 ## Fresh Evidence Used
 
 - `sed -n '1882,2085p' goal.md`: phase, v1 done, and out-of-scope criteria.
-- `git -C the-agent status --short`: clean before the safety slice; safety, Dream candidate-generation, and attention token-budget changes are tracked in follow-up commits.
+- `git -C the-agent status --short`: clean before the safety slice; safety, Dream candidate-generation, attention token-budget, and provider anonymizer changes are tracked in follow-up commits.
 - `git -C the-world status --short`: clean.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
 - `bun test packages/runtime/src/orchestrator.test.ts`: 5 tests passed, including harmful refusal and destructive confirmation behavior.
 - `bun test packages/state/src/repository.test.ts packages/state/src/sqlite-repository.test.ts packages/state/src/storage/migrations.test.ts packages/runtime/src/primitives/dream/primitive.test.ts`: 10 tests passed, including Dream candidate queues and extraction.
 - `bun test packages/runtime/src/attention.test.ts`: 2 tests passed, including working-token budget enforcement.
+- `bun test packages/tools/src/anonymizer/pipeline.test.ts packages/providers/src/router.test.ts`: 5 tests passed, including provider anonymizer fallback.
 - `bun run lint`: scanned 167 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 71 tests passed, 0 failed.
+- `bun run test`: 73 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value remaining local gap after the attention token-budget slice is production-readiness around Phase 2 anonymization and daemon ownership:
+The highest-value remaining gap after the provider anonymizer slice is daemon ownership and live external verification:
 
-1. Add a provider-backed anonymizer/scrubber interface while keeping the current regex scrubber as deterministic fallback.
-2. Decide whether the local scheduler helper should become a real long-running daemon loop in this repo or stay deployment-supervisor-owned.
-3. Verify live provider credentials and live GitHub remotes once the required user decisions are available.
+1. Decide whether the local scheduler helper should become a real long-running daemon loop in this repo or stay deployment-supervisor-owned.
+2. Verify live provider credentials and live GitHub remotes once the required user decisions are available.
+3. Run a real cross-install/canonical-world contribution loop after remotes and credentials exist.
 
 Live provider credentials, real GitHub remotes, real GitHub Discussions, cross-install cultural transmission, and deployment supervision still require user-provided decisions or external access.

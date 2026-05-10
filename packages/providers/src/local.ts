@@ -1,6 +1,6 @@
 import type { Capability, CostClass } from "../../core/src/index.js";
 
-export type LocalProviderTaskKind = "plan" | "predict" | "execute" | "validate" | "reflect" | "recover";
+export type LocalProviderTaskKind = "plan" | "predict" | "execute" | "validate" | "reflect" | "recover" | "anonymize";
 
 export interface ProviderCompletionRequest {
   readonly kind: LocalProviderTaskKind;
@@ -37,6 +37,8 @@ export function createLocalProvider(options: LocalProviderOptions): LocalProvide
           return `Reflection: kept the run bounded, evidence-led, and publishable only by opt-in.`;
         case "recover":
           return `Recovery: replan after forced failure and narrow scope.`;
+        case "anonymize":
+          return request.input;
       }
     },
   };
