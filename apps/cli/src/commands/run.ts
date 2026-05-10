@@ -1,4 +1,4 @@
-import type { Episode } from "../../../../packages/core/src/index.js";
+import type { Capability, CostClass, Episode } from "../../../../packages/core/src/index.js";
 import {
   createAnthropicProvider,
   createLocalProvider,
@@ -11,6 +11,7 @@ import { runGoal } from "../../../../packages/runtime/src/index.js";
 import { InMemoryStateRepository, SQLiteStateRepository, type StateRepository } from "../../../../packages/state/src/index.js";
 import { createSelfTools } from "../../../../packages/tools/src/index.js";
 import { createLocalWorldReader } from "../../../../packages/world/src/index.js";
+import { resolveProviderProfile } from "./providers.js";
 
 export type RunProviderKind = "local" | "anthropic" | "openai" | "openai-compat";
 
@@ -24,6 +25,8 @@ export interface RunCommandOptions {
   readonly providerApiKeyEnv?: string;
   readonly providerModel?: string;
   readonly providerBaseUrl?: string;
+  readonly providerProfilesPath?: string;
+  readonly providerProfile?: string;
   readonly env?: Readonly<Record<string, string | undefined>>;
   readonly fetch?: ProviderFetch;
 }
@@ -49,6 +52,16 @@ interface ConfiguredRunProvider {
   readonly summary: RunCommandResult["provider"];
 }
 
+interface RunProviderConfig {
+  readonly kind: RunProviderKind;
+  readonly id: string;
+  readonly apiKeyEnv?: string;
+  readonly model?: string;
+  readonly baseUrl?: string;
+  readonly capabilities: readonly Capability[];
+  readonly costClass: CostClass;
+}
+
 function localProvider(): ConfiguredRunProvider {
   return {
     provider: createLocalProvider({ id: "local", costClass: "medium", capabilities: ["chat", "json_mode"] }),
@@ -56,11 +69,11 @@ function localProvider(): ConfiguredRunProvider {
   };
 }
 
-function providerConfigError(kind: RunProviderKind, model: string | undefined, error: string): RunCommandResult {
+function providerConfigError(kind: string, id: string, model: string | null | undefined, error: string): RunCommandResult {
   return {
     success: false,
     runId: null,
-    provider: { kind, id: `run-${kind}`, model: model ?? null },
+    provider: { kind, id, model: model ?? null },
     episodeKinds: [],
     error,
   };
@@ -70,60 +83,96 @@ function isRunProviderKind(value: string): value is RunProviderKind {
   return value === "local" || value === "anthropic" || value === "openai" || value === "openai-compat";
 }
 
-function configuredProvider(options: RunCommandOptions): ConfiguredRunProvider | RunCommandResult {
-  const rawKind = options.providerKind ?? "local";
-  if (!isRunProviderKind(rawKind)) {
-    return {
-      success: false,
-      runId: null,
-      provider: { kind: rawKind, id: `run-${rawKind}`, model: options.providerModel ?? null },
-      episodeKinds: [],
-      error: `Unsupported --provider-kind: ${rawKind}`,
-    };
-  }
-
-  const kind = rawKind;
-  if (kind === "local") {
+function configuredProviderFrom(config: RunProviderConfig, options: RunCommandOptions): ConfiguredRunProvider | RunCommandResult {
+  if (config.kind === "local") {
     return localProvider();
   }
 
-  if (options.providerApiKeyEnv === undefined || options.providerApiKeyEnv.length === 0) {
-    return providerConfigError(kind, options.providerModel, "Missing --provider-api-key-env for configured provider run");
+  if (config.apiKeyEnv === undefined || config.apiKeyEnv.length === 0) {
+    return providerConfigError(config.kind, config.id, config.model, "Missing --provider-api-key-env for configured provider run");
   }
-  if (options.providerModel === undefined || options.providerModel.length === 0) {
-    return providerConfigError(kind, options.providerModel, "Missing --provider-model for configured provider run");
+  if (config.model === undefined || config.model.length === 0) {
+    return providerConfigError(config.kind, config.id, config.model, "Missing --provider-model for configured provider run");
   }
 
-  const apiKey = (options.env ?? process.env)[options.providerApiKeyEnv];
+  const apiKey = (options.env ?? process.env)[config.apiKeyEnv];
   if (apiKey === undefined || apiKey.length === 0) {
-    return providerConfigError(kind, options.providerModel, `Missing provider environment variable: ${options.providerApiKeyEnv}`);
+    return providerConfigError(config.kind, config.id, config.model, `Missing provider environment variable: ${config.apiKeyEnv}`);
   }
 
   const base = {
-    id: `run-${kind}`,
+    id: config.id,
     apiKey,
-    model: options.providerModel,
-    costClass: "medium" as const,
-    capabilities: ["chat", "json_mode"] as const,
+    model: config.model,
+    costClass: config.costClass,
+    capabilities: config.capabilities,
     ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
   };
 
-  if (kind === "openai") {
-    return { provider: createOpenAIProvider(base), summary: { kind, id: base.id, model: options.providerModel } };
+  if (config.kind === "openai") {
+    return { provider: createOpenAIProvider(base), summary: { kind: config.kind, id: base.id, model: config.model } };
   }
 
-  if (kind === "anthropic") {
-    return { provider: createAnthropicProvider(base), summary: { kind, id: base.id, model: options.providerModel } };
+  if (config.kind === "anthropic") {
+    return { provider: createAnthropicProvider(base), summary: { kind: config.kind, id: base.id, model: config.model } };
   }
 
-  if (options.providerBaseUrl === undefined || options.providerBaseUrl.length === 0) {
-    return providerConfigError(kind, options.providerModel, "Missing --provider-base-url for openai-compat provider");
+  if (config.baseUrl === undefined || config.baseUrl.length === 0) {
+    return providerConfigError(config.kind, config.id, config.model, "Missing --provider-base-url for openai-compat provider");
   }
 
   return {
-    provider: createOpenAICompatProvider({ ...base, baseUrl: options.providerBaseUrl }),
-    summary: { kind, id: base.id, model: options.providerModel },
+    provider: createOpenAICompatProvider({ ...base, baseUrl: config.baseUrl }),
+    summary: { kind: config.kind, id: base.id, model: config.model },
   };
+}
+
+function configuredProvider(options: RunCommandOptions): ConfiguredRunProvider | RunCommandResult {
+  if (options.providerProfile !== undefined) {
+    const id = `run-${options.providerProfile}`;
+    if (options.providerProfilesPath === undefined) {
+      return providerConfigError(options.providerProfile, id, null, "Missing --provider-profiles-path for provider profile");
+    }
+
+    const profile = resolveProviderProfile({
+      profilesPath: options.providerProfilesPath,
+      profile: options.providerProfile,
+    });
+    if (profile === undefined) {
+      return providerConfigError(options.providerProfile, id, null, `Provider profile not found: ${options.providerProfile}`);
+    }
+
+    return configuredProviderFrom(
+      {
+        kind: profile.kind,
+        id,
+        apiKeyEnv: profile.apiKeyEnv,
+        model: profile.model,
+        ...(profile.baseUrl === undefined ? {} : { baseUrl: profile.baseUrl }),
+        capabilities: profile.capabilities,
+        costClass: profile.costClass,
+      },
+      options,
+    );
+  }
+
+  const rawKind = options.providerKind ?? "local";
+  if (!isRunProviderKind(rawKind)) {
+    return providerConfigError(rawKind, `run-${rawKind}`, options.providerModel, `Unsupported --provider-kind: ${rawKind}`);
+  }
+
+  return configuredProviderFrom(
+    {
+      kind: rawKind,
+      id: `run-${rawKind}`,
+      ...(options.providerApiKeyEnv === undefined ? {} : { apiKeyEnv: options.providerApiKeyEnv }),
+      ...(options.providerModel === undefined ? {} : { model: options.providerModel }),
+      ...(options.providerBaseUrl === undefined ? {} : { baseUrl: options.providerBaseUrl }),
+      capabilities: ["chat", "json_mode"],
+      costClass: "medium",
+    },
+    options,
+  );
 }
 
 export async function runCommand(options: RunCommandOptions): Promise<RunCommandResult> {

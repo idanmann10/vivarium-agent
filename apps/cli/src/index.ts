@@ -35,8 +35,16 @@ export type {
   ListedCredential,
   ListCredentialsCommandResult,
 } from "./commands/credentials.js";
-export { providerSmokeCommand } from "./commands/providers.js";
-export type { ProviderSmokeCommandOptions, ProviderSmokeCommandResult, ProviderSmokeKind } from "./commands/providers.js";
+export { configureProviderProfileCommand, listProviderProfilesCommand, providerSmokeCommand } from "./commands/providers.js";
+export type {
+  ConfigureProviderProfileCommandOptions,
+  ProviderProfile,
+  ProviderProfilesCommandOptions,
+  ProviderProfilesCommandResult,
+  ProviderSmokeCommandOptions,
+  ProviderSmokeCommandResult,
+  ProviderSmokeKind,
+} from "./commands/providers.js";
 export { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand, githubWorkflowRunsCommand } from "./commands/github.js";
 export type {
   GitHubDiscussionCommandOptions,

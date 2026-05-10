@@ -371,6 +371,83 @@ describe("dispatchCliCommand", () => {
     });
   });
 
+  test("routes saved provider profiles into smoke and run", async () => {
+    const profilesPath = join(mkdtempSync(join(tmpdir(), "cli-dispatch-provider-profiles-")), "profiles.json");
+    const worldRoot = createWorldFixture();
+    const configured = await dispatchCliCommand([
+      "providers",
+      "configure",
+      "--profiles-path",
+      profilesPath,
+      "--name",
+      "openrouter",
+      "--kind",
+      "openai-compat",
+      "--api-key-env",
+      "VIVARIUM_MISSING_PROVIDER_KEY",
+      "--model",
+      "openrouter/test-model",
+      "--base-url",
+      "https://openrouter.example",
+      "--capability",
+      "chat",
+      "--capability",
+      "json_mode",
+      "--context-window",
+      "128000",
+      "--cost-class",
+      "medium",
+    ]);
+    const listed = await dispatchCliCommand(["providers", "list", "--profiles-path", profilesPath]);
+    const smoked = await dispatchCliCommand([
+      "providers",
+      "smoke",
+      "--profiles-path",
+      profilesPath,
+      "--profile",
+      "openrouter",
+    ]);
+    const run = await dispatchCliCommand([
+      "run",
+      "--goal",
+      "write a provider-backed test",
+      "--world-root",
+      worldRoot,
+      "--provider-profiles-path",
+      profilesPath,
+      "--provider-profile",
+      "openrouter",
+    ]);
+
+    expect(configured.result).toMatchObject({
+      profiles: [
+        {
+          name: "openrouter",
+          kind: "openai-compat",
+          apiKeyEnv: "VIVARIUM_MISSING_PROVIDER_KEY",
+          model: "openrouter/test-model",
+          capabilities: ["chat", "json_mode"],
+          contextWindow: 128000,
+          costClass: "medium",
+        },
+      ],
+    });
+    expect(listed.result).toEqual(configured.result);
+    expect(smoked.result).toEqual({
+      ok: false,
+      kind: "openai-compat",
+      model: "openrouter/test-model",
+      error: "Missing provider environment variable: VIVARIUM_MISSING_PROVIDER_KEY",
+    });
+    expect(run.result).toEqual({
+      success: false,
+      runId: null,
+      provider: { kind: "openai-compat", id: "run-openrouter", model: "openrouter/test-model" },
+      episodeKinds: [],
+      error: "Missing provider environment variable: VIVARIUM_MISSING_PROVIDER_KEY",
+    });
+  });
+
   test("routes GitHub smoke checks without credentials", async () => {
     await expect(
       dispatchCliCommand([

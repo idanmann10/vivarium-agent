@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
+import { configureProviderProfileCommand } from "./providers.js";
 import { runCommand } from "./run.js";
 
 function write(path: string, content: string): void {
@@ -38,6 +39,44 @@ describe("runCommand", () => {
     expect(result).toMatchObject({
       success: true,
       provider: { kind: "openai-compat", id: "run-openai-compat", model: "openrouter/test-model" },
+      episodeKinds: expect.arrayContaining(["plan", "prediction", "action", "validation", "reflection"]),
+    });
+    expect(requests).toHaveLength(4);
+    expect(requests[0]?.url).toBe("https://openrouter.example/v1/chat/completions");
+    expect(requests[0]?.init.headers).toMatchObject({ authorization: "Bearer provider-secret" });
+  });
+
+  test("runs a goal through a saved provider profile", async () => {
+    const requests: { readonly url: string; readonly init: RequestInit }[] = [];
+    const profilesPath = join(mkdtempSync(join(tmpdir(), "cli-run-provider-profiles-")), "profiles.json");
+    configureProviderProfileCommand({
+      profilesPath,
+      name: "openrouter",
+      kind: "openai-compat",
+      apiKeyEnv: "OPENROUTER_API_KEY",
+      model: "openrouter/test-model",
+      baseUrl: "https://openrouter.example",
+      capabilities: ["chat", "json_mode"],
+      contextWindow: 128000,
+      costClass: "medium",
+    });
+
+    const result = await runCommand({
+      goal: "write a provider-backed test",
+      domain: "coding",
+      worldRoot: createWorldFixture(),
+      providerProfilesPath: profilesPath,
+      providerProfile: "openrouter",
+      env: { OPENROUTER_API_KEY: "provider-secret" },
+      fetch: async (url, init) => {
+        requests.push({ url, init });
+        return Response.json({ choices: [{ message: { content: "provider text" } }] });
+      },
+    });
+
+    expect(result).toMatchObject({
+      success: true,
+      provider: { kind: "openai-compat", id: "run-openrouter", model: "openrouter/test-model" },
       episodeKinds: expect.arrayContaining(["plan", "prediction", "action", "validation", "reflection"]),
     });
     expect(requests).toHaveLength(4);

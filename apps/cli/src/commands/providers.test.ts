@@ -1,6 +1,9 @@
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { providerSmokeCommand } from "./providers.js";
+import { configureProviderProfileCommand, listProviderProfilesCommand, providerSmokeCommand } from "./providers.js";
 
 describe("providerSmokeCommand", () => {
   test("returns a missing-env result without making a provider call", async () => {
@@ -42,6 +45,57 @@ describe("providerSmokeCommand", () => {
       model: "openrouter/test-model",
       responsePreview: "provider smoke ok",
       responseLength: 17,
+    });
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.headers).toMatchObject({ authorization: "Bearer provider-secret" });
+  });
+
+  test("persists provider profiles and smokes a named profile", async () => {
+    const profilesPath = join(mkdtempSync(join(tmpdir(), "provider-profiles-")), "profiles.json");
+    const configured = configureProviderProfileCommand({
+      profilesPath,
+      name: "openrouter",
+      kind: "openai-compat",
+      apiKeyEnv: "OPENROUTER_API_KEY",
+      model: "openrouter/test-model",
+      baseUrl: "https://openrouter.example",
+      capabilities: ["chat", "json_mode"],
+      contextWindow: 128000,
+      costClass: "medium",
+    });
+    const requests: RequestInit[] = [];
+    const result = await providerSmokeCommand({
+      profilesPath,
+      profile: "openrouter",
+      env: { OPENROUTER_API_KEY: "provider-secret" },
+      fetch: async (_url, init) => {
+        requests.push(init);
+        return Response.json({ choices: [{ message: { content: "profile smoke ok" } }] });
+      },
+    });
+
+    expect(configured).toEqual({
+      profiles: [
+        {
+          name: "openrouter",
+          kind: "openai-compat",
+          apiKeyEnv: "OPENROUTER_API_KEY",
+          model: "openrouter/test-model",
+          baseUrl: "https://openrouter.example",
+          capabilities: ["chat", "json_mode"],
+          contextWindow: 128000,
+          costClass: "medium",
+        },
+      ],
+    });
+    expect(listProviderProfilesCommand({ profilesPath })).toEqual(configured);
+    expect(JSON.parse(readFileSync(profilesPath, "utf8"))).toEqual(configured);
+    expect(result).toEqual({
+      ok: true,
+      kind: "openai-compat",
+      model: "openrouter/test-model",
+      responsePreview: "profile smoke ok",
+      responseLength: 16,
     });
     expect(requests).toHaveLength(1);
     expect(requests[0]?.headers).toMatchObject({ authorization: "Bearer provider-secret" });

@@ -1,11 +1,16 @@
-import type { CredentialKind } from "../../../packages/core/src/index.js";
+import type { Capability, CostClass, CredentialKind } from "../../../packages/core/src/index.js";
 import type { HttpMethod } from "../../../packages/tools/src/external/index.js";
 import { addCredentialCommand, credentialSmokeCommand, listCredentialsCommand } from "./commands/credentials.js";
 import { daemonSmokeCommand } from "./commands/daemon.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand, githubWorkflowRunsCommand } from "./commands/github.js";
 import { runInitCommand } from "./commands/init.js";
-import { providerSmokeCommand, type ProviderSmokeKind } from "./commands/providers.js";
+import {
+  configureProviderProfileCommand,
+  listProviderProfilesCommand,
+  providerSmokeCommand,
+  type ProviderSmokeKind,
+} from "./commands/providers.js";
 import { runCommand, type RunProviderKind } from "./commands/run.js";
 import { listSkillsCommand } from "./commands/skills.js";
 import { statusCommand } from "./commands/status.js";
@@ -125,6 +130,8 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
       const providerApiKeyEnv = value(flags, "provider-api-key-env");
       const providerModel = value(flags, "provider-model");
       const providerBaseUrl = value(flags, "provider-base-url");
+      const providerProfilesPath = value(flags, "provider-profiles-path");
+      const providerProfile = value(flags, "provider-profile");
       return output(
         command,
         await runCommand({
@@ -137,6 +144,8 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
           ...(providerApiKeyEnv === undefined ? {} : { providerApiKeyEnv }),
           ...(providerModel === undefined ? {} : { providerModel }),
           ...(providerBaseUrl === undefined ? {} : { providerBaseUrl }),
+          ...(providerProfilesPath === undefined ? {} : { providerProfilesPath }),
+          ...(providerProfile === undefined ? {} : { providerProfile }),
         }),
       );
     }
@@ -285,18 +294,56 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
 
       usage('Unknown world subcommand. Use "search", "subscribe", "subscriptions", "pull", or "transmission-smoke".');
     case "providers": {
+      if (subcommand === "configure") {
+        const baseUrl = value(flags, "base-url");
+        const contextWindow = integerFlag(flags, "context-window");
+        if (contextWindow === undefined) {
+          usage("Missing required --context-window");
+        }
+        return output(
+          command,
+          configureProviderProfileCommand({
+            profilesPath: required(flags, "profiles-path"),
+            name: required(flags, "name"),
+            kind: required(flags, "kind") as ProviderSmokeKind,
+            apiKeyEnv: required(flags, "api-key-env"),
+            model: required(flags, "model"),
+            ...(baseUrl === undefined ? {} : { baseUrl }),
+            capabilities: values(flags, "capability") as readonly Capability[],
+            contextWindow,
+            costClass: required(flags, "cost-class") as CostClass,
+          }),
+        );
+      }
+
+      if (subcommand === "list") {
+        return output(
+          command,
+          listProviderProfilesCommand({
+            profilesPath: required(flags, "profiles-path"),
+          }),
+        );
+      }
+
       if (subcommand !== "smoke") {
-        usage('Unknown providers subcommand. Use "smoke".');
+        usage('Unknown providers subcommand. Use "configure", "list", or "smoke".');
       }
       const baseUrl = value(flags, "base-url");
       const prompt = value(flags, "prompt");
+      const kind = value(flags, "kind") as ProviderSmokeKind | undefined;
+      const apiKeyEnv = value(flags, "api-key-env");
+      const model = value(flags, "model");
+      const profilesPath = value(flags, "profiles-path");
+      const profile = value(flags, "profile");
       return output(
         command,
         await providerSmokeCommand({
-          kind: required(flags, "kind") as ProviderSmokeKind,
-          apiKeyEnv: required(flags, "api-key-env"),
-          model: required(flags, "model"),
+          ...(kind === undefined ? {} : { kind }),
+          ...(apiKeyEnv === undefined ? {} : { apiKeyEnv }),
+          ...(model === undefined ? {} : { model }),
           ...(baseUrl === undefined ? {} : { baseUrl }),
+          ...(profilesPath === undefined ? {} : { profilesPath }),
+          ...(profile === undefined ? {} : { profile }),
           ...(prompt === undefined ? {} : { prompt }),
         }),
       );

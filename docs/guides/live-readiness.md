@@ -43,7 +43,33 @@ export OPENROUTER_API_KEY=<redacted>
 
 Only one provider is required for a first live pass. Keep secrets out of git and shell history where possible.
 
-Then run a provider smoke completion:
+Save the live provider as a profile:
+
+```bash
+bun apps/cli/src/index.ts providers configure \
+  --profiles-path /tmp/vivarium-provider-profiles.json \
+  --name openrouter \
+  --kind openai-compat \
+  --api-key-env OPENROUTER_API_KEY \
+  --model <model> \
+  --base-url <provider-base-url> \
+  --capability chat \
+  --capability json_mode \
+  --context-window <context-window> \
+  --cost-class medium
+```
+
+For OpenAI or Anthropic profiles, use `--kind openai` or `--kind anthropic` and omit `--base-url`.
+
+Then run a provider smoke completion through the saved profile:
+
+```bash
+bun apps/cli/src/index.ts providers smoke \
+  --profiles-path /tmp/vivarium-provider-profiles.json \
+  --profile openrouter
+```
+
+The one-off smoke flags still work when you do not need to save the profile:
 
 ```bash
 bun apps/cli/src/index.ts providers smoke \
@@ -70,13 +96,11 @@ bun apps/cli/src/index.ts run \
   --domain coding \
   --world-root /Users/idanmann/Vivarium/the-world \
   --state-path /tmp/vivarium-live-state.db \
-  --provider-kind openai-compat \
-  --provider-api-key-env OPENROUTER_API_KEY \
-  --provider-model <model> \
-  --provider-base-url <provider-base-url>
+  --provider-profiles-path /tmp/vivarium-provider-profiles.json \
+  --provider-profile openrouter
 ```
 
-Use `--provider-kind openai` or `--provider-kind anthropic` without `--provider-base-url` for first-party providers.
+One-off run flags also remain available. Use `--provider-kind openai` or `--provider-kind anthropic` without `--provider-base-url` for first-party providers.
 
 ## Internal API Credential
 
@@ -264,8 +288,8 @@ bun apps/cli/src/index.ts daemon smoke --status-url http://127.0.0.1:8787/status
 After the external prerequisites are configured:
 
 1. Re-run `doctor --live`.
-2. Run `providers smoke` for one configured provider.
-3. Run `run` with `--provider-kind`, `--provider-api-key-env`, and `--provider-model` against a small real goal.
+2. Save a provider profile with `providers configure`, then run `providers smoke --profile`.
+3. Run `run` with `--provider-profiles-path` and `--provider-profile` against a small real goal.
 4. Add and smoke one internal API credential with `credentials add` and `credentials smoke`.
 5. Run `github smoke` for the canonical world remote.
 6. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.
