@@ -44,4 +44,22 @@ describe("reference docs", () => {
       }
     }
   });
+
+  test("documents the agent configuration schema fields", () => {
+    const body = readFileSync(join("docs", "reference", "config-schema.md"), "utf8");
+    for (const field of [
+      "AgentConfig",
+      "WorldSubscription",
+      "ProvidersConfig",
+      "ProviderRef",
+      "AttentionConfig",
+      "HabituationConfig",
+      "SafetyConfig",
+      "apiKeyEnvVar",
+      "httpRateLimit",
+      "computerUseConfirmationLevel",
+    ]) {
+      expect(body).toContain(field);
+    }
+  });
 });
