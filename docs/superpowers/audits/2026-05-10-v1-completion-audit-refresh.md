@@ -43,6 +43,7 @@ Not complete. Local implementation and local test gates are strong, including ag
 - `live-readiness.local.env` is intentionally absent in this checkout; filled copies are gitignored because they may contain provider keys, GitHub tokens, and internal API metadata.
 - `bun apps/cli/src/index.ts doctor --live --env-file docs/live-readiness.env.example --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false` with copied template values classified as `:placeholder` or unavailable, not live-ready.
 - `bun apps/cli/src/index.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false`, now including `v1.evidencePath:missing` so setup readiness cannot be confused with v1 loop verification.
+- Local disk pressure was cleared before continuing live-readiness work: `/` had only 116 MiB available and shell startup emitted `No space left on device`; after deleting regenerable Codex caches, `df -h / /System/Volumes/Data` reports 2.8 GiB available and subsequent shell/git/doctor commands no longer emit the rbenv temp-file error.
 - `bun run typecheck` in `the-agent`: TypeScript passed.
 - `bun run test` in `the-agent`: 273 tests passed, 0 failed, 1397 assertions.
 - `bun run lint` in `the-agent`: repo lint scanned 196 TypeScript files, and Oxlint found 0 warnings and 0 errors.
@@ -109,7 +110,7 @@ Not complete. Local implementation and local test gates are strong, including ag
 - `bun run typecheck` in `the-world`: TypeScript passed.
 - `bun run test` in `the-world`: 26 tests passed, 0 failed, 208 assertions.
 - `bun run build` in `the-world`: 8 required files present.
-- Latest agent local-gate commits: `3b1de16 docs(agent): align v1 evidence example`, `ba0d1b4 fix(agent): reject opaque v1 evidence refs`, `e96cb54 fix(agent): verify v1 evidence references`, `8644964 feat(agent): gate live readiness on v1 evidence`, `59b8d0c docs(agent): record proposal validation gate`, `4beaaf2 docs(agent): record domain artifact validation gate`, `17b28b0 docs(agent): record anti-pattern validation gate`, `95271fd docs(agent): refresh world gate audit evidence`, `3265509 docs(agent): include knip in install verification`.
+- Latest agent local-gate commits: `35d2e14 fix(agent): verify published artifact refs`, `2cab9c5 fix(agent): verify v1 world refs`, `e6df940 fix(agent): verify v1 contributor identity`, `bfda20b fix(agent): reject future v1 evidence dates`, `8897e5f fix(agent): require live competing skill evidence`, `f640168 fix(agent): verify canonical github evidence`, `a3047d6 fix(agent): verify destructive sequence`, `47baf06 fix(agent): verify refinement contributors`.
 - Latest world local-gate commits: `6df8516 ci(world): validate contribution proposals`, `091b80c ci(world): validate domain learning artifacts`, `be012df ci(world): validate anti-pattern contributions`, `fbec50b docs(world): require full gate in PR templates`, `4478b27 ci(world): validate generated maintenance PRs`, `ad46110 ci(world): run full checkpoint before auto-merge`, `d8dc698 docs(world): require build before publishing`, `9474e60 ci(world): build during manual revalidation`, `788ad9b ci(world): add full checkpoint workflow`.
 
 ## Next Required External Inputs
