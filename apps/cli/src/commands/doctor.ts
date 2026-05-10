@@ -77,6 +77,7 @@ const privateOaiCompatApiKeyEnv = "VIVARIUM_OAI_COMPAT_API_KEY";
 const privateOaiCompatBaseUrlEnv = "VIVARIUM_OAI_COMPAT_BASE_URL";
 const privateOaiCompatModelEnv = "VIVARIUM_OAI_COMPAT_MODEL";
 const credentialsPathEnv = "VIVARIUM_CREDENTIALS_PATH";
+const credentialsMasterKeyEnv = "VIVARIUM_CREDENTIALS_MASTER_KEY";
 const internalApiCredentialNameEnv = "VIVARIUM_INTERNAL_API_CREDENTIAL_NAME";
 const internalApiHealthUrlEnv = "VIVARIUM_INTERNAL_API_HEALTH_URL";
 const v1EvidencePathEnv = "VIVARIUM_V1_EVIDENCE_PATH";
@@ -992,8 +993,15 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         env: [credentialsPathEnv],
         command: cliCommand(
           context,
-          'credentials add --path "$VIVARIUM_CREDENTIALS_PATH" --master-key <local-master-key> --kind bearer --name INTERNAL_API_TOKEN --purpose "Call internal API" --value <redacted>',
+          'credentials add --path "$VIVARIUM_CREDENTIALS_PATH" --master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY" --kind bearer --name INTERNAL_API_TOKEN --purpose "Call internal API" --value <redacted>',
         ),
+        guide: `${guide}#internal-api-credential`,
+      };
+    case "credentials.masterKey":
+      return {
+        check,
+        action: "Export the local credential store master key used by credential smoke tests.",
+        env: [credentialsMasterKeyEnv],
         guide: `${guide}#internal-api-credential`,
       };
     case "internalApi.credentialName":
@@ -1175,6 +1183,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     providerProfileCheck(env, profiles, openRouterProviderProfileEnv, "provider.openrouterProfile"),
     providerProfileCheck(env, profiles, privateOaiCompatProviderProfileEnv, "provider.privateOaiCompatProfile"),
     requiredFileCheck(env, credentialsPathEnv, "credentials.path"),
+    requiredEnvCheck(env, credentialsMasterKeyEnv, "credentials.masterKey"),
     requiredEnvCheck(env, internalApiCredentialNameEnv, "internalApi.credentialName"),
     requiredEnvCheck(env, internalApiHealthUrlEnv, "internalApi.healthUrl"),
     githubEnvCheck(env),

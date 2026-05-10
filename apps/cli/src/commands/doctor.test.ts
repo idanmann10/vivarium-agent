@@ -421,6 +421,12 @@ describe("doctorCommand", () => {
     );
     expect(result.nextActions).toContainEqual(
       expect.objectContaining({
+        check: "credentials.masterKey:missing",
+        env: expect.arrayContaining(["VIVARIUM_CREDENTIALS_MASTER_KEY"]),
+      }),
+    );
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
         check: "github.auth:invalid",
         command: expect.stringContaining("gh auth status"),
       }),
@@ -544,6 +550,7 @@ describe("doctorCommand", () => {
         VIVARIUM_OAI_COMPAT_API_KEY: "<redacted-private-oai-compatible-key>",
         VIVARIUM_OAI_COMPAT_BASE_URL: "<private-oai-compatible-base-url>",
         VIVARIUM_OAI_COMPAT_MODEL: "<private-fine-tune-model>",
+        VIVARIUM_CREDENTIALS_MASTER_KEY: "<local-master-key>",
         VIVARIUM_INTERNAL_API_HEALTH_URL: "<internal-api-health-url>",
         GITHUB_TOKEN: "<redacted-github-token>",
       },
@@ -561,6 +568,7 @@ describe("doctorCommand", () => {
         "provider.anthropic:placeholder",
         "provider.openrouter:placeholder",
         "provider.privateOaiCompat:placeholder",
+        "credentials.masterKey:placeholder",
         "internalApi.healthUrl:placeholder",
         "github.env:placeholder",
         "github.owner:placeholder",
@@ -2639,6 +2647,7 @@ describe("doctorCommand", () => {
 
     expect(result.ok).toBe(false);
     expect(result.checks).toContain("credentials.path:missing");
+    expect(result.checks).toContain("credentials.masterKey:missing");
     expect(result.checks).toContain("internalApi.credentialName:missing");
     expect(result.checks).toContain("internalApi.healthUrl:missing");
   });
@@ -2896,6 +2905,7 @@ describe("doctorCommand", () => {
         VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
         VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE: "private-finetune",
         VIVARIUM_CREDENTIALS_PATH: files.credentialsPath,
+        VIVARIUM_CREDENTIALS_MASTER_KEY: "configured",
         VIVARIUM_INTERNAL_API_CREDENTIAL_NAME: "INTERNAL_API_TOKEN",
         VIVARIUM_INTERNAL_API_HEALTH_URL: "https://internal.example/health",
         VIVARIUM_V1_EVIDENCE_PATH: files.evidencePath,

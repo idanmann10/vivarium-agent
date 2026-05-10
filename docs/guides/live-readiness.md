@@ -164,7 +164,7 @@ After adding an internal API credential, smoke it through the encrypted keychain
 ```bash
 bun apps/cli/src/index.ts credentials add \
   --path /tmp/vivarium-credentials.enc \
-  --master-key <local-master-key> \
+  --master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY" \
   --kind bearer \
   --name INTERNAL_API_TOKEN \
   --purpose "Call internal API" \
@@ -172,7 +172,7 @@ bun apps/cli/src/index.ts credentials add \
 
 bun apps/cli/src/index.ts credentials smoke \
   --path /tmp/vivarium-credentials.enc \
-  --master-key <local-master-key> \
+  --master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY" \
   --name INTERNAL_API_TOKEN \
   --url <internal-health-url> \
   --method GET
@@ -184,11 +184,12 @@ Export the stable credential metadata for `doctor --live`:
 
 ```bash
 export VIVARIUM_CREDENTIALS_PATH=/tmp/vivarium-credentials.enc
+export VIVARIUM_CREDENTIALS_MASTER_KEY=<local-master-key>
 export VIVARIUM_INTERNAL_API_CREDENTIAL_NAME=INTERNAL_API_TOKEN
 export VIVARIUM_INTERNAL_API_HEALTH_URL=<internal-health-url>
 ```
 
-`doctor --live` expects `VIVARIUM_CREDENTIALS_PATH` to point at the encrypted file created by `credentials add`.
+`doctor --live` expects `VIVARIUM_CREDENTIALS_PATH` to point at the encrypted file created by `credentials add`, and it expects `VIVARIUM_CREDENTIALS_MASTER_KEY` to be exported so the follow-up smoke command can read it.
 
 ## GitHub Auth
 
