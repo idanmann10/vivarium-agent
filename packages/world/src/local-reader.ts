@@ -73,8 +73,12 @@ export function createLocalWorldReader({ root }: LocalWorldReaderOptions): Local
   return {
     search({ domain, query, limit = 8 }) {
       const domainRoot = join(root, "domains", domain);
-      const proposalRoot = join(root, "proposals", "skills", domain);
-      const artifactFiles = [...walk(domainRoot), ...walk(proposalRoot)].filter(
+      const proposalRoots = [
+        join(root, "proposals", "skills", domain),
+        join(root, "proposals", "anti-patterns", domain),
+        join(root, "proposals", "traces", domain),
+      ];
+      const artifactFiles = [...walk(domainRoot), ...proposalRoots.flatMap((proposalRoot) => walk(proposalRoot))].filter(
         (path) => path.endsWith("SKILL.md") || path.endsWith("ANTI-PATTERN.md") || path.endsWith("TRACE.md"),
       );
       const runFiles = walk(join(root, "runs")).filter((path) => {

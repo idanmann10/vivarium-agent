@@ -16,6 +16,18 @@ export interface ProposeSkillRequest {
   readonly contributor: string;
 }
 
+export interface ProposeAntiPatternRequest {
+  readonly worldRoot: string;
+  readonly domain: string;
+  readonly slug: string;
+  readonly name: string;
+  readonly description: string;
+  readonly why: string;
+  readonly insteadDo: string;
+  readonly contributor: string;
+  readonly evidenceRunIds?: readonly string[];
+}
+
 export interface SkillPushGateEvidence {
   readonly lowerBound: number;
   readonly uses: number;
@@ -52,6 +64,21 @@ export function proposeSkill(request: ProposeSkillRequest): string {
   writeFileSync(
     path,
     `---\nid: ${request.domain}.${request.slug}\nname: ${request.name}\ndescription: ${request.description}\ndomain: ${request.domain}\nvisibility: public\ncontributor: ${request.contributor}\n---\n\n# ${request.name}\n\n${request.body}\n\n# Provenance\n\nProposed locally by ${request.contributor}.\n`,
+  );
+  return path;
+}
+
+function evidenceMarkdown(evidenceRunIds: readonly string[] = []): string {
+  return evidenceRunIds.length === 0 ? "No evidence run IDs supplied." : evidenceRunIds.map((id) => `- ${id}`).join("\n");
+}
+
+export function proposeAntiPattern(request: ProposeAntiPatternRequest): string {
+  const directory = join(request.worldRoot, "proposals", "anti-patterns", request.domain, request.slug);
+  mkdirSync(directory, { recursive: true });
+  const path = join(directory, "ANTI-PATTERN.md");
+  writeFileSync(
+    path,
+    `---\nid: ${request.domain}.${request.slug}\nname: ${request.name}\ndomain: ${request.domain}\nvisibility: public\ncontributor: ${request.contributor}\n---\n\n# ${request.name}\n\n## What Not To Do\n\n${request.description}\n\n## Why\n\n${request.why}\n\n## Instead Do\n\n${request.insteadDo}\n\n## Evidence\n\n${evidenceMarkdown(request.evidenceRunIds)}\n\n# Provenance\n\nProposed locally by ${request.contributor}.\n`,
   );
   return path;
 }

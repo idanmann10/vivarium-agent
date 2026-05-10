@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { proposeSkill, proposeSkillPullRequest } from "./push.js";
+import { proposeAntiPattern, proposeSkill, proposeSkillPullRequest } from "./push.js";
 import { publishRun } from "./runs.js";
 import { publishTrace } from "./traces.js";
 
@@ -38,6 +38,30 @@ describe("local world writes", () => {
     expect(readFileSync(skillPath, "utf8")).toContain("# Local Skill");
     expect(readFileSync(runPath, "utf8")).toContain("# Outcome");
     expect(readFileSync(tracePath, "utf8")).toContain("# Goal");
+  });
+
+  test("proposes an anti-pattern artifact with evidence", () => {
+    const root = mkdtempSync(join(tmpdir(), "world-write-anti-pattern-"));
+
+    const path = proposeAntiPattern({
+      worldRoot: root,
+      domain: "coding",
+      slug: "retrying-without-new-evidence",
+      name: "Retrying Without New Evidence",
+      description: "Repeating the same failing action without new evidence",
+      why: "It burns time and compounds the original uncertainty.",
+      insteadDo: "Gather a new observation before retrying.",
+      contributor: "agent-a",
+      evidenceRunIds: ["run-failed-retry"],
+    });
+
+    expect(path).toBe(
+      join(root, "proposals", "anti-patterns", "coding", "retrying-without-new-evidence", "ANTI-PATTERN.md"),
+    );
+    expect(readFileSync(path, "utf8")).toContain("id: coding.retrying-without-new-evidence");
+    expect(readFileSync(path, "utf8")).toContain("contributor: agent-a");
+    expect(readFileSync(path, "utf8")).toContain("## What Not To Do\n\nRepeating the same failing action without new evidence");
+    expect(readFileSync(path, "utf8")).toContain("## Evidence\n\n- run-failed-retry");
   });
 
   test("opens a skill proposal pull request when the push gate passes", async () => {

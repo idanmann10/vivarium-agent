@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { createLocalWorldReader } from "./local-reader.js";
+import { proposeAntiPattern } from "./push.js";
 import { publishRun } from "./runs.js";
 
 describe("local world reader", () => {
@@ -44,6 +45,34 @@ describe("local world reader", () => {
         kind: "run",
         id: "runs/run-published/RUN.md",
         title: "debug a flaky deployment",
+      }),
+    ]);
+  });
+
+  test("retrieves proposed anti-patterns by domain and query", () => {
+    const root = mkdtempSync(join(tmpdir(), "world-reader-anti-pattern-proposal-"));
+    proposeAntiPattern({
+      worldRoot: root,
+      domain: "coding",
+      slug: "retrying-without-new-evidence",
+      name: "Retrying Without New Evidence",
+      description: "Repeating a failed action without a new observation.",
+      why: "Repeated retries compound uncertainty.",
+      insteadDo: "Gather fresh evidence before trying again.",
+      contributor: "agent-a",
+      evidenceRunIds: ["run-retry-loop"],
+    });
+
+    const results = createLocalWorldReader({ root }).search({
+      domain: "coding",
+      query: "retry fresh evidence",
+    });
+
+    expect(results).toEqual([
+      expect.objectContaining({
+        kind: "anti-pattern",
+        id: "proposals/anti-patterns/coding/retrying-without-new-evidence/ANTI-PATTERN.md",
+        title: "Retrying Without New Evidence",
       }),
     ]);
   });
