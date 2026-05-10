@@ -2,7 +2,7 @@ import type { Capability, CostClass, CredentialKind } from "../../../packages/co
 import type { HttpMethod } from "../../../packages/tools/src/external/index.js";
 import { addCredentialCommand, credentialSmokeCommand, listCredentialsCommand } from "./commands/credentials.js";
 import { daemonSmokeCommand } from "./commands/daemon.js";
-import { doctorCommand } from "./commands/doctor.js";
+import { doctorCommand, type DoctorCommandRunner } from "./commands/doctor.js";
 import { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand, githubWorkflowRunsCommand } from "./commands/github.js";
 import { runInitCommand } from "./commands/init.js";
 import {
@@ -27,6 +27,11 @@ export interface CliDispatchResult {
   readonly command: CliCommand;
   readonly result: unknown;
   readonly output: string;
+}
+
+export interface CliDispatchOptions {
+  readonly doctorRunner?: DoctorCommandRunner;
+  readonly env?: Readonly<Record<string, string | undefined>>;
 }
 
 type FlagMap = ReadonlyMap<string, readonly string[]>;
@@ -97,7 +102,7 @@ function output(command: CliCommand, result: unknown): CliDispatchResult {
   return { command, result, output: `${JSON.stringify(result, null, 2)}\n` };
 }
 
-export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDispatchResult> {
+export async function dispatchCliCommand(argv: readonly string[], options: CliDispatchOptions = {}): Promise<CliDispatchResult> {
   const [command, subcommand, ...rest] = argv;
   if (command === undefined) {
     usage("Missing command");
@@ -437,6 +442,8 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
           ...(booleanFlag(flags, "live") ? { mode: "live-readiness" } : {}),
           ...(agentRoot === undefined ? {} : { agentRoot }),
           ...(worldRoot === undefined ? {} : { worldRoot }),
+          ...(options.doctorRunner === undefined ? {} : { runner: options.doctorRunner }),
+          ...(options.env === undefined ? {} : { env: options.env }),
         }),
       );
     }

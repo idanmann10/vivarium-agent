@@ -26,3 +26,4 @@ Use the directories by question:
 Common operational guides:
 
 - [Live Readiness](guides/live-readiness.md): clear remotes, credentials, GitHub auth, and Docker Compose blockers before live v1 verification.
+- [Live Readiness Env Template](live-readiness.env.example): copyable environment skeleton for the `doctor --live` handoff.

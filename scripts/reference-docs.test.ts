@@ -191,6 +191,31 @@ const guideDocs = {
   "publish-a-run": ["publishable", "anonymization", "world.publishRun", "visibility", "PII"],
 } as const;
 
+const liveReadinessEnvVars = [
+  "VIVARIUM_AGENT_REPO_NAME",
+  "VIVARIUM_WORLD_REPO_NAME",
+  "VIVARIUM_GITHUB_OWNER",
+  "VIVARIUM_GITHUB_REPOSITORY_ID",
+  "VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID",
+  "VIVARIUM_WORLD_SUBSCRIPTIONS_PATH",
+  "VIVARIUM_CANONICAL_WORLD_REF",
+  "VIVARIUM_PRIVATE_WORLD_REF",
+  "ANTHROPIC_API_KEY",
+  "OPENROUTER_API_KEY",
+  "VIVARIUM_OAI_COMPAT_API_KEY",
+  "VIVARIUM_OAI_COMPAT_BASE_URL",
+  "VIVARIUM_OAI_COMPAT_MODEL",
+  "VIVARIUM_PROVIDER_PROFILES_PATH",
+  "VIVARIUM_ANTHROPIC_PROVIDER_PROFILE",
+  "VIVARIUM_OPENROUTER_PROVIDER_PROFILE",
+  "VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE",
+  "VIVARIUM_CREDENTIALS_PATH",
+  "VIVARIUM_INTERNAL_API_CREDENTIAL_NAME",
+  "VIVARIUM_INTERNAL_API_HEALTH_URL",
+  "GITHUB_TOKEN",
+  "GH_TOKEN",
+] as const;
+
 const packageReadmes = {
   "apps/cli": ["dispatcher", "init", "doctor --live", "providers", "world transmission-smoke"],
   "apps/daemon": ["status", "run", "dream", "Dream scheduler", "MCP"],
@@ -221,6 +246,7 @@ const topLevelDocs = {
     "reference/",
     "math/",
     "demos/",
+    "live-readiness.env.example",
   ],
   "docs/thesis.md": [
     "kernel",
@@ -332,6 +358,17 @@ describe("reference docs", () => {
     for (const doc of Object.keys(guideDocs)) {
       const body = readFileSync(join("docs", "guides", `${doc}.md`), "utf8");
       expect(body).not.toContain("placeholder");
+    }
+  });
+
+  test("documents the live-readiness environment template", () => {
+    const path = join("docs", "live-readiness.env.example");
+    expect(existsSync(path), `${path} should exist`).toBe(true);
+    const body = existsSync(path) ? readFileSync(path, "utf8") : "";
+    expect(body).toContain("doctor --live");
+    expect(body).toContain("Do not commit");
+    for (const envVar of liveReadinessEnvVars) {
+      expect(body).toContain(`export ${envVar}=`);
     }
   });
 

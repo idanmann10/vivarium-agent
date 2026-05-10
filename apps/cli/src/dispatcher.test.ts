@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import { SQLiteStateRepository } from "../../../packages/state/src/index.js";
+import type { DoctorCommandRunner } from "./commands/doctor.js";
 import { dispatchCliCommand } from "./dispatcher.js";
 
 function write(path: string, content: string): void {
@@ -29,6 +30,21 @@ function runGit(args: readonly string[], cwd?: string): void {
   }
 }
 
+const deterministicDoctorRunner: DoctorCommandRunner = ({ command, args }) => {
+  const text = [command, ...args].join(" ");
+  if (text === "git remote -v") {
+    return { exitCode: 1, stdout: "", stderr: "missing remote" };
+  }
+  if (text === "gh auth status") {
+    return { exitCode: 1, stdout: "", stderr: "invalid token" };
+  }
+  if (text === "docker --version" || text === "docker compose version") {
+    return { exitCode: 0, stdout: `${text} ok`, stderr: "" };
+  }
+
+  return { exitCode: 127, stdout: "", stderr: `unexpected command: ${text}` };
+};
+
 describe("dispatchCliCommand", () => {
   test("routes status and doctor commands", async () => {
     await expect(dispatchCliCommand(["status"])).resolves.toMatchObject({
@@ -39,7 +55,11 @@ describe("dispatchCliCommand", () => {
       command: "doctor",
       result: { ok: true },
     });
-    await expect(dispatchCliCommand(["doctor", "--live", "--agent-root", "/agent", "--world-root", "/world"])).resolves.toMatchObject({
+    await expect(
+      dispatchCliCommand(["doctor", "--live", "--agent-root", "/agent", "--world-root", "/world"], {
+        doctorRunner: deterministicDoctorRunner,
+      }),
+    ).resolves.toMatchObject({
       command: "doctor",
       result: {
         nextActions: expect.arrayContaining([expect.objectContaining({ check: expect.stringMatching(/^agent\.name:/) })]),
@@ -52,6 +72,19 @@ describe("dispatchCliCommand", () => {
           expect.stringMatching(/^docker:/),
           expect.stringMatching(/^docker\.compose:/),
         ]),
+      },
+    });
+  });
+
+  test("routes live doctor checks through injected probes", async () => {
+    await expect(
+      dispatchCliCommand(["doctor", "--live", "--agent-root", "/agent", "--world-root", "/world"], {
+        doctorRunner: deterministicDoctorRunner,
+      }),
+    ).resolves.toMatchObject({
+      command: "doctor",
+      result: {
+        checks: expect.arrayContaining(["agent.remote:missing", "world.remote:missing", "github.auth:invalid"]),
       },
     });
   });
