@@ -178,7 +178,39 @@ Use this to verify the validator, stats, trust-gate, and archive workflows that 
 
 ## Multi-World Subscriptions
 
-After the canonical world and a private fork are available locally, verify that retrieval searches both and preserves source labels:
+After the canonical world and a private fork are available locally, save both subscriptions and verify that retrieval searches both while preserving source labels:
+
+```bash
+bun apps/cli/src/index.ts world subscribe \
+  --subscriptions-path /tmp/vivarium-world-subscriptions.json \
+  --world-root /tmp/vivarium-world-canonical \
+  --world-label canonical \
+  --world-ref <canonical-world-remote-url> \
+  --priority 1
+
+bun apps/cli/src/index.ts world subscribe \
+  --subscriptions-path /tmp/vivarium-world-subscriptions.json \
+  --world-root /tmp/vivarium-world-private \
+  --world-label private \
+  --world-ref <private-world-remote-url> \
+  --priority 0 \
+  --auto-push
+
+bun apps/cli/src/index.ts world subscriptions \
+  --subscriptions-path /tmp/vivarium-world-subscriptions.json
+```
+
+Search through the saved registry:
+
+```bash
+bun apps/cli/src/index.ts world search \
+  --subscriptions-path /tmp/vivarium-world-subscriptions.json \
+  --domain coding \
+  --query "<artifact title or distinctive phrase>" \
+  --limit 3
+```
+
+For one-off checks without writing the registry, repeated roots still work:
 
 ```bash
 bun apps/cli/src/index.ts world search \
@@ -191,7 +223,7 @@ bun apps/cli/src/index.ts world search \
   --limit 3
 ```
 
-Repeated `--world-root` flags are searched in order. Use the private fork first when team/internal knowledge should have priority over the canonical world.
+Repeated `--world-root` flags are searched in order. Use priority `0` or list the private fork first when team/internal knowledge should have priority over the canonical world.
 
 ## Cross-Install World Pull
 
@@ -239,7 +271,8 @@ After the external prerequisites are configured:
 6. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.
 7. Create a live world contribution PR from a generated artifact with `github pull-request --confirm-write`.
 8. Verify the world workflows and trust gates on GitHub with `github workflow-runs`.
-9. Pull the accepted contribution into a second local install with `world transmission-smoke`.
-10. Run the Compose daemon and verify `/status` with `daemon smoke`.
+9. Save canonical and private fork subscriptions with `world subscribe`, then verify retrieval with `world search --subscriptions-path`.
+10. Pull the accepted contribution into a second local install with `world transmission-smoke`.
+11. Run the Compose daemon and verify `/status` with `daemon smoke`.
 
 Record the resulting command output in `docs/superpowers/audits/2026-05-09-v1-completion-audit.md`.

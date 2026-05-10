@@ -9,7 +9,13 @@ import { providerSmokeCommand, type ProviderSmokeKind } from "./commands/provide
 import { runCommand, type RunProviderKind } from "./commands/run.js";
 import { listSkillsCommand } from "./commands/skills.js";
 import { statusCommand } from "./commands/status.js";
-import { pullWorldCommand, searchWorldCommand, verifyWorldTransmissionCommand } from "./commands/world.js";
+import {
+  listWorldSubscriptionsCommand,
+  pullWorldCommand,
+  searchWorldCommand,
+  subscribeWorldCommand,
+  verifyWorldTransmissionCommand,
+} from "./commands/world.js";
 import type { CliCommand } from "./index.js";
 
 export interface CliDispatchResult {
@@ -193,6 +199,31 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
         );
       }
     case "world":
+      if (subcommand === "subscribe") {
+        const priority = integerFlag(flags, "priority");
+        const ref = value(flags, "world-ref");
+        return output(
+          command,
+          subscribeWorldCommand({
+            subscriptionsPath: required(flags, "subscriptions-path"),
+            root: required(flags, "world-root"),
+            label: required(flags, "world-label"),
+            ...(priority === undefined ? {} : { priority }),
+            ...(ref === undefined ? {} : { ref }),
+            ...(booleanFlag(flags, "auto-push") ? { autoPushEnabled: true } : {}),
+          }),
+        );
+      }
+
+      if (subcommand === "subscriptions") {
+        return output(
+          command,
+          listWorldSubscriptionsCommand({
+            subscriptionsPath: required(flags, "subscriptions-path"),
+          }),
+        );
+      }
+
       if (subcommand === "pull") {
         const ref = value(flags, "ref");
         return output(
@@ -209,6 +240,7 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
         const limit = integerFlag(flags, "limit");
         const worldRoots = values(flags, "world-root");
         const worldLabels = values(flags, "world-label");
+        const subscriptionsPath = value(flags, "subscriptions-path");
         if (worldLabels.length > 0 && worldLabels.length !== worldRoots.length) {
           usage("--world-label must be provided once for each --world-root");
         }
@@ -223,7 +255,11 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
                     priority: index,
                   })),
                 }
-              : { worldRoot: required(flags, "world-root") }),
+              : worldRoots.length === 1
+                ? { worldRoot: worldRoots[0] as string }
+                : subscriptionsPath === undefined
+                  ? { worldRoot: required(flags, "world-root") }
+                  : { subscriptionsPath }),
             domain: required(flags, "domain"),
             query: required(flags, "query"),
             ...(limit === undefined ? {} : { limit }),
@@ -247,7 +283,7 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
         );
       }
 
-      usage('Unknown world subcommand. Use "search", "pull", or "transmission-smoke".');
+      usage('Unknown world subcommand. Use "search", "subscribe", "subscriptions", "pull", or "transmission-smoke".');
     case "providers": {
       if (subcommand !== "smoke") {
         usage('Unknown providers subcommand. Use "smoke".');

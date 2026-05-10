@@ -1,10 +1,16 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { pullWorldCommand, searchWorldCommand, verifyWorldTransmissionCommand } from "./world.js";
+import {
+  listWorldSubscriptionsCommand,
+  pullWorldCommand,
+  searchWorldCommand,
+  subscribeWorldCommand,
+  verifyWorldTransmissionCommand,
+} from "./world.js";
 
 function write(path: string, content: string): void {
   mkdirSync(dirname(path), { recursive: true });
@@ -38,6 +44,79 @@ describe("world commands", () => {
     }).results;
 
     expect(results).toEqual([
+      expect.objectContaining({ source: "private", title: "Private Skill" }),
+      expect.objectContaining({ source: "public", title: "Public Skill" }),
+    ]);
+  });
+
+  test("persists subscribed worlds and searches them with source labels", () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-world-subscriptions-"));
+    const publicWorld = join(root, "public");
+    const privateWorld = join(root, "private");
+    const subscriptionsPath = join(root, "subscriptions.json");
+    write(join(publicWorld, "domains", "coding", "skills", "public-skill", "SKILL.md"), "# Public Skill\n\nShared coding pattern.");
+    write(join(privateWorld, "domains", "coding", "skills", "private-skill", "SKILL.md"), "# Private Skill\n\nTeam coding pattern.");
+
+    subscribeWorldCommand({
+      subscriptionsPath,
+      label: "public",
+      root: publicWorld,
+      priority: 1,
+      ref: "git@example.test:world/public.git",
+    });
+    subscribeWorldCommand({
+      subscriptionsPath,
+      label: "private",
+      root: privateWorld,
+      priority: 0,
+      ref: "git@example.test:world/private.git",
+      autoPushEnabled: true,
+    });
+
+    expect(listWorldSubscriptionsCommand({ subscriptionsPath })).toEqual({
+      subscriptions: [
+        {
+          label: "private",
+          root: privateWorld,
+          priority: 0,
+          ref: "git@example.test:world/private.git",
+          autoPushEnabled: true,
+        },
+        {
+          label: "public",
+          root: publicWorld,
+          priority: 1,
+          ref: "git@example.test:world/public.git",
+          autoPushEnabled: false,
+        },
+      ],
+    });
+    expect(JSON.parse(readFileSync(subscriptionsPath, "utf8"))).toEqual({
+      worlds: [
+        {
+          label: "private",
+          root: privateWorld,
+          priority: 0,
+          ref: "git@example.test:world/private.git",
+          autoPushEnabled: true,
+        },
+        {
+          label: "public",
+          root: publicWorld,
+          priority: 1,
+          ref: "git@example.test:world/public.git",
+          autoPushEnabled: false,
+        },
+      ],
+    });
+    expect(
+      searchWorldCommand({
+        subscriptionsPath,
+        domain: "coding",
+        query: "coding pattern",
+        limit: 1,
+      }).results,
+    ).toEqual([
       expect.objectContaining({ source: "private", title: "Private Skill" }),
       expect.objectContaining({ source: "public", title: "Public Skill" }),
     ]);

@@ -54,8 +54,15 @@ export { daemonSmokeCommand } from "./commands/daemon.js";
 export type { DaemonSmokeCommandOptions, DaemonSmokeCommandResult, DaemonSmokeFetch } from "./commands/daemon.js";
 export { listSkillsCommand } from "./commands/skills.js";
 export type { ListedSkill, ListSkillsCommandOptions, ListSkillsCommandResult } from "./commands/skills.js";
-export { searchWorldCommand } from "./commands/world.js";
-export type { SearchWorldCommandOptions, SearchWorldCommandResult } from "./commands/world.js";
+export { listWorldSubscriptionsCommand, searchWorldCommand, subscribeWorldCommand } from "./commands/world.js";
+export type {
+  PersistedWorldSubscription,
+  SearchWorldCommandOptions,
+  SearchWorldCommandResult,
+  SubscribeWorldCommandOptions,
+  WorldSubscriptionsCommandOptions,
+  WorldSubscriptionsCommandResult,
+} from "./commands/world.js";
 export type { CliDispatchResult } from "./dispatcher.js";
 
 if (import.meta.main) {

@@ -61,6 +61,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` world transmission-smoke CLI implemented after workflow-runs checks, giving cross-install verification a concrete pull-then-search path for a second local install.
 - `the-agent` math-gated world proposal PR helper implemented after transmission-smoke, wiring `shouldPushToWorld` evidence to `GitHubWorldClient.createPullRequest` with tests for pass/fail gates.
 - `the-agent` CLI multi-world search implemented after Compose verification, exposing repeated `--world-root` / `--world-label` subscriptions for canonical + private-fork retrieval.
+- `the-agent` saved world subscription registry implemented after credential smoke, exposing `world subscribe`, `world subscriptions`, and `world search --subscriptions-path` for reusable canonical + private-fork retrieval.
 - `the-agent` proposed anti-pattern retrieval and Node-side `better-sqlite3` migration verifier implemented after the gated proposal PR helper.
 - `the-agent` local end-to-end demo recorder implemented after the SQLite stack verifier; `docs/demos/local-e2e.cast` records init, run, second-install world transmission-smoke, and SQLite stack verification as an asciinema v2 cast.
 - `the-agent` proposed trace proposal/retrieval slice implemented after the local demo recorder, writing annotated trace proposals and retrieving them with frontmatter titles through the local world reader.

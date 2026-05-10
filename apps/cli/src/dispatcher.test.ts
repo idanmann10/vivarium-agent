@@ -145,6 +145,78 @@ describe("dispatchCliCommand", () => {
     });
   });
 
+  test("routes saved world subscriptions into search", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-subscriptions-"));
+    const publicWorld = join(root, "public");
+    const privateWorld = join(root, "private");
+    const subscriptionsPath = join(root, "subscriptions.json");
+    write(join(publicWorld, "domains", "coding", "skills", "public-skill", "SKILL.md"), "# Public Skill\n\nShared coding pattern.");
+    write(join(privateWorld, "domains", "coding", "skills", "private-skill", "SKILL.md"), "# Private Skill\n\nTeam coding pattern.");
+
+    const publicSubscription = await dispatchCliCommand([
+      "world",
+      "subscribe",
+      "--subscriptions-path",
+      subscriptionsPath,
+      "--world-root",
+      publicWorld,
+      "--world-label",
+      "public",
+      "--world-ref",
+      "git@example.test:world/public.git",
+      "--priority",
+      "1",
+    ]);
+    const privateSubscription = await dispatchCliCommand([
+      "world",
+      "subscribe",
+      "--subscriptions-path",
+      subscriptionsPath,
+      "--world-root",
+      privateWorld,
+      "--world-label",
+      "private",
+      "--world-ref",
+      "git@example.test:world/private.git",
+      "--priority",
+      "0",
+      "--auto-push",
+    ]);
+    const listed = await dispatchCliCommand(["world", "subscriptions", "--subscriptions-path", subscriptionsPath]);
+    const searched = await dispatchCliCommand([
+      "world",
+      "search",
+      "--subscriptions-path",
+      subscriptionsPath,
+      "--domain",
+      "coding",
+      "--query",
+      "coding pattern",
+      "--limit",
+      "1",
+    ]);
+
+    expect(publicSubscription.result).toMatchObject({ subscriptions: [{ label: "public", priority: 1 }] });
+    expect(privateSubscription.result).toMatchObject({
+      subscriptions: [
+        { label: "private", priority: 0, autoPushEnabled: true },
+        { label: "public", priority: 1, autoPushEnabled: false },
+      ],
+    });
+    expect(listed.result).toMatchObject({
+      subscriptions: [
+        { label: "private", priority: 0 },
+        { label: "public", priority: 1 },
+      ],
+    });
+    expect(searched.result).toMatchObject({
+      results: [
+        { source: "private", title: "Private Skill" },
+        { source: "public", title: "Public Skill" },
+      ],
+    });
+  });
+
   test("routes world transmission smoke with a local git remote", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-world-transmission-"));
     const source = join(root, "source");
