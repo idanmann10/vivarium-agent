@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
+import { agentId, runId } from "../../core/src/index.js";
+import { InMemoryStateRepository } from "../../state/src/index.js";
+import { createLocalWorldReader } from "../../world/src/index.js";
+import { createSelfTools } from "./builtin/self-tools.js";
 import { createMemoryCredentialStore } from "./credentials/store.js";
 import { createToolDispatcher, type ToolDispatchEvent } from "./dispatcher.js";
 
@@ -230,6 +234,102 @@ describe("createToolDispatcher", () => {
       error: "Tool arguments appear to contain an embedded credential",
       blocked: true,
     });
+  });
+
+  test("emits a sanitized safety surprise when blocking embedded credential arguments", async () => {
+    const surprises: Array<{
+      readonly tool: string;
+      readonly prediction: {
+        readonly about: string;
+        readonly expected: string;
+        readonly confidence: number;
+      };
+      readonly actual: string;
+      readonly magnitude: number;
+      readonly notes?: string;
+    }> = [];
+    const dispatcher = createToolDispatcher({
+      externalAdapters: {
+        fetch: async () => Response.json({ ok: true }),
+      },
+      onSafetySurprise: (event) => surprises.push(event),
+    });
+
+    const result = await dispatcher.dispatch({
+      name: "http.request",
+      args: {
+        url: "https://api.example.test/pages",
+        method: "POST",
+        body: "Bearer sk-secret-token",
+      },
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Tool arguments appear to contain an embedded credential",
+      blocked: true,
+    });
+    expect(surprises).toEqual([
+      {
+        tool: "http.request",
+        prediction: {
+          about: "http.request",
+          expected: "Tool arguments do not contain embedded credentials",
+          confidence: 0.99,
+        },
+        actual: "Tool arguments appear to contain an embedded credential",
+        magnitude: 0.9,
+        notes: "Credential-like tool arguments were blocked before dispatch.",
+      },
+    ]);
+    expect(JSON.stringify(surprises)).not.toContain("sk-secret-token");
+  });
+
+  test("allows credential safety surprises to be recorded as surprise episodes", async () => {
+    const state = new InMemoryStateRepository();
+    const tools = createSelfTools({
+      state,
+      world: createLocalWorldReader({ root: "../the-world" }),
+    });
+    const id = runId("run-credential-safety");
+    const localAgent = agentId("agent-credential-safety");
+    const dispatcher = createToolDispatcher({
+      externalAdapters: {
+        fetch: async () => Response.json({ ok: true }),
+      },
+      onSafetySurprise: (event) => {
+        tools.episodes.surprise({
+          runId: id,
+          agentId: localAgent,
+          predicted: event.prediction,
+          actual: event.actual,
+          magnitude: event.magnitude,
+          ...(event.notes === undefined ? {} : { notes: event.notes }),
+        });
+      },
+    });
+
+    await expect(
+      dispatcher.dispatch({
+        name: "http.request",
+        args: {
+          url: "https://api.example.test/pages",
+          method: "POST",
+          body: "Bearer sk-secret-token",
+        },
+      }),
+    ).resolves.toMatchObject({ ok: false, blocked: true });
+
+    expect(state.listEpisodes(id)).toEqual([
+      expect.objectContaining({
+        runId: id,
+        agentId: localAgent,
+        kind: "surprise",
+        actual: "Tool arguments appear to contain an embedded credential",
+        magnitude: 0.9,
+        notes: "Credential-like tool arguments were blocked before dispatch.",
+      }),
+    ]);
   });
 
   test("requires confirmation for system-level computer-use click actions", async () => {

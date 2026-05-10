@@ -30,6 +30,7 @@ export type {
   ToolDispatchRequest,
   ToolDispatchResult,
   ToolRateLimitConfig,
+  ToolSafetySurpriseEvent,
 } from "./dispatcher.js";
 export { createEncryptedFileCredentialStore, createMemoryCredentialStore } from "./credentials/store.js";
 export type { CredentialRecord, CredentialStore } from "./credentials/store.js";

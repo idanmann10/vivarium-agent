@@ -1,3 +1,4 @@
+import type { Prediction } from "../../core/src/index.js";
 import type { CredentialRecord, CredentialStore } from "./credentials/store.js";
 import {
   dispatchExternalTool,
@@ -40,6 +41,14 @@ export interface ToolDispatchEvent {
   readonly reason?: string;
 }
 
+export interface ToolSafetySurpriseEvent {
+  readonly tool: string;
+  readonly prediction: Prediction;
+  readonly actual: string;
+  readonly magnitude: number;
+  readonly notes?: string;
+}
+
 export type BuiltinToolHandler = (args: unknown) => Promise<unknown> | unknown;
 
 export interface HttpSafetyConfig {
@@ -71,6 +80,7 @@ export interface ToolDispatcherOptions {
   readonly computerUseSafety?: ComputerUseSafetyConfig;
   readonly rateLimits?: ToolRateLimitConfig;
   readonly onDispatch?: (event: ToolDispatchEvent) => void;
+  readonly onSafetySurprise?: (event: ToolSafetySurpriseEvent) => void;
 }
 
 export interface ToolDispatcher {
@@ -290,6 +300,24 @@ function emit(options: ToolDispatcherOptions, event: ToolDispatchEvent): void {
   options.onDispatch?.(event);
 }
 
+function emitSafetySurprise(options: ToolDispatcherOptions, event: ToolSafetySurpriseEvent): void {
+  options.onSafetySurprise?.(event);
+}
+
+function credentialArgumentSurprise(name: string): ToolSafetySurpriseEvent {
+  return {
+    tool: name,
+    prediction: {
+      about: name,
+      expected: "Tool arguments do not contain embedded credentials",
+      confidence: 0.99,
+    },
+    actual: "Tool arguments appear to contain an embedded credential",
+    magnitude: 0.9,
+    notes: "Credential-like tool arguments were blocked before dispatch.",
+  };
+}
+
 function dispatchEvent(name: string, result: ToolDispatchResult): ToolDispatchEvent {
   if (result.ok) {
     return result.warnings === undefined || result.warnings.length === 0
@@ -448,6 +476,7 @@ export function createToolDispatcher(options: ToolDispatcherOptions): ToolDispat
           error: "Tool arguments appear to contain an embedded credential",
           blocked: true,
         } satisfies ToolDispatchResult;
+        emitSafetySurprise(options, credentialArgumentSurprise(request.name));
         emit(options, dispatchEvent(request.name, result));
         return result;
       }
