@@ -4,7 +4,12 @@ on:
   pull_request:
 
 jobs:
-  placeholder:
+  changeset:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Changeset checks start with publishable packages."
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx changeset status --since=origin/main

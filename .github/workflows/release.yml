@@ -3,8 +3,23 @@ name: Release
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
-  placeholder:
+  release:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Release automation starts after Phase 0."
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run typecheck
+      - run: bun run test
+      - run: bun run build
+      - uses: changesets/action@v1
+        with:
+          version: bunx changeset version
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
