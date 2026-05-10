@@ -108,6 +108,22 @@ bun apps/cli/src/index.ts github discussion \
 
 Without `--confirm-write`, the command refuses before reading credentials or calling GitHub.
 
+After a generated artifact has been committed to a branch, open a contribution PR:
+
+```bash
+bun apps/cli/src/index.ts github pull-request \
+  --owner <owner> \
+  --repo <world-repo> \
+  --token-env GITHUB_TOKEN \
+  --title "Add generated artifact" \
+  --body "<summary and validation evidence>" \
+  --head <branch-or-owner:branch> \
+  --base main \
+  --confirm-write
+```
+
+Without `--confirm-write`, the command refuses before reading credentials or calling GitHub.
+
 ## Docker Compose
 
 Daemon supervision needs either the Docker Compose plugin or the standalone `docker-compose` command.
@@ -134,7 +150,7 @@ After the external prerequisites are configured:
 2. Run `providers smoke` for one configured provider.
 3. Run `github smoke` for the canonical world remote.
 4. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.
-5. Create a live world contribution PR from a generated artifact.
+5. Create a live world contribution PR from a generated artifact with `github pull-request --confirm-write`.
 6. Verify the world workflows and trust gates on GitHub.
 7. Pull the accepted contribution into a second local install.
 8. Run the Compose daemon and verify `/status` with `daemon smoke`.

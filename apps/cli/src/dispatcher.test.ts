@@ -229,6 +229,35 @@ describe("dispatchCliCommand", () => {
     });
   });
 
+  test("routes guarded GitHub pull request creation", async () => {
+    await expect(
+      dispatchCliCommand([
+        "github",
+        "pull-request",
+        "--owner",
+        "owner",
+        "--repo",
+        "world",
+        "--token-env",
+        "GITHUB_TOKEN",
+        "--title",
+        "Add generated skill",
+        "--body",
+        "Generated artifact",
+        "--head",
+        "agent:add-generated-skill",
+        "--base",
+        "main",
+      ]),
+    ).resolves.toMatchObject({
+      command: "github",
+      result: {
+        ok: false,
+        error: "Missing --confirm-write for GitHub pull request creation",
+      },
+    });
+  });
+
   test("routes daemon smoke checks", async () => {
     await expect(dispatchCliCommand(["daemon", "smoke", "--status-url", "http://127.0.0.1:9/status"])).resolves.toMatchObject({
       command: "daemon",

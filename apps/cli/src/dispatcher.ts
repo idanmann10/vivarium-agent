@@ -2,7 +2,7 @@ import type { CredentialKind } from "../../../packages/core/src/index.js";
 import { addCredentialCommand, listCredentialsCommand } from "./commands/credentials.js";
 import { daemonSmokeCommand } from "./commands/daemon.js";
 import { doctorCommand } from "./commands/doctor.js";
-import { githubDiscussionCommand, githubSmokeCommand } from "./commands/github.js";
+import { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand } from "./commands/github.js";
 import { runInitCommand } from "./commands/init.js";
 import { providerSmokeCommand, type ProviderSmokeKind } from "./commands/providers.js";
 import { runCommand } from "./commands/run.js";
@@ -239,7 +239,23 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
         );
       }
 
-      usage('Unknown github subcommand. Use "smoke" or "discussion".');
+      if (subcommand === "pull-request") {
+        return output(
+          command,
+          await githubPullRequestCommand({
+            owner: required(flags, "owner"),
+            repo: required(flags, "repo"),
+            tokenEnv: required(flags, "token-env"),
+            title: required(flags, "title"),
+            body: required(flags, "body"),
+            head: required(flags, "head"),
+            base: required(flags, "base"),
+            confirmWrite: booleanFlag(flags, "confirm-write"),
+          }),
+        );
+      }
+
+      usage('Unknown github subcommand. Use "smoke", "discussion", or "pull-request".');
     }
     case "daemon": {
       if (subcommand !== "smoke") {

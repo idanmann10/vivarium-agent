@@ -45,6 +45,19 @@ export interface GitHubDiscussionCommandOptions {
   readonly fetch?: GitHubFetch;
 }
 
+export interface GitHubPullRequestCommandOptions {
+  readonly owner: string;
+  readonly repo: string;
+  readonly tokenEnv: string;
+  readonly title: string;
+  readonly body: string;
+  readonly head: string;
+  readonly base: string;
+  readonly confirmWrite: boolean;
+  readonly env?: Readonly<Record<string, string | undefined>>;
+  readonly fetch?: GitHubFetch;
+}
+
 export type GitHubDiscussionCommandResult =
   | {
       readonly ok: true;
@@ -52,6 +65,21 @@ export type GitHubDiscussionCommandResult =
       readonly repo: string;
       readonly discussionId: string;
       readonly discussionUrl: string;
+    }
+  | {
+      readonly ok: false;
+      readonly owner: string;
+      readonly repo: string;
+      readonly error: string;
+    };
+
+export type GitHubPullRequestCommandResult =
+  | {
+      readonly ok: true;
+      readonly owner: string;
+      readonly repo: string;
+      readonly pullRequestNumber: number;
+      readonly pullRequestUrl: string;
     }
   | {
       readonly ok: false;
@@ -175,6 +203,48 @@ export async function githubDiscussionCommand(options: GitHubDiscussionCommandOp
       repo: options.repo,
       discussionId: discussion.id,
       discussionUrl: discussion.url,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { ok: false, owner: options.owner, repo: options.repo, error: message };
+  }
+}
+
+export async function githubPullRequestCommand(options: GitHubPullRequestCommandOptions): Promise<GitHubPullRequestCommandResult> {
+  if (!options.confirmWrite) {
+    return { ok: false, owner: options.owner, repo: options.repo, error: "Missing --confirm-write for GitHub pull request creation" };
+  }
+
+  const env = options.env ?? process.env;
+  const token = env[options.tokenEnv];
+  if (token === undefined || token.length === 0) {
+    return {
+      ok: false,
+      owner: options.owner,
+      repo: options.repo,
+      error: `Missing GitHub token environment variable: ${options.tokenEnv}`,
+    };
+  }
+
+  try {
+    const pullRequest = await createGitHubWorldClient({
+      owner: options.owner,
+      repo: options.repo,
+      token,
+      ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
+    }).createPullRequest({
+      title: options.title,
+      body: options.body,
+      head: options.head,
+      base: options.base,
+    });
+
+    return {
+      ok: true,
+      owner: options.owner,
+      repo: options.repo,
+      pullRequestNumber: pullRequest.number,
+      pullRequestUrl: pullRequest.url,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

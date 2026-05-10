@@ -34,10 +34,12 @@ export type {
 } from "./commands/credentials.js";
 export { providerSmokeCommand } from "./commands/providers.js";
 export type { ProviderSmokeCommandOptions, ProviderSmokeCommandResult, ProviderSmokeKind } from "./commands/providers.js";
-export { githubDiscussionCommand, githubSmokeCommand } from "./commands/github.js";
+export { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand } from "./commands/github.js";
 export type {
   GitHubDiscussionCommandOptions,
   GitHubDiscussionCommandResult,
+  GitHubPullRequestCommandOptions,
+  GitHubPullRequestCommandResult,
   GitHubRepositoryPermissions,
   GitHubSmokeCommandOptions,
   GitHubSmokeCommandResult,
