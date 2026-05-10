@@ -104,6 +104,54 @@ describe("InMemoryStateRepository", () => {
     expect(state.listPublishableArtifacts()).toEqual([{ kind: "run", path: "runs/local", body: "redacted" }]);
   });
 
+  test("persists anti-pattern and trace candidates by domain", () => {
+    const state = new InMemoryStateRepository();
+
+    state.upsertAntiPatternCandidate({
+      id: "anti-coding-retry-loop",
+      domain: "coding",
+      name: "Avoid blind retry loops",
+      description: "A failed coding run retried without new evidence.",
+      why: "The run emitted a recovery signal before ending.",
+      insteadDo: "Inspect monitor reasons before retrying.",
+      evidenceRunIds: ["run-failed"],
+      createdAt: "2026-05-09T00:00:00.000Z",
+    });
+    state.upsertTraceCandidate({
+      id: "trace-run-success",
+      domain: "coding",
+      title: "Trace for successful coding run",
+      sourceRunId: runId("run-success"),
+      teaches: ["coding", "ship feature"],
+      steps: [
+        {
+          index: 1,
+          action: "Use local-provider.execute",
+          observation: "completed",
+          annotation: "Action recorded during a successful run.",
+        },
+      ],
+      createdAt: "2026-05-09T00:00:01.000Z",
+    });
+
+    state.upsertAntiPatternCandidate({
+      id: "anti-writing-drift",
+      domain: "writing",
+      name: "Avoid summary drift",
+      description: "A writing run lost the requested audience.",
+      why: "The validation score was below threshold.",
+      insteadDo: "Restate the audience before drafting.",
+      evidenceRunIds: ["run-writing"],
+      createdAt: "2026-05-09T00:00:02.000Z",
+    });
+
+    expect(state.listAntiPatternCandidates("coding").map((candidate) => candidate.id)).toEqual([
+      "anti-coding-retry-loop",
+    ]);
+    expect(state.listTraceCandidates("coding")[0]?.steps[0]?.annotation).toContain("successful run");
+    expect(state.listAntiPatternCandidates()).toHaveLength(2);
+  });
+
   test("upserts semantic facts and filters by domain", () => {
     const state = new InMemoryStateRepository();
 

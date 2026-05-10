@@ -3,11 +3,13 @@ import { Database } from "bun:sqlite";
 import type { RunId } from "../../core/src/ids.js";
 import type { CurriculumProgress, Episode, Identity, Run } from "../../core/src/index.js";
 import type {
+  AntiPatternCandidateRecord,
   ConfidenceBucket,
   LocalSkillRecord,
   PredictionOutcome,
   PublishableArtifact,
   SemanticFactRecord,
+  TraceCandidateRecord,
 } from "./repository.js";
 import { runMigrations } from "./storage/migrations.js";
 
@@ -19,6 +21,10 @@ interface ConfidenceRow {
   readonly bucket: string;
   readonly correct: number;
   readonly total: number;
+}
+
+interface CandidateRow {
+  readonly json: string;
 }
 
 export class SQLiteStateRepository {
@@ -148,6 +154,40 @@ export class SQLiteStateRepository {
         ? (this.#db.query("SELECT json FROM semantic_facts ORDER BY id").all() as JsonRow[])
         : (this.#db.query("SELECT json FROM semantic_facts WHERE domain = ? ORDER BY id").all(domain) as JsonRow[]);
     return rows.map((row) => JSON.parse(row.json) as SemanticFactRecord);
+  }
+
+  upsertAntiPatternCandidate(candidate: AntiPatternCandidateRecord): void {
+    this.#db
+      .query("INSERT OR REPLACE INTO dream_candidates (id, kind, domain, json) VALUES (?, 'anti-pattern', ?, ?)")
+      .run(candidate.id, candidate.domain, JSON.stringify(candidate));
+  }
+
+  listAntiPatternCandidates(domain?: string): readonly AntiPatternCandidateRecord[] {
+    const rows =
+      domain === undefined
+        ? (this.#db
+            .query("SELECT json FROM dream_candidates WHERE kind = 'anti-pattern' ORDER BY id")
+            .all() as CandidateRow[])
+        : (this.#db
+            .query("SELECT json FROM dream_candidates WHERE kind = 'anti-pattern' AND domain = ? ORDER BY id")
+            .all(domain) as CandidateRow[]);
+    return rows.map((row) => JSON.parse(row.json) as AntiPatternCandidateRecord);
+  }
+
+  upsertTraceCandidate(candidate: TraceCandidateRecord): void {
+    this.#db
+      .query("INSERT OR REPLACE INTO dream_candidates (id, kind, domain, json) VALUES (?, 'trace', ?, ?)")
+      .run(candidate.id, candidate.domain, JSON.stringify(candidate));
+  }
+
+  listTraceCandidates(domain?: string): readonly TraceCandidateRecord[] {
+    const rows =
+      domain === undefined
+        ? (this.#db.query("SELECT json FROM dream_candidates WHERE kind = 'trace' ORDER BY id").all() as CandidateRow[])
+        : (this.#db
+            .query("SELECT json FROM dream_candidates WHERE kind = 'trace' AND domain = ? ORDER BY id")
+            .all(domain) as CandidateRow[]);
+    return rows.map((row) => JSON.parse(row.json) as TraceCandidateRecord);
   }
 
   setIdentity(identity: Identity): void {

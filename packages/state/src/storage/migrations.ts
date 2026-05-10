@@ -11,6 +11,7 @@ interface Migration {
 const migrations = [
   { version: "0001_initial", fileName: "0001_initial.sql" },
   { version: "0002_semantic_facts", fileName: "0002_semantic_facts.sql" },
+  { version: "0003_dream_candidates", fileName: "0003_dream_candidates.sql" },
 ] as const satisfies readonly Migration[];
 
 export const migrationVersions = migrations.map((migration) => migration.version);

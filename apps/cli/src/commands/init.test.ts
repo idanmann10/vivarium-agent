@@ -39,7 +39,7 @@ describe("runInitCommand", () => {
     expect(result.starterSkills.map((skill) => skill.title).sort()).toEqual(["Red Green", "Small Steps"]);
     expect(result.starterTraces.map((trace) => trace.title)).toEqual(["Debugging Trace"]);
     expect(result.curriculumPath).toBe(join(worldRoot, "domains", "coding", "curriculum.md"));
-    expect(result.migrations).toEqual(["0001_initial", "0002_semantic_facts"]);
+    expect(result.migrations).toEqual(["0001_initial", "0002_semantic_facts", "0003_dream_candidates"]);
     expect(result.prompts).toEqual([
       "Bind GitHub identity",
       "Configure provider: anthropic",

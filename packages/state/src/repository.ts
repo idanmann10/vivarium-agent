@@ -1,5 +1,5 @@
 import type { RunId, SkillId } from "../../core/src/ids.js";
-import type { CurriculumProgress, DevStage, Episode, Identity, Run, SemanticFact } from "../../core/src/index.js";
+import type { CurriculumProgress, DevStage, Episode, Identity, Run, SemanticFact, TraceStep } from "../../core/src/index.js";
 
 export interface ConfidenceBucket {
   readonly bucket: string;
@@ -32,6 +32,27 @@ export interface PublishableArtifact {
   readonly body: string;
 }
 
+export interface AntiPatternCandidateRecord {
+  readonly id: string;
+  readonly domain: string;
+  readonly name: string;
+  readonly description: string;
+  readonly why: string;
+  readonly insteadDo: string;
+  readonly evidenceRunIds: readonly string[];
+  readonly createdAt: string;
+}
+
+export interface TraceCandidateRecord {
+  readonly id: string;
+  readonly domain: string;
+  readonly title: string;
+  readonly sourceRunId: RunId;
+  readonly teaches: readonly string[];
+  readonly steps: readonly TraceStep[];
+  readonly createdAt: string;
+}
+
 export interface SemanticFactRecord extends SemanticFact {
   readonly id: string;
   readonly domain: string;
@@ -52,6 +73,8 @@ export class InMemoryStateRepository {
   readonly #curriculum = new Map<string, CurriculumProgress>();
   readonly #skills = new Map<SkillId, LocalSkillRecord>();
   readonly #semanticFacts = new Map<string, SemanticFactRecord>();
+  readonly #antiPatternCandidates = new Map<string, AntiPatternCandidateRecord>();
+  readonly #traceCandidates = new Map<string, TraceCandidateRecord>();
   readonly #publishable: PublishableArtifact[] = [];
   #identity: Identity | undefined;
 
@@ -145,6 +168,26 @@ export class InMemoryStateRepository {
   listSemanticFacts(domain?: string): readonly SemanticFactRecord[] {
     return [...this.#semanticFacts.values()]
       .filter((fact) => domain === undefined || fact.domain === domain)
+      .sort((left, right) => left.id.localeCompare(right.id));
+  }
+
+  upsertAntiPatternCandidate(candidate: AntiPatternCandidateRecord): void {
+    this.#antiPatternCandidates.set(candidate.id, candidate);
+  }
+
+  listAntiPatternCandidates(domain?: string): readonly AntiPatternCandidateRecord[] {
+    return [...this.#antiPatternCandidates.values()]
+      .filter((candidate) => domain === undefined || candidate.domain === domain)
+      .sort((left, right) => left.id.localeCompare(right.id));
+  }
+
+  upsertTraceCandidate(candidate: TraceCandidateRecord): void {
+    this.#traceCandidates.set(candidate.id, candidate);
+  }
+
+  listTraceCandidates(domain?: string): readonly TraceCandidateRecord[] {
+    return [...this.#traceCandidates.values()]
+      .filter((candidate) => domain === undefined || candidate.domain === domain)
       .sort((left, right) => left.id.localeCompare(right.id));
   }
 

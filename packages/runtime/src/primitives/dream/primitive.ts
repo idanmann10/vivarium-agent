@@ -4,7 +4,7 @@ import {
   shouldPruneLocalSkill,
   stageForScore,
 } from "../../../../core/src/index.js";
-import type { DevStage } from "../../../../core/src/index.js";
+import type { DevStage, Episode, Run, TraceStep } from "../../../../core/src/index.js";
 import type { InMemoryStateRepository } from "../../../../state/src/index.js";
 import type { LocalSkillRecord } from "../../../../state/src/index.js";
 import { wilsonLowerBound } from "../../../../core/src/index.js";
@@ -27,6 +27,8 @@ export interface DreamResult {
   readonly identitySummary: string;
   readonly devStages: Readonly<Record<string, DevStage>>;
   readonly confidenceNotes: readonly string[];
+  readonly antiPatternCandidates: readonly string[];
+  readonly traceCandidates: readonly string[];
 }
 
 function lowerBound(skill: LocalSkillRecord): number {
@@ -42,10 +44,95 @@ function confidenceNotes(state: InMemoryStateRepository): readonly string[] {
   });
 }
 
+function stringify(value: unknown): string {
+  return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+function monitorReasons(episodes: readonly Episode[]): readonly string[] {
+  return episodes
+    .filter((episode) => episode.kind === "monitor_signal")
+    .flatMap((episode) => episode.reasons);
+}
+
+function generateAntiPatternCandidate(state: InMemoryStateRepository, run: Run, episodes: readonly Episode[]): string {
+  const id = `anti-pattern-${String(run.id)}`;
+  const reasons = monitorReasons(episodes);
+  state.upsertAntiPatternCandidate({
+    id,
+    domain: run.domain,
+    name: `Avoid repeating ${run.domain} failure`,
+    description: `Run ${String(run.id)} failed while trying to ${run.goal}.`,
+    why: reasons.length > 0 ? reasons.join("; ") : run.notes || "The run ended unsuccessfully.",
+    insteadDo: "Review monitor signals, narrow the scope, and retry only with new evidence.",
+    evidenceRunIds: [String(run.id)],
+    createdAt: new Date().toISOString(),
+  });
+  return id;
+}
+
+function traceStepsFromEpisodes(episodes: readonly Episode[]): readonly TraceStep[] {
+  const steps: TraceStep[] = [];
+  for (const episode of episodes) {
+    if (episode.kind === "run_start") {
+      steps.push({
+        index: steps.length + 1,
+        action: `Start ${episode.domain ?? "local"} run`,
+        observation: episode.goal,
+        annotation: "Run goal captured before planning.",
+      });
+    }
+
+    if (episode.kind === "action") {
+      steps.push({
+        index: steps.length + 1,
+        action: `Use ${episode.tool}`,
+        observation: stringify(episode.args),
+        annotation: "Action recorded during a successful run.",
+      });
+    }
+
+    if (episode.kind === "observation") {
+      steps.push({
+        index: steps.length + 1,
+        action: "Observe result",
+        observation: stringify(episode.content),
+        annotation: "Observation retained as trace evidence.",
+      });
+    }
+
+    if (episode.kind === "validation") {
+      steps.push({
+        index: steps.length + 1,
+        action: "Validate outcome",
+        observation: episode.reasons.join("; "),
+        annotation: `Validation ${episode.passed ? "passed" : "failed"} with score ${episode.score}.`,
+      });
+    }
+  }
+
+  return steps;
+}
+
+function generateTraceCandidate(state: InMemoryStateRepository, run: Run, episodes: readonly Episode[]): string {
+  const id = `trace-${String(run.id)}`;
+  state.upsertTraceCandidate({
+    id,
+    domain: run.domain,
+    title: `Trace for ${run.goal}`,
+    sourceRunId: run.id,
+    teaches: [run.domain, run.goal],
+    steps: traceStepsFromEpisodes(episodes),
+    createdAt: new Date().toISOString(),
+  });
+  return id;
+}
+
 export function runDream({ state, domainStats }: DreamRequest): DreamResult {
   const promoted: string[] = [];
   const pruned: string[] = [];
   const habitual: string[] = [];
+  const antiPatternCandidates: string[] = [];
+  const traceCandidates: string[] = [];
   const skills = state.listLocalSkills();
   const rankedByUse = [...skills].sort((left, right) => right.uses - left.uses);
 
@@ -68,6 +155,18 @@ export function runDream({ state, domainStats }: DreamRequest): DreamResult {
     if (shouldHabituate({ uses: skill.uses, lowerBound: lb, rankByUse })) {
       state.upsertLocalSkill({ ...skill, habitual: true });
       habitual.push(String(skill.id));
+    }
+  }
+
+  for (const run of state.listRuns()) {
+    const episodes = state.listEpisodes(run.id);
+    if (run.success === false || (run.score !== null && run.score < 0.5)) {
+      antiPatternCandidates.push(generateAntiPatternCandidate(state, run, episodes));
+      continue;
+    }
+
+    if (run.success === true && (run.score ?? 0) >= 0.7) {
+      traceCandidates.push(generateTraceCandidate(state, run, episodes));
     }
   }
 
@@ -97,5 +196,7 @@ export function runDream({ state, domainStats }: DreamRequest): DreamResult {
     identitySummary,
     devStages,
     confidenceNotes: confidenceNotes(state),
+    antiPatternCandidates,
+    traceCandidates,
   };
 }

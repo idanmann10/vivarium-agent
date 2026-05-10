@@ -60,6 +60,32 @@ describe("SQLiteStateRepository", () => {
         derivedFromEpisodeIds: ["episode-sqlite"],
         updatedAt: "2026-05-09T00:00:02.000Z",
       });
+      state.upsertAntiPatternCandidate({
+        id: "anti-sqlite-retry-loop",
+        domain: "coding",
+        name: "Avoid SQLite retry loops",
+        description: "A persisted failed run repeated without new evidence.",
+        why: "Recovery happened before the run ended.",
+        insteadDo: "Inspect persisted monitor reasons before retrying.",
+        evidenceRunIds: ["run-sqlite"],
+        createdAt: "2026-05-09T00:00:03.000Z",
+      });
+      state.upsertTraceCandidate({
+        id: "trace-sqlite-run",
+        domain: "coding",
+        title: "SQLite Run Trace",
+        sourceRunId: run,
+        teaches: ["coding", "sqlite persistence"],
+        steps: [
+          {
+            index: 1,
+            action: "Persist state",
+            observation: "state reopened",
+            annotation: "Trace candidate survived a repository reopen.",
+          },
+        ],
+        createdAt: "2026-05-09T00:00:04.000Z",
+      });
       state.setIdentity({
         agentId: agentId("agent-sqlite"),
         name: "agent-sqlite",
@@ -91,6 +117,8 @@ describe("SQLiteStateRepository", () => {
           updatedAt: "2026-05-09T00:00:02.000Z",
         },
       ]);
+      expect(state.listAntiPatternCandidates("coding")[0]?.name).toBe("Avoid SQLite retry loops");
+      expect(state.listTraceCandidates("coding")[0]?.steps[0]?.annotation).toContain("reopen");
       expect(state.getIdentity()?.summary).toBe("SQLite-backed local agent.");
       expect(state.listPublishableArtifacts()).toEqual([{ kind: "run", path: "runs/run-sqlite", body: "redacted" }]);
       state.close();

@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal and destructive confirmation behavior, but the audit still finds uncovered v1 requirements in Phase 1, Phase 2, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, and local Dream candidate generation, but the audit still finds uncovered v1 requirements in Phase 1, Phase 2, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -39,14 +39,14 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 1 CLI | `init`, `run`, `credentials`, `skills`, `world`, `status`, and `doctor` helpers exist; init runs migrations, installs starter skills, discovers starter traces/curriculum, and returns provider/credential prompts; no interactive parser UX yet | Complete locally |
 | Phase 1 e2e run/recover | `tests/e2e-run.test.ts` and `tests/e2e-recover.test.ts` pass in current test suite | Complete locally |
 | Phase 1 done scenario | A developer can run a synthetic local goal; real provider config, credential use, anti-pattern automatic lookup, and full CLI install flow are not verified | Incomplete |
-| Phase 2 Dream primitive | Deterministic `runDream` exists with promotion/pruning/habituation/identity/confidence behavior | Partially complete |
+| Phase 2 Dream primitive | Deterministic `runDream` exists with promotion/pruning/habituation/identity/confidence behavior and now returns generated anti-pattern/trace candidate IDs | Partially complete |
 | Phase 2 scheduler | `shouldRunDream` helper exists; real nightly firing loop is not implemented | Partially complete |
-| Phase 2 candidate pipelines | Skill candidate handling exists; anti-pattern and trace candidate pipelines are not fully wired | Incomplete |
+| Phase 2 candidate pipelines | Skill candidate handling exists; Dream now generates anti-pattern candidates from failed/low-score runs and annotated trace candidates from successful high-score runs, with in-memory and SQLite persistence | Complete locally |
 | Phase 2 confidence storage | In-memory and SQLite confidence buckets exist | Complete locally |
 | Phase 2 compounding eval | `packages/eval/src/compounding.ts` and e2e Dream test exist | Partially complete |
 | Phase 2 anonymizer | Regex anonymizer exists with tests; LLM scrubber path is not implemented | Partially complete |
-| Phase 2 publishability queue | Publishable artifacts are stored locally | Partially complete |
-| Phase 2 done scenario | First anti-pattern auto-generation and first trace auto-extraction with annotations are not verified | Incomplete |
+| Phase 2 publishability queue | Publishable artifacts and Dream candidate queues are stored locally | Partially complete |
+| Phase 2 done scenario | Dream primitive tests verify first anti-pattern generation and first trace extraction with annotations from local run history | Complete locally |
 | Phase 3 GitHub write paths | GitHub client can create PRs/issues/Discussions using mocked fetch | Complete locally; live GitHub unverified |
 | Phase 3 multi-world subscriptions | Multi-world retrieval test exists | Complete locally |
 | Phase 3 world workflows | Auto-merge, validation, archive, nightly stats, stale workflows exist in `the-world/.github/workflows/` | Partially complete |
@@ -61,22 +61,23 @@ Not complete. The roadmap has substantial local implementation complete, includi
 ## Fresh Evidence Used
 
 - `sed -n '1882,2085p' goal.md`: phase, v1 done, and out-of-scope criteria.
-- `git -C the-agent status --short`: clean before the safety slice; safety changes are tracked in the follow-up commit.
+- `git -C the-agent status --short`: clean before the safety slice; safety and Dream candidate-generation changes are tracked in follow-up commits.
 - `git -C the-world status --short`: clean.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
 - `bun test packages/runtime/src/orchestrator.test.ts`: 5 tests passed, including harmful refusal and destructive confirmation behavior.
+- `bun test packages/state/src/repository.test.ts packages/state/src/sqlite-repository.test.ts packages/state/src/storage/migrations.test.ts packages/runtime/src/primitives/dream/primitive.test.ts`: 10 tests passed, including Dream candidate queues and extraction.
 - `bun run lint`: scanned 167 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 68 tests passed, 0 failed.
+- `bun run test`: 70 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value unblocked local gap after the run-level safety behavior slice is Phase 2 candidate generation:
+The highest-value remaining local gap after the Dream candidate-generation slice is production-readiness around Phase 1/2 runtime depth:
 
-1. Wire anti-pattern candidate generation from failed or costly runs.
-2. Wire trace candidate extraction with annotations from completed runs.
-3. Persist the candidate queue in the existing state layer before publication.
+1. Add token-budget accounting to the attention/runtime path.
+2. Add a provider-backed anonymizer/scrubber interface while keeping the current regex scrubber as deterministic fallback.
+3. Decide whether the local scheduler helper should become a real long-running daemon loop in this repo or stay deployment-supervisor-owned.
 
 Live provider credentials, real GitHub remotes, real GitHub Discussions, cross-install cultural transmission, and deployment supervision still require user-provided decisions or external access.
