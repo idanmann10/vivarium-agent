@@ -69,6 +69,10 @@ function metaValue(text: string, key: string): string | undefined {
     .trim();
 }
 
+function staleSkillPenalty(kind: LocalWorldArtifactKind, text: string): number {
+  return kind === "skill" && metaValue(text, "stale") === "true" ? -0.5 : 0;
+}
+
 function runTitle(text: string, fallback: string): string {
   const goal = text.match(/# Goal\s+([\s\S]*?)(?:\n# |\n*$)/)?.[1]?.trim();
   return goal === undefined || goal.length === 0 ? fallback : goal;
@@ -111,7 +115,7 @@ export function createLocalWorldReader({ root }: LocalWorldReaderOptions): Local
             id: path.replace(`${root}/`, ""),
             title: kind === "run" ? runTitle(text, path) : titleFromMarkdown(text, path),
             path,
-            score: scoreText(text, query) + (kind === "anti-pattern" ? 0.5 : 0),
+            score: scoreText(text, query) + (kind === "anti-pattern" ? 0.5 : 0) + staleSkillPenalty(kind, text),
           };
         })
         .filter((result) => result.score > 0 || result.kind === "anti-pattern" || result.kind === "trace")

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -16,6 +16,33 @@ describe("local world reader", () => {
     expect(results.some((result) => result.kind === "skill" && result.title.includes("Red Green"))).toBe(true);
     expect(results.some((result) => result.kind === "anti-pattern")).toBe(true);
     expect(results.some((result) => result.kind === "trace")).toBe(true);
+  });
+
+  test("deprioritizes stale skills without hiding them", () => {
+    const root = mkdtempSync(join(tmpdir(), "world-reader-stale-"));
+    const staleDirectory = join(root, "domains", "coding", "skills", "aaa-stale");
+    const freshDirectory = join(root, "domains", "coding", "skills", "zzz-fresh");
+    mkdirSync(staleDirectory, { recursive: true });
+    mkdirSync(freshDirectory, { recursive: true });
+    writeFileSync(
+      join(staleDirectory, "SKILL.md"),
+      "---\nname: Stale Deployment Skill\ndescription: deployment health check\nstale: true\n---\n\n# Stale Deployment Skill\n\nUse deployment health check evidence.\n",
+    );
+    writeFileSync(
+      join(freshDirectory, "SKILL.md"),
+      "---\nname: Fresh Deployment Skill\ndescription: deployment health check\n---\n\n# Fresh Deployment Skill\n\nUse deployment health check evidence.\n",
+    );
+
+    const results = createLocalWorldReader({ root }).search({
+      domain: "coding",
+      query: "deployment health check",
+      limit: 2,
+    });
+
+    const fresh = results.find((result) => result.title === "Fresh Deployment Skill");
+    const stale = results.find((result) => result.title === "Stale Deployment Skill");
+    expect(results.map((result) => result.title)).toEqual(["Fresh Deployment Skill", "Stale Deployment Skill"]);
+    expect(stale?.score).toBeLessThan(fresh?.score ?? 0);
   });
 
   test("retrieves published runs by domain and query", () => {
