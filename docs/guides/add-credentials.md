@@ -20,6 +20,8 @@ export VIVARIUM_INTERNAL_API_HEALTH_URL=<internal-health-url>
 ```
 
 Keep the master key and credential value out of committed files.
+After `credentials add` creates the encrypted store, `doctor --live` can verify the credential
+through `credentials smoke` without keeping `VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE` exported.
 
 `doctor --live` reports `credentials.path:unavailable` until the encrypted file at
 `VIVARIUM_CREDENTIALS_PATH` exists.

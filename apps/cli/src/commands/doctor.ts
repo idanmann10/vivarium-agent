@@ -901,6 +901,20 @@ function privateOaiCompatCheck(env: Readonly<Record<string, string | undefined>>
   return statuses.includes("placeholder") ? "provider.privateOaiCompat:placeholder" : "provider.privateOaiCompat:missing";
 }
 
+function internalApiCredentialValueCheck(env: Readonly<Record<string, string | undefined>>): string {
+  const status = envValueStatus(env, internalApiCredentialValueEnv);
+  if (status === "configured") {
+    return "internalApi.credentialValue:configured";
+  }
+
+  const credentialsPath = textValue(env[credentialsPathEnv]);
+  if (credentialsPath !== undefined && existsSync(credentialsPath)) {
+    return "internalApi.credentialValue:configured";
+  }
+
+  return `internalApi.credentialValue:${status}`;
+}
+
 function credentialSmokeCheck(
   runner: DoctorCommandRunner,
   env: Readonly<Record<string, string | undefined>>,
@@ -1528,7 +1542,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     requiredFileCheck(env, credentialsPathEnv, "credentials.path"),
     requiredEnvCheck(env, credentialsMasterKeyEnv, "credentials.masterKey"),
     requiredEnvCheck(env, internalApiCredentialNameEnv, "internalApi.credentialName"),
-    requiredEnvCheck(env, internalApiCredentialValueEnv, "internalApi.credentialValue"),
+    internalApiCredentialValueCheck(env),
     requiredEnvCheck(env, internalApiHealthUrlEnv, "internalApi.healthUrl"),
     credentialSmokeCheck(runner, env, agentRoot),
     githubEnvCheck(env),

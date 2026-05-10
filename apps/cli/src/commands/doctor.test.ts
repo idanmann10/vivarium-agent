@@ -3154,6 +3154,47 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("credentials.smoke:failed");
   });
 
+  test("does not require plaintext internal API credential value after encrypted credential smoke succeeds", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-credential-value-"));
+    const files = writeLiveReadyFiles(root);
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      nowMillis: Date.parse("2026-05-23T00:00:00.000Z"),
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        VIVARIUM_WORLD_SUBSCRIPTIONS_PATH: files.subscriptionsPath,
+        VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world-final.git",
+        VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
+        ANTHROPIC_API_KEY: "configured",
+        OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
+        VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_PROVIDER_PROFILES_PATH: files.profilesPath,
+        VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
+        VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
+        VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE: "private-finetune",
+        VIVARIUM_CREDENTIALS_PATH: files.credentialsPath,
+        VIVARIUM_CREDENTIALS_MASTER_KEY: "configured",
+        VIVARIUM_INTERNAL_API_CREDENTIAL_NAME: "INTERNAL_API_TOKEN",
+        VIVARIUM_INTERNAL_API_HEALTH_URL: "https://internal.example/health",
+        VIVARIUM_V1_EVIDENCE_PATH: files.evidencePath,
+        GITHUB_TOKEN: "configured",
+      },
+      runner: readyRunner,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.checks).toContain("internalApi.credentialValue:configured");
+    expect(result.checks).toContain("credentials.smoke:ok");
+  });
+
   test("accepts a complete v1 evidence manifest with otherwise configured live readiness inputs", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-live-ready-"));
     const files = writeLiveReadyFiles(root);

@@ -200,7 +200,7 @@ export VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE=<redacted-internal-api-token>
 export VIVARIUM_INTERNAL_API_HEALTH_URL=<internal-health-url>
 ```
 
-`doctor --live` expects `VIVARIUM_CREDENTIALS_PATH` to point at the encrypted file created by `credentials add`, and it expects the master key, credential name, credential value, and health URL to be exported so the credential add and smoke commands can run from the same filled local env file. It reports `credentials.smoke:ok` only when the encrypted credential can call the configured health URL and receive a 2xx status.
+`VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE` is needed to create the encrypted record with `credentials add`, but it does not need to stay exported after the encrypted store exists. `doctor --live` expects `VIVARIUM_CREDENTIALS_PATH` to point at that encrypted file, expects the master key, credential name, and health URL to be exported, and reports `credentials.smoke:ok` only when the encrypted credential can call the configured health URL and receive a 2xx status.
 
 ## GitHub Auth
 
