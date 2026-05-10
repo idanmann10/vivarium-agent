@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, and a CLI dispatcher, but the audit still finds uncovered v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, and independent validator machine-fingerprint trust gates, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -50,7 +50,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 3 GitHub write paths | GitHub client can create PRs/issues/Discussions using mocked fetch | Complete locally; live GitHub unverified |
 | Phase 3 multi-world subscriptions | Multi-world retrieval test exists | Complete locally |
 | Phase 3 world workflows | Auto-merge, validation, archive, nightly stats, stale workflows exist in `the-world/.github/workflows/` | Partially complete |
-| Phase 3 anti-gaming and trust gates | Trust scripts and held-review listing exist; independent machine fingerprinting is not fully implemented | Partially complete |
+| Phase 3 anti-gaming and trust gates | Trust scripts, held-review listing, and independent positive validator machine-fingerprint counting exist with tests | Complete locally; live reviewer identity unverified |
 | Phase 3 done scenario | No canonical remote world, second install, live PR, auto-merge, cross-install pull, featured maintainer pick, or recognizable live STATS loop verified | Incomplete externally |
 | v1 starter pack init | `runInitCommand` discovers starter skills/traces, installs starter skills in SQLite, records migrations, returns curriculum path and prompts; `dispatchCliCommand` routes init argv; actual 20-30 skill availability still depends on selected world/domain content | Partially complete |
 | v1 real goals over a week | Synthetic tests only | Incomplete externally |
@@ -71,6 +71,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun test packages/tools/src/anonymizer/pipeline.test.ts packages/providers/src/router.test.ts`: 5 tests passed, including provider anonymizer fallback.
 - `bun test apps/daemon/src/scheduler.test.ts`: 4 tests passed, including daemon Dream scheduler start/stop behavior.
 - `bun test apps/cli/src/dispatcher.test.ts`: 4 tests passed, including CLI parser routing for local commands.
+- `the-world bun test scripts`: 8 tests passed, including independent validator machine-fingerprint counting.
 - `bun run lint`: scanned 169 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
 - `bun run test`: 79 tests passed, 0 failed.
