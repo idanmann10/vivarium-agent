@@ -1,12 +1,19 @@
 import type { CredentialRecord, CredentialStore } from "./credentials/store.js";
 import {
   dispatchExternalTool,
+  type ComputerScrollToolRequest,
   type ExternalToolAdapters,
   type ExternalToolRequest,
   type ExternalToolResult,
   type HttpMethod,
 } from "./external/index.js";
-import { containsEmbeddedCredential, evaluateHttpSafety, scanToolOutputForPromptInjection } from "./safety/pipeline.js";
+import {
+  containsEmbeddedCredential,
+  evaluateComputerUseSafety,
+  evaluateHttpSafety,
+  scanToolOutputForPromptInjection,
+  type ComputerUseConfirmationLevel,
+} from "./safety/pipeline.js";
 
 export interface ToolDispatchRequest {
   readonly name: string;
@@ -50,11 +57,16 @@ export interface ToolDailyUsageCounter {
   getToolUsageCount(toolName: string, day: string): number;
 }
 
+export interface ComputerUseSafetyConfig {
+  readonly confirmationLevel: ComputerUseConfirmationLevel;
+}
+
 export interface ToolDispatcherOptions {
   readonly builtinHandlers?: Readonly<Record<string, BuiltinToolHandler>>;
   readonly externalAdapters: ExternalToolAdapters;
   readonly credentials?: CredentialStore;
   readonly httpSafety?: HttpSafetyConfig;
+  readonly computerUseSafety?: ComputerUseSafetyConfig;
   readonly rateLimits?: ToolRateLimitConfig;
   readonly onDispatch?: (event: ToolDispatchEvent) => void;
 }
@@ -81,6 +93,14 @@ function optionalString(value: unknown): string | undefined {
 
 function optionalBoolean(value: unknown): boolean | undefined {
   return typeof value === "boolean" ? value : undefined;
+}
+
+function optionalNumber(value: unknown): number | undefined {
+  return typeof value === "number" ? value : undefined;
+}
+
+function isComputerScrollDirection(value: unknown): value is ComputerScrollToolRequest["args"]["direction"] {
+  return value === "up" || value === "down" || value === "left" || value === "right";
 }
 
 function parseExternalRequest(request: ToolDispatchRequest): ExternalToolRequest | undefined {
@@ -148,6 +168,56 @@ function parseExternalRequest(request: ToolDispatchRequest): ExternalToolRequest
 
   if (request.name === "mcp.call" && typeof request.args.server === "string" && typeof request.args.tool === "string") {
     return { name: request.name, args: { server: request.args.server, tool: request.args.tool, input: request.args.input } };
+  }
+
+  if (request.name === "computer.screenshot") {
+    return { name: request.name, args: {} };
+  }
+
+  if (request.name === "computer.click" && typeof request.args.target === "string") {
+    const systemLevel = optionalBoolean(request.args.systemLevel);
+    const confirmed = optionalBoolean(request.args.confirmed);
+    return {
+      name: request.name,
+      args: {
+        target: request.args.target,
+        ...(systemLevel === undefined ? {} : { systemLevel }),
+        ...(confirmed === undefined ? {} : { confirmed }),
+      },
+    };
+  }
+
+  if (request.name === "computer.type" && typeof request.args.text === "string") {
+    const target = optionalString(request.args.target);
+    const systemLevel = optionalBoolean(request.args.systemLevel);
+    const passwordField = optionalBoolean(request.args.passwordField);
+    const confirmed = optionalBoolean(request.args.confirmed);
+    return {
+      name: request.name,
+      args: {
+        text: request.args.text,
+        ...(target === undefined ? {} : { target }),
+        ...(systemLevel === undefined ? {} : { systemLevel }),
+        ...(passwordField === undefined ? {} : { passwordField }),
+        ...(confirmed === undefined ? {} : { confirmed }),
+      },
+    };
+  }
+
+  if (request.name === "computer.scroll" && isComputerScrollDirection(request.args.direction)) {
+    const amount = optionalNumber(request.args.amount);
+    return {
+      name: request.name,
+      args: { direction: request.args.direction, ...(amount === undefined ? {} : { amount }) },
+    };
+  }
+
+  if (request.name === "computer.list_windows") {
+    return { name: request.name, args: {} };
+  }
+
+  if (request.name === "computer.focus_window" && typeof request.args.windowId === "string") {
+    return { name: request.name, args: { windowId: request.args.windowId } };
   }
 
   return undefined;
@@ -231,6 +301,19 @@ async function dispatchExternal(
           headers: mergeHeaders(request.args.headers, credentialHeaders(credential)),
         },
       };
+    }
+  }
+
+  if (request.name === "computer.click" || request.name === "computer.type") {
+    const decision = evaluateComputerUseSafety({
+      action: request.name,
+      confirmationLevel: options.computerUseSafety?.confirmationLevel ?? "system_only",
+      systemLevel: request.args.systemLevel ?? false,
+      passwordField: request.name === "computer.type" ? request.args.passwordField ?? false : false,
+      confirmed: request.args.confirmed ?? false,
+    });
+    if (!decision.allowed) {
+      return { ok: false, error: decision.reason, blocked: true };
     }
   }
 

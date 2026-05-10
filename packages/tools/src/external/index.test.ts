@@ -78,6 +78,44 @@ describe("dispatchExternalTool", () => {
     ).toMatchObject({ ok: true, value: { server: "memory", tool: "search" } });
   });
 
+  test("routes computer-use requests through an injected adapter", async () => {
+    const adapters = {
+      computer: {
+        screenshot: async () => ({ image: "screen" }),
+        click: async (request: { readonly target: string }) => ({ clicked: request.target }),
+        type: async (request: { readonly text: string }) => ({ typed: request.text.length }),
+        scroll: async (request: { readonly direction: string }) => ({ scrolled: request.direction }),
+        listWindows: async () => [{ id: "win-1", title: "Editor" }],
+        focusWindow: async (request: { readonly windowId: string }) => ({ focused: request.windowId }),
+      },
+    };
+
+    expect(await dispatchExternalTool({ name: "computer.screenshot", args: {} }, adapters)).toEqual({
+      ok: true,
+      value: { image: "screen" },
+    });
+    expect(await dispatchExternalTool({ name: "computer.click", args: { target: "button" } }, adapters)).toEqual({
+      ok: true,
+      value: { clicked: "button" },
+    });
+    expect(await dispatchExternalTool({ name: "computer.type", args: { text: "hello" } }, adapters)).toEqual({
+      ok: true,
+      value: { typed: 5 },
+    });
+    expect(await dispatchExternalTool({ name: "computer.scroll", args: { direction: "down" } }, adapters)).toEqual({
+      ok: true,
+      value: { scrolled: "down" },
+    });
+    expect(await dispatchExternalTool({ name: "computer.list_windows", args: {} }, adapters)).toEqual({
+      ok: true,
+      value: [{ id: "win-1", title: "Editor" }],
+    });
+    expect(await dispatchExternalTool({ name: "computer.focus_window", args: { windowId: "win-1" } }, adapters)).toEqual({
+      ok: true,
+      value: { focused: "win-1" },
+    });
+  });
+
   test("routes web fetch, read, and search requests through injected adapters", async () => {
     const adapters = {
       fetch: async (request: Request) =>

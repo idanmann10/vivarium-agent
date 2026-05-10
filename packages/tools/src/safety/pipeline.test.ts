@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { containsEmbeddedCredential, evaluateHttpSafety, scanToolOutputForPromptInjection } from "./pipeline.js";
+import {
+  containsEmbeddedCredential,
+  evaluateComputerUseSafety,
+  evaluateHttpSafety,
+  scanToolOutputForPromptInjection,
+} from "./pipeline.js";
 
 describe("safety pipeline", () => {
   test("allows allowlisted read requests and blocks destructive requests without confirmation", () => {
@@ -35,5 +40,40 @@ describe("safety pipeline", () => {
   test("detects credential-like secrets embedded in tool arguments", () => {
     expect(containsEmbeddedCredential({ body: "Bearer sk-secret-token" })).toBe(true);
     expect(containsEmbeddedCredential({ body: "plain text" })).toBe(false);
+  });
+
+  test("requires computer-use confirmation based on configured policy", () => {
+    expect(
+      evaluateComputerUseSafety({
+        action: "computer.click",
+        confirmationLevel: "system_only",
+        systemLevel: true,
+        confirmed: false,
+      }),
+    ).toEqual({ allowed: false, reason: "Computer use action requires confirmation" });
+    expect(
+      evaluateComputerUseSafety({
+        action: "computer.click",
+        confirmationLevel: "system_only",
+        systemLevel: true,
+        confirmed: true,
+      }),
+    ).toEqual({ allowed: true, reason: "Computer use action passed safety checks" });
+    expect(
+      evaluateComputerUseSafety({
+        action: "computer.type",
+        confirmationLevel: "always",
+        systemLevel: false,
+        confirmed: false,
+      }),
+    ).toEqual({ allowed: false, reason: "Computer use action requires confirmation" });
+    expect(
+      evaluateComputerUseSafety({
+        action: "computer.type",
+        confirmationLevel: "never",
+        passwordField: true,
+        confirmed: false,
+      }),
+    ).toEqual({ allowed: true, reason: "Computer use action passed safety checks" });
   });
 });

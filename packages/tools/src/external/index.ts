@@ -88,6 +88,51 @@ export interface McpToolRequest {
   };
 }
 
+export interface ComputerScreenshotToolRequest {
+  readonly name: "computer.screenshot";
+  readonly args: Record<string, never>;
+}
+
+export interface ComputerClickToolRequest {
+  readonly name: "computer.click";
+  readonly args: {
+    readonly target: string;
+    readonly systemLevel?: boolean;
+    readonly confirmed?: boolean;
+  };
+}
+
+export interface ComputerTypeToolRequest {
+  readonly name: "computer.type";
+  readonly args: {
+    readonly text: string;
+    readonly target?: string;
+    readonly systemLevel?: boolean;
+    readonly passwordField?: boolean;
+    readonly confirmed?: boolean;
+  };
+}
+
+export interface ComputerScrollToolRequest {
+  readonly name: "computer.scroll";
+  readonly args: {
+    readonly direction: "up" | "down" | "left" | "right";
+    readonly amount?: number;
+  };
+}
+
+export interface ComputerListWindowsToolRequest {
+  readonly name: "computer.list_windows";
+  readonly args: Record<string, never>;
+}
+
+export interface ComputerFocusWindowToolRequest {
+  readonly name: "computer.focus_window";
+  readonly args: {
+    readonly windowId: string;
+  };
+}
+
 export type ExternalToolRequest =
   | HttpToolRequest
   | WebFetchToolRequest
@@ -98,7 +143,13 @@ export type ExternalToolRequest =
   | FileEditToolRequest
   | TerminalToolRequest
   | CodeToolRequest
-  | McpToolRequest;
+  | McpToolRequest
+  | ComputerScreenshotToolRequest
+  | ComputerClickToolRequest
+  | ComputerTypeToolRequest
+  | ComputerScrollToolRequest
+  | ComputerListWindowsToolRequest
+  | ComputerFocusWindowToolRequest;
 
 export interface ProcessToolResult {
   readonly exitCode: number;
@@ -122,6 +173,15 @@ export interface FileToolAdapter {
   edit(path: string, search: string, replace: string): Promise<FileEditResult>;
 }
 
+export interface ComputerUseAdapter {
+  readonly screenshot?: () => Promise<unknown>;
+  readonly click?: (request: ComputerClickToolRequest["args"]) => Promise<unknown>;
+  readonly type?: (request: ComputerTypeToolRequest["args"]) => Promise<unknown>;
+  readonly scroll?: (request: ComputerScrollToolRequest["args"]) => Promise<unknown>;
+  readonly listWindows?: () => Promise<unknown>;
+  readonly focusWindow?: (request: ComputerFocusWindowToolRequest["args"]) => Promise<unknown>;
+}
+
 export interface ExternalToolAdapters {
   readonly fetch?: (request: Request) => Promise<Response>;
   readonly searchWeb?: (query: string) => Promise<readonly WebSearchResult[]>;
@@ -129,6 +189,7 @@ export interface ExternalToolAdapters {
   readonly runTerminal?: (command: string) => Promise<ProcessToolResult>;
   readonly executeCode?: (request: CodeToolRequest["args"]) => Promise<ProcessToolResult>;
   readonly callMcp?: (request: McpToolRequest["args"]) => Promise<unknown>;
+  readonly computer?: ComputerUseAdapter;
 }
 
 export type ExternalToolResult =
@@ -304,6 +365,54 @@ export async function dispatchExternalTool(
       return missingAdapter(request.name);
     }
     return attempt(() => executeCode(request.args));
+  }
+
+  if (request.name === "computer.screenshot") {
+    const screenshot = adapters.computer?.screenshot;
+    if (screenshot === undefined) {
+      return missingAdapter(request.name);
+    }
+    return attempt(() => screenshot());
+  }
+
+  if (request.name === "computer.click") {
+    const click = adapters.computer?.click;
+    if (click === undefined) {
+      return missingAdapter(request.name);
+    }
+    return attempt(() => click(request.args));
+  }
+
+  if (request.name === "computer.type") {
+    const type = adapters.computer?.type;
+    if (type === undefined) {
+      return missingAdapter(request.name);
+    }
+    return attempt(() => type(request.args));
+  }
+
+  if (request.name === "computer.scroll") {
+    const scroll = adapters.computer?.scroll;
+    if (scroll === undefined) {
+      return missingAdapter(request.name);
+    }
+    return attempt(() => scroll(request.args));
+  }
+
+  if (request.name === "computer.list_windows") {
+    const listWindows = adapters.computer?.listWindows;
+    if (listWindows === undefined) {
+      return missingAdapter(request.name);
+    }
+    return attempt(() => listWindows());
+  }
+
+  if (request.name === "computer.focus_window") {
+    const focusWindow = adapters.computer?.focusWindow;
+    if (focusWindow === undefined) {
+      return missingAdapter(request.name);
+    }
+    return attempt(() => focusWindow(request.args));
   }
 
   const callMcp = adapters.callMcp;

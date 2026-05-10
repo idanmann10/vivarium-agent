@@ -3,6 +3,7 @@ export { createSelfTools } from "./builtin/self-tools.js";
 export type { SelfTools, SelfToolsDependencies } from "./builtin/self-tools.js";
 export { createAllowlistedFileAdapter, dispatchExternalTool, externalToolsets } from "./external/index.js";
 export type {
+  ComputerUseAdapter,
   ExternalToolAdapters,
   ExternalToolRequest,
   ExternalToolResult,
@@ -14,6 +15,7 @@ export type {
 export { createToolDispatcher, dispatchTool } from "./dispatcher.js";
 export type {
   BuiltinToolHandler,
+  ComputerUseSafetyConfig,
   HttpSafetyConfig,
   ToolDispatcher,
   ToolDispatcherOptions,
@@ -29,5 +31,10 @@ export { resolveCredential } from "./credentials/resolver.js";
 export type { CredentialLookup, CredentialResolution } from "./credentials/resolver.js";
 export { anonymizeText, anonymizeTextWithProvider, markRequiresAnonymization } from "./anonymizer/pipeline.js";
 export type { ProviderAnonymizationResult } from "./anonymizer/pipeline.js";
-export { evaluateHttpSafety } from "./safety/pipeline.js";
-export type { HttpSafetyRequest, SafetyDecision } from "./safety/pipeline.js";
+export { evaluateComputerUseSafety, evaluateHttpSafety } from "./safety/pipeline.js";
+export type {
+  ComputerUseConfirmationLevel,
+  ComputerUseSafetyRequest,
+  HttpSafetyRequest,
+  SafetyDecision,
+} from "./safety/pipeline.js";

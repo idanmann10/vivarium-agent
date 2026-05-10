@@ -186,4 +186,62 @@ describe("createToolDispatcher", () => {
       blocked: true,
     });
   });
+
+  test("requires confirmation for system-level computer-use click actions", async () => {
+    const events: ToolDispatchEvent[] = [];
+    let clicked = false;
+    const dispatcher = createToolDispatcher({
+      externalAdapters: {
+        computer: {
+          click: async () => {
+            clicked = true;
+            return { clicked: true };
+          },
+        },
+      },
+      onDispatch: (event) => events.push(event),
+    });
+
+    await expect(
+      dispatcher.dispatch({ name: "computer.click", args: { target: "admin-dialog", systemLevel: true } }),
+    ).resolves.toEqual({
+      ok: false,
+      error: "Computer use action requires confirmation",
+      blocked: true,
+    });
+    expect(clicked).toBe(false);
+    expect(events).toContainEqual(expect.objectContaining({ name: "computer.click", status: "blocked" }));
+
+    await expect(
+      dispatcher.dispatch({
+        name: "computer.click",
+        args: { target: "admin-dialog", systemLevel: true, confirmed: true },
+      }),
+    ).resolves.toEqual({
+      ok: true,
+      value: { clicked: true },
+    });
+    expect(clicked).toBe(true);
+  });
+
+  test("requires confirmation for computer-use typing into password fields", async () => {
+    const dispatcher = createToolDispatcher({
+      externalAdapters: {
+        computer: {
+          type: async () => ({ typed: true }),
+        },
+      },
+    });
+
+    await expect(
+      dispatcher.dispatch({
+        name: "computer.type",
+        args: { target: "password", text: "secret", passwordField: true },
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      error: "Computer use action requires confirmation",
+      blocked: true,
+    });
+  });
 });

@@ -15,6 +15,16 @@ export interface HttpSafetyRequest {
   readonly confirmed: boolean;
 }
 
+export type ComputerUseConfirmationLevel = "always" | "system_only" | "never";
+
+export interface ComputerUseSafetyRequest {
+  readonly action: "computer.click" | "computer.type";
+  readonly confirmationLevel: ComputerUseConfirmationLevel;
+  readonly systemLevel?: boolean;
+  readonly passwordField?: boolean;
+  readonly confirmed: boolean;
+}
+
 export function evaluateHttpSafety(request: HttpSafetyRequest): SafetyDecision {
   const allowedHost = request.allowlist.some((prefix) => request.url.startsWith(prefix));
   if (!allowedHost) {
@@ -27,6 +37,19 @@ export function evaluateHttpSafety(request: HttpSafetyRequest): SafetyDecision {
   }
 
   return { allowed: true, reason: "Request passed safety checks" };
+}
+
+export function evaluateComputerUseSafety(request: ComputerUseSafetyRequest): SafetyDecision {
+  const requiresConfirmation =
+    request.confirmationLevel === "always" ||
+    (request.confirmationLevel === "system_only" &&
+      (request.systemLevel === true || request.passwordField === true));
+
+  if (requiresConfirmation && !request.confirmed) {
+    return { allowed: false, reason: "Computer use action requires confirmation" };
+  }
+
+  return { allowed: true, reason: "Computer use action passed safety checks" };
 }
 
 const promptInjectionPatterns = [
