@@ -9,6 +9,7 @@
   "scripts": {
     "build": "bun run scripts/build.ts",
     "lint": "bun run scripts/lint.ts",
+    "record:local-e2e-demo": "node scripts/record-local-e2e-demo.cjs",
     "test": "bun test",
     "typecheck": "tsc --noEmit -p tsconfig.base.json",
     "verify:sqlite-stack": "node scripts/verify-better-sqlite3.cjs"
