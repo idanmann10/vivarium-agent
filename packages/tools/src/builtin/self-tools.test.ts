@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -76,6 +76,37 @@ describe("self-tools", () => {
     ]);
     expect(tools.world.listSubscriptions()).toEqual(result.subscriptions);
     expect(tools.world.search({ domain: "coding", query: "test first" }).length).toBeGreaterThan(0);
+  });
+
+  test("proposes skills through subscribed worlds", () => {
+    const root = mkdtempSync(join(tmpdir(), "self-tools-world-propose-"));
+    const canonicalWorld = join(root, "canonical");
+    const privateWorld = join(root, "private");
+    const subscriptionsPath = join(root, "subscriptions.json");
+    const state = new InMemoryStateRepository();
+    const tools = createSelfTools({
+      state,
+      world: createLocalWorldReader({ root: "../the-world" }),
+      worldSubscriptionsPath: subscriptionsPath,
+    });
+
+    tools.world.subscribe({ label: "private", root: privateWorld, priority: 0, autoPushEnabled: true });
+    tools.world.subscribe({ label: "canonical", root: canonicalWorld, priority: 1, autoPushEnabled: false });
+
+    const result = tools.world.propose({
+      domain: "coding",
+      name: "Internal Skill",
+      description: "An internal-only skill.",
+      body: "Use private context.",
+      contributor: "agent-a",
+      visibility: "internal",
+      evidenceRunIds: ["run-1"],
+    });
+
+    expect(result.target.label).toBe("private");
+    expect(result.path).toBe(join(privateWorld, "proposals", "skills", "coding", "internal-skill", "SKILL.md"));
+    expect(readFileSync(result.path, "utf8")).toContain("visibility: internal");
+    expect(readFileSync(result.path, "utf8")).toContain("- run-1");
   });
 
   test("exposes roadmap self-tools against SQLite state", () => {

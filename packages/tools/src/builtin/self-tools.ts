@@ -1,14 +1,16 @@
 import type { RunId, SkillId } from "../../../core/src/ids.js";
-import type { Episode, Run, TraceStep } from "../../../core/src/index.js";
+import type { Episode, Run, TraceStep, Visibility } from "../../../core/src/index.js";
 import type { StateRepository } from "../../../state/src/index.js";
 import {
   listWorldSubscriptions,
+  proposeSkillToSubscribedWorld,
   searchWorlds,
   subscribeWorld,
   type LocalWorldReader,
   type LocalWorldSearchRequest,
   type LocalWorldSearchResult,
   type PersistedWorldSubscription,
+  type ProposalWorldTarget,
   type SubscribeWorldRequest,
   type WorldSubscriptionSearch,
 } from "../../../world/src/index.js";
@@ -24,6 +26,22 @@ export interface MemoryWriteRequest {
   readonly subject: string;
   readonly content: string;
   readonly importance?: number;
+}
+
+export interface WorldProposeSkillRequest {
+  readonly domain: string;
+  readonly name: string;
+  readonly description: string;
+  readonly body: string;
+  readonly contributor: string;
+  readonly slug?: string;
+  readonly visibility?: Visibility;
+  readonly evidenceRunIds?: readonly string[];
+}
+
+export interface WorldProposeSkillResult {
+  readonly target: ProposalWorldTarget;
+  readonly path: string;
 }
 
 export interface SelfTools {
@@ -64,6 +82,7 @@ export interface SelfTools {
   };
   readonly world: {
     search(request: LocalWorldSearchRequest): readonly LocalWorldSearchResult[];
+    propose(request: WorldProposeSkillRequest): WorldProposeSkillResult;
     subscribe(request: Omit<SubscribeWorldRequest, "subscriptionsPath">): { readonly subscriptions: readonly PersistedWorldSubscription[] };
     listSubscriptions(): readonly PersistedWorldSubscription[];
   };
@@ -103,6 +122,24 @@ function searchSubscribedWorlds(
   request: LocalWorldSearchRequest,
 ): readonly LocalWorldSearchResult[] {
   return searchWorlds({ worlds, ...request });
+}
+
+function slugFromName(name: string): string {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug.length === 0 ? "skill" : slug;
+}
+
+function skillProposalBody(body: string, evidenceRunIds: readonly string[] = []): string {
+  if (evidenceRunIds.length === 0) {
+    return body;
+  }
+
+  return `${body}\n\n## Evidence\n\n${evidenceRunIds.map((id) => `- ${id}`).join("\n")}`;
 }
 
 export function createSelfTools({ state, world, worldSubscriptionsPath }: SelfToolsDependencies): SelfTools {
@@ -260,6 +297,18 @@ export function createSelfTools({ state, world, worldSubscriptionsPath }: SelfTo
         }
 
         return world.search(request);
+      },
+      propose(request) {
+        return proposeSkillToSubscribedWorld({
+          worlds: listWorldSubscriptions(requireWorldSubscriptionsPath(worldSubscriptionsPath)),
+          domain: request.domain,
+          slug: request.slug ?? slugFromName(request.name),
+          name: request.name,
+          description: request.description,
+          body: skillProposalBody(request.body, request.evidenceRunIds),
+          contributor: request.contributor,
+          visibility: request.visibility ?? "public",
+        });
       },
       subscribe(request) {
         return {
