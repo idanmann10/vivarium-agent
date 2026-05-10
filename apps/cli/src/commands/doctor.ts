@@ -37,6 +37,9 @@ const openRouterApiKeyEnv = "OPENROUTER_API_KEY";
 const privateOaiCompatApiKeyEnv = "VIVARIUM_OAI_COMPAT_API_KEY";
 const privateOaiCompatBaseUrlEnv = "VIVARIUM_OAI_COMPAT_BASE_URL";
 const privateOaiCompatModelEnv = "VIVARIUM_OAI_COMPAT_MODEL";
+const credentialsPathEnv = "VIVARIUM_CREDENTIALS_PATH";
+const internalApiCredentialNameEnv = "VIVARIUM_INTERNAL_API_CREDENTIAL_NAME";
+const internalApiHealthUrlEnv = "VIVARIUM_INTERNAL_API_HEALTH_URL";
 
 function defaultRunner({ command, args, cwd }: DoctorCommandRun): DoctorCommandRunResult {
   try {
@@ -145,6 +148,9 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     requiredEnvCheck(env, anthropicApiKeyEnv, "provider.anthropic"),
     requiredEnvCheck(env, openRouterApiKeyEnv, "provider.openrouter"),
     privateOaiCompatCheck(env),
+    requiredEnvCheck(env, credentialsPathEnv, "credentials.path"),
+    requiredEnvCheck(env, internalApiCredentialNameEnv, "internalApi.credentialName"),
+    requiredEnvCheck(env, internalApiHealthUrlEnv, "internalApi.healthUrl"),
     hasGithubEnv(env) ? "github.env:configured" : "github.env:missing",
     requiredEnvCheck(env, githubOwnerEnv, "github.owner"),
     requiredEnvCheck(env, githubRepositoryIdEnv, "github.repositoryId"),

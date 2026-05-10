@@ -154,6 +154,14 @@ bun apps/cli/src/index.ts credentials smoke \
 
 The smoke result reports status and a response preview without returning the secret value.
 
+Export the stable credential metadata for `doctor --live`:
+
+```bash
+export VIVARIUM_CREDENTIALS_PATH=/tmp/vivarium-credentials.enc
+export VIVARIUM_INTERNAL_API_CREDENTIAL_NAME=INTERNAL_API_TOKEN
+export VIVARIUM_INTERNAL_API_HEALTH_URL=<internal-health-url>
+```
+
 ## GitHub Auth
 
 GitHub writes need a valid authenticated CLI session or token environment. Use one of these paths:

@@ -120,4 +120,31 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("provider.openrouter:configured");
     expect(result.checks).toContain("provider.privateOaiCompat:missing");
   });
+
+  test("reports missing internal API credential metadata as live readiness blockers", () => {
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        ANTHROPIC_API_KEY: "configured",
+        OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
+        VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        GITHUB_TOKEN: "configured",
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("credentials.path:missing");
+    expect(result.checks).toContain("internalApi.credentialName:missing");
+    expect(result.checks).toContain("internalApi.healthUrl:missing");
+  });
 });
