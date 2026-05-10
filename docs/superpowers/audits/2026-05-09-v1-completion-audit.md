@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation over the shared state repository, aggregate compounding benchmark eval, Drizzle schema artifacts, state memory modules for all five roadmap memory systems, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, CLI live-readiness doctor preflight checks and handoff guide, provider/GitHub/daemon smoke commands, guarded GitHub Discussion and pull-request commands, GitHub workflow-runs check, world transmission-smoke verification, shared-state CLI init-to-run flow, local Compose daemon supervisor artifacts, SQLite-backed self-tools, read-only world pull/search paths, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, Anthropic-native external tool routing, Docker terminal sandbox adapter, computer-use click/type confirmation safety, concrete world maintenance workflows, independent validator machine-fingerprint trust gates, and coding starter-pack depth, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation over the shared state repository, aggregate compounding benchmark eval, Drizzle schema artifacts, state memory modules for all five roadmap memory systems, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, CLI live-readiness doctor preflight checks and handoff guide, provider/GitHub/daemon smoke commands, guarded GitHub Discussion and pull-request commands, GitHub workflow-runs check, world transmission-smoke verification, math-gated proposal PR helper, shared-state CLI init-to-run flow, local Compose daemon supervisor artifacts, SQLite-backed self-tools, read-only world pull/search paths, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, Anthropic-native external tool routing, Docker terminal sandbox adapter, computer-use click/type confirmation safety, concrete world maintenance workflows, independent validator machine-fingerprint trust gates, and coding starter-pack depth, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -47,7 +47,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 2 anonymizer | Regex anonymizer exists with tests; provider-backed scrubber path redacts before and after provider calls and falls back deterministically on provider failure | Complete locally; live provider credentials unverified |
 | Phase 2 publishability queue | Reflect-marked publishable runs are anonymized and queued locally; publishable artifacts and Dream candidate queues are stored locally | Complete locally |
 | Phase 2 done scenario | Dream primitive tests verify first anti-pattern generation and first trace extraction with annotations from local run history; orchestrator tests verify first publishable run queued locally | Complete locally |
-| Phase 3 GitHub write paths | GitHub client can create PRs/issues/Discussions using mocked fetch | Complete locally; live GitHub unverified |
+| Phase 3 GitHub write paths | GitHub client can create PRs/issues/Discussions using mocked fetch; `proposeSkillPullRequest` creates a local proposal and only opens a PR when `shouldPushToWorld` evidence passes | Complete locally; live GitHub unverified |
 | Phase 3 multi-world subscriptions | Multi-world retrieval test exists | Complete locally |
 | Phase 3 world workflows | Auto-merge, validation, archive-regression, nightly stats, and stale workflows exist in `the-world/.github/workflows/`; tests reject placeholder workflow bodies and require concrete archive/auto-merge commands | Complete locally; live GitHub execution unverified |
 | Phase 3 anti-gaming and trust gates | Trust scripts, held-review listing, and independent positive validator machine-fingerprint counting exist with tests | Complete locally; live reviewer identity unverified |
@@ -75,6 +75,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun apps/cli/src/index.ts github pull-request ...` without `--confirm-write`: returns a refusal before reading credentials or attempting a GitHub API call.
 - `bun apps/cli/src/index.ts github workflow-runs --owner owner --repo world --token-env VIVARIUM_MISSING_GITHUB_TOKEN --branch main --limit 2`: returns a missing-env result without attempting a GitHub API call.
 - `bun test packages/world/src/pull.test.ts apps/cli/src/commands/world.test.ts apps/cli/src/dispatcher.test.ts`: 19 tests passed, including local second-install world transmission verification.
+- `bun test packages/world/src/write.test.ts packages/world/src/github.test.ts tests/e2e-world-integration.test.ts`: 7 tests passed, including math-gated proposal PR creation, mocked GitHub writes, and local cultural transmission.
 - `docs/guides/live-readiness.md`: records the exact external prerequisites and verification sequence needed to clear the remaining live blockers.
 - `rg --files` and shallow file listings verified `the-agent` app/package skeleton, root metadata, CI workflows, and per-package README/AGENTS files; `the-world` top-level files, templates, and workflows are present.
 - `rg --files` over agent runtime/tools/state/CLI packages.
@@ -110,7 +111,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `the-world bun run build`: 8 required files present.
 - `bun run lint`: scanned 182 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 134 tests passed, 0 failed.
+- `bun run test`: 136 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work

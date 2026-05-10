@@ -56,6 +56,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` guarded GitHub pull-request CLI implemented after Discussion creation, giving contribution-loop verification a concrete `github pull-request --confirm-write` path while refusing unconfirmed writes.
 - `the-agent` GitHub workflow-runs CLI implemented after guarded PR creation, giving live workflow/trust-gate verification a concrete read-only `github workflow-runs` path.
 - `the-agent` world transmission-smoke CLI implemented after workflow-runs checks, giving cross-install verification a concrete pull-then-search path for a second local install.
+- `the-agent` math-gated world proposal PR helper implemented after transmission-smoke, wiring `shouldPushToWorld` evidence to `GitHubWorldClient.createPullRequest` with tests for pass/fail gates.
 - `the-world` Phase 0 committed at `81b28a2`.
 - `the-world` Phase 3 maintenance scripts committed at `866c121`.
 - `the-world` trust-gates slice committed at `719f0a1`.
@@ -70,7 +71,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 
 - `bun run lint`: scanned 182 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 134 tests passed, 0 failed.
+- `bun run test`: 136 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 `the-world`:
@@ -97,6 +98,7 @@ Live/external checks:
 - `bun apps/cli/src/index.ts github pull-request ...` without `--confirm-write`: returns a refusal before reading credentials or attempting a GitHub API call.
 - `bun apps/cli/src/index.ts github workflow-runs --owner owner --repo world --token-env VIVARIUM_MISSING_GITHUB_TOKEN --branch main --limit 2`: returns a missing-env result without attempting a GitHub API call.
 - `bun test packages/world/src/pull.test.ts apps/cli/src/commands/world.test.ts apps/cli/src/dispatcher.test.ts`: 19 tests passed, including local second-install world transmission verification.
+- `bun test packages/world/src/write.test.ts packages/world/src/github.test.ts tests/e2e-world-integration.test.ts`: 7 tests passed, including math-gated proposal PR creation, mocked GitHub writes, and local cultural transmission.
 - `bun test packages/tools/src/external/index.test.ts packages/tools/src/dispatcher.test.ts packages/tools/src/safety/pipeline.test.ts`: 21 tests passed, including Anthropic-native external adapter routing, credential injection, and Docker terminal sandbox command construction.
 
 ## Prompt-To-Artifact Checklist
@@ -111,13 +113,13 @@ Live/external checks:
 | Phase 0 bootstrap | Two local repos, tooling, core types/math/kernel, world seed content, validators | Complete locally |
 | Phase 1 agent works alone | Offline deterministic runtime, state, SQLite persistence, Drizzle schema artifacts, state memory modules for working/episodic/semantic/procedural/identity memory, semantic facts storage with deletion, versioned SQL migration runner, local provider, Anthropic/OpenAI/OpenAI-compatible HTTP adapters, encrypted credential store, typed tool dispatcher, web/HTTP/file/terminal Docker sandbox/code/MCP/anthropic-native/computer-use external adapters, SQLite-backed self-tools, HTTP/tool safety with output prompt-injection warnings, per-run and persistent per-day rate limits, credential-argument blocking, computer-use click/type confirmation, run-level harmful refusal and destructive confirmation behavior, automatic anti-pattern loading before execution, world read/search/pull paths, concrete primitive modules, attention-limited world context selection with token-budget accounting, daemon service, HTTP transport lifecycle, daemon-owned Dream scheduler loop, MCP tool manifest, local Compose supervisor artifacts, CLI init/run/credentials/skills/world search/pull/transmission-smoke/status/doctor/providers/github/daemon dispatcher and helpers, shared-state CLI init-to-run flow, live-readiness doctor preflight checks, provider/GitHub/daemon smoke commands, guarded GitHub Discussion and pull-request commands, GitHub workflow-runs check, e2e run/recover | Local slice partially complete |
 | Phase 2 Dream | Offline deterministic Dream, promotion/pruning/habits/identity/confidence/anonymizer/eval/e2e, StateRepository-backed Dream execution including SQLite, provider-backed anonymizer fallback, anti-pattern candidate generation, annotated trace candidate extraction, SQLite-backed candidate queue, aggregate compounding benchmark eval, and anonymized publishable run queueing from Reflect | Local slice complete |
-| Phase 3 world integration | Local proposal/publish, multi-world retrieval, GitHub PR/issue/Discussion client with mocked tests, world maintenance scripts, concrete archive/auto-merge workflows, trust gates, independent validator machine-fingerprint counting, held-review listing, cultural transmission e2e | Local slice complete |
+| Phase 3 world integration | Local proposal/publish, math-gated proposal PR helper, multi-world retrieval, GitHub PR/issue/Discussion client with mocked tests, world maintenance scripts, concrete archive/auto-merge workflows, trust gates, independent validator machine-fingerprint counting, held-review listing, cultural transmission e2e | Local slice complete |
 
 ## Remaining Blockers For Full Roadmap Completion
 
 - Anthropic/OpenAI/OpenRouter-compatible adapters are implemented and tested with mocked fetch; live calls still require API keys and runtime configuration.
 - Versioned SQL migrations are implemented on top of `bun:sqlite`; Drizzle schema artifacts and package dependencies are present, but direct `better-sqlite3` execution is blocked under Bun by the runtime's unsupported native module error.
-- GitHub PR/issue/Discussion client code and local trust/held-review gate logic are implemented and tested; live PR creation, auto-merge execution, and remote repository settings require actual GitHub remotes and credentials.
+- GitHub PR/issue/Discussion client code, math-gated proposal PR helper, and local trust/held-review gate logic are implemented and tested; live PR creation, auto-merge execution, and remote repository settings require actual GitHub remotes and credentials.
 - End-to-end cultural transmission is verified locally, including a second-install pull-then-search smoke path, but not against a canonical GitHub world remote.
 - Daemon service, HTTP transport lifecycle, daemon-owned Dream scheduler loop, MCP tool manifest, and local Compose supervisor artifacts are implemented and tested locally where possible; Compose CLI execution remains blocked by missing local Docker Compose tooling.
 - The CLI now exposes live blocker checks through `doctor --live`, but resolving the reported blockers still requires remotes, credentials, and Compose-capable tooling.
