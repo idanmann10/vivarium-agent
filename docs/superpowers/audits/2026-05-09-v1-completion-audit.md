@@ -61,7 +61,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 ## Fresh Evidence Used
 
 - `sed -n '1882,2085p' goal.md`: phase, v1 done, and out-of-scope criteria.
-- `git -C the-agent status --short`: clean after the Dream state repository, compounding eval, state memory implementation, CLI install-flow state, and audit update commits; prior safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, CLI dispatcher, SQLite self-tools, publishable run queue, tool-output warning, credential-argument safety, persistent daily rate-limit, computer-use confirmation, and world pull read-path changes are tracked in follow-up commits.
+- `git -C the-agent status --short`: clean after the Dream state repository, compounding eval, state memory implementation, CLI install-flow state, daemon Compose supervision, Drizzle schema, and audit update commits; prior safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, CLI dispatcher, SQLite self-tools, publishable run queue, tool-output warning, credential-argument safety, persistent daily rate-limit, computer-use confirmation, and world pull read-path changes are tracked in follow-up commits.
 - `git -C the-world status --short`: clean after concrete maintenance workflow and coding starter-pack depth commits.
 - `rg --files` and shallow file listings verified `the-agent` app/package skeleton, root metadata, CI workflows, and per-package README/AGENTS files; `the-world` top-level files, templates, and workflows are present.
 - `rg --files` over agent runtime/tools/state/CLI packages.
@@ -98,7 +98,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 
 ## Next Unblocked Local Work
 
-The highest-value remaining gaps after the daemon Compose supervision artifact slice are live external verification and deployment execution:
+The highest-value remaining gaps after the Drizzle schema artifact slice are live external verification and deployment execution:
 
 1. Verify live provider credentials and live model calls once credential names and values are available.
 2. Verify live GitHub remotes, Discussions, PR creation, and auto-merge settings once repository targets and credentials are available.
