@@ -170,6 +170,14 @@ gh auth status
 
 The token must be able to create Discussions, branches, pull requests, issues, and read workflow state for the chosen world remote.
 
+Export the stable GitHub target metadata for `doctor --live` and the Discussion command:
+
+```bash
+export VIVARIUM_GITHUB_OWNER=<owner>
+export VIVARIUM_GITHUB_REPOSITORY_ID=<repository-node-id>
+export VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID=<discussion-category-node-id>
+```
+
 Then run a read-only GitHub smoke check:
 
 ```bash

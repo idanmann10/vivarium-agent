@@ -77,4 +77,24 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("agent.name:placeholder");
     expect(result.checks).toContain("world.name:placeholder");
   });
+
+  test("reports missing GitHub target metadata as live readiness blockers", () => {
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        OPENROUTER_API_KEY: "configured",
+        GITHUB_TOKEN: "configured",
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("github.owner:missing");
+    expect(result.checks).toContain("github.repositoryId:missing");
+    expect(result.checks).toContain("github.discussionCategoryId:missing");
+  });
 });

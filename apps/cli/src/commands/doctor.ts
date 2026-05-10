@@ -29,6 +29,9 @@ const providerEnvPrefixes = ["ANTHROPIC", "OPENAI", "OPENROUTER", "OAI"] as cons
 const githubEnvNames = ["GITHUB_TOKEN", "GH_TOKEN"] as const;
 const agentRepoNameEnv = "VIVARIUM_AGENT_REPO_NAME";
 const worldRepoNameEnv = "VIVARIUM_WORLD_REPO_NAME";
+const githubOwnerEnv = "VIVARIUM_GITHUB_OWNER";
+const githubRepositoryIdEnv = "VIVARIUM_GITHUB_REPOSITORY_ID";
+const githubDiscussionCategoryIdEnv = "VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID";
 
 function defaultRunner({ command, args, cwd }: DoctorCommandRun): DoctorCommandRunResult {
   try {
@@ -79,6 +82,11 @@ function repoNameCheck(env: Readonly<Record<string, string | undefined>>, envNam
   return value === placeholder ? `${label}.name:placeholder` : `${label}.name:configured`;
 }
 
+function requiredEnvCheck(env: Readonly<Record<string, string | undefined>>, envName: string, label: string): string {
+  const value = env[envName]?.trim();
+  return value === undefined || value.length === 0 ? `${label}:missing` : `${label}:configured`;
+}
+
 function githubAuthCheck(runner: DoctorCommandRunner): string {
   const result = run(runner, "gh", ["auth", "status"]);
   if (result.exitCode === 0) {
@@ -117,6 +125,9 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     hasRemote(runner, worldRoot) ? "world.remote:configured" : "world.remote:missing",
     hasProviderEnv(env) ? "provider.env:configured" : "provider.env:missing",
     hasGithubEnv(env) ? "github.env:configured" : "github.env:missing",
+    requiredEnvCheck(env, githubOwnerEnv, "github.owner"),
+    requiredEnvCheck(env, githubRepositoryIdEnv, "github.repositoryId"),
+    requiredEnvCheck(env, githubDiscussionCategoryIdEnv, "github.discussionCategoryId"),
     githubAuthCheck(runner),
     ...dockerCheck(runner),
   ];
