@@ -180,7 +180,7 @@ const guideDocs = {
     "computer.type",
   ],
   "fork-the-world-privately": ["canonical", "private", "--auto-push", "priority", "world search"],
-  install: ["bun install", "bun run lint", "init", "provider", "live-readiness"],
+  install: ["bun install", "bun run lint", "bun run knip", "init", "provider", "live-readiness"],
   "live-readiness": [
     "doctor --live",
     "--env-file live-readiness.local.env",
