@@ -44,6 +44,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` CLI install-flow shared-state slice implemented after state memory modules.
 - `the-agent` local daemon Compose supervision artifacts implemented after CLI install-flow state; Compose CLI execution remains unverified because this workspace lacks `docker compose` and `docker-compose`.
 - `the-agent` Drizzle schema artifact slice implemented after credential kind coverage; `better-sqlite3` package installation is present, but direct execution remains blocked by Bun's unsupported native module error.
+- `the-agent` live verification blocker evidence recorded in `9876160`.
 - `the-world` Phase 0 committed at `81b28a2`.
 - `the-world` Phase 3 maintenance scripts committed at `866c121`.
 - `the-world` trust-gates slice committed at `719f0a1`.
@@ -68,6 +69,15 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `bun run test`: 10 tests passed, 0 failed.
 - `bun run build`: 8 required files present.
 
+Live/external checks:
+
+- `git -C the-agent remote -v` and `git -C the-world remote -v`: no remotes configured.
+- `env | sort | rg '^(ANTHROPIC|OPENAI|OPENROUTER|GITHUB|GH_|VIVARIUM|THE_AGENT|INTERNAL|OAI|MODEL)'`: only `GH_PAGER=cat` is present; no provider or GitHub token env vars are configured.
+- `gh auth status`: configured GitHub accounts report invalid tokens.
+- `docker --version`: Docker 29.4.1 is installed.
+- `docker compose version`: unavailable because this Docker CLI has no `compose` subcommand.
+- `command -v docker-compose`: no standalone `docker-compose` executable found.
+
 ## Prompt-To-Artifact Checklist
 
 | Requirement | Evidence | Status |
@@ -89,6 +99,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - GitHub PR/issue/Discussion client code and local trust/held-review gate logic are implemented and tested; live PR creation, auto-merge execution, and remote repository settings require actual GitHub remotes and credentials.
 - End-to-end cultural transmission is verified locally, not across two distinct real installs pulling from a canonical GitHub world.
 - Daemon service, HTTP transport lifecycle, daemon-owned Dream scheduler loop, MCP tool manifest, and local Compose supervisor artifacts are implemented and tested locally where possible; Compose CLI execution remains blocked by missing local Docker Compose tooling.
+- The existing CLI `doctor` helper is still an offline local stub; the live blocker checks above are captured in audits, not yet exposed through the product CLI.
 
 ## Next Decision
 
