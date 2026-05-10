@@ -14,8 +14,11 @@ credentials and remotes.
 - `bun run test`
 - `bun run build`
 - `bun apps/cli/src/index.ts init --domain coding --world-root ../the-world --state-path .vivarium/state.db`
-- `bun apps/cli/src/index.ts doctor --live --agent-root . --world-root ../the-world`
+- `bun apps/cli/src/index.ts doctor --live --env-file live-readiness.local.env --agent-root . --world-root ../the-world`
 - `bun apps/cli/src/index.ts daemon smoke --status-url http://127.0.0.1:8787/status`
+
+Copy `docs/live-readiness.env.example` to `live-readiness.local.env` before filling live provider,
+GitHub, world subscription, and internal API values. Filled env files are ignored by git.
 
 ## Influences
 
