@@ -259,7 +259,8 @@ bun apps/cli/src/index.ts github workflow-runs \
 Use this to verify the validator, stats, trust-gate, and archive workflows that are relevant to the live contribution.
 The world auto-merge workflow fails closed unless live signal collection provides trust evidence through `WORLD_CONTRIBUTOR_TRUST`, `WORLD_EFFECTIVE_LB`, `WORLD_REGRESSION_VOTES`, and either `WORLD_POSITIVE_VALIDATORS` or `WORLD_VALIDATOR_VOTES_JSON`.
 `scripts/compute-signals.ts` exports those values from contribution proposal metadata when `GITHUB_ENV` is available.
-Verify proposal metadata is populated before expecting `gh pr merge --auto` to run.
+Generated skill PR proposals include neutral contributor trust, local effective lower bound, zero regression votes, and empty validator evidence by default.
+Verify live validator metadata is populated before expecting `gh pr merge --auto` to run.
 
 ## Multi-World Subscriptions
 

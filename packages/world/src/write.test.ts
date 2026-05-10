@@ -204,6 +204,11 @@ describe("local world writes", () => {
       gate: { lowerBound: 0.6, uses: 5, coverage: 0.5 },
       pullRequest: { url: "https://github.example/pulls/7", number: 7 },
     });
+    expect(readFileSync(result.path, "utf8")).toContain("contributor_trust: 0.5");
+    expect(readFileSync(result.path, "utf8")).toContain("effective_lb: 0.6");
+    expect(readFileSync(result.path, "utf8")).toContain("regression_votes: 0");
+    expect(readFileSync(result.path, "utf8")).toContain("positive_validators: 0");
+    expect(readFileSync(result.path, "utf8")).toContain("validator_votes_json: []");
   });
 
   test("does not open a skill proposal pull request when the push gate fails", async () => {

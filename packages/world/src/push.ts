@@ -15,6 +15,7 @@ export interface ProposeSkillRequest {
   readonly body: string;
   readonly contributor: string;
   readonly visibility?: Visibility;
+  readonly autoMergeSignals?: SkillAutoMergeSignals;
 }
 
 export interface ProposeAntiPatternRequest {
@@ -86,8 +87,17 @@ export interface SkillPushGateEvidence {
   readonly coverage: number;
 }
 
+export interface SkillAutoMergeSignals {
+  readonly contributorTrust: number;
+  readonly effectiveLowerBound: number;
+  readonly regressionVotes: number;
+  readonly positiveValidators: number;
+  readonly validatorVotesJson: string;
+}
+
 export interface ProposeSkillPullRequestRequest extends ProposeSkillRequest {
   readonly gate: SkillPushGateEvidence;
+  readonly contributorTrust?: number;
   readonly client: Pick<GitHubWorldClient, "createPullRequest">;
   readonly head: string;
   readonly base: string;
@@ -113,6 +123,12 @@ function proposalVisibility(visibility: Visibility | undefined): Visibility {
   return visibility ?? "public";
 }
 
+function skillSignalFrontmatter(signals: SkillAutoMergeSignals | undefined): string {
+  return signals === undefined
+    ? ""
+    : `contributor_trust: ${signals.contributorTrust}\neffective_lb: ${signals.effectiveLowerBound}\nregression_votes: ${signals.regressionVotes}\npositive_validators: ${signals.positiveValidators}\nvalidator_votes_json: ${signals.validatorVotesJson}\n`;
+}
+
 export function selectProposalWorldTarget(request: SelectProposalWorldTargetRequest): ProposalWorldTarget {
   const worlds = [...request.worlds].toSorted((left, right) => left.priority - right.priority || left.label.localeCompare(right.label));
   if (worlds.length === 0) {
@@ -133,7 +149,7 @@ export function proposeSkill(request: ProposeSkillRequest): string {
   const visibility = proposalVisibility(request.visibility);
   writeFileSync(
     path,
-    `---\nid: ${request.domain}.${request.slug}\nname: ${request.name}\ndescription: ${request.description}\ndomain: ${request.domain}\nvisibility: ${visibility}\ncontributor: ${request.contributor}\n---\n\n# ${request.name}\n\n${request.body}\n\n# Provenance\n\nProposed locally by ${request.contributor}.\n`,
+    `---\nid: ${request.domain}.${request.slug}\nname: ${request.name}\ndescription: ${request.description}\ndomain: ${request.domain}\nvisibility: ${visibility}\ncontributor: ${request.contributor}\n${skillSignalFrontmatter(request.autoMergeSignals)}---\n\n# ${request.name}\n\n${request.body}\n\n# Provenance\n\nProposed locally by ${request.contributor}.\n`,
   );
   return path;
 }
@@ -218,7 +234,16 @@ export function proposeRun(request: ProposeRunRequest): string {
 export async function proposeSkillPullRequest(
   request: ProposeSkillPullRequestRequest,
 ): Promise<ProposeSkillPullRequestResult> {
-  const path = proposeSkill(request);
+  const path = proposeSkill({
+    ...request,
+    autoMergeSignals: {
+      contributorTrust: request.contributorTrust ?? 0.5,
+      effectiveLowerBound: request.gate.lowerBound,
+      regressionVotes: 0,
+      positiveValidators: 0,
+      validatorVotesJson: "[]",
+    },
+  });
 
   if (!shouldPushToWorld(request.gate)) {
     return { pushed: false, path, gate: request.gate, reason: "Push gate not satisfied" };
