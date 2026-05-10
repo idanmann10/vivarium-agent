@@ -361,8 +361,10 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
     v1Check(
       "publicContribution",
       evidenceReference(publicContribution?.publicSkillPr, context) &&
+        evidenceReference(publicContribution?.mathGate, context) &&
         evidenceReference(publicContribution?.autoMerge, context) &&
         evidenceReference(publicContribution?.canonicalSkill, context) &&
+        (numberValue(publicContribution?.contributorTrust) ?? 0) >= 0.5 &&
         evidenceReferenceArray(publicContribution?.positiveSignalEvidence, context).length >= 5 &&
         evidenceReferenceArray(publicContribution?.externalPullEvidence, context).length >= 3,
     ),

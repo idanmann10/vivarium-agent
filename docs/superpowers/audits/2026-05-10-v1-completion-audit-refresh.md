@@ -31,7 +31,7 @@ Not complete. Local implementation and local test gates are strong, including ag
 | Phase 3: featured pick and STATS concentration | World scripts, checked-in stats, CI build gate, manual revalidation build gate, and generated maintenance PR post-mutation gates are locally verified; live maintainer workflow execution and live telemetry are unverified | Complete locally, incomplete live |
 | V1 done: five real goals over a week and two-week measurable improvement | Synthetic/local tests only | Incomplete externally |
 | Naming decision | `goal.md` still says `the-agent` and `the-world` are temporary names; `doctor --live` reports `agent.name:missing` and `world.name:missing` | Incomplete; requires user decision |
-| Live readiness handoff | `docs/live-readiness.env.example`, `docs/guides/live-readiness.md`, `doctor --live --env-file`, structured `nextActions`, and v1 evidence manifest checks exist; copied `<...>` values, missing live-loop evidence, bare evidence IDs, missing local evidence references, bare public-contribution signal/pull counts, sub-30% top-five contributor concentration, and missing contributor-profile summary counts/trust now report as blockers. The guide's manifest example now uses inspectable local paths or URLs for positive-signal and external pull/use artifacts, and `scripts/reference-docs.test.ts` prevents opaque placeholder references from returning | Complete locally |
+| Live readiness handoff | `docs/live-readiness.env.example`, `docs/guides/live-readiness.md`, `doctor --live --env-file`, structured `nextActions`, and v1 evidence manifest checks exist; copied `<...>` values, missing live-loop evidence, bare evidence IDs, missing local evidence references, bare public-contribution signal/pull counts, missing public-skill math-gate evidence or neutral trust, sub-30% top-five contributor concentration, and missing contributor-profile summary counts/trust now report as blockers. The guide's manifest example now uses inspectable local paths or URLs for positive-signal and external pull/use artifacts, and `scripts/reference-docs.test.ts` prevents opaque placeholder references from returning | Complete locally |
 
 ## Fresh Evidence
 
@@ -44,7 +44,7 @@ Not complete. Local implementation and local test gates are strong, including ag
 - `bun apps/cli/src/index.ts doctor --live --env-file docs/live-readiness.env.example --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false` with copied template values classified as `:placeholder` or unavailable, not live-ready.
 - `bun apps/cli/src/index.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false`, now including `v1.evidencePath:missing` so setup readiness cannot be confused with v1 loop verification.
 - `bun run typecheck` in `the-agent`: TypeScript passed.
-- `bun run test` in `the-agent`: 234 tests passed, 0 failed, 1235 assertions.
+- `bun run test` in `the-agent`: 235 tests passed, 0 failed, 1238 assertions.
 - `bun run lint` in `the-agent`: repo lint scanned 196 TypeScript files, and Oxlint found 0 warnings and 0 errors.
 - `bun run format:check` in `the-agent`: all matched package/config/tooling files use the expected Oxfmt format.
 - `bun run build` in `the-agent`: 9 entrypoints present.
@@ -54,9 +54,10 @@ Not complete. Local implementation and local test gates are strong, including ag
 - `bun run test` in `the-agent` after the CLI routing fix: 230 tests passed, 0 failed, 1221 assertions.
 - `bun test apps/cli/src/index.test.ts` first failed because `pullWorldCommand` was undefined in the CLI public API, then passed after exporting `pullWorldCommand` and `verifyWorldTransmissionCommand`.
 - `bun test apps/cli/src/commands/doctor.test.ts -t "rejects public contribution counts without inspectable signal and pull evidence"` first failed because `v1.publicContribution` was configured from bare `positiveSignals`/`externalPulls` counts, then passed after `doctor --live` required five inspectable positive-signal references and three inspectable external pull/use references.
+- `bun test apps/cli/src/commands/doctor.test.ts -t "requires v1 public contribution math gate evidence and neutral trust"` first failed because `v1.publicContribution` was configured without math-gate evidence or contributor trust, then passed after `doctor --live` required an inspectable math-gate reference and contributor trust of at least 0.5.
 - `bun test apps/cli/src/commands/doctor.test.ts -t "requires v1 curation stats to show the roadmap top-five contributor concentration"` first failed because `v1.curationStats` was configured with `top5SkillSharePercent: 1`, then passed after `doctor --live` required the roadmap's 30% minimum.
 - `bun test apps/cli/src/commands/doctor.test.ts -t "requires v1 two-week evidence to include contributor profile counts and trust"` first failed because `v1.twoWeekImprovement` was configured without the v1 contributor-profile facts, then passed after `doctor --live` required summary counts for public skills, anti-patterns, traces, published runs, internal skills, and public trust.
-- `bun test apps/cli/src/commands/doctor.test.ts`: 22 tests passed, 0 failed, 110 assertions.
+- `bun test apps/cli/src/commands/doctor.test.ts`: 23 tests passed, 0 failed, 113 assertions.
 - `bun test scripts/reference-docs.test.ts`: 14 tests passed, 0 failed, 452 assertions.
 - `bun run lint` in `the-world`: world validator reports 3 domains, 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, and 1 contributor.
 - `bun run typecheck` in `the-world`: TypeScript passed.
