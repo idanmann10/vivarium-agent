@@ -1,3 +1,5 @@
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { addCredentialCommand } from "./credentials.js";
 import { configureProviderProfileCommand } from "./providers.js";
 
@@ -25,6 +27,25 @@ export type LiveSetupCommandResult =
       readonly missing?: readonly string[];
       readonly placeholders?: readonly string[];
       readonly invalid?: readonly string[];
+    };
+
+export interface LiveEvidenceInitCommandOptions {
+  readonly path: string;
+  readonly overwrite?: boolean;
+}
+
+export type LiveEvidenceInitCommandResult =
+  | {
+      readonly ok: true;
+      readonly written: true;
+      readonly path: string;
+      readonly sections: readonly string[];
+    }
+  | {
+      readonly ok: false;
+      readonly written: false;
+      readonly path: string;
+      readonly error: string;
     };
 
 const requiredEnvNames = [
@@ -57,6 +78,125 @@ const integerEnvNames = [
 
 type RequiredEnvName = (typeof requiredEnvNames)[number];
 type IntegerEnvName = (typeof integerEnvNames)[number];
+
+const v1EvidenceSections = [
+  "starterPack",
+  "realGoals",
+  "providerSmokes",
+  "internalCredentialSmoke",
+  "worldSubscriptions",
+  "behaviorLoop",
+  "dreamArtifacts",
+  "publicContribution",
+  "publishedArtifacts",
+  "curationStats",
+  "twoWeekImprovement",
+] as const;
+
+function v1EvidenceSkeleton(): Readonly<Record<string, unknown>> {
+  return {
+    starterPack: {
+      primaryDomain: "coding",
+      skillCount: 0,
+      traceCount: 0,
+      skillReferences: [],
+      traceReferences: [],
+      curriculum: "",
+      firstRunReferences: [],
+    },
+    realGoals: [],
+    providerSmokes: {
+      anthropic: "",
+      openRouter: "",
+      privateOaiCompat: "",
+    },
+    internalCredentialSmoke: "",
+    worldSubscriptions: {
+      canonical: "",
+      privateFork: "",
+    },
+    behaviorLoop: {
+      antiPatternAvoided: "",
+      antiPatternUnfamiliarTerritory: "",
+      tracesRead: [],
+      traceSimilarWorkflows: "",
+      monitorFailurePattern: "",
+      recoverReplan: "",
+      destructiveHold: "",
+      destructiveEscalation: "",
+      destructiveConfirmation: "",
+      destructiveContinuation: "",
+      destructiveEndpoint: {
+        run: "",
+        sequence: [],
+      },
+      refusal: "",
+    },
+    dreamArtifacts: {
+      skillCandidates: [],
+      internalSkill: "",
+      internalSkillPrivateFork: "",
+      internalSkillCanonicalAbsence: "",
+      publicSkill: "",
+      antiPattern: "",
+      trace: "",
+      traceSourceRun: "",
+      traceAnnotations: "",
+    },
+    publicContribution: {
+      contributorAgent: "",
+      publicSkillPr: "",
+      mathGate: "",
+      autoMerge: "",
+      canonicalSkill: "",
+      contributorTrust: 0,
+      positiveSignals: [],
+      externalPullUses: [],
+    },
+    publishedArtifacts: {
+      contributorAgent: "",
+      antiPattern: "",
+      trace: "",
+      run: "",
+      tracePlanRead: {
+        agent: "",
+        evidence: "",
+      },
+      runPlanRead: {
+        agent: "",
+        evidence: "",
+      },
+    },
+    curationStats: {
+      agentContributor: "",
+      featuredContributor: "",
+      featuredPick: "",
+      featuredAntiPattern: "",
+      stats: "",
+      top5SkillSharePercent: 0,
+    },
+    twoWeekImprovement: {
+      followupDate: "",
+      baselineMetric: 0,
+      followupMetric: 0,
+      improvementPercent: 0,
+      contributorProfile: "",
+      contributorAgent: "",
+      competingDiscussion: "",
+      competingSkillReferences: [],
+      similarGoalsEvidence: "",
+      refinementEvidence: [],
+      contributorProfileSummary: {
+        publicSkills: 0,
+        antiPatterns: 0,
+        traces: 0,
+        publishedRuns: 0,
+        internalSkills: 0,
+        publicTrust: 0,
+      },
+    },
+  };
+}
 
 function isPlaceholderValue(value: string): boolean {
   return /^<[^>]+>$/.test(value.trim());
@@ -175,5 +315,25 @@ export function liveSetupCommand(options: LiveSetupCommandOptions): LiveSetupCom
     providerProfiles: [anthropicProfile, openRouterProfile, privateProfile],
     credentialName,
     paths: { providerProfilesPath, credentialsPath },
+  };
+}
+
+export function liveEvidenceInitCommand(options: LiveEvidenceInitCommandOptions): LiveEvidenceInitCommandResult {
+  if (existsSync(options.path) && options.overwrite !== true) {
+    return {
+      ok: false,
+      written: false,
+      path: options.path,
+      error: "Evidence manifest already exists. Pass --overwrite to replace it.",
+    };
+  }
+
+  mkdirSync(dirname(options.path), { recursive: true });
+  writeFileSync(options.path, `${JSON.stringify(v1EvidenceSkeleton(), null, 2)}\n`, "utf8");
+  return {
+    ok: true,
+    written: true,
+    path: options.path,
+    sections: v1EvidenceSections,
   };
 }

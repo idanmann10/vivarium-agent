@@ -11,7 +11,7 @@ Implemented command groups include:
 - `init`, `run`, `status`, `doctor`, and `doctor --live`
 - `credentials add/list/smoke`
 - `providers configure/list/smoke`
-- `live setup`
+- `live setup/evidence-init`
 - `skills list`
 - `dream run`
 - `identity summary/stage/history`
@@ -30,5 +30,6 @@ Use the CLI for local handoff checks such as provider profile smoke tests,
 encrypted credential smoke tests, GitHub read/write guards, daemon status, and
 world transmission-smoke. `live setup --env-file <file> --confirm-write` materializes
 the local provider profile file and encrypted internal API credential store from a
-filled readiness file without printing secret values. Reusable logic should move into `packages/*` before it
-grows command-specific state.
+filled readiness file without printing secret values. `live evidence-init --path <file>`
+creates an empty v1 evidence manifest shape for later real evidence collection. Reusable logic should move into
+`packages/*` before it grows command-specific state.

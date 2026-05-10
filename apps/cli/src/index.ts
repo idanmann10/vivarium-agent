@@ -86,8 +86,13 @@ export type {
 } from "./commands/github.js";
 export { daemonSmokeCommand } from "./commands/daemon.js";
 export type { DaemonSmokeCommandOptions, DaemonSmokeCommandResult, DaemonSmokeFetch } from "./commands/daemon.js";
-export { liveSetupCommand } from "./commands/live.js";
-export type { LiveSetupCommandOptions, LiveSetupCommandResult } from "./commands/live.js";
+export { liveEvidenceInitCommand, liveSetupCommand } from "./commands/live.js";
+export type {
+  LiveEvidenceInitCommandOptions,
+  LiveEvidenceInitCommandResult,
+  LiveSetupCommandOptions,
+  LiveSetupCommandResult,
+} from "./commands/live.js";
 export { listSkillsCommand } from "./commands/skills.js";
 export type { ListedSkill, ListSkillsCommandOptions, ListSkillsCommandResult } from "./commands/skills.js";
 export {

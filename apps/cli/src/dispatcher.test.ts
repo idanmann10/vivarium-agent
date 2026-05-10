@@ -847,6 +847,46 @@ describe("dispatchCliCommand", () => {
     expect(existsSync(credentialsPath)).toBe(false);
   });
 
+  test("routes live evidence init and refuses accidental overwrite", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-evidence-"));
+    const evidencePath = join(root, "v1-evidence.json");
+
+    const created = await dispatchCliCommand(["live", "evidence-init", "--path", evidencePath]);
+    const body = JSON.parse(readFileSync(evidencePath, "utf8")) as Record<string, unknown>;
+    const refused = await dispatchCliCommand(["live", "evidence-init", "--path", evidencePath]);
+    const overwritten = await dispatchCliCommand(["live", "evidence-init", "--path", evidencePath, "--overwrite"]);
+
+    expect(created.command).toBe("live");
+    expect(created.result).toEqual({
+      ok: true,
+      written: true,
+      path: evidencePath,
+      sections: [
+        "starterPack",
+        "realGoals",
+        "providerSmokes",
+        "internalCredentialSmoke",
+        "worldSubscriptions",
+        "behaviorLoop",
+        "dreamArtifacts",
+        "publicContribution",
+        "publishedArtifacts",
+        "curationStats",
+        "twoWeekImprovement",
+      ],
+    });
+    expect(body.starterPack).toMatchObject({ primaryDomain: "coding", skillCount: 0, traceCount: 0 });
+    expect(body.realGoals).toEqual([]);
+    expect(body.providerSmokes).toEqual({ anthropic: "", openRouter: "", privateOaiCompat: "" });
+    expect(refused.result).toEqual({
+      ok: false,
+      written: false,
+      path: evidencePath,
+      error: "Evidence manifest already exists. Pass --overwrite to replace it.",
+    });
+    expect(overwritten.result).toMatchObject({ ok: true, written: true, path: evidencePath });
+  });
+
   test("routes GitHub smoke checks without credentials", async () => {
     await expect(
       dispatchCliCommand([

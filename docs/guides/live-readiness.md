@@ -429,6 +429,7 @@ bun apps/cli/src/main.ts daemon smoke --status-url http://127.0.0.1:8787/status
 
 ```bash
 export VIVARIUM_V1_EVIDENCE_PATH=/tmp/vivarium-v1-evidence.json
+bun apps/cli/src/main.ts live evidence-init --path "$VIVARIUM_V1_EVIDENCE_PATH"
 ```
 
 The manifest is a compact index of evidence, not a substitute for the underlying artifacts. Every evidence-bearing string should point to a command transcript, audit file, PR, Discussion, workflow run, run artifact, contributor profile, or other concrete evidence you can inspect. `doctor --live` accepts `http://` and `https://` evidence links as external artifacts. Local evidence references must be paths that exist relative to the manifest file, the agent root, or the world root; bare run IDs or artifact IDs alone are not enough. `worldSubscriptions.canonical` and `worldSubscriptions.privateFork` must be distinct remote-style refs; when `VIVARIUM_CANONICAL_WORLD_REF` and `VIVARIUM_PRIVATE_WORLD_REF` are configured, those manifest refs must match the configured values exactly. `publicContribution.canonicalSkill` and every `twoWeekImprovement.competingSkillReferences` entry must be GitHub blob URLs for canonical-world `SKILL.md` files, and the two-week competing references must include the public skill that landed. When `VIVARIUM_GITHUB_OWNER` and `VIVARIUM_WORLD_REPO_NAME` are configured, `publicContribution.publicSkillPr`, `publicContribution.autoMerge`, `publicContribution.canonicalSkill`, `publishedArtifacts.antiPattern`, `publishedArtifacts.trace`, `publishedArtifacts.run`, `twoWeekImprovement.competingDiscussion`, and `twoWeekImprovement.competingSkillReferences` must target that configured canonical world repository. `publishedArtifacts.antiPattern`, `publishedArtifacts.trace`, and `publishedArtifacts.run` must be GitHub blob URLs for canonical-world `ANTI-PATTERN.md`, `TRACE.md`, and `RUN.md` files. `twoWeekImprovement.competingDiscussion` is stricter than generic evidence references: it must be a `https://github.com/<owner>/<repo>/discussions/<number>` URL for the competing variant Discussion. The same developer's agent must stay identifiable across the loop: `publishedArtifacts.contributorAgent`, `curationStats.agentContributor`, and `twoWeekImprovement.contributorAgent` must match `publicContribution.contributorAgent`; other-agent signal, pull/use, Plan-read, and refinement evidence must still exclude that contributor identity.
@@ -601,7 +602,7 @@ After the external prerequisites are configured:
 9. Save canonical and private fork subscriptions with `world subscribe`, then verify retrieval with `world search --subscriptions-path`.
 10. Pull the accepted contribution into a second local install with `world transmission-smoke`.
 11. Run the Compose daemon and verify `/status` with `daemon smoke`.
-12. Fill `VIVARIUM_V1_EVIDENCE_PATH` with the real v1 loop evidence collected during the week-long and two-week follow-up windows.
+12. Initialize `VIVARIUM_V1_EVIDENCE_PATH` with `live evidence-init`, then fill it with the real v1 loop evidence collected during the week-long and two-week follow-up windows.
 13. Re-run `doctor --live`; do not claim v1 live verification until all setup and `v1.*` checks report configured, ok, or installed.
 
 Record the resulting command output in `docs/superpowers/audits/2026-05-10-v1-completion-audit-refresh.md`.
