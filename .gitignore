@@ -3,6 +3,7 @@ dist/
 coverage/
 .turbo/
 *.log
+.DS_Store
 .worktrees/
 
 # Filled live-readiness env files may contain provider keys, GitHub tokens, and internal API metadata.
