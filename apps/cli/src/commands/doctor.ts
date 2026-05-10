@@ -414,6 +414,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         (numberValue(twoWeekImprovement?.improvementPercent) ?? 0) > 0 &&
         evidenceReference(twoWeekImprovement?.contributorProfile, context) &&
         evidenceReference(twoWeekImprovement?.competingDiscussion, context) &&
+        evidenceReference(twoWeekImprovement?.refinementEvidence, context) &&
         (numberValue(contributorProfileSummary?.publicSkills) ?? 0) >= 1 &&
         (numberValue(contributorProfileSummary?.antiPatterns) ?? 0) >= 1 &&
         (numberValue(contributorProfileSummary?.traces) ?? 0) >= 1 &&
@@ -847,7 +848,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record the two-week follow-up at least fourteen days after the last goal, improvement metrics, contributor profile counts/trust, and competing Discussion evidence.",
+          "Record the two-week follow-up at least fourteen days after the last goal, improvement metrics, contributor profile counts/trust, competing Discussion evidence, and other-agent refinement evidence.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     default:
