@@ -29,6 +29,8 @@ interface V1EvidenceReferenceContext {
     readonly owner: string;
     readonly repo: string;
   };
+  readonly canonicalWorldRef?: string;
+  readonly privateWorldRef?: string;
 }
 
 export interface DoctorCommandRun {
@@ -443,6 +445,11 @@ function canonicalGitHubRepo(env: Readonly<Record<string, string | undefined>>):
   return owner !== undefined && repo !== undefined && repo !== "the-world" ? { owner, repo } : undefined;
 }
 
+function configuredWorldReference(env: Readonly<Record<string, string | undefined>>, envName: string): string | undefined {
+  const value = textValue(env[envName]);
+  return value !== undefined && !isPlaceholderValue(value) ? value : undefined;
+}
+
 function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, context: V1EvidenceReferenceContext): readonly string[] {
   const starterPack = asRecord(manifest.starterPack);
   const skillCount = numberValue(starterPack?.skillCount);
@@ -468,6 +475,10 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const worldSubscriptions = asRecord(manifest.worldSubscriptions);
   const canonicalWorldSubscription = worldSubscriptionReference(worldSubscriptions?.canonical);
   const privateForkWorldSubscription = worldSubscriptionReference(worldSubscriptions?.privateFork);
+  const canonicalWorldSubscriptionMatchesConfiguredRef =
+    context.canonicalWorldRef === undefined || canonicalWorldSubscription === context.canonicalWorldRef;
+  const privateForkWorldSubscriptionMatchesConfiguredRef =
+    context.privateWorldRef === undefined || privateForkWorldSubscription === context.privateWorldRef;
   const behaviorLoop = asRecord(manifest.behaviorLoop);
   const destructiveEndpoint = asRecord(behaviorLoop?.destructiveEndpoint);
   const destructiveEndpointRun = evidenceReferenceIdentity(destructiveEndpoint?.run, context);
@@ -554,7 +565,9 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
       "worldSubscriptions",
       canonicalWorldSubscription !== undefined &&
         privateForkWorldSubscription !== undefined &&
-        canonicalWorldSubscription !== privateForkWorldSubscription,
+        canonicalWorldSubscription !== privateForkWorldSubscription &&
+        canonicalWorldSubscriptionMatchesConfiguredRef &&
+        privateForkWorldSubscriptionMatchesConfiguredRef,
     ),
     v1Check(
       "behaviorLoop",
@@ -674,8 +687,15 @@ function v1EvidenceChecks(
     }
 
     const repo = canonicalGitHubRepo(env);
-    const referenceContext: V1EvidenceReferenceContext =
-      repo === undefined ? { ...context, manifestDir: dirname(value) } : { ...context, manifestDir: dirname(value), canonicalGitHubRepo: repo };
+    const canonicalWorldRef = configuredWorldReference(env, canonicalWorldRefEnv);
+    const privateWorldRef = configuredWorldReference(env, privateWorldRefEnv);
+    const referenceContext: V1EvidenceReferenceContext = {
+      ...context,
+      manifestDir: dirname(value),
+      ...(repo === undefined ? {} : { canonicalGitHubRepo: repo }),
+      ...(canonicalWorldRef === undefined ? {} : { canonicalWorldRef }),
+      ...(privateWorldRef === undefined ? {} : { privateWorldRef }),
+    };
     return ["v1.evidencePath:configured", ...v1EvidenceDetailChecks(manifest, referenceContext)];
   } catch {
     return ["v1.evidencePath:invalid"];

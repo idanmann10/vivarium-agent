@@ -1300,6 +1300,41 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("v1.worldSubscriptions:missing");
   });
 
+  test("requires v1 world subscriptions to match configured live refs", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-world-subscription-ref-match-"));
+    const { evidencePath } = writeLiveReadyFiles(root);
+    const manifest = JSON.parse(readFileSync(evidencePath, "utf8")) as {
+      worldSubscriptions: {
+        canonical: string;
+        privateFork: string;
+      };
+    };
+    manifest.worldSubscriptions = {
+      canonical: "git@github.com:owner/other-world.git",
+      privateFork: "git@github.com:team/other-private.git",
+    };
+    writeFileSync(evidencePath, `${JSON.stringify(manifest)}\n`, "utf8");
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      nowMillis: Date.parse("2026-05-23T00:00:00.000Z"),
+      env: {
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world-final.git",
+        VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
+        VIVARIUM_V1_EVIDENCE_PATH: evidencePath,
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.worldSubscriptions:missing");
+  });
+
   test("rejects public contribution counts without inspectable signal and pull evidence", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-public-contribution-evidence-"));
     const evidencePath = join(root, "v1-evidence.json");
