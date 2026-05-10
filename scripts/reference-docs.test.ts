@@ -79,6 +79,21 @@ const mathDocs = {
   diversity: ["chooseWithEpsilon", "epsilon = 0.05", "alternatives", "non-habitual"],
 } as const;
 
+const conceptDocs = {
+  "anti-patterns": ["why", "insteadDo", "relatedSkills", "evidenceRunIds", "regression"],
+  credentials: ["encrypted", "apiKeyEnvVar", "oauth", "service_account", "smoke"],
+  domains: ["coding", "writing", "research", "curriculum", "stage"],
+  eval: ["compounding", "before", "after", "Dream", "benchmark"],
+  kernel: ["KERNEL", "search", "prediction", "reflection", "refusal"],
+  memory: ["working memory", "episodic", "semantic", "procedural", "identity"],
+  primitives: ["Plan", "Predict", "Execute", "Monitor", "Recover", "Validate", "Reflect", "Dream"],
+  safety: ["allowlist", "rate limits", "argument scrubbing", "computer-use", "refusal"],
+  tools: ["dispatcher", "SelfTools", "external", "credentials", "safety"],
+  traces: ["TraceStep", "prerequisites", "teaches", "pitfalls", "alternatives"],
+  trust: ["Wilson", "effective_LB", "auto-merge", "regression", "veto"],
+  world: ["canonical", "private", "skills", "traces", "runs", "subscriptions"],
+} as const;
+
 describe("reference docs", () => {
   test("documents every top-level self-tool group", () => {
     for (const tool of selfToolDocs) {
@@ -139,6 +154,15 @@ describe("reference docs", () => {
   test("documents math formulas and thresholds", () => {
     for (const [doc, terms] of Object.entries(mathDocs)) {
       const body = readFileSync(join("docs", "math", `${doc}.md`), "utf8");
+      for (const term of terms) {
+        expect(body).toContain(term);
+      }
+    }
+  });
+
+  test("documents concept explanations", () => {
+    for (const [doc, terms] of Object.entries(conceptDocs)) {
+      const body = readFileSync(join("docs", "concepts", `${doc}.md`), "utf8");
       for (const term of terms) {
         expect(body).toContain(term);
       }
