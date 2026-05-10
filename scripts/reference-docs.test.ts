@@ -70,6 +70,15 @@ const architectureDocs = {
   ],
 } as const;
 
+const mathDocs = {
+  "wilson-score": ["Wilson", "helped", "uses", "z = 1.96", "0.4385"],
+  trust: ["sigmoid", "log1p", "effective_LB", "0.85", "0.15"],
+  "retrieval-scoring": ["alpha", "beta", "gamma", "delta", "recencyScore", "tauDays = 30"],
+  "surprise-magnitude": ["cosineSimilarity", "surpriseMagnitude", "shouldTagSurprise", "0.3"],
+  stages: ["developmentScore", "runsCompleted", "successRate", "skillDiversity", "master"],
+  diversity: ["chooseWithEpsilon", "epsilon = 0.05", "alternatives", "non-habitual"],
+} as const;
+
 describe("reference docs", () => {
   test("documents every top-level self-tool group", () => {
     for (const tool of selfToolDocs) {
@@ -121,6 +130,15 @@ describe("reference docs", () => {
   test("documents architecture package ownership and data flow", () => {
     for (const [doc, terms] of Object.entries(architectureDocs)) {
       const body = readFileSync(join("docs", "architecture", `${doc}.md`), "utf8");
+      for (const term of terms) {
+        expect(body).toContain(term);
+      }
+    }
+  });
+
+  test("documents math formulas and thresholds", () => {
+    for (const [doc, terms] of Object.entries(mathDocs)) {
+      const body = readFileSync(join("docs", "math", `${doc}.md`), "utf8");
       for (const term of terms) {
         expect(body).toContain(term);
       }
