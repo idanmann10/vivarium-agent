@@ -158,6 +158,27 @@ describe("dispatchCliCommand", () => {
     });
   });
 
+  test("routes provider smoke checks without credentials", async () => {
+    await expect(
+      dispatchCliCommand([
+        "providers",
+        "smoke",
+        "--kind",
+        "openai",
+        "--api-key-env",
+        "VIVARIUM_MISSING_PROVIDER_KEY",
+        "--model",
+        "gpt-test",
+      ]),
+    ).resolves.toMatchObject({
+      command: "providers",
+      result: {
+        ok: false,
+        error: "Missing provider environment variable: VIVARIUM_MISSING_PROVIDER_KEY",
+      },
+    });
+  });
+
   test("returns a usage error for unsupported commands", async () => {
     await expect(dispatchCliCommand(["unknown"])).rejects.toThrow('Unknown command "unknown"');
   });

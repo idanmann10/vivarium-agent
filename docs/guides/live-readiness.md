@@ -43,6 +43,25 @@ export OPENROUTER_API_KEY=<redacted>
 
 Only one provider is required for a first live pass. Keep secrets out of git and shell history where possible.
 
+Then run a provider smoke completion:
+
+```bash
+bun apps/cli/src/index.ts providers smoke \
+  --kind openai \
+  --api-key-env OPENAI_API_KEY \
+  --model <model>
+```
+
+For Anthropic, use `--kind anthropic --api-key-env ANTHROPIC_API_KEY`. For OpenAI-compatible providers, include a base URL:
+
+```bash
+bun apps/cli/src/index.ts providers smoke \
+  --kind openai-compat \
+  --api-key-env OPENROUTER_API_KEY \
+  --model <model> \
+  --base-url <provider-base-url>
+```
+
 ## GitHub Auth
 
 GitHub writes need a valid authenticated CLI session or token environment. Use one of these paths:
@@ -85,7 +104,7 @@ curl http://127.0.0.1:8787/status
 After the external prerequisites are configured:
 
 1. Re-run `doctor --live`.
-2. Run one live provider completion through the configured provider adapter.
+2. Run `providers smoke` for one configured provider.
 3. Open the Phase 0 RFC Discussion in the world remote.
 4. Create a live world contribution PR from a generated artifact.
 5. Verify the world workflows and trust gates on GitHub.

@@ -2,6 +2,7 @@ import type { CredentialKind } from "../../../packages/core/src/index.js";
 import { addCredentialCommand, listCredentialsCommand } from "./commands/credentials.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { runInitCommand } from "./commands/init.js";
+import { providerSmokeCommand, type ProviderSmokeKind } from "./commands/providers.js";
 import { runCommand } from "./commands/run.js";
 import { listSkillsCommand } from "./commands/skills.js";
 import { statusCommand } from "./commands/status.js";
@@ -191,6 +192,23 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
       }
 
       usage('Unknown world subcommand. Use "search" or "pull".');
+    case "providers": {
+      if (subcommand !== "smoke") {
+        usage('Unknown providers subcommand. Use "smoke".');
+      }
+      const baseUrl = value(flags, "base-url");
+      const prompt = value(flags, "prompt");
+      return output(
+        command,
+        await providerSmokeCommand({
+          kind: required(flags, "kind") as ProviderSmokeKind,
+          apiKeyEnv: required(flags, "api-key-env"),
+          model: required(flags, "model"),
+          ...(baseUrl === undefined ? {} : { baseUrl }),
+          ...(prompt === undefined ? {} : { prompt }),
+        }),
+      );
+    }
     case "status":
       return output(command, statusCommand());
     case "doctor": {
