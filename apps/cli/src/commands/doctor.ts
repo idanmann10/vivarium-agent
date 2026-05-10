@@ -858,6 +858,117 @@ function githubAuthCheck(runner: DoctorCommandRunner, env: Readonly<Record<strin
   return "github.auth:unavailable";
 }
 
+function githubRepoTarget(
+  env: Readonly<Record<string, string | undefined>>,
+  repoNameEnv: string,
+  placeholder: string,
+): { readonly owner: string; readonly repo: string } | undefined {
+  const owner = textValue(env[githubOwnerEnv]);
+  const repo = textValue(env[repoNameEnv]);
+  return owner === undefined || repo === undefined || repo === placeholder ? undefined : { owner, repo };
+}
+
+function githubCiCheck(
+  runner: DoctorCommandRunner,
+  env: Readonly<Record<string, string | undefined>>,
+  repoNameEnv: string,
+  placeholder: string,
+  label: string,
+): string {
+  const target = githubRepoTarget(env, repoNameEnv, placeholder);
+  if (target === undefined) {
+    return `github.${label}:missing`;
+  }
+
+  const result = run(
+    runner,
+    "gh",
+    [
+      "run",
+      "list",
+      "--repo",
+      `${target.owner}/${target.repo}`,
+      "--branch",
+      "main",
+      "--workflow",
+      "CI",
+      "--limit",
+      "1",
+      "--json",
+      "status,conclusion",
+    ],
+    env,
+  );
+  if (result.exitCode !== 0) {
+    return `github.${label}:unavailable`;
+  }
+
+  try {
+    const runs = JSON.parse(result.stdout) as unknown;
+    if (!Array.isArray(runs)) {
+      return `github.${label}:unavailable`;
+    }
+
+    const latest = asRecord(runs[0]);
+    if (latest === undefined) {
+      return `github.${label}:missing`;
+    }
+
+    const status = textValue(latest.status);
+    const conclusion = textValue(latest.conclusion);
+    if (status !== "completed") {
+      return `github.${label}:pending`;
+    }
+
+    return conclusion === "success" ? `github.${label}:ok` : `github.${label}:failed`;
+  } catch {
+    return `github.${label}:unavailable`;
+  }
+}
+
+function githubDiscussionCheck(runner: DoctorCommandRunner, env: Readonly<Record<string, string | undefined>>): string {
+  const target = githubRepoTarget(env, worldRepoNameEnv, "the-world");
+  if (target === undefined) {
+    return "github.discussion:missing";
+  }
+
+  const result = run(
+    runner,
+    "gh",
+    [
+      "api",
+      "graphql",
+      "-f",
+      "query=query($owner:String!,$name:String!){repository(owner:$owner,name:$name){discussions(first:20,orderBy:{field:CREATED_AT,direction:DESC}){nodes{title url}}}}",
+      "-F",
+      `owner=${target.owner}`,
+      "-F",
+      `name=${target.repo}`,
+    ],
+    env,
+  );
+  if (result.exitCode !== 0) {
+    return "github.discussion:unavailable";
+  }
+
+  try {
+    const parsed = asRecord(JSON.parse(result.stdout));
+    const data = asRecord(parsed?.data);
+    const repository = asRecord(data?.repository);
+    const discussions = asRecord(repository?.discussions);
+    const nodes = Array.isArray(discussions?.nodes) ? discussions.nodes : undefined;
+    if (nodes === undefined) {
+      return "github.discussion:unavailable";
+    }
+
+    return nodes.some((node) => textValue(asRecord(node)?.title) === "RFC 0001: Phase 0 Bootstrap")
+      ? "github.discussion:configured"
+      : "github.discussion:missing";
+  } catch {
+    return "github.discussion:unavailable";
+  }
+}
+
 function dockerCheck(runner: DoctorCommandRunner, env: Readonly<Record<string, string | undefined>>): readonly string[] {
   const docker = run(runner, "docker", ["--version"], env);
   const dockerStatus = docker.exitCode === 0 ? "docker:installed" : "docker:missing";
@@ -1094,6 +1205,33 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         command: "gh auth status",
         guide: `${guide}#github-auth`,
       };
+    case "github.discussion":
+      return {
+        check,
+        action: "Open the Phase 0 RFC Discussion in the canonical world repo and verify it is visible through GitHub.",
+        env: [githubOwnerEnv, worldRepoNameEnv, githubRepositoryIdEnv, githubDiscussionCategoryIdEnv],
+        command: cliCommand(
+          context,
+          'github discussion --owner "$VIVARIUM_GITHUB_OWNER" --repo "$VIVARIUM_WORLD_REPO_NAME" --token-env GITHUB_TOKEN --repository-id "$VIVARIUM_GITHUB_REPOSITORY_ID" --category-id "$VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID" --title "RFC 0001: Phase 0 Bootstrap" --body "$(cat ../the-world/proposals/0001-phase-0-bootstrap-rfc.md)" --confirm-write',
+        ),
+        guide: `${guide}#github-auth`,
+      };
+    case "github.agentCi":
+      return {
+        check,
+        action: "Make the latest agent GitHub Actions CI run on main complete successfully.",
+        env: [githubOwnerEnv, agentRepoNameEnv],
+        command: 'gh run list --repo "$VIVARIUM_GITHUB_OWNER/$VIVARIUM_AGENT_REPO_NAME" --branch main --workflow CI --limit 1',
+        guide: `${guide}#github-auth`,
+      };
+    case "github.worldCi":
+      return {
+        check,
+        action: "Make the latest world GitHub Actions CI run on main complete successfully.",
+        env: [githubOwnerEnv, worldRepoNameEnv],
+        command: 'gh run list --repo "$VIVARIUM_GITHUB_OWNER/$VIVARIUM_WORLD_REPO_NAME" --branch main --workflow CI --limit 1',
+        guide: `${guide}#github-auth`,
+      };
     case "docker":
       return {
         check,
@@ -1238,6 +1376,9 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     requiredEnvCheck(env, githubRepositoryIdEnv, "github.repositoryId"),
     requiredEnvCheck(env, githubDiscussionCategoryIdEnv, "github.discussionCategoryId"),
     githubAuthCheck(runner, env),
+    githubDiscussionCheck(runner, env),
+    githubCiCheck(runner, env, agentRepoNameEnv, "the-agent", "agentCi"),
+    githubCiCheck(runner, env, worldRepoNameEnv, "the-world", "worldCi"),
     ...dockerCheck(runner, env),
     ...v1EvidenceChecks(env, { agentRoot, worldRoot, nowMillis }),
   ];

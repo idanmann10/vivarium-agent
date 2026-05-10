@@ -17,7 +17,7 @@ bun apps/cli/src/main.ts doctor --live \
   --world-root /Users/idanmann/Vivarium/the-world
 ```
 
-A live-ready workspace should report configured agent/world names, configured agent/world remotes, canonical/private world subscription metadata, configured provider environment and profile metadata, configured GitHub token environment, valid GitHub auth, installed Docker, installed Docker Compose, and a complete v1 evidence manifest.
+A live-ready workspace should report configured agent/world names, configured agent/world remotes, canonical/private world subscription metadata, configured provider environment and profile metadata, configured GitHub token environment, valid GitHub auth, a visible Phase 0 RFC Discussion, green latest agent/world GitHub Actions CI runs on `main`, installed Docker, installed Docker Compose, and a complete v1 evidence manifest.
 Path-based checks report `:unavailable` when the env var is set but the expected local file has not been created yet.
 When the world subscription registry exists, canonical/private world refs also report `:unavailable` if the configured refs are not present in that registry.
 For live-readiness mode, the JSON result also includes `nextActions` for every non-passing check. Each action names the failed check, the env vars or command needed to clear it, and the guide section to read before making live changes.
@@ -247,6 +247,20 @@ bun apps/cli/src/main.ts github discussion \
 ```
 
 Without `--confirm-write`, the command refuses before reading credentials or calling GitHub.
+
+`doctor --live` also checks that GitHub can see the `RFC 0001: Phase 0 Bootstrap` Discussion in the
+canonical world repo. If it reports `github.discussion:missing`, create the Discussion or verify the
+configured owner/world repo points at the canonical public world.
+
+The live doctor also checks the latest `main` GitHub Actions CI run for both the agent and world repos:
+
+```bash
+gh run list --repo "$VIVARIUM_GITHUB_OWNER/$VIVARIUM_AGENT_REPO_NAME" --branch main --workflow CI --limit 1
+gh run list --repo "$VIVARIUM_GITHUB_OWNER/$VIVARIUM_WORLD_REPO_NAME" --branch main --workflow CI --limit 1
+```
+
+`github.agentCi:ok` and `github.worldCi:ok` require the latest run to be completed with a successful
+conclusion. Pending, missing, failed, or unavailable runs remain live-readiness blockers.
 
 After a generated artifact has been committed to a branch, open a contribution PR:
 

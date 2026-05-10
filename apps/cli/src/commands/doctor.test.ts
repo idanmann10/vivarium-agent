@@ -86,7 +86,42 @@ const readyRunner: DoctorCommandRunner = (run) => {
     return { exitCode: 0, stdout: "Docker Compose version v2.32.4", stderr: "" };
   }
 
+  if (text === "gh run list --repo owner/agent-final --branch main --workflow CI --limit 1 --json status,conclusion") {
+    return { exitCode: 0, stdout: '[{"status":"completed","conclusion":"success"}]', stderr: "" };
+  }
+
+  if (text === "gh run list --repo owner/world-final --branch main --workflow CI --limit 1 --json status,conclusion") {
+    return { exitCode: 0, stdout: '[{"status":"completed","conclusion":"success"}]', stderr: "" };
+  }
+
+  if (text.startsWith("gh api graphql")) {
+    return {
+      exitCode: 0,
+      stdout:
+        '{"data":{"repository":{"discussions":{"nodes":[{"title":"RFC 0001: Phase 0 Bootstrap","url":"https://github.com/owner/world-final/discussions/1"}]}}}}',
+      stderr: "",
+    };
+  }
+
   return { exitCode: 127, stdout: "", stderr: `unexpected command: ${text}` };
+};
+
+const missingGitHubLiveRunner: DoctorCommandRunner = (run) => {
+  const text = [run.command, ...run.args].join(" ");
+
+  if (text === "gh run list --repo owner/agent-final --branch main --workflow CI --limit 1 --json status,conclusion") {
+    return { exitCode: 0, stdout: '[{"status":"completed","conclusion":"failure"}]', stderr: "" };
+  }
+
+  if (text === "gh run list --repo owner/world-final --branch main --workflow CI --limit 1 --json status,conclusion") {
+    return { exitCode: 0, stdout: "[]", stderr: "" };
+  }
+
+  if (text.startsWith("gh api graphql")) {
+    return { exitCode: 0, stdout: '{"data":{"repository":{"discussions":{"nodes":[]}}}}', stderr: "" };
+  }
+
+  return readyRunner(run);
 };
 
 const missingDockerRunner: DoctorCommandRunner = (run) => {
@@ -2907,6 +2942,99 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("world.remote:mismatch");
   });
 
+  test("reports missing GitHub RFC discussion and CI status as live readiness blockers", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-github-live-"));
+    const files = writeLiveReadyFiles(root);
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      nowMillis: Date.parse("2026-05-23T00:00:00.000Z"),
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        VIVARIUM_WORLD_SUBSCRIPTIONS_PATH: files.subscriptionsPath,
+        VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world-final.git",
+        VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
+        ANTHROPIC_API_KEY: "configured",
+        OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
+        VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_PROVIDER_PROFILES_PATH: files.profilesPath,
+        VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
+        VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
+        VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE: "private-finetune",
+        VIVARIUM_CREDENTIALS_PATH: files.credentialsPath,
+        VIVARIUM_CREDENTIALS_MASTER_KEY: "configured",
+        VIVARIUM_INTERNAL_API_CREDENTIAL_NAME: "INTERNAL_API_TOKEN",
+        VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE: "configured",
+        VIVARIUM_INTERNAL_API_HEALTH_URL: "https://internal.example/health",
+        VIVARIUM_V1_EVIDENCE_PATH: files.evidencePath,
+        GITHUB_TOKEN: "configured",
+      },
+      runner: missingGitHubLiveRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("github.discussion:missing");
+    expect(result.checks).toContain("github.agentCi:failed");
+    expect(result.checks).toContain("github.worldCi:missing");
+  });
+
+  test("passes live env values to GitHub RFC and CI probes", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-github-live-env-"));
+    const files = writeLiveReadyFiles(root);
+    const seenTokens: string[] = [];
+    const runner: DoctorCommandRunner = (run) => {
+      if (run.command === "gh" && (run.args[0] === "run" || run.args[0] === "api")) {
+        seenTokens.push(run.env?.GITHUB_TOKEN ?? "missing");
+      }
+
+      return readyRunner(run);
+    };
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      nowMillis: Date.parse("2026-05-23T00:00:00.000Z"),
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        VIVARIUM_WORLD_SUBSCRIPTIONS_PATH: files.subscriptionsPath,
+        VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world-final.git",
+        VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
+        ANTHROPIC_API_KEY: "configured",
+        OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
+        VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_PROVIDER_PROFILES_PATH: files.profilesPath,
+        VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
+        VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
+        VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE: "private-finetune",
+        VIVARIUM_CREDENTIALS_PATH: files.credentialsPath,
+        VIVARIUM_CREDENTIALS_MASTER_KEY: "configured",
+        VIVARIUM_INTERNAL_API_CREDENTIAL_NAME: "INTERNAL_API_TOKEN",
+        VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE: "configured",
+        VIVARIUM_INTERNAL_API_HEALTH_URL: "https://internal.example/health",
+        VIVARIUM_V1_EVIDENCE_PATH: files.evidencePath,
+        GITHUB_TOKEN: "configured-token",
+      },
+      runner,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(seenTokens).toEqual(["configured-token", "configured-token", "configured-token"]);
+  });
+
   test("accepts a complete v1 evidence manifest with otherwise configured live readiness inputs", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-live-ready-"));
     const files = writeLiveReadyFiles(root);
@@ -2948,6 +3076,9 @@ describe("doctorCommand", () => {
     expect(result.nextActions).toEqual([]);
     expect(result.checks).toEqual(
       expect.arrayContaining([
+        "github.discussion:configured",
+        "github.agentCi:ok",
+        "github.worldCi:ok",
         "v1.evidencePath:configured",
         "v1.starterPack:configured",
         "v1.realGoals:configured",

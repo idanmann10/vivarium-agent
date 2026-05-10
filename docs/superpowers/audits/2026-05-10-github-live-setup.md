@@ -29,7 +29,7 @@ Continue `goal.md` toward v1 by clearing the externally actionable GitHub setup 
 | Private world CI is green | `https://github.com/idanmann10/vivarium-world-private/actions/runs/25641578403` completed with `conclusion: success` on `main` | Complete |
 | Agent CI has a regression guard for its sibling world dependency | `scripts/workflows.test.ts` requires `.github/workflows/ci.yml` to clone `vivarium-world` to `../the-world` before tests | Complete |
 | Local verification for the CI fix | `bun run lint`, `bun run typecheck`, `bun run test`, and `git diff --check` passed in `the-agent` before pushing `755a98a` | Complete |
-| Live readiness GitHub checks | Elevated `doctor --live --env-file live-readiness.local.env` reports `github.env:configured`, `github.owner:configured`, `github.repositoryId:configured`, `github.discussionCategoryId:configured`, and `github.auth:ok` | Complete |
+| Live readiness GitHub checks | Elevated `doctor --live --env-file live-readiness.local.env` reports `github.env:configured`, `github.owner:configured`, `github.repositoryId:configured`, `github.discussionCategoryId:configured`, `github.auth:ok`, `github.discussion:configured`, `github.agentCi:ok`, and `github.worldCi:ok` | Complete |
 
 ## Remaining Blockers
 
