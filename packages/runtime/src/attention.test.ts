@@ -35,6 +35,7 @@ describe("applyAttentionLimits", () => {
         worldResult("trace", "trace-a", 3),
         worldResult("trace", "trace-b", 2),
         worldResult("anti-pattern", "anti-a", 10),
+        worldResult("run", "run-a", 4),
       ],
       tools: ["http.request", "file.read", "terminal.run"],
       episodes: [episode(1), episode(2), episode(3)],
@@ -49,6 +50,7 @@ describe("applyAttentionLimits", () => {
     expect(result.skills.map((skill) => skill.id)).toEqual(["skill-a"]);
     expect(result.traces.map((trace) => trace.id)).toEqual(["trace-a"]);
     expect(result.antiPatterns.map((antiPattern) => antiPattern.id)).toEqual(["anti-a"]);
+    expect(result.runs.map((run) => run.id)).toEqual(["run-a"]);
     expect(result.tools).toEqual(["http.request", "file.read"]);
     expect(result.episodes.map((item) => item.id)).toEqual([episodeId("episode-2"), episodeId("episode-3")]);
   });

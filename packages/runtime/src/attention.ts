@@ -26,6 +26,7 @@ export interface AttentionSelection {
   readonly skills: readonly LocalWorldSearchResult[];
   readonly traces: readonly LocalWorldSearchResult[];
   readonly antiPatterns: readonly LocalWorldSearchResult[];
+  readonly runs: readonly LocalWorldSearchResult[];
   readonly tools: readonly string[];
   readonly episodes: readonly Episode[];
   readonly tokenBudget: AttentionTokenBudget;
@@ -86,6 +87,11 @@ export function applyAttentionLimits({
     budget,
     limits.maxWorkingTokens,
   );
+  const runs = takeWithinBudget(
+    worldResults.filter((result) => result.kind === "run").slice(0, limits.maxSkillsInContext),
+    budget,
+    limits.maxWorkingTokens,
+  );
   const selectedTools = takeWithinBudget(tools.slice(0, limits.maxToolsActive), budget, limits.maxWorkingTokens);
   const selectedEpisodes = takeWithinBudget(
     episodes.slice(Math.max(0, episodes.length - limits.maxEpisodesInContext)),
@@ -97,6 +103,7 @@ export function applyAttentionLimits({
     skills,
     traces,
     antiPatterns,
+    runs,
     tools: selectedTools,
     episodes: selectedEpisodes,
     tokenBudget: {

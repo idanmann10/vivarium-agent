@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-export type LocalWorldArtifactKind = "skill" | "anti-pattern" | "trace";
+export type LocalWorldArtifactKind = "skill" | "anti-pattern" | "trace" | "run";
 
 export interface LocalWorldSearchRequest {
   readonly domain: string;
@@ -56,14 +56,36 @@ function scoreText(text: string, query: string): number {
   return terms.reduce((score, term) => score + (normalized.includes(term) ? 1 : 0), 0);
 }
 
+function metaValue(text: string, key: string): string | undefined {
+  return text
+    .split("\n")
+    .find((line) => line.startsWith(`${key}:`))
+    ?.slice(key.length + 1)
+    .trim();
+}
+
+function runTitle(text: string, fallback: string): string {
+  const goal = text.match(/# Goal\s+([\s\S]*?)(?:\n# |\n*$)/)?.[1]?.trim();
+  return goal === undefined || goal.length === 0 ? fallback : goal;
+}
+
 export function createLocalWorldReader({ root }: LocalWorldReaderOptions): LocalWorldReader {
   return {
     search({ domain, query, limit = 8 }) {
       const domainRoot = join(root, "domains", domain);
       const proposalRoot = join(root, "proposals", "skills", domain);
-      const files = [...walk(domainRoot), ...walk(proposalRoot)].filter(
+      const artifactFiles = [...walk(domainRoot), ...walk(proposalRoot)].filter(
         (path) => path.endsWith("SKILL.md") || path.endsWith("ANTI-PATTERN.md") || path.endsWith("TRACE.md"),
       );
+      const runFiles = walk(join(root, "runs")).filter((path) => {
+        if (!path.endsWith("RUN.md")) {
+          return false;
+        }
+
+        const metaPath = path.replace(/RUN\.md$/, "meta.yaml");
+        return existsSync(metaPath) && metaValue(readFileSync(metaPath, "utf8"), "domain") === domain;
+      });
+      const files = [...artifactFiles, ...runFiles];
 
       return files
         .map((path) => {
@@ -72,11 +94,13 @@ export function createLocalWorldReader({ root }: LocalWorldReaderOptions): Local
             ? "skill"
             : path.endsWith("ANTI-PATTERN.md")
               ? "anti-pattern"
-              : "trace";
+              : path.endsWith("TRACE.md")
+                ? "trace"
+                : "run";
           return {
             kind,
             id: path.replace(`${root}/`, ""),
-            title: titleFromMarkdown(text, path),
+            title: kind === "run" ? runTitle(text, path) : titleFromMarkdown(text, path),
             path,
             score: scoreText(text, query) + (kind === "anti-pattern" ? 0.5 : 0),
           };
