@@ -404,6 +404,18 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents live credential commands with exported environment variables", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    for (const term of [
+      '--path "$VIVARIUM_CREDENTIALS_PATH"',
+      '--master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY"',
+      '--name "$VIVARIUM_INTERNAL_API_CREDENTIAL_NAME"',
+      '--url "$VIVARIUM_INTERNAL_API_HEALTH_URL"',
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
+
   test("ignores filled live-readiness environment files", () => {
     const gitignore = readFileSync(".gitignore", "utf8");
     for (const pattern of ["live-readiness.local.env", "docs/live-readiness.local.env"]) {

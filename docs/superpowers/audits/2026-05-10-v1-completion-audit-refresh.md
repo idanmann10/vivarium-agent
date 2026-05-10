@@ -46,11 +46,12 @@ Not complete. Local implementation and local test gates are strong, including ag
 - `docs/live-readiness.env.example` and `docs/guides/live-readiness.md` now instruct operators to copy the local env file and run `chmod 600 live-readiness.local.env` before filling live secrets; `scripts/reference-docs.test.ts` guards both docs.
 - `bun test apps/cli/src/commands/doctor.test.ts -t "reports missing internal API credential metadata as live readiness blockers"` first failed because `doctor --live` did not report `credentials.masterKey:missing`, then passed after adding `VIVARIUM_CREDENTIALS_MASTER_KEY` to the live-readiness checks and next actions.
 - `scripts/reference-docs.test.ts` first failed after adding `VIVARIUM_CREDENTIALS_MASTER_KEY` to the live-readiness env-var contract, then passed after documenting the env var in `docs/live-readiness.env.example` and `docs/guides/live-readiness.md`.
+- `bun test scripts/reference-docs.test.ts -t "documents live credential commands with exported environment variables"` first failed because the internal credential add/smoke examples still hardcoded the credential path, credential name, and health URL, then passed after those examples switched to the exported live-readiness variables.
 - `bun apps/cli/src/index.ts doctor --live --env-file docs/live-readiness.env.example --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false` with copied template values classified as `:placeholder` or unavailable, not live-ready.
 - `bun apps/cli/src/index.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false`, now including `v1.evidencePath:missing` so setup readiness cannot be confused with v1 loop verification.
 - Local disk pressure was cleared before continuing live-readiness work: `/` had only 116 MiB available and shell startup emitted `No space left on device`; after deleting regenerable Codex caches, `df -h / /System/Volumes/Data` reports 2.8 GiB available and subsequent shell/git/doctor commands no longer emit the rbenv temp-file error.
 - `bun run typecheck` in `the-agent`: TypeScript passed.
-- `bun run test` in `the-agent`: 273 tests passed, 0 failed, 1404 assertions.
+- `bun run test` in `the-agent`: 274 tests passed, 0 failed, 1408 assertions.
 - `bun run lint` in `the-agent`: repo lint scanned 196 TypeScript files, and Oxlint found 0 warnings and 0 errors.
 - `bun run format:check` in `the-agent`: all matched package/config/tooling files use the expected Oxfmt format.
 - `bun run build` in `the-agent`: 9 entrypoints present.
@@ -109,7 +110,7 @@ Not complete. Local implementation and local test gates are strong, including ag
 - `bun test apps/cli/src/commands/doctor.test.ts -t "requires v1 public contribution positive signals from distinct agents"` first failed because five positive-signal artifacts without distinct signal-agent identities configured `v1.publicContribution`, then passed after `doctor --live` required five distinct positive-signal agent/evidence records.
 - `bun test apps/cli/src/commands/doctor.test.ts` now also checks that public-contribution next-action guidance names other-agent pull/use records.
 - `bun test apps/cli/src/commands/doctor.test.ts`: 61 tests passed, 0 failed, 274 assertions.
-- `bun test scripts/reference-docs.test.ts`: 14 tests passed, 0 failed, 456 assertions.
+- `bun test scripts/reference-docs.test.ts`: 15 tests passed, 0 failed, 460 assertions.
 - `git diff --check` in `the-agent`: exits 0.
 - `bun run lint` in `the-world`: world validator reports 3 domains, 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, and 1 contributor.
 - `bun run typecheck` in `the-world`: TypeScript passed.

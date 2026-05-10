@@ -163,18 +163,18 @@ After adding an internal API credential, smoke it through the encrypted keychain
 
 ```bash
 bun apps/cli/src/index.ts credentials add \
-  --path /tmp/vivarium-credentials.enc \
+  --path "$VIVARIUM_CREDENTIALS_PATH" \
   --master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY" \
   --kind bearer \
-  --name INTERNAL_API_TOKEN \
+  --name "$VIVARIUM_INTERNAL_API_CREDENTIAL_NAME" \
   --purpose "Call internal API" \
   --value <redacted>
 
 bun apps/cli/src/index.ts credentials smoke \
-  --path /tmp/vivarium-credentials.enc \
+  --path "$VIVARIUM_CREDENTIALS_PATH" \
   --master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY" \
-  --name INTERNAL_API_TOKEN \
-  --url <internal-health-url> \
+  --name "$VIVARIUM_INTERNAL_API_CREDENTIAL_NAME" \
+  --url "$VIVARIUM_INTERNAL_API_HEALTH_URL" \
   --method GET
 ```
 
