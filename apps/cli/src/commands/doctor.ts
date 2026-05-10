@@ -1125,6 +1125,11 @@ function cliCommand(context: DoctorNextActionContext, args: string): string {
   return `bun ${shellQuote(join(context.agentRoot, "apps/cli/src/main.ts"))} ${args}`;
 }
 
+function liveSetupCommand(context: DoctorNextActionContext): string {
+  const envFilePath = context.envFilePath ?? "<filled-env-file>";
+  return cliCommand(context, `live setup --env-file ${shellQuote(envFilePath)} --confirm-write`);
+}
+
 function nextActionForCheck(check: string, context: DoctorNextActionContext): DoctorNextAction {
   const guide = "docs/guides/live-readiness.md";
   const [name = check] = check.split(":");
@@ -1282,10 +1287,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: "Export the provider profiles path and create the configured provider profiles.",
         env: [providerProfilesPathEnv],
-        command: cliCommand(
-          context,
-          'providers configure --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --name <profile> --kind <provider-kind> --api-key-env <KEY_ENV> --model <model> --capability chat --context-window <context-window> --cost-class medium',
-        ),
+        command: liveSetupCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.anthropicProfile":
@@ -1361,10 +1363,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: "Create the encrypted credential store and export its path.",
         env: [credentialsPathEnv],
-        command: cliCommand(
-          context,
-          'credentials add --path "$VIVARIUM_CREDENTIALS_PATH" --master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY" --kind bearer --name "$VIVARIUM_INTERNAL_API_CREDENTIAL_NAME" --purpose "Call internal API" --value "$VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE"',
-        ),
+        command: liveSetupCommand(context),
         guide: `${guide}#internal-api-credential`,
       };
     case "credentials.masterKey":

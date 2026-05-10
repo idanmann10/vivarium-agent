@@ -551,6 +551,30 @@ describe("doctorCommand", () => {
     );
   });
 
+  test("points setup-created live files at the live setup command", () => {
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { GH_PAGER: "cat" },
+      envFilePath: "live-readiness.local.env",
+      runner: blockedRunner,
+    });
+
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "provider.profilesPath:missing",
+        command: expect.stringContaining('live setup --env-file "live-readiness.local.env" --confirm-write'),
+      }),
+    );
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "credentials.path:missing",
+        command: expect.stringContaining('live setup --env-file "live-readiness.local.env" --confirm-write'),
+      }),
+    );
+  });
+
   test("returns next-action guide anchors that exist in the live-readiness guide", () => {
     const result = doctorCommand({
       mode: "live-readiness",
