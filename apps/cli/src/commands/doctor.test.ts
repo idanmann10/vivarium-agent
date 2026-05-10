@@ -136,8 +136,10 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
     "docs/live/provider-private.md",
     "docs/live/internal-api-smoke.md",
     "docs/live/anti-pattern-avoided.md",
+    "docs/live/anti-pattern-unfamiliar-territory.md",
     "docs/live/trace-a.md",
     "docs/live/trace-b.md",
+    "docs/live/trace-similar-workflows.md",
     "docs/live/monitor-failure-pattern.md",
     "docs/live/recover-replan.md",
     "docs/live/destructive-hold.md",
@@ -242,7 +244,9 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
       },
       behaviorLoop: {
         antiPatternAvoided: "docs/live/anti-pattern-avoided.md",
+        antiPatternUnfamiliarTerritory: "docs/live/anti-pattern-unfamiliar-territory.md",
         tracesRead: ["docs/live/trace-a.md", "docs/live/trace-b.md"],
+        traceSimilarWorkflows: "docs/live/trace-similar-workflows.md",
         monitorFailurePattern: "docs/live/monitor-failure-pattern.md",
         recoverReplan: "docs/live/recover-replan.md",
         destructiveHold: "docs/live/destructive-hold.md",
@@ -452,6 +456,8 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.realGoals:missing")).toContain("named real coding goals");
     expect(actions.get("v1.starterPack:missing")).toContain("distinct installed");
     expect(actions.get("v1.providerSmokes:missing")).toContain("distinct");
+    expect(actions.get("v1.behaviorLoop:missing")).toContain("unfamiliar territory");
+    expect(actions.get("v1.behaviorLoop:missing")).toContain("similar workflows");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("fourteen days");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("faster");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("profile counts");
@@ -937,6 +943,57 @@ describe("doctorCommand", () => {
           tracesRead: ["docs/live/trace-a.md", "docs/live/trace-b.md"],
           recoverReplan: "docs/live/recover-replan.md",
           destructiveHold: "docs/live/destructive-hold.md",
+          refusal: "docs/live/refusal.md",
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.behaviorLoop:missing");
+  });
+
+  test("requires v1 behavior loop evidence for unfamiliar anti-pattern lookup and similar workflow traces", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-behavior-loop-context-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    const localEvidencePaths = [
+      "docs/live/anti-pattern-avoided.md",
+      "docs/live/trace-a.md",
+      "docs/live/trace-b.md",
+      "docs/live/monitor-failure-pattern.md",
+      "docs/live/recover-replan.md",
+      "docs/live/destructive-hold.md",
+      "docs/live/destructive-escalation.md",
+      "docs/live/destructive-confirmation.md",
+      "docs/live/destructive-continuation.md",
+      "docs/live/refusal.md",
+    ];
+    for (const path of localEvidencePaths) {
+      const absolutePath = join(root, path);
+      mkdirSync(dirname(absolutePath), { recursive: true });
+      writeFileSync(absolutePath, "behavior evidence\n", "utf8");
+    }
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        behaviorLoop: {
+          antiPatternAvoided: "docs/live/anti-pattern-avoided.md",
+          tracesRead: ["docs/live/trace-a.md", "docs/live/trace-b.md"],
+          monitorFailurePattern: "docs/live/monitor-failure-pattern.md",
+          recoverReplan: "docs/live/recover-replan.md",
+          destructiveHold: "docs/live/destructive-hold.md",
+          destructiveEscalation: "docs/live/destructive-escalation.md",
+          destructiveConfirmation: "docs/live/destructive-confirmation.md",
+          destructiveContinuation: "docs/live/destructive-continuation.md",
           refusal: "docs/live/refusal.md",
         },
       })}\n`,

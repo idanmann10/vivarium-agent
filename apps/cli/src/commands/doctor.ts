@@ -425,7 +425,9 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
     v1Check(
       "behaviorLoop",
       evidenceReference(behaviorLoop?.antiPatternAvoided, context) &&
+        evidenceReference(behaviorLoop?.antiPatternUnfamiliarTerritory, context) &&
         distinctEvidenceReferenceCount(behaviorLoop?.tracesRead, context) >= 2 &&
+        evidenceReference(behaviorLoop?.traceSimilarWorkflows, context) &&
         evidenceReference(behaviorLoop?.monitorFailurePattern, context) &&
         evidenceReference(behaviorLoop?.recoverReplan, context) &&
         evidenceReference(behaviorLoop?.destructiveHold, context) &&
@@ -892,7 +894,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record live behavior-loop evidence for anti-pattern use, two distinct traces read, Monitor tool-failure detection, Recover re-plan, destructive hold/escalation/confirmation/continuation, and refusal.",
+          "Record live behavior-loop evidence for anti-pattern use before unfamiliar territory, two distinct traces read that demonstrate similar workflows, Monitor tool-failure detection, Recover re-plan, destructive hold/escalation/confirmation/continuation, and refusal.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.dreamArtifacts":
