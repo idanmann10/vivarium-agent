@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import { agentId, episodeId, runId, skillId } from "../../../../core/src/index.js";
-import { InMemoryStateRepository } from "../../../../state/src/index.js";
+import { InMemoryStateRepository, SQLiteStateRepository } from "../../../../state/src/index.js";
 import { runDream } from "./primitive.js";
 
 describe("runDream", () => {
@@ -195,5 +198,54 @@ describe("runDream", () => {
     expect(state.listTraceCandidates("coding")[0]?.steps.map((step) => step.annotation)).toContain(
       "Validation passed with score 0.84.",
     );
+  });
+
+  test("runs against SQLite-backed state repository", () => {
+    const statePath = join(mkdtempSync(join(tmpdir(), "dream-sqlite-")), "state.db");
+    const state = new SQLiteStateRepository(statePath);
+    const failedRun = runId("run-dream-sqlite-failed");
+
+    state.setIdentity({
+      agentId: agentId("agent-dream-sqlite"),
+      name: "agent-dream-sqlite",
+      devStages: { coding: "newborn" },
+      runsCompleted: 0,
+      summary: "SQLite Dream agent.",
+      updatedAt: "local",
+    });
+    state.createRun({
+      id: failedRun,
+      agentId: agentId("agent-dream-sqlite"),
+      domain: "coding",
+      goal: "recover from durable failure",
+      startedAt: "2026-05-10T00:00:00.000Z",
+      endedAt: "2026-05-10T00:01:00.000Z",
+      success: false,
+      score: 0,
+      notes: "durable monitor signal",
+      publishable: false,
+      published: false,
+      publishedAt: null,
+      visibility: "private",
+    });
+    state.appendEpisode({
+      id: episodeId("dream-sqlite-monitor"),
+      runId: failedRun,
+      agentId: agentId("agent-dream-sqlite"),
+      timestamp: "2026-05-10T00:00:30.000Z",
+      tags: [],
+      kind: "monitor_signal",
+      offTrackScore: 0.8,
+      reasons: ["durable failure"],
+    });
+
+    const result = runDream({
+      state,
+      domainStats: { coding: { runsCompleted: 1, successRate: 0, skillDiversity: 0 } },
+    });
+
+    expect(result.antiPatternCandidates).toEqual(["anti-pattern-run-dream-sqlite-failed"]);
+    expect(state.listAntiPatternCandidates("coding")[0]?.why).toContain("durable failure");
+    state.close();
   });
 });

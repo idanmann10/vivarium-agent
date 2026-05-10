@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, SQLite-backed self-tools, read-only world pull/search paths, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, computer-use click/type confirmation safety, concrete world maintenance workflows, and independent validator machine-fingerprint trust gates, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation over the shared state repository, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, SQLite-backed self-tools, read-only world pull/search paths, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, computer-use click/type confirmation safety, concrete world maintenance workflows, and independent validator machine-fingerprint trust gates, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -39,7 +39,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 1 CLI | `dispatchCliCommand` routes `init`, `run`, `credentials add/list`, `skills list`, `world search`, `world pull`, `status`, and `doctor`; init runs migrations, installs starter skills, discovers starter traces/curriculum, and returns provider/credential prompts | Complete locally |
 | Phase 1 e2e run/recover | `tests/e2e-run.test.ts` and `tests/e2e-recover.test.ts` pass in current test suite | Complete locally |
 | Phase 1 done scenario | A developer can run a synthetic local goal; real provider config, credential use, anti-pattern automatic lookup, and full CLI install flow are not verified | Incomplete |
-| Phase 2 Dream primitive | Deterministic `runDream` exists with promotion/pruning/habituation/identity/confidence behavior and now returns generated anti-pattern/trace candidate IDs | Partially complete |
+| Phase 2 Dream primitive | Deterministic `runDream` exists with promotion/pruning/habituation/identity/confidence behavior, generated anti-pattern/trace candidate IDs, and a SQLite-backed StateRepository regression test | Complete locally |
 | Phase 2 scheduler | `shouldRunDream` helper and `createDreamScheduler` start/stop interval loop exist with deterministic tests | Complete locally; process-manager persistence unverified |
 | Phase 2 candidate pipelines | Skill candidate handling exists; Dream now generates anti-pattern candidates from failed/low-score runs and annotated trace candidates from successful high-score runs, with in-memory and SQLite persistence | Complete locally |
 | Phase 2 confidence storage | In-memory and SQLite confidence buckets exist | Complete locally |
@@ -66,7 +66,8 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
 - `bun test packages/runtime/src/orchestrator.test.ts`: 5 tests passed, including harmful refusal and destructive confirmation behavior.
-- `bun test packages/state/src/repository.test.ts packages/state/src/sqlite-repository.test.ts packages/state/src/storage/migrations.test.ts packages/runtime/src/primitives/dream/primitive.test.ts`: 10 tests passed, including Dream candidate queues and extraction.
+- `bun test packages/state/src/repository.test.ts packages/state/src/sqlite-repository.test.ts packages/state/src/storage/migrations.test.ts packages/runtime/src/primitives/dream/primitive.test.ts`: 11 tests passed, including Dream candidate queues and extraction.
+- `bun test packages/runtime/src/primitives/dream/primitive.test.ts`: 3 tests passed, including SQLite-backed Dream candidate persistence.
 - `bun test packages/runtime/src/attention.test.ts`: 2 tests passed, including working-token budget enforcement.
 - `bun test packages/tools/src/anonymizer/pipeline.test.ts packages/providers/src/router.test.ts`: 5 tests passed, including provider anonymizer fallback.
 - `bun test apps/daemon/src/scheduler.test.ts`: 4 tests passed, including daemon Dream scheduler start/stop behavior.
@@ -80,12 +81,12 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `the-world bun test scripts`: 9 tests passed, including independent validator machine-fingerprint counting and concrete workflow command checks.
 - `bun run lint`: scanned 170 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 97 tests passed, 0 failed.
+- `bun run test`: 98 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value remaining gaps after the world pull read-path slice are live external verification and deployment decisions:
+The highest-value remaining gaps after the Dream state repository slice are live external verification and deployment decisions:
 
 1. Verify live provider credentials and live model calls once credential names and values are available.
 2. Verify live GitHub remotes, Discussions, PR creation, and auto-merge settings once repository targets and credentials are available.

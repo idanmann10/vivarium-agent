@@ -5,8 +5,7 @@ import {
   stageForScore,
 } from "../../../../core/src/index.js";
 import type { DevStage, Episode, Run, TraceStep } from "../../../../core/src/index.js";
-import type { InMemoryStateRepository } from "../../../../state/src/index.js";
-import type { LocalSkillRecord } from "../../../../state/src/index.js";
+import type { LocalSkillRecord, StateRepository } from "../../../../state/src/index.js";
 import { wilsonLowerBound } from "../../../../core/src/index.js";
 
 export interface DreamDomainStats {
@@ -16,7 +15,7 @@ export interface DreamDomainStats {
 }
 
 export interface DreamRequest {
-  readonly state: InMemoryStateRepository;
+  readonly state: StateRepository;
   readonly domainStats: Readonly<Record<string, DreamDomainStats>>;
 }
 
@@ -35,7 +34,7 @@ function lowerBound(skill: LocalSkillRecord): number {
   return wilsonLowerBound({ helped: skill.helped, uses: skill.uses });
 }
 
-function confidenceNotes(state: InMemoryStateRepository): readonly string[] {
+function confidenceNotes(state: StateRepository): readonly string[] {
   return state.listConfidenceBuckets().map((bucket) => {
     const rate = bucket.correct / bucket.total;
     return rate < 0.5
@@ -54,7 +53,7 @@ function monitorReasons(episodes: readonly Episode[]): readonly string[] {
     .flatMap((episode) => episode.reasons);
 }
 
-function generateAntiPatternCandidate(state: InMemoryStateRepository, run: Run, episodes: readonly Episode[]): string {
+function generateAntiPatternCandidate(state: StateRepository, run: Run, episodes: readonly Episode[]): string {
   const id = `anti-pattern-${String(run.id)}`;
   const reasons = monitorReasons(episodes);
   state.upsertAntiPatternCandidate({
@@ -113,7 +112,7 @@ function traceStepsFromEpisodes(episodes: readonly Episode[]): readonly TraceSte
   return steps;
 }
 
-function generateTraceCandidate(state: InMemoryStateRepository, run: Run, episodes: readonly Episode[]): string {
+function generateTraceCandidate(state: StateRepository, run: Run, episodes: readonly Episode[]): string {
   const id = `trace-${String(run.id)}`;
   state.upsertTraceCandidate({
     id,
