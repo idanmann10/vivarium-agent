@@ -110,12 +110,14 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
     case "run": {
       const domain = value(flags, "domain");
       const worldRoot = value(flags, "world-root");
+      const statePath = value(flags, "state-path");
       return output(
         command,
         await runCommand({
           goal: required(flags, "goal"),
           ...(domain === undefined ? {} : { domain }),
           ...(worldRoot === undefined ? {} : { worldRoot }),
+          ...(statePath === undefined ? {} : { statePath }),
           ...(booleanFlag(flags, "force-failure") ? { forceFailure: true } : {}),
         }),
       );
