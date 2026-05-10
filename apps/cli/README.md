@@ -30,6 +30,8 @@ Use the CLI for local handoff checks such as provider profile smoke tests,
 encrypted credential smoke tests, GitHub read/write guards, daemon status, and
 world transmission-smoke. `live setup --env-file <file> --confirm-write` materializes
 the local provider profile file and encrypted internal API credential store from a
-filled readiness file without printing secret values. `live evidence-init --path <file>`
+filled readiness file without printing secret values. Without `--confirm-write`, the same
+command reports the target paths, provider profile names, and credential name without writing files.
+`live evidence-init --path <file>`
 creates an empty v1 evidence manifest shape for later real evidence collection. Reusable logic should move into
 `packages/*` before it grows command-specific state.
