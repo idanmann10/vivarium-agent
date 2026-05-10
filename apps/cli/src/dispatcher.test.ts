@@ -179,6 +179,27 @@ describe("dispatchCliCommand", () => {
     });
   });
 
+  test("routes GitHub smoke checks without credentials", async () => {
+    await expect(
+      dispatchCliCommand([
+        "github",
+        "smoke",
+        "--owner",
+        "owner",
+        "--repo",
+        "world",
+        "--token-env",
+        "VIVARIUM_MISSING_GITHUB_TOKEN",
+      ]),
+    ).resolves.toMatchObject({
+      command: "github",
+      result: {
+        ok: false,
+        error: "Missing GitHub token environment variable: VIVARIUM_MISSING_GITHUB_TOKEN",
+      },
+    });
+  });
+
   test("returns a usage error for unsupported commands", async () => {
     await expect(dispatchCliCommand(["unknown"])).rejects.toThrow('Unknown command "unknown"');
   });

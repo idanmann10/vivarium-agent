@@ -7,6 +7,7 @@ export const cliCommands = [
   "skills",
   "world",
   "providers",
+  "github",
   "credentials",
   "identity",
   "publish",
@@ -32,6 +33,8 @@ export type {
 } from "./commands/credentials.js";
 export { providerSmokeCommand } from "./commands/providers.js";
 export type { ProviderSmokeCommandOptions, ProviderSmokeCommandResult, ProviderSmokeKind } from "./commands/providers.js";
+export { githubSmokeCommand } from "./commands/github.js";
+export type { GitHubSmokeCommandOptions, GitHubSmokeCommandResult, GitHubRepositoryPermissions } from "./commands/github.js";
 export { listSkillsCommand } from "./commands/skills.js";
 export type { ListedSkill, ListSkillsCommandOptions, ListSkillsCommandResult } from "./commands/skills.js";
 export { searchWorldCommand } from "./commands/world.js";

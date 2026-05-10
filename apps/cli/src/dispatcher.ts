@@ -1,6 +1,7 @@
 import type { CredentialKind } from "../../../packages/core/src/index.js";
 import { addCredentialCommand, listCredentialsCommand } from "./commands/credentials.js";
 import { doctorCommand } from "./commands/doctor.js";
+import { githubSmokeCommand } from "./commands/github.js";
 import { runInitCommand } from "./commands/init.js";
 import { providerSmokeCommand, type ProviderSmokeKind } from "./commands/providers.js";
 import { runCommand } from "./commands/run.js";
@@ -206,6 +207,19 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
           model: required(flags, "model"),
           ...(baseUrl === undefined ? {} : { baseUrl }),
           ...(prompt === undefined ? {} : { prompt }),
+        }),
+      );
+    }
+    case "github": {
+      if (subcommand !== "smoke") {
+        usage('Unknown github subcommand. Use "smoke".');
+      }
+      return output(
+        command,
+        await githubSmokeCommand({
+          owner: required(flags, "owner"),
+          repo: required(flags, "repo"),
+          tokenEnv: required(flags, "token-env"),
         }),
       );
     }
