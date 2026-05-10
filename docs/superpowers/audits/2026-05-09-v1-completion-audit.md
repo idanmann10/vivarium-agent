@@ -63,6 +63,10 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `sed -n '1882,2085p' goal.md`: phase, v1 done, and out-of-scope criteria.
 - `git -C the-agent status --short`: clean after the Dream state repository, compounding eval, state memory implementation, CLI install-flow state, daemon Compose supervision, Drizzle schema, and audit update commits; prior safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, CLI dispatcher, SQLite self-tools, publishable run queue, tool-output warning, credential-argument safety, persistent daily rate-limit, computer-use confirmation, and world pull read-path changes are tracked in follow-up commits.
 - `git -C the-world status --short`: clean after concrete maintenance workflow and coding starter-pack depth commits.
+- `git -C the-agent remote -v` and `git -C the-world remote -v`: no remotes configured.
+- `env | sort | rg '^(ANTHROPIC|OPENAI|OPENROUTER|GITHUB|GH_|VIVARIUM|THE_AGENT|INTERNAL|OAI|MODEL)'`: only `GH_PAGER=cat` is present; no provider or GitHub token env vars are configured.
+- `gh auth status`: all configured GitHub accounts report invalid tokens.
+- `docker --version`: Docker is installed; `docker compose` and `docker-compose` are unavailable.
 - `rg --files` and shallow file listings verified `the-agent` app/package skeleton, root metadata, CI workflows, and per-package README/AGENTS files; `the-world` top-level files, templates, and workflows are present.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
