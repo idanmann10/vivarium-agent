@@ -296,6 +296,13 @@ function agentEvidenceRecords(value: unknown, context: V1EvidenceReferenceContex
   });
 }
 
+function agentEvidenceRecord(value: unknown, context: V1EvidenceReferenceContext): { readonly agent: string; readonly evidence: string } | undefined {
+  const record = asRecord(value);
+  const agent = textValue(record?.agent);
+  const evidence = evidenceReferenceIdentity(record?.evidence, context);
+  return agent === undefined || evidence === undefined ? undefined : { agent, evidence };
+}
+
 function worldSubscriptionReference(value: unknown): string | undefined {
   const text = textValue(value);
   if (text === undefined) {
@@ -368,8 +375,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const dreamInternalSkillEvidence = evidenceReferenceIdentity(dreamArtifacts?.internalSkill, context);
   const dreamPublicSkillEvidence = evidenceReferenceIdentity(dreamArtifacts?.publicSkill, context);
   const publishedArtifacts = asRecord(manifest.publishedArtifacts);
-  const publishedTracePlanReadEvidence = evidenceReferenceIdentity(publishedArtifacts?.tracePlanRead, context);
-  const publishedRunPlanReadEvidence = evidenceReferenceIdentity(publishedArtifacts?.runPlanRead, context);
+  const publishedTracePlanRead = agentEvidenceRecord(publishedArtifacts?.tracePlanRead, context);
+  const publishedRunPlanRead = agentEvidenceRecord(publishedArtifacts?.runPlanRead, context);
   const curationStats = asRecord(manifest.curationStats);
   const curationAgentContributor = textValue(curationStats?.agentContributor);
   const curationFeaturedContributor = textValue(curationStats?.featuredContributor);
@@ -468,9 +475,9 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
       evidenceReference(publishedArtifacts?.antiPattern, context) &&
         evidenceReference(publishedArtifacts?.trace, context) &&
         evidenceReference(publishedArtifacts?.run, context) &&
-        publishedTracePlanReadEvidence !== undefined &&
-        publishedRunPlanReadEvidence !== undefined &&
-        publishedTracePlanReadEvidence !== publishedRunPlanReadEvidence,
+        publishedTracePlanRead !== undefined &&
+        publishedRunPlanRead !== undefined &&
+        publishedTracePlanRead.evidence !== publishedRunPlanRead.evidence,
     ),
     v1Check(
       "curationStats",
@@ -917,7 +924,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.publishedArtifacts":
       return {
         check,
-        action: "Record published anti-pattern, trace, run, and separate trace and run Plan-read evidence.",
+        action: "Record published anti-pattern, trace, run, and separate other-agent trace and run Plan-read agent/evidence records.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.curationStats":
