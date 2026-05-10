@@ -22,7 +22,8 @@ export VIVARIUM_OPENROUTER_PROVIDER_PROFILE=openrouter
 export VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE=private-finetune
 ```
 
-Save named profiles locally:
+Save named profiles locally for Anthropic, OpenRouter, and the private
+OpenAI-compatible target:
 
 ```bash
 bun apps/cli/src/index.ts providers configure \

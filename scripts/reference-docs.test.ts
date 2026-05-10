@@ -94,6 +94,65 @@ const conceptDocs = {
   world: ["canonical", "private", "skills", "traces", "runs", "subscriptions"],
 } as const;
 
+const guideDocs = {
+  "add-a-primitive": [
+    "packages/runtime/src/primitives/<name>/",
+    "primitive.ts",
+    "meta.ts",
+    "registry",
+    "tests",
+  ],
+  "add-a-skill": [
+    "SKILL.md",
+    "requiredToolsets",
+    "requiredCredentials",
+    "provenance",
+    "evidenceRunIds",
+  ],
+  "add-an-anti-pattern": ["ANTI-PATTERN.md", "why", "insteadDo", "relatedSkills", "evidenceRunIds"],
+  "add-credentials": [
+    "credentials add",
+    "credentials smoke",
+    "encrypted",
+    "master-key",
+    "VIVARIUM_CREDENTIALS_PATH",
+  ],
+  "author-a-trace": ["TRACE.md", "TraceStep", "prerequisites", "pitfalls", "alternatives"],
+  "configure-providers": [
+    "VIVARIUM_PROVIDER_PROFILES_PATH",
+    "providers configure",
+    "providers smoke",
+    "Anthropic",
+    "OpenRouter",
+  ],
+  "deploy-fly": ["post-v1", "out of scope for v1", "daemon", "state volume", "world mount"],
+  "deploy-local-compose": [
+    "docker compose",
+    "vivarium-daemon",
+    "8787",
+    "restart: unless-stopped",
+    "daemon smoke",
+  ],
+  "deploy-railway": ["post-v1", "out of scope for v1", "daemon", "state volume", "world mount"],
+  "enable-computer-use": [
+    "computer-use",
+    "confirmation",
+    "computerUseConfirmationLevel",
+    "computer.click",
+    "computer.type",
+  ],
+  "fork-the-world-privately": ["canonical", "private", "--auto-push", "priority", "world search"],
+  install: ["bun install", "bun run lint", "init", "provider", "live-readiness"],
+  "live-readiness": [
+    "doctor --live",
+    "Naming Gate",
+    "Git Remotes",
+    "Provider Environment",
+    "Verification Sequence",
+  ],
+  "publish-a-run": ["publishable", "anonymization", "world.publishRun", "visibility", "PII"],
+} as const;
+
 describe("reference docs", () => {
   test("documents every top-level self-tool group", () => {
     for (const tool of selfToolDocs) {
@@ -163,6 +222,15 @@ describe("reference docs", () => {
   test("documents concept explanations", () => {
     for (const [doc, terms] of Object.entries(conceptDocs)) {
       const body = readFileSync(join("docs", "concepts", `${doc}.md`), "utf8");
+      for (const term of terms) {
+        expect(body).toContain(term);
+      }
+    }
+  });
+
+  test("documents guide workflows", () => {
+    for (const [doc, terms] of Object.entries(guideDocs)) {
+      const body = readFileSync(join("docs", "guides", `${doc}.md`), "utf8");
       for (const term of terms) {
         expect(body).toContain(term);
       }
