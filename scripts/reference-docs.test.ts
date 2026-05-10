@@ -24,6 +24,27 @@ const documentedMethods = {
   episodes: ["note(request)", "surprise(request)", "recallRun(runId)"],
 } as const;
 
+const referenceFormatFields = {
+  "anti-pattern-format": [
+    "AntiPattern",
+    "why",
+    "insteadDo",
+    "relatedSkills",
+    "AntiPatternCandidateProposal",
+  ],
+  "curriculum-format": [
+    "Curriculum",
+    "CurriculumStep",
+    "references",
+    "starterGoals",
+    "CurriculumProgress",
+  ],
+  "episode-kinds": ["Episode", "BaseEpisode", "run_start", "surprise", "validation", "Reflection"],
+  "run-format": ["Run", "agentId", "publishable", "publishedAt", "visibility"],
+  "skill-format": ["Skill", "SkillStatus", "requiredCredentials", "requiredToolsets", "habitual"],
+  "trace-format": ["Trace", "TraceStep", "prerequisites", "pitfalls", "TraceCandidateProposal"],
+} as const;
+
 describe("reference docs", () => {
   test("documents every top-level self-tool group", () => {
     for (const tool of selfToolDocs) {
@@ -60,6 +81,15 @@ describe("reference docs", () => {
       "computerUseConfirmationLevel",
     ]) {
       expect(body).toContain(field);
+    }
+  });
+
+  test("documents core artifact reference format fields", () => {
+    for (const [doc, fields] of Object.entries(referenceFormatFields)) {
+      const body = readFileSync(join("docs", "reference", `${doc}.md`), "utf8");
+      for (const field of fields) {
+        expect(body).toContain(field);
+      }
     }
   });
 });
