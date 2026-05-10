@@ -28,6 +28,7 @@ describe("agent workflows", () => {
     }
 
     expect(release).toContain("changesets/action@v1");
+    expect(release).toContain("bun run knip");
     expect(changesetBot).toContain("bunx changeset status");
   });
 });
