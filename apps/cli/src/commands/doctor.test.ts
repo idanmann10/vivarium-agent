@@ -168,6 +168,7 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
     "docs/live/trace-plan-read.md",
     "docs/live/run-plan-read.md",
     "featured/current.md",
+    "domains/coding/anti-patterns/provider-quirk/ANTI-PATTERN.md",
     "STATS.md",
     "contributors/live-agent.json",
     "docs/live/refinement-evidence.md",
@@ -281,6 +282,9 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
       },
       curationStats: {
         featuredPick: "featured/current.md",
+        featuredAntiPattern: "domains/coding/anti-patterns/provider-quirk/ANTI-PATTERN.md",
+        agentContributor: "live-agent",
+        featuredContributor: "provider-quirk-author",
         stats: "STATS.md",
         top5SkillSharePercent: 30,
       },
@@ -430,6 +434,8 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.publicContribution:missing")).toContain("distinct");
     expect(actions.get("v1.publicContribution:missing")).toContain("agent/evidence");
     expect(actions.get("v1.publicContribution:missing")).toContain("other-agent");
+    expect(actions.get("v1.curationStats:missing")).toContain("different contributor");
+    expect(actions.get("v1.curationStats:missing")).toContain("anti-pattern");
     expect(actions.get("v1.curationStats:missing")).toContain("30%");
     expect(actions.get("v1.realGoals:missing")).toContain("distinct");
     expect(actions.get("v1.realGoals:missing")).toContain("named real coding goals");
@@ -1320,6 +1326,39 @@ describe("doctorCommand", () => {
           featuredPick: "featured/current.md",
           stats: "STATS.md",
           top5SkillSharePercent: 1,
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.curationStats:missing");
+  });
+
+  test("requires v1 curation stats to feature a different contributor anti-pattern", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-curation-featured-anti-pattern-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    for (const path of ["featured/current.md", "STATS.md"]) {
+      const absolutePath = join(root, path);
+      mkdirSync(dirname(absolutePath), { recursive: true });
+      writeFileSync(absolutePath, "curation stats evidence\n", "utf8");
+    }
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        curationStats: {
+          featuredPick: "featured/current.md",
+          stats: "STATS.md",
+          top5SkillSharePercent: 30,
         },
       })}\n`,
       "utf8",

@@ -369,6 +369,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const publishedTracePlanReadEvidence = evidenceReferenceIdentity(publishedArtifacts?.tracePlanRead, context);
   const publishedRunPlanReadEvidence = evidenceReferenceIdentity(publishedArtifacts?.runPlanRead, context);
   const curationStats = asRecord(manifest.curationStats);
+  const curationAgentContributor = textValue(curationStats?.agentContributor);
+  const curationFeaturedContributor = textValue(curationStats?.featuredContributor);
   const twoWeekImprovement = asRecord(manifest.twoWeekImprovement);
   const contributorProfileSummary = asRecord(twoWeekImprovement?.contributorProfileSummary);
   const followupMillis = dateMillis(twoWeekImprovement?.followupDate);
@@ -464,6 +466,10 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
     v1Check(
       "curationStats",
       evidenceReference(curationStats?.featuredPick, context) &&
+        evidenceReference(curationStats?.featuredAntiPattern, context) &&
+        curationAgentContributor !== undefined &&
+        curationFeaturedContributor !== undefined &&
+        curationAgentContributor !== curationFeaturedContributor &&
         evidenceReference(curationStats?.stats, context) &&
         (numberValue(curationStats?.top5SkillSharePercent) ?? 0) >= 30,
     ),
@@ -907,7 +913,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.curationStats":
       return {
         check,
-        action: "Record featured pick and STATS.md evidence showing at least 30% top-five contributor concentration.",
+        action:
+          "Record featured pick evidence including a different contributor's anti-pattern, plus STATS.md evidence showing at least 30% top-five contributor concentration.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.twoWeekImprovement":
