@@ -109,6 +109,97 @@ describe("self-tools", () => {
     expect(readFileSync(result.path, "utf8")).toContain("- run-1");
   });
 
+  test("publishes runs through subscribed worlds", () => {
+    const root = mkdtempSync(join(tmpdir(), "self-tools-world-publish-run-"));
+    const canonicalWorld = join(root, "canonical");
+    const privateWorld = join(root, "private");
+    const subscriptionsPath = join(root, "subscriptions.json");
+    const state = new InMemoryStateRepository();
+    const tools = createSelfTools({
+      state,
+      world: createLocalWorldReader({ root: "../the-world" }),
+      worldSubscriptionsPath: subscriptionsPath,
+    });
+    const id = runId("run-publish-self-tool");
+
+    tools.world.subscribe({ label: "private", root: privateWorld, priority: 0, autoPushEnabled: true });
+    tools.world.subscribe({ label: "canonical", root: canonicalWorld, priority: 1, autoPushEnabled: false });
+    tools.runs.create({
+      id,
+      agentId: agentId("agent-tools"),
+      domain: "coding",
+      goal: "publish a run",
+      startedAt: "local",
+      endedAt: "later",
+      success: true,
+      score: 0.9,
+      notes: "Worked cleanly.",
+      publishable: true,
+      published: false,
+      publishedAt: null,
+      visibility: "public",
+    });
+    tools.episodes.append({
+      id: episodeId("episode-publish-run"),
+      runId: id,
+      agentId: agentId("agent-tools"),
+      timestamp: "local",
+      tags: [],
+      kind: "run_start",
+      goal: "publish a run",
+      domain: "coding",
+    });
+
+    const result = tools.world.publishRun({ runId: id, visibility: "public", contributor: "agent-a" });
+
+    expect(result.target.label).toBe("canonical");
+    expect(result.path).toBe(join(canonicalWorld, "proposals", "runs", String(id), "RUN.md"));
+    expect(readFileSync(result.path, "utf8")).toContain("publish a run");
+    expect(readFileSync(join(canonicalWorld, "proposals", "runs", String(id), "meta.yaml"), "utf8")).toContain("visibility: public");
+  });
+
+  test("publishes traces through subscribed worlds", () => {
+    const root = mkdtempSync(join(tmpdir(), "self-tools-world-publish-trace-"));
+    const canonicalWorld = join(root, "canonical");
+    const privateWorld = join(root, "private");
+    const subscriptionsPath = join(root, "subscriptions.json");
+    const state = new InMemoryStateRepository();
+    const tools = createSelfTools({
+      state,
+      world: createLocalWorldReader({ root: "../the-world" }),
+      worldSubscriptionsPath: subscriptionsPath,
+    });
+    const id = runId("run-trace-self-tool");
+
+    tools.world.subscribe({ label: "private", root: privateWorld, priority: 0, autoPushEnabled: true });
+    tools.world.subscribe({ label: "canonical", root: canonicalWorld, priority: 1, autoPushEnabled: false });
+    tools.runs.create({
+      id,
+      agentId: agentId("agent-tools"),
+      domain: "coding",
+      goal: "publish a trace",
+      startedAt: "local",
+      endedAt: "later",
+      success: true,
+      score: 0.9,
+      notes: "",
+      publishable: true,
+      published: false,
+      publishedAt: null,
+      visibility: "internal",
+    });
+    const authored = tools.traces.author(id, ["Explain the critical step."], "coding");
+
+    const result = tools.world.publishTrace({ traceId: authored.id, visibility: "internal", contributor: "agent-a" });
+
+    expect(result.target.label).toBe("private");
+    expect(result.path).toBe(join(privateWorld, "proposals", "traces", "coding", authored.id, "TRACE.md"));
+    expect(readFileSync(result.path, "utf8")).toContain("Trace for run-trace-self-tool");
+    expect(readFileSync(join(privateWorld, "proposals", "traces", "coding", authored.id, "meta.yaml"), "utf8")).toContain(
+      "visibility: internal",
+    );
+  });
+
   test("exposes roadmap self-tools against SQLite state", () => {
     const statePath = join(mkdtempSync(join(tmpdir(), "self-tools-state-")), "state.db");
     const state = new SQLiteStateRepository(statePath);

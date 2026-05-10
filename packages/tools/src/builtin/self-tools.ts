@@ -3,8 +3,11 @@ import type { Episode, Run, TraceStep, Visibility } from "../../../core/src/inde
 import type { StateRepository } from "../../../state/src/index.js";
 import {
   listWorldSubscriptions,
+  proposeRun,
   proposeSkillToSubscribedWorld,
+  proposeTrace,
   searchWorlds,
+  selectProposalWorldTarget,
   subscribeWorld,
   type LocalWorldReader,
   type LocalWorldSearchRequest,
@@ -40,6 +43,23 @@ export interface WorldProposeSkillRequest {
 }
 
 export interface WorldProposeSkillResult {
+  readonly target: ProposalWorldTarget;
+  readonly path: string;
+}
+
+export interface WorldPublishRunRequest {
+  readonly runId: RunId;
+  readonly visibility: Visibility;
+  readonly contributor: string;
+}
+
+export interface WorldPublishTraceRequest {
+  readonly traceId: string;
+  readonly visibility: Visibility;
+  readonly contributor: string;
+}
+
+export interface WorldPublishResult {
   readonly target: ProposalWorldTarget;
   readonly path: string;
 }
@@ -83,6 +103,8 @@ export interface SelfTools {
   readonly world: {
     search(request: LocalWorldSearchRequest): readonly LocalWorldSearchResult[];
     propose(request: WorldProposeSkillRequest): WorldProposeSkillResult;
+    publishRun(request: WorldPublishRunRequest): WorldPublishResult;
+    publishTrace(request: WorldPublishTraceRequest): WorldPublishResult;
     subscribe(request: Omit<SubscribeWorldRequest, "subscriptionsPath">): { readonly subscriptions: readonly PersistedWorldSubscription[] };
     listSubscriptions(): readonly PersistedWorldSubscription[];
   };
@@ -140,6 +162,33 @@ function skillProposalBody(body: string, evidenceRunIds: readonly string[] = [])
   }
 
   return `${body}\n\n## Evidence\n\n${evidenceRunIds.map((id) => `- ${id}`).join("\n")}`;
+}
+
+function targetForVisibility(worldSubscriptionsPath: string | undefined, visibility: Visibility): ProposalWorldTarget {
+  return selectProposalWorldTarget({ worlds: listWorldSubscriptions(requireWorldSubscriptionsPath(worldSubscriptionsPath)), visibility });
+}
+
+function runOutcome(run: Run): string {
+  if (run.success === true) {
+    return "success";
+  }
+
+  if (run.success === false) {
+    return "failure";
+  }
+
+  return "unknown";
+}
+
+function runTranscript(episodes: readonly Episode[]): string {
+  return episodes.map((episode) => JSON.stringify(episode)).join("\n");
+}
+
+function proposalTraceSteps(steps: readonly TraceStep[]): readonly { readonly action: string; readonly annotation: string }[] {
+  return steps.map((step) => ({
+    action: step.action,
+    annotation: step.annotation ?? "No annotation supplied.",
+  }));
 }
 
 export function createSelfTools({ state, world, worldSubscriptionsPath }: SelfToolsDependencies): SelfTools {
@@ -309,6 +358,48 @@ export function createSelfTools({ state, world, worldSubscriptionsPath }: SelfTo
           contributor: request.contributor,
           visibility: request.visibility ?? "public",
         });
+      },
+      publishRun(request) {
+        const run = state.getRun(request.runId);
+        if (run === undefined) {
+          throw new Error(`Run not found: ${String(request.runId)}`);
+        }
+
+        const target = targetForVisibility(worldSubscriptionsPath, request.visibility);
+        const path = proposeRun({
+          worldRoot: target.root,
+          runId: String(run.id),
+          domain: run.domain,
+          goal: run.goal,
+          outcome: runOutcome(run),
+          contributor: request.contributor,
+          body: runTranscript(state.listEpisodes(run.id)),
+          sourceRunId: String(run.id),
+          visibility: request.visibility,
+        });
+        state.updateRun({ ...run, published: true, publishedAt: new Date().toISOString(), visibility: request.visibility });
+
+        return { target, path };
+      },
+      publishTrace(request) {
+        const trace = state.listTraceCandidates().find((candidate) => candidate.id === request.traceId);
+        if (trace === undefined) {
+          throw new Error(`Trace candidate not found: ${request.traceId}`);
+        }
+
+        const target = targetForVisibility(worldSubscriptionsPath, request.visibility);
+        const path = proposeTrace({
+          worldRoot: target.root,
+          domain: trace.domain,
+          slug: trace.id,
+          title: trace.title,
+          contributor: request.contributor,
+          steps: proposalTraceSteps(trace.steps),
+          evidenceRunId: String(trace.sourceRunId),
+          visibility: request.visibility,
+        });
+
+        return { target, path };
       },
       subscribe(request) {
         return {
