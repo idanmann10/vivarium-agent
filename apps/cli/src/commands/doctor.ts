@@ -220,6 +220,15 @@ function asRecord(value: unknown): Readonly<Record<string, unknown>> | undefined
   return typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Readonly<Record<string, unknown>>) : undefined;
 }
 
+function recordArray(value: unknown): ReadonlyArray<Readonly<Record<string, unknown>>> {
+  return Array.isArray(value)
+    ? value.flatMap((item) => {
+        const record = asRecord(item);
+        return record === undefined ? [] : [record];
+      })
+    : [];
+}
+
 function textValue(value: unknown): string | undefined {
   if (typeof value !== "string") {
     return undefined;
@@ -312,12 +321,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const traceCount = numberValue(starterPack?.traceCount);
   const starterSkillReferenceCount = distinctEvidenceReferenceCount(starterPack?.skillReferences, context);
   const starterTraceReferenceCount = distinctEvidenceReferenceCount(starterPack?.traceReferences, context);
-  const realGoals: ReadonlyArray<Readonly<Record<string, unknown>>> = Array.isArray(manifest.realGoals)
-    ? manifest.realGoals.flatMap((goal) => {
-        const record = asRecord(goal);
-        return record === undefined ? [] : [record];
-      })
-    : [];
+  const realGoals = recordArray(manifest.realGoals);
   const realGoalIds = new Set(realGoals.flatMap((goal) => textValue(goal.id) ?? []));
   const realGoalEvidenceCount = new Set(realGoals.flatMap((goal) => evidenceReferenceIdentity(goal.evidence, context) ?? [])).size;
   const realGoalDates = realGoals.flatMap((goal) => {
@@ -338,6 +342,13 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const behaviorLoop = asRecord(manifest.behaviorLoop);
   const dreamArtifacts = asRecord(manifest.dreamArtifacts);
   const publicContribution = asRecord(manifest.publicContribution);
+  const publicContributionPullUses = recordArray(publicContribution?.externalPullUses).flatMap((pullUse) => {
+    const agent = textValue(pullUse.agent);
+    const evidence = evidenceReferenceIdentity(pullUse.evidence, context);
+    return agent === undefined || evidence === undefined ? [] : [{ agent, evidence }];
+  });
+  const publicContributionPullUseAgents = new Set(publicContributionPullUses.map((pullUse) => pullUse.agent));
+  const publicContributionPullUseEvidence = new Set(publicContributionPullUses.map((pullUse) => pullUse.evidence));
   const publishedArtifacts = asRecord(manifest.publishedArtifacts);
   const curationStats = asRecord(manifest.curationStats);
   const twoWeekImprovement = asRecord(manifest.twoWeekImprovement);
@@ -408,7 +419,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         evidenceReference(publicContribution?.canonicalSkill, context) &&
         (numberValue(publicContribution?.contributorTrust) ?? 0) >= 0.5 &&
         distinctEvidenceReferenceCount(publicContribution?.positiveSignalEvidence, context) >= 5 &&
-        distinctEvidenceReferenceCount(publicContribution?.externalPullEvidence, context) >= 3,
+        publicContributionPullUseAgents.size >= 3 &&
+        publicContributionPullUseEvidence.size >= 3,
     ),
     v1Check(
       "publishedArtifacts",
@@ -850,7 +862,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record public skill PR, math gate, contributor trust, K=5 distinct positive signals, auto-merge, canonical landing, and distinct external pull evidence.",
+          "Record public skill PR, math gate, contributor trust, K=5 distinct positive signals, auto-merge, canonical landing, and three distinct other-agent pull/use evidence records.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.publishedArtifacts":
