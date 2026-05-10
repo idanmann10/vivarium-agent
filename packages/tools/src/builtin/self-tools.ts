@@ -109,6 +109,7 @@ export interface SelfTools {
   };
   readonly skills: {
     list(status?: string): readonly string[];
+    habitual(domain?: string): readonly LocalWorldSearchResult[];
     search(query: string): readonly string[];
     view(id: SkillId): string | undefined;
     use(id: SkillId, helped?: boolean): void;
@@ -260,6 +261,16 @@ function runTranscript(episodes: readonly Episode[]): string {
   return episodes.map((episode) => JSON.stringify(episode)).join("\n");
 }
 
+function localSkillSearchResult(skill: LocalSkillRecord): LocalWorldSearchResult {
+  return {
+    kind: "skill",
+    id: String(skill.id),
+    title: skill.name,
+    path: `local:${String(skill.id)}`,
+    score: Number.POSITIVE_INFINITY,
+  };
+}
+
 function proposalTraceSteps(steps: readonly TraceStep[]): readonly { readonly action: string; readonly annotation: string }[] {
   return steps.map((step) => ({
     action: step.action,
@@ -397,6 +408,17 @@ export function createSelfTools({ state, world, github, worldRoot, worldSubscrip
           .listLocalSkills()
           .filter((skill) => status === undefined || skill.status === status)
           .map((skill) => String(skill.id));
+      },
+      habitual(domain) {
+        return state
+          .listLocalSkills()
+          .filter(
+            (skill) =>
+              skill.habitual && skill.status === "promoted" && (domain === undefined || skill.domain === domain),
+          )
+          .sort((left, right) => right.uses - left.uses)
+          .slice(0, 5)
+          .map(localSkillSearchResult);
       },
       search(query) {
         const needle = query.toLowerCase();

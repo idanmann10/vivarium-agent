@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { skillId } from "../../core/src/index.js";
 import { createLocalProvider } from "../../providers/src/index.js";
 import { InMemoryStateRepository } from "../../state/src/index.js";
 import { createSelfTools } from "../../tools/src/index.js";
@@ -61,6 +62,34 @@ describe("runGoal", () => {
     expect(result.success).toBe(true);
     expect(plan).toMatchObject({ kind: "plan" });
     expect(plan?.plan).toContain("Editing Before Reading");
+  });
+
+  test("preloads habitual local skills before retrieval-selected skills", async () => {
+    const harness = createHarness();
+    harness.state.upsertLocalSkill({
+      id: skillId("coding.habitual-branch-cleanup"),
+      name: "Habitual Branch Cleanup",
+      domain: "coding",
+      status: "promoted",
+      uses: 42,
+      helped: 40,
+      lastUsedRunOffset: 0,
+      habitual: true,
+      body: "A frequently used local habit.",
+    });
+
+    const result = await runGoal({
+      goal: "summarize the release notes",
+      domain: "coding",
+      agentName: "local-agent",
+      provider: harness.provider,
+      tools: harness.tools,
+    });
+
+    const plan = harness.state.listEpisodes(result.runId).find((episode) => episode.kind === "plan");
+
+    expect(result.success).toBe(true);
+    expect(plan?.plan).toContain("Habitual Branch Cleanup");
   });
 
   test("records monitor and recovery episodes after a forced failure", async () => {

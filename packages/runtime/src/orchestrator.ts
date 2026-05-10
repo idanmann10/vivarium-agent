@@ -44,6 +44,14 @@ function makeEpisodeId(runNumber: string, index: number) {
   return episodeId(`${runNumber}-episode-${index}`);
 }
 
+function preloadHabitualSkills(
+  habitualSkills: ReturnType<SelfTools["skills"]["habitual"]>,
+  worldResults: ReturnType<SelfTools["world"]["search"]>,
+): ReturnType<SelfTools["world"]["search"]> {
+  const habitualIds = new Set(habitualSkills.map((skill) => skill.id));
+  return [...habitualSkills, ...worldResults.filter((result) => result.kind !== "skill" || !habitualIds.has(result.id))];
+}
+
 type EpisodeBody = {
   [Kind in Episode["kind"]]: Omit<
     Extract<Episode, { readonly kind: Kind }>,
@@ -109,7 +117,10 @@ export async function runGoal(request: RunGoalRequest): Promise<RunGoalResult> {
     return { runId: id, success: false };
   }
 
-  const worldResults = request.tools.world.search({ domain: request.domain, query: request.goal });
+  const worldResults = preloadHabitualSkills(
+    request.tools.skills.habitual(request.domain),
+    request.tools.world.search({ domain: request.domain, query: request.goal }),
+  );
   const attentionRequest = {
     worldResults,
     tools: ["local-provider.execute"],
