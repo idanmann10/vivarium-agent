@@ -8,6 +8,16 @@ when_to_read: When wiring model adapters.
 
 Provider configs refer to environment variable names for keys.
 
+The v1 live-readiness path expects all three provider targets from `goal.md` to be configured:
+
+```bash
+export ANTHROPIC_API_KEY=<redacted>
+export OPENROUTER_API_KEY=<redacted>
+export VIVARIUM_OAI_COMPAT_API_KEY=<redacted>
+export VIVARIUM_OAI_COMPAT_BASE_URL=<private-oai-compatible-base-url>
+export VIVARIUM_OAI_COMPAT_MODEL=<private-fine-tune-model>
+```
+
 Save named profiles locally:
 
 ```bash
@@ -32,6 +42,18 @@ bun apps/cli/src/index.ts providers configure \
   --capability chat \
   --capability json_mode \
   --context-window 128000 \
+  --cost-class medium
+
+bun apps/cli/src/index.ts providers configure \
+  --profiles-path ~/.the-agent/provider-profiles.json \
+  --name private-finetune \
+  --kind openai-compat \
+  --api-key-env VIVARIUM_OAI_COMPAT_API_KEY \
+  --model "$VIVARIUM_OAI_COMPAT_MODEL" \
+  --base-url "$VIVARIUM_OAI_COMPAT_BASE_URL" \
+  --capability chat \
+  --capability json_mode \
+  --context-window <context-window> \
   --cost-class medium
 ```
 

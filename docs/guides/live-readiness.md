@@ -59,15 +59,18 @@ Replace `<agent-repo>` and `<world-repo>` with the names chosen in the naming ga
 
 ## Provider Environment
 
-At least one real model provider key must be present before live provider calls and provider-backed anonymization can be verified.
+At least one real model provider key is enough for a first smoke call. The v1 done scenario requires Anthropic,
+OpenRouter, and a private OAI-compatible endpoint for a fine-tune.
 
 ```bash
-export OPENAI_API_KEY=<redacted>
 export ANTHROPIC_API_KEY=<redacted>
 export OPENROUTER_API_KEY=<redacted>
+export VIVARIUM_OAI_COMPAT_API_KEY=<redacted>
+export VIVARIUM_OAI_COMPAT_BASE_URL=<private-oai-compatible-base-url>
+export VIVARIUM_OAI_COMPAT_MODEL=<private-fine-tune-model>
 ```
 
-Only one provider is required for a first live pass. Keep secrets out of git and shell history where possible.
+Keep secrets out of git and shell history where possible.
 
 Save the live provider as a profile:
 

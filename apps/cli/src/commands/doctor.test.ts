@@ -97,4 +97,27 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("github.repositoryId:missing");
     expect(result.checks).toContain("github.discussionCategoryId:missing");
   });
+
+  test("reports missing v1 provider targets as live readiness blockers", () => {
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        OPENROUTER_API_KEY: "configured",
+        GITHUB_TOKEN: "configured",
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("provider.anthropic:missing");
+    expect(result.checks).toContain("provider.openrouter:configured");
+    expect(result.checks).toContain("provider.privateOaiCompat:missing");
+  });
 });

@@ -32,6 +32,11 @@ const worldRepoNameEnv = "VIVARIUM_WORLD_REPO_NAME";
 const githubOwnerEnv = "VIVARIUM_GITHUB_OWNER";
 const githubRepositoryIdEnv = "VIVARIUM_GITHUB_REPOSITORY_ID";
 const githubDiscussionCategoryIdEnv = "VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID";
+const anthropicApiKeyEnv = "ANTHROPIC_API_KEY";
+const openRouterApiKeyEnv = "OPENROUTER_API_KEY";
+const privateOaiCompatApiKeyEnv = "VIVARIUM_OAI_COMPAT_API_KEY";
+const privateOaiCompatBaseUrlEnv = "VIVARIUM_OAI_COMPAT_BASE_URL";
+const privateOaiCompatModelEnv = "VIVARIUM_OAI_COMPAT_MODEL";
 
 function defaultRunner({ command, args, cwd }: DoctorCommandRun): DoctorCommandRunResult {
   try {
@@ -87,6 +92,19 @@ function requiredEnvCheck(env: Readonly<Record<string, string | undefined>>, env
   return value === undefined || value.length === 0 ? `${label}:missing` : `${label}:configured`;
 }
 
+function hasRequiredEnv(env: Readonly<Record<string, string | undefined>>, envName: string): boolean {
+  const value = env[envName]?.trim();
+  return value !== undefined && value.length > 0;
+}
+
+function privateOaiCompatCheck(env: Readonly<Record<string, string | undefined>>): string {
+  return hasRequiredEnv(env, privateOaiCompatApiKeyEnv) &&
+    hasRequiredEnv(env, privateOaiCompatBaseUrlEnv) &&
+    hasRequiredEnv(env, privateOaiCompatModelEnv)
+    ? "provider.privateOaiCompat:configured"
+    : "provider.privateOaiCompat:missing";
+}
+
 function githubAuthCheck(runner: DoctorCommandRunner): string {
   const result = run(runner, "gh", ["auth", "status"]);
   if (result.exitCode === 0) {
@@ -124,6 +142,9 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     hasRemote(runner, agentRoot) ? "agent.remote:configured" : "agent.remote:missing",
     hasRemote(runner, worldRoot) ? "world.remote:configured" : "world.remote:missing",
     hasProviderEnv(env) ? "provider.env:configured" : "provider.env:missing",
+    requiredEnvCheck(env, anthropicApiKeyEnv, "provider.anthropic"),
+    requiredEnvCheck(env, openRouterApiKeyEnv, "provider.openrouter"),
+    privateOaiCompatCheck(env),
     hasGithubEnv(env) ? "github.env:configured" : "github.env:missing",
     requiredEnvCheck(env, githubOwnerEnv, "github.owner"),
     requiredEnvCheck(env, githubRepositoryIdEnv, "github.repositoryId"),
