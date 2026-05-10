@@ -390,7 +390,14 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
       realGoals.length >= 5 &&
         realGoalIds.size >= 5 &&
         realGoalEvidenceCount >= 5 &&
-        realGoals.every((goal) => textValue(goal.id) !== undefined && dateMillis(goal.date) !== undefined && evidenceReference(goal.evidence, context)) &&
+        realGoals.every(
+          (goal) =>
+            textValue(goal.id) !== undefined &&
+            textValue(goal.goal) !== undefined &&
+            textValue(goal.domain) === "coding" &&
+            dateMillis(goal.date) !== undefined &&
+            evidenceReference(goal.evidence, context),
+        ) &&
         firstGoal !== undefined &&
         lastGoal !== undefined &&
         lastGoal - firstGoal >= 7 * 24 * 60 * 60 * 1000,
@@ -842,7 +849,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.realGoals":
       return {
         check,
-        action: "Record at least five distinct real coding goals spanning a week, with distinct evidence for each run.",
+        action: "Record at least five distinct named real coding goals spanning a week, with domain and distinct evidence for each run.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.providerSmokes":

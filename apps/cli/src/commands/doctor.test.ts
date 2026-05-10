@@ -219,11 +219,11 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
         firstRunReferences: ["docs/live/starter-run-1.md", "docs/live/starter-run-2.md"],
       },
       realGoals: [
-        { id: "goal-1", date: "2026-05-01", evidence: "docs/live/goal-1.md" },
-        { id: "goal-2", date: "2026-05-02", evidence: "docs/live/goal-2.md" },
-        { id: "goal-3", date: "2026-05-04", evidence: "docs/live/goal-3.md" },
-        { id: "goal-4", date: "2026-05-06", evidence: "docs/live/goal-4.md" },
-        { id: "goal-5", date: "2026-05-08", evidence: "docs/live/goal-5.md" },
+        { id: "goal-1", goal: "Fix a flaky coding test", domain: "coding", date: "2026-05-01", evidence: "docs/live/goal-1.md" },
+        { id: "goal-2", goal: "Add a coding CLI command", domain: "coding", date: "2026-05-02", evidence: "docs/live/goal-2.md" },
+        { id: "goal-3", goal: "Refactor a coding module", domain: "coding", date: "2026-05-04", evidence: "docs/live/goal-3.md" },
+        { id: "goal-4", goal: "Debug a coding integration", domain: "coding", date: "2026-05-06", evidence: "docs/live/goal-4.md" },
+        { id: "goal-5", goal: "Ship a coding workflow", domain: "coding", date: "2026-05-08", evidence: "docs/live/goal-5.md" },
       ],
       providerSmokes: {
         anthropic: "docs/live/provider-anthropic.md",
@@ -431,6 +431,7 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.publicContribution:missing")).toContain("other-agent");
     expect(actions.get("v1.curationStats:missing")).toContain("30%");
     expect(actions.get("v1.realGoals:missing")).toContain("distinct");
+    expect(actions.get("v1.realGoals:missing")).toContain("named real coding goals");
     expect(actions.get("v1.starterPack:missing")).toContain("distinct installed");
     expect(actions.get("v1.providerSmokes:missing")).toContain("distinct");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("fourteen days");
@@ -636,6 +637,47 @@ describe("doctorCommand", () => {
           { id: "goal-1", date: "2026-05-04", evidence: "docs/live/goal.md" },
           { id: "goal-1", date: "2026-05-06", evidence: "docs/live/goal.md" },
           { id: "goal-1", date: "2026-05-08", evidence: "docs/live/goal.md" },
+        ],
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.realGoals:missing");
+  });
+
+  test("requires v1 real goals to be named coding goals", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-real-coding-goals-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    for (const path of [
+      "docs/live/goal-1.md",
+      "docs/live/goal-2.md",
+      "docs/live/goal-3.md",
+      "docs/live/goal-4.md",
+      "docs/live/goal-5.md",
+    ]) {
+      const absolutePath = join(root, path);
+      mkdirSync(dirname(absolutePath), { recursive: true });
+      writeFileSync(absolutePath, "real goal evidence\n", "utf8");
+    }
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        realGoals: [
+          { id: "goal-1", date: "2026-05-01", evidence: "docs/live/goal-1.md" },
+          { id: "goal-2", date: "2026-05-02", evidence: "docs/live/goal-2.md" },
+          { id: "goal-3", date: "2026-05-04", evidence: "docs/live/goal-3.md" },
+          { id: "goal-4", date: "2026-05-06", evidence: "docs/live/goal-4.md" },
+          { id: "goal-5", date: "2026-05-08", evidence: "docs/live/goal-5.md" },
         ],
       })}\n`,
       "utf8",
