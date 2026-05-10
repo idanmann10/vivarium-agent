@@ -1,5 +1,3 @@
-import { dispatchCliCommand } from "./dispatcher.js";
-
 export const cliCommands = [
   "init",
   "run",
@@ -108,14 +106,3 @@ export type {
   WorldSubscriptionsCommandResult,
 } from "./commands/world.js";
 export type { CliDispatchResult } from "./dispatcher.js";
-
-if (import.meta.main) {
-  try {
-    const result = await dispatchCliCommand(Bun.argv.slice(2));
-    process.stdout.write(result.output);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown CLI error";
-    process.stderr.write(`${message}\n`);
-    process.exitCode = 1;
-  }
-}

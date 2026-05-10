@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "bin": {
-    "the-agent": "./src/index.ts"
+    "the-agent": "./src/main.ts"
   },
   "scripts": {
     "build": "bun ../../scripts/build.ts",

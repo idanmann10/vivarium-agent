@@ -1,6 +1,16 @@
 import { describe, expect, test } from "bun:test";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import * as cli from "./index.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const cliPackageRoot = resolve(__dirname, "..");
+
+const readCliPackageFile = (relativePath: string): string => {
+  return readFileSync(resolve(cliPackageRoot, relativePath), "utf8");
+};
 
 describe("CLI public API", () => {
   test("exports every implemented world command helper", () => {
@@ -11,5 +21,24 @@ describe("CLI public API", () => {
     expect(typeof exports.subscribeWorldCommand).toBe("function");
     expect(typeof exports.pullWorldCommand).toBe("function");
     expect(typeof exports.verifyWorldTransmissionCommand).toBe("function");
+  });
+});
+
+describe("CLI entrypoint boundary", () => {
+  test("uses a dedicated process entrypoint", () => {
+    const packageJson = JSON.parse(readCliPackageFile("package.json")) as {
+      bin?: Record<string, string>;
+    };
+
+    expect(packageJson.bin?.["the-agent"]).toBe("./src/main.ts");
+
+    const mainPath = resolve(cliPackageRoot, "src/main.ts");
+    const mainSource = readCliPackageFile("src/main.ts");
+    const indexSource = readCliPackageFile("src/index.ts");
+
+    expect(existsSync(mainPath)).toBe(true);
+    expect(mainSource).toContain('import { dispatchCliCommand } from "./dispatcher.js";');
+    expect(mainSource).toContain("dispatchCliCommand(Bun.argv.slice(2))");
+    expect(indexSource).not.toContain("import.meta.main");
   });
 });
