@@ -133,15 +133,51 @@ Not complete. Local implementation and local test gates are strong, including ag
 - Latest agent local-gate commits: `e8ce4e1 docs(cli): point direct usage at main entrypoint`, `62ae977 fix(cli): split executable entrypoint`, `bad8638 docs(agent): add cli entrypoint implementation plan`, `bc346d1 docs(agent): specify cli entrypoint split`, `74a240e fix(agent): exempt live env templates from permission check`, `9659ec2 fix(agent): count private provider env readiness`, `b21d34b fix(agent): check live env file permissions`, `8395aa2 fix(agent): require internal credential value readiness`, `e71e5f1 docs(agent): use env vars in credential readiness guide`, `036be1e fix(agent): require credential master key readiness`.
 - Latest world local-gate commits: `6df8516 ci(world): validate contribution proposals`, `091b80c ci(world): validate domain learning artifacts`, `be012df ci(world): validate anti-pattern contributions`, `fbec50b docs(world): require full gate in PR templates`, `4478b27 ci(world): validate generated maintenance PRs`, `ad46110 ci(world): run full checkpoint before auto-merge`, `d8dc698 docs(world): require build before publishing`, `9474e60 ci(world): build during manual revalidation`, `788ad9b ci(world): add full checkpoint workflow`.
 
+## 2026-05-10 Live Setup Refresh
+
+The GitHub and repository setup blockers have been cleared since the earlier audit entries. Current evidence:
+
+- Agent repository: `https://github.com/idanmann10/vivarium-agent`.
+- World repository: `https://github.com/idanmann10/vivarium-world`.
+- Private world mirror: `https://github.com/idanmann10/vivarium-world-private`.
+- Phase 0 RFC Discussion: `https://github.com/idanmann10/vivarium-world/discussions/1`.
+- Latest agent main CI for `0d9139efad689f64cbd321693e2bcf2d6c65fed6`: success, `https://github.com/idanmann10/vivarium-agent/actions/runs/25643067651`.
+- Latest world main CI for `6df8516ddf88d877b6cd5a3700fa3a4335cf5993`: success, `https://github.com/idanmann10/vivarium-world/actions/runs/25641578266`.
+- `git ls-remote origin main phase-1-runtime-slice` in `the-agent`: both refs point at `0d9139efad689f64cbd321693e2bcf2d6c65fed6`.
+
+Fresh live-readiness command:
+
+```bash
+bun apps/cli/src/main.ts doctor --live \
+  --env-file live-readiness.local.env \
+  --agent-root . \
+  --world-root ../the-world
+```
+
+Fresh result: `ok:false`. Configured/ok/installed checks now include `liveEnvFile.permissions`, agent/world names, agent/world remotes, world subscription path, canonical/private world refs, provider profile names, internal credential name, GitHub token environment, GitHub owner/repository/category metadata, GitHub auth, the Phase 0 Discussion, agent/world CI, Docker, Docker Compose, and `v1.evidencePath`.
+
+The remaining non-passing checks are:
+
+- Provider setup: `provider.env:placeholder`, `provider.anthropic:placeholder`, `provider.anthropicModel:missing`, `provider.anthropicContextWindow:missing`, `provider.openrouter:placeholder`, `provider.openrouterModel:missing`, `provider.openrouterBaseUrl:missing`, `provider.openrouterContextWindow:missing`, `provider.privateOaiCompat:placeholder`, `provider.privateOaiCompatContextWindow:missing`, `provider.profilesPath:unavailable`.
+- Provider smokes: `provider.anthropicSmoke:missing`, `provider.openrouterSmoke:missing`, `provider.privateOaiCompatSmoke:missing`.
+- Internal credential setup: `credentials.path:unavailable`, `credentials.masterKey:placeholder`, `internalApi.credentialValue:placeholder`, `internalApi.healthUrl:placeholder`, `credentials.smoke:missing`.
+- V1 evidence: `v1.starterPack:missing`, `v1.realGoals:missing`, `v1.providerSmokes:missing`, `v1.internalCredentialSmoke:missing`, `v1.worldSubscriptions:missing`, `v1.behaviorLoop:missing`, `v1.dreamArtifacts:missing`, `v1.publicContribution:missing`, `v1.publishedArtifacts:missing`, `v1.curationStats:missing`, `v1.twoWeekImprovement:missing`.
+
+The current `doctor --live` next actions now route setup-created local files through the safer aggregate command:
+
+```bash
+bun "apps/cli/src/main.ts" live setup --env-file "live-readiness.local.env" --confirm-write
+```
+
+That command still requires real provider keys, model/base/context values, the internal API credential, the credential-store master key, and the internal health URL. The evidence manifest exists as a skeleton, but its v1 sections are intentionally empty until real live runs, PRs, Discussions, workflow runs, stats, and other-agent evidence exist.
+
 ## Next Required External Inputs
 
-1. Final product/repo names for agent and world.
-2. GitHub owner plus canonical agent/world repository remotes.
-3. Canonical world ref and private fork world ref.
-4. GitHub token plus repository node ID and Discussion category node ID.
-5. Anthropic, OpenRouter, and private OpenAI-compatible provider credentials/model choices.
-6. Internal API credential value, credential store master key, credential name, and health URL.
-7. Live v1 evidence manifest path populated from inspectable run, PR, Discussion, workflow, stats, and contributor-profile evidence.
-8. Live run window for five real goals and later follow-up measurement.
+1. Anthropic, OpenRouter, and private OpenAI-compatible provider credentials, model choices, base URLs where applicable, and context-window values.
+2. Internal API credential value, credential store master key, and internal API health URL.
+3. Successful live provider smoke results for Anthropic, OpenRouter, and the private OpenAI-compatible endpoint.
+4. Successful internal API credential smoke through the encrypted credential store.
+5. Live v1 evidence manifest populated from inspectable run, PR, Discussion, workflow, stats, contributor-profile, and other-agent evidence.
+6. Live run window for five real coding goals and the required fourteen-day-or-later follow-up measurement.
 
 Until those are available and verified, do not mark the thread goal complete.
