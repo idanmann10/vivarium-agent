@@ -185,6 +185,7 @@ const guideDocs = {
     "doctor --live",
     "--env-file live-readiness.local.env",
     "chmod 600 live-readiness.local.env",
+    "liveEnvFile.permissions:insecure",
     "source live-readiness.local.env",
     "VIVARIUM_CREDENTIALS_MASTER_KEY",
     "VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE",

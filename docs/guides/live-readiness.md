@@ -29,6 +29,8 @@ cp docs/live-readiness.env.example live-readiness.local.env
 chmod 600 live-readiness.local.env
 ```
 
+When `--env-file` is used, `doctor --live` reports `liveEnvFile.permissions:insecure` until group and world permissions are removed from the filled file.
+
 The setup commands below use shell variables from that same file. Before running those commands, load the filled file into a trusted local shell:
 
 ```bash

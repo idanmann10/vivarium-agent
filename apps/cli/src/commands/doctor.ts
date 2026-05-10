@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, extname, isAbsolute, join, resolve } from "node:path";
 
 export interface DoctorResult {
@@ -18,6 +18,7 @@ export interface DoctorNextAction {
 interface DoctorNextActionContext {
   readonly agentRoot: string;
   readonly worldRoot: string;
+  readonly envFilePath?: string;
 }
 
 interface V1EvidenceReferenceContext {
@@ -54,6 +55,7 @@ export interface DoctorCommandOptions {
   readonly worldRoot?: string;
   readonly nowMillis?: number;
   readonly env?: Readonly<Record<string, string | undefined>>;
+  readonly envFilePath?: string;
   readonly runner?: DoctorCommandRunner;
 }
 
@@ -224,6 +226,23 @@ function requiredFileCheck(env: Readonly<Record<string, string | undefined>>, en
   }
 
   return existsSync(value) ? `${label}:configured` : `${label}:unavailable`;
+}
+
+function liveEnvFilePermissionChecks(envFilePath: string | undefined): readonly string[] {
+  if (envFilePath === undefined) {
+    return [];
+  }
+
+  try {
+    const stat = statSync(envFilePath);
+    if (!stat.isFile()) {
+      return ["liveEnvFile.permissions:unavailable"];
+    }
+
+    return (stat.mode & 0o077) === 0 ? ["liveEnvFile.permissions:configured"] : ["liveEnvFile.permissions:insecure"];
+  } catch {
+    return ["liveEnvFile.permissions:unavailable"];
+  }
 }
 
 function asRecord(value: unknown): Readonly<Record<string, unknown>> | undefined {
@@ -876,6 +895,13 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         env: [worldRepoNameEnv],
         guide: `${guide}#naming-gate`,
       };
+    case "liveEnvFile.permissions":
+      return {
+        check,
+        action: "Restrict the filled live-readiness env file to the current user before storing live secrets.",
+        ...(context.envFilePath === undefined ? {} : { command: `chmod 600 ${shellQuote(context.envFilePath)}` }),
+        guide,
+      };
     case "agent.remote":
       return {
         check,
@@ -1174,7 +1200,13 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
   const nowMillis = options.nowMillis ?? Date.now();
   const worldRefs = worldSubscriptionRefs(env);
   const profiles = providerProfileNames(env);
+  const nextActionContext: DoctorNextActionContext = {
+    agentRoot,
+    worldRoot,
+    ...(options.envFilePath === undefined ? {} : { envFilePath: options.envFilePath }),
+  };
   const checks = [
+    ...liveEnvFilePermissionChecks(options.envFilePath),
     repoNameCheck(env, agentRepoNameEnv, "the-agent", "agent"),
     repoNameCheck(env, worldRepoNameEnv, "the-world", "world"),
     remoteCheck(runner, agentRoot, env, agentRepoNameEnv, "the-agent", "agent"),
@@ -1209,7 +1241,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     checks,
     nextActions: checks
       .filter((check) => !isPassingCheck(check))
-      .map((check) => nextActionForCheck(check, { agentRoot, worldRoot })),
+      .map((check) => nextActionForCheck(check, nextActionContext)),
   };
 }
 

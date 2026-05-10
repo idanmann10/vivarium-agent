@@ -611,6 +611,7 @@ export async function dispatchCliCommand(argv: readonly string[], options: CliDi
           ...(worldRoot === undefined ? {} : { worldRoot }),
           ...(options.doctorRunner === undefined ? {} : { runner: options.doctorRunner }),
           ...(env === undefined ? {} : { env }),
+          ...(envFile === undefined ? {} : { envFilePath: envFile }),
         }),
       );
     }

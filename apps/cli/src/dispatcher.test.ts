@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, test } from "bun:test";
@@ -121,6 +121,29 @@ describe("dispatchCliCommand", () => {
     expect(checks).not.toContain("agent.name:missing");
     expect(checks).not.toContain("world.name:missing");
     expect(checks).not.toContain("github.env:missing");
+  });
+
+  test("reports permissive live env file permissions as a readiness blocker", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-env-permissions-"));
+    const envPath = join(root, "live-readiness.local.env");
+    write(
+      envPath,
+      [
+        "# Filled from docs/live-readiness.env.example",
+        'export VIVARIUM_AGENT_REPO_NAME="agent-final"',
+        "export VIVARIUM_WORLD_REPO_NAME=world-final",
+        'export ANTHROPIC_API_KEY="configured"',
+        'export GITHUB_TOKEN="configured"',
+      ].join("\n"),
+    );
+    chmodSync(envPath, 0o644);
+
+    const result = await dispatchCliCommand(["doctor", "--live", "--env-file", envPath, "--agent-root", "/agent", "--world-root", "/world"], {
+      doctorRunner: deterministicDoctorRunner,
+    });
+    const checks = (result.result as { checks: readonly string[] }).checks;
+
+    expect(checks).toContain("liveEnvFile.permissions:insecure");
   });
 
   test("passes copied env file values to live doctor probes", async () => {
