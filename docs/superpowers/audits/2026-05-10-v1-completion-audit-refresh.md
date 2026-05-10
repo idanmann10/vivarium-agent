@@ -11,7 +11,7 @@ Continue following `/Users/idanmann/Vivarium/goal.md` until the project is genui
 
 ## Current Status
 
-Not complete. Local implementation and local test gates are strong, including agent dependency gates, world CI/revalidation build coverage, anti-pattern validation coverage, domain learning artifact validation coverage, contribution proposal validation coverage, auto-merge checkpoint coverage, generated-maintenance-PR checkpoint coverage, and full-gate PR template guidance, but the v1 loop still lacks live external proof. The current blockers are not proxy signals; they are direct failures from `doctor --live` and direct empty Git remote inspections.
+Not complete. Local implementation and local test gates are strong, including agent dependency gates, world CI/revalidation build coverage, anti-pattern validation coverage, domain learning artifact validation coverage, contribution proposal validation coverage, auto-merge checkpoint coverage, generated-maintenance-PR checkpoint coverage, full-gate PR template guidance, and live v1 evidence-manifest gating, but the v1 loop still lacks live external proof. The current blockers are not proxy signals; they are direct failures from `doctor --live` and direct empty Git remote inspections.
 
 ## Prompt-To-Artifact Checklist
 
@@ -29,18 +29,19 @@ Not complete. Local implementation and local test gates are strong, including ag
 | Phase 3: featured pick and STATS concentration | World scripts, checked-in stats, CI build gate, manual revalidation build gate, and generated maintenance PR post-mutation gates are locally verified; live maintainer workflow execution and live telemetry are unverified | Complete locally, incomplete live |
 | V1 done: five real goals over a week and two-week measurable improvement | Synthetic/local tests only | Incomplete externally |
 | Naming decision | `goal.md` still says `the-agent` and `the-world` are temporary names; `doctor --live` reports `agent.name:missing` and `world.name:missing` | Incomplete; requires user decision |
-| Live readiness handoff | `docs/live-readiness.env.example`, `docs/guides/live-readiness.md`, `doctor --live --env-file`, and structured `nextActions` exist; copied `<...>` values now report as blockers | Complete locally |
+| Live readiness handoff | `docs/live-readiness.env.example`, `docs/guides/live-readiness.md`, `doctor --live --env-file`, structured `nextActions`, and v1 evidence manifest checks exist; copied `<...>` values and missing live-loop evidence now report as blockers | Complete locally |
 
 ## Fresh Evidence
 
 - `git remote -v` in `the-agent`: no remotes printed.
 - `git remote -v` in `the-world`: no remotes printed.
 - `bun apps/cli/src/index.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false`.
-- Real-env live blockers: final names, both remotes, world subscription path, canonical/private world refs, provider env, Anthropic/OpenRouter/private-compatible targets, provider profile metadata, encrypted credential metadata, internal API health URL, GitHub env/owner/repository/category metadata, and GitHub auth.
+- Real-env live blockers: final names, both remotes, world subscription path, canonical/private world refs, provider env, Anthropic/OpenRouter/private-compatible targets, provider profile metadata, encrypted credential metadata, internal API health URL, GitHub env/owner/repository/category metadata, GitHub auth, and v1 evidence manifest path.
 - Passing live checks: `docker:installed`, `docker.compose:installed`.
 - `live-readiness.local.env` is intentionally absent in this checkout; filled copies are gitignored because they may contain provider keys, GitHub tokens, and internal API metadata.
 - `bun apps/cli/src/index.ts doctor --live --env-file docs/live-readiness.env.example --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false` with copied template values classified as `:placeholder` or unavailable, not live-ready.
-- Latest agent local-gate commits: `199b677 ci(agent): run knip before release`, `8fc8eba ci(agent): run knip dependency gate`, `1a3e7a4 chore(agent): enable knip dependency gate`.
+- `bun apps/cli/src/index.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false`, now including `v1.evidencePath:missing` so setup readiness cannot be confused with v1 loop verification.
+- Latest agent local-gate commits: `59b8d0c docs(agent): record proposal validation gate`, `4beaaf2 docs(agent): record domain artifact validation gate`, `17b28b0 docs(agent): record anti-pattern validation gate`, `95271fd docs(agent): refresh world gate audit evidence`, `3265509 docs(agent): include knip in install verification`, `199b677 ci(agent): run knip before release`, `8fc8eba ci(agent): run knip dependency gate`, `1a3e7a4 chore(agent): enable knip dependency gate`.
 - Latest world local-gate commits: `6df8516 ci(world): validate contribution proposals`, `091b80c ci(world): validate domain learning artifacts`, `be012df ci(world): validate anti-pattern contributions`, `fbec50b docs(world): require full gate in PR templates`, `4478b27 ci(world): validate generated maintenance PRs`, `ad46110 ci(world): run full checkpoint before auto-merge`, `d8dc698 docs(world): require build before publishing`, `9474e60 ci(world): build during manual revalidation`, `788ad9b ci(world): add full checkpoint workflow`.
 
 ## Next Required External Inputs
@@ -51,6 +52,7 @@ Not complete. Local implementation and local test gates are strong, including ag
 4. GitHub token plus repository node ID and Discussion category node ID.
 5. Anthropic, OpenRouter, and private OpenAI-compatible provider credentials/model choices.
 6. Internal API credential value, credential store master key, credential name, and health URL.
-7. Live run window for five real goals and later follow-up measurement.
+7. Live v1 evidence manifest path populated from inspectable run, PR, Discussion, workflow, stats, and contributor-profile evidence.
+8. Live run window for five real goals and later follow-up measurement.
 
 Until those are available and verified, do not mark the thread goal complete.

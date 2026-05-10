@@ -65,6 +65,7 @@ const privateOaiCompatModelEnv = "VIVARIUM_OAI_COMPAT_MODEL";
 const credentialsPathEnv = "VIVARIUM_CREDENTIALS_PATH";
 const internalApiCredentialNameEnv = "VIVARIUM_INTERNAL_API_CREDENTIAL_NAME";
 const internalApiHealthUrlEnv = "VIVARIUM_INTERNAL_API_HEALTH_URL";
+const v1EvidencePathEnv = "VIVARIUM_V1_EVIDENCE_PATH";
 type EnvValueStatus = "missing" | "placeholder" | "configured";
 
 function spawnEnv(env: Readonly<Record<string, string | undefined>>): Record<string, string | undefined> {
@@ -207,6 +208,178 @@ function requiredFileCheck(env: Readonly<Record<string, string | undefined>>, en
   }
 
   return existsSync(value) ? `${label}:configured` : `${label}:unavailable`;
+}
+
+function asRecord(value: unknown): Readonly<Record<string, unknown>> | undefined {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Readonly<Record<string, unknown>>) : undefined;
+}
+
+function textValue(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const text = value.trim();
+  return text.length > 0 && !isPlaceholderValue(text) ? text : undefined;
+}
+
+function numberValue(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function textArray(value: unknown): readonly string[] {
+  return Array.isArray(value)
+    ? value.flatMap((item) => {
+        const text = textValue(item);
+        return text === undefined ? [] : [text];
+      })
+    : [];
+}
+
+function dateMillis(value: unknown): number | undefined {
+  const text = textValue(value);
+  if (text === undefined) {
+    return undefined;
+  }
+
+  const millis = Date.parse(text);
+  return Number.isNaN(millis) ? undefined : millis;
+}
+
+function v1Check(label: string, configured: boolean): string {
+  return `v1.${label}:${configured ? "configured" : "missing"}`;
+}
+
+function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>): readonly string[] {
+  const starterPack = asRecord(manifest.starterPack);
+  const skillCount = numberValue(starterPack?.skillCount);
+  const traceCount = numberValue(starterPack?.traceCount);
+  const realGoals: ReadonlyArray<Readonly<Record<string, unknown>>> = Array.isArray(manifest.realGoals)
+    ? manifest.realGoals.flatMap((goal) => {
+        const record = asRecord(goal);
+        return record === undefined ? [] : [record];
+      })
+    : [];
+  const realGoalDates = realGoals.flatMap((goal) => {
+    const millis = dateMillis(goal.date);
+    return millis === undefined ? [] : [millis];
+  });
+  const firstGoal = realGoalDates.length === 0 ? undefined : Math.min(...realGoalDates);
+  const lastGoal = realGoalDates.length === 0 ? undefined : Math.max(...realGoalDates);
+  const providerSmokes = asRecord(manifest.providerSmokes);
+  const worldSubscriptions = asRecord(manifest.worldSubscriptions);
+  const behaviorLoop = asRecord(manifest.behaviorLoop);
+  const dreamArtifacts = asRecord(manifest.dreamArtifacts);
+  const publicContribution = asRecord(manifest.publicContribution);
+  const publishedArtifacts = asRecord(manifest.publishedArtifacts);
+  const curationStats = asRecord(manifest.curationStats);
+  const twoWeekImprovement = asRecord(manifest.twoWeekImprovement);
+  const followupMillis = dateMillis(twoWeekImprovement?.followupDate);
+
+  return [
+    v1Check(
+      "starterPack",
+      textValue(starterPack?.primaryDomain) === "coding" &&
+        skillCount !== undefined &&
+        skillCount >= 20 &&
+        skillCount <= 30 &&
+        traceCount !== undefined &&
+        traceCount >= 3 &&
+        traceCount <= 5 &&
+        textValue(starterPack?.curriculum) !== undefined,
+    ),
+    v1Check(
+      "realGoals",
+      realGoals.length >= 5 &&
+        realGoals.every((goal) => textValue(goal.id) !== undefined && dateMillis(goal.date) !== undefined && textValue(goal.evidence) !== undefined) &&
+        firstGoal !== undefined &&
+        lastGoal !== undefined &&
+        lastGoal - firstGoal >= 7 * 24 * 60 * 60 * 1000,
+    ),
+    v1Check(
+      "providerSmokes",
+      textValue(providerSmokes?.anthropic) !== undefined &&
+        textValue(providerSmokes?.openRouter) !== undefined &&
+        textValue(providerSmokes?.privateOaiCompat) !== undefined,
+    ),
+    v1Check("internalCredentialSmoke", textValue(manifest.internalCredentialSmoke) !== undefined),
+    v1Check(
+      "worldSubscriptions",
+      textValue(worldSubscriptions?.canonical) !== undefined && textValue(worldSubscriptions?.privateFork) !== undefined,
+    ),
+    v1Check(
+      "behaviorLoop",
+      textValue(behaviorLoop?.antiPatternAvoided) !== undefined &&
+        textArray(behaviorLoop?.tracesRead).length >= 2 &&
+        textValue(behaviorLoop?.recoverReplan) !== undefined &&
+        textValue(behaviorLoop?.destructiveHold) !== undefined &&
+        textValue(behaviorLoop?.refusal) !== undefined,
+    ),
+    v1Check(
+      "dreamArtifacts",
+      textArray(dreamArtifacts?.skillCandidates).length >= 2 &&
+        textValue(dreamArtifacts?.internalSkill) !== undefined &&
+        textValue(dreamArtifacts?.publicSkill) !== undefined &&
+        textValue(dreamArtifacts?.antiPattern) !== undefined &&
+        textValue(dreamArtifacts?.trace) !== undefined,
+    ),
+    v1Check(
+      "publicContribution",
+      textValue(publicContribution?.publicSkillPr) !== undefined &&
+        textValue(publicContribution?.autoMerge) !== undefined &&
+        textValue(publicContribution?.canonicalSkill) !== undefined &&
+        (numberValue(publicContribution?.positiveSignals) ?? 0) >= 5 &&
+        (numberValue(publicContribution?.externalPulls) ?? 0) >= 3,
+    ),
+    v1Check(
+      "publishedArtifacts",
+      textValue(publishedArtifacts?.antiPattern) !== undefined &&
+        textValue(publishedArtifacts?.trace) !== undefined &&
+        textValue(publishedArtifacts?.run) !== undefined &&
+        textValue(publishedArtifacts?.secondInstallRead) !== undefined,
+    ),
+    v1Check(
+      "curationStats",
+      textValue(curationStats?.featuredPick) !== undefined &&
+        textValue(curationStats?.stats) !== undefined &&
+        (numberValue(curationStats?.top5SkillSharePercent) ?? 0) > 0,
+    ),
+    v1Check(
+      "twoWeekImprovement",
+      followupMillis !== undefined &&
+        lastGoal !== undefined &&
+        followupMillis - lastGoal >= 14 * 24 * 60 * 60 * 1000 &&
+        numberValue(twoWeekImprovement?.baselineMetric) !== undefined &&
+        numberValue(twoWeekImprovement?.followupMetric) !== undefined &&
+        (numberValue(twoWeekImprovement?.improvementPercent) ?? 0) > 0 &&
+        textValue(twoWeekImprovement?.contributorProfile) !== undefined &&
+        textValue(twoWeekImprovement?.competingDiscussion) !== undefined,
+    ),
+  ];
+}
+
+function v1EvidenceChecks(env: Readonly<Record<string, string | undefined>>): readonly string[] {
+  const value = env[v1EvidencePathEnv]?.trim();
+  if (value === undefined || value.length === 0) {
+    return ["v1.evidencePath:missing"];
+  }
+  if (isPlaceholderValue(value)) {
+    return ["v1.evidencePath:placeholder"];
+  }
+  if (!existsSync(value)) {
+    return ["v1.evidencePath:unavailable"];
+  }
+
+  try {
+    const manifest = asRecord(JSON.parse(readFileSync(value, "utf8")));
+    if (manifest === undefined) {
+      return ["v1.evidencePath:invalid"];
+    }
+
+    return ["v1.evidencePath:configured", ...v1EvidenceDetailChecks(manifest)];
+  } catch {
+    return ["v1.evidencePath:invalid"];
+  }
 }
 
 function worldSubscriptionRefs(env: Readonly<Record<string, string | undefined>>): ReadonlySet<string> | undefined {
@@ -532,6 +705,79 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         command: "docker compose version",
         guide: `${guide}#docker-compose`,
       };
+    case "v1.evidencePath":
+      return {
+        check,
+        action: "Create the v1 evidence manifest and export its path before claiming live v1 verification.",
+        env: [v1EvidencePathEnv],
+        guide: `${guide}#v1-evidence-manifest`,
+      };
+    case "v1.starterPack":
+      return {
+        check,
+        action: "Record live init evidence showing coding starter-pack skills, traces, and curriculum were installed.",
+        guide: `${guide}#v1-evidence-manifest`,
+      };
+    case "v1.realGoals":
+      return {
+        check,
+        action: "Record at least five real coding goals spanning a week, with evidence for each run.",
+        guide: `${guide}#v1-evidence-manifest`,
+      };
+    case "v1.providerSmokes":
+      return {
+        check,
+        action: "Record successful Anthropic, OpenRouter, and private OpenAI-compatible provider smoke evidence.",
+        guide: `${guide}#v1-evidence-manifest`,
+      };
+    case "v1.internalCredentialSmoke":
+      return {
+        check,
+        action: "Record internal API credential smoke evidence from the encrypted credential store.",
+        guide: `${guide}#v1-evidence-manifest`,
+      };
+    case "v1.worldSubscriptions":
+      return {
+        check,
+        action: "Record canonical and private world subscription evidence from the live registry.",
+        guide: `${guide}#v1-evidence-manifest`,
+      };
+    case "v1.behaviorLoop":
+      return {
+        check,
+        action: "Record live behavior-loop evidence for anti-pattern use, two traces read, Recover re-plan, destructive hold, and refusal.",
+        guide: `${guide}#v1-evidence-manifest`,
+      };
+    case "v1.dreamArtifacts":
+      return {
+        check,
+        action: "Record nightly Dream evidence for two skill candidates, one anti-pattern, and one trace.",
+        guide: `${guide}#v1-evidence-manifest`,
+      };
+    case "v1.publicContribution":
+      return {
+        check,
+        action: "Record public skill PR, K=5 positive signals, auto-merge, canonical landing, and external pull evidence.",
+        guide: `${guide}#v1-evidence-manifest`,
+      };
+    case "v1.publishedArtifacts":
+      return {
+        check,
+        action: "Record published anti-pattern, trace, run, and second-install read evidence.",
+        guide: `${guide}#v1-evidence-manifest`,
+      };
+    case "v1.curationStats":
+      return {
+        check,
+        action: "Record featured pick and STATS.md concentration evidence.",
+        guide: `${guide}#v1-evidence-manifest`,
+      };
+    case "v1.twoWeekImprovement":
+      return {
+        check,
+        action: "Record the two-week follow-up measurement, contributor profile, and competing Discussion evidence.",
+        guide: `${guide}#v1-evidence-manifest`,
+      };
     default:
       return {
         check,
@@ -573,6 +819,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     requiredEnvCheck(env, githubDiscussionCategoryIdEnv, "github.discussionCategoryId"),
     githubAuthCheck(runner, env),
     ...dockerCheck(runner, env),
+    ...v1EvidenceChecks(env),
   ];
 
   return {

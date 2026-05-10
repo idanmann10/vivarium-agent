@@ -17,7 +17,7 @@ bun apps/cli/src/index.ts doctor --live \
   --world-root /Users/idanmann/Vivarium/the-world
 ```
 
-A live-ready workspace should report configured agent/world names, configured agent/world remotes, canonical/private world subscription metadata, configured provider environment and profile metadata, configured GitHub token environment, valid GitHub auth, installed Docker, and installed Docker Compose.
+A live-ready workspace should report configured agent/world names, configured agent/world remotes, canonical/private world subscription metadata, configured provider environment and profile metadata, configured GitHub token environment, valid GitHub auth, installed Docker, installed Docker Compose, and a complete v1 evidence manifest.
 Path-based checks report `:unavailable` when the env var is set but the expected local file has not been created yet.
 When the world subscription registry exists, canonical/private world refs also report `:unavailable` if the configured refs are not present in that registry.
 For live-readiness mode, the JSON result also includes `nextActions` for every non-passing check. Each action names the failed check, the env vars or command needed to clear it, and the guide section to read before making live changes.
@@ -375,11 +375,91 @@ docker compose -f /Users/idanmann/Vivarium/the-agent/docker-compose.yml up --bui
 bun apps/cli/src/index.ts daemon smoke --status-url http://127.0.0.1:8787/status
 ```
 
+## V1 Evidence Manifest
+
+`doctor --live` checks setup prerequisites and the live evidence required by `goal.md` before it can report v1 readiness. Keep the evidence manifest outside git if it contains private links, internal run summaries, or customer data:
+
+```bash
+export VIVARIUM_V1_EVIDENCE_PATH=/tmp/vivarium-v1-evidence.json
+```
+
+The manifest is a compact index of evidence, not a substitute for the underlying artifacts. Every string should point to a command transcript, audit file, PR, Discussion, workflow run, run artifact, contributor profile, or other concrete evidence you can inspect.
+
+```json
+{
+  "starterPack": {
+    "primaryDomain": "coding",
+    "skillCount": 20,
+    "traceCount": 3,
+    "curriculum": "domains/coding/curriculum.md"
+  },
+  "realGoals": [
+    { "id": "goal-1", "date": "2026-05-01", "evidence": "docs/live/goal-1.md" },
+    { "id": "goal-2", "date": "2026-05-02", "evidence": "docs/live/goal-2.md" },
+    { "id": "goal-3", "date": "2026-05-04", "evidence": "docs/live/goal-3.md" },
+    { "id": "goal-4", "date": "2026-05-06", "evidence": "docs/live/goal-4.md" },
+    { "id": "goal-5", "date": "2026-05-08", "evidence": "docs/live/goal-5.md" }
+  ],
+  "providerSmokes": {
+    "anthropic": "docs/live/provider-anthropic.md",
+    "openRouter": "docs/live/provider-openrouter.md",
+    "privateOaiCompat": "docs/live/provider-private.md"
+  },
+  "internalCredentialSmoke": "docs/live/internal-api-smoke.md",
+  "worldSubscriptions": {
+    "canonical": "git@github.com:owner/world.git",
+    "privateFork": "git@github.com:team/world-private.git"
+  },
+  "behaviorLoop": {
+    "antiPatternAvoided": "run-id-or-audit-link",
+    "tracesRead": ["trace-a", "trace-b"],
+    "recoverReplan": "run-id-or-audit-link",
+    "destructiveHold": "run-id-or-audit-link",
+    "refusal": "run-id-or-audit-link"
+  },
+  "dreamArtifacts": {
+    "skillCandidates": ["skill-a", "skill-b"],
+    "internalSkill": "private-world proposal path or PR",
+    "publicSkill": "public-world proposal path or PR",
+    "antiPattern": "anti-pattern proposal path",
+    "trace": "trace proposal path"
+  },
+  "publicContribution": {
+    "publicSkillPr": "https://github.com/owner/world/pull/1",
+    "autoMerge": "https://github.com/owner/world/actions/runs/1",
+    "canonicalSkill": "domains/coding/skills/example/SKILL.md",
+    "positiveSignals": 5,
+    "externalPulls": 3
+  },
+  "publishedArtifacts": {
+    "antiPattern": "domains/coding/anti-patterns/example/ANTI-PATTERN.md",
+    "trace": "domains/coding/traces/example/TRACE.md",
+    "run": "runs/run-live-001/RUN.md",
+    "secondInstallRead": "docs/live/second-install-read.md"
+  },
+  "curationStats": {
+    "featuredPick": "featured/current.md",
+    "stats": "STATS.md",
+    "top5SkillSharePercent": 30
+  },
+  "twoWeekImprovement": {
+    "followupDate": "2026-05-22",
+    "baselineMetric": 120,
+    "followupMetric": 90,
+    "improvementPercent": 25,
+    "contributorProfile": "contributors/live-agent.json",
+    "competingDiscussion": "https://github.com/owner/world/discussions/2"
+  }
+}
+```
+
+The live doctor checks the manifest for: coding starter pack depth, five real goals spanning at least seven days, all three provider smoke records, internal credential smoke evidence, canonical and private subscriptions, anti-pattern/trace/recover/destructive-hold/refusal behavior evidence, Dream artifacts, public skill PR/auto-merge/cross-install pull evidence, published anti-pattern/trace/run evidence, featured and `STATS.md` evidence, and a follow-up measurement at least fourteen days after the last recorded goal.
+
 ## Verification Sequence
 
 After the external prerequisites are configured:
 
-1. Re-run `doctor --live`.
+1. Re-run `doctor --live` to confirm the setup blockers that remain.
 2. Save a provider profile with `providers configure`, then run `providers smoke --profile`.
 3. Run `run` with `--provider-profiles-path`, `--provider-profile`, and `--world-subscriptions-path` against a small real goal.
 4. Add and smoke one internal API credential with `credentials add` and `credentials smoke`.
@@ -390,5 +470,7 @@ After the external prerequisites are configured:
 9. Save canonical and private fork subscriptions with `world subscribe`, then verify retrieval with `world search --subscriptions-path`.
 10. Pull the accepted contribution into a second local install with `world transmission-smoke`.
 11. Run the Compose daemon and verify `/status` with `daemon smoke`.
+12. Fill `VIVARIUM_V1_EVIDENCE_PATH` with the real v1 loop evidence collected during the week-long and two-week follow-up windows.
+13. Re-run `doctor --live`; do not claim v1 live verification until all setup and `v1.*` checks report configured, ok, or installed.
 
-Record the resulting command output in `docs/superpowers/audits/2026-05-09-v1-completion-audit.md`.
+Record the resulting command output in `docs/superpowers/audits/2026-05-10-v1-completion-audit-refresh.md`.

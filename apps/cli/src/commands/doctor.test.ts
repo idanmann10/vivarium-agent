@@ -56,6 +56,39 @@ const mismatchedRemoteRunner: DoctorCommandRunner = (run) => {
   return blockedRunner(run);
 };
 
+const readyRunner: DoctorCommandRunner = (run) => {
+  const text = [run.command, ...run.args].join(" ");
+  if (text === "git remote -v" && run.cwd === "/agent") {
+    return {
+      exitCode: 0,
+      stdout: "origin\tgit@github.com:owner/agent-final.git (fetch)\norigin\tgit@github.com:owner/agent-final.git (push)\n",
+      stderr: "",
+    };
+  }
+
+  if (text === "git remote -v" && run.cwd === "/world") {
+    return {
+      exitCode: 0,
+      stdout: "origin\tgit@github.com:owner/world-final.git (fetch)\norigin\tgit@github.com:owner/world-final.git (push)\n",
+      stderr: "",
+    };
+  }
+
+  if (text === "gh auth status") {
+    return { exitCode: 0, stdout: "Logged in to github.com account owner", stderr: "" };
+  }
+
+  if (text === "docker --version") {
+    return { exitCode: 0, stdout: "Docker version 29.4.1, build 055a478ea9", stderr: "" };
+  }
+
+  if (text === "docker compose version") {
+    return { exitCode: 0, stdout: "Docker Compose version v2.32.4", stderr: "" };
+  }
+
+  return { exitCode: 127, stdout: "", stderr: `unexpected command: ${text}` };
+};
+
 const missingDockerRunner: DoctorCommandRunner = (run) => {
   const text = [run.command, ...run.args].join(" ");
   if (text === "docker --version" || text === "docker compose version" || text === "docker-compose version") {
@@ -80,6 +113,108 @@ function markdownHeadingAnchors(markdown: string): ReadonlySet<string> {
           ],
     ),
   );
+}
+
+function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
+  const subscriptionsPath = join(root, "world-subscriptions.json");
+  const profilesPath = join(root, "provider-profiles.json");
+  const credentialsPath = join(root, "credentials.enc");
+  const evidencePath = join(root, "v1-evidence.json");
+
+  writeFileSync(
+    subscriptionsPath,
+    `${JSON.stringify({
+      worlds: [
+        { label: "canonical", root: "/world", priority: 1, ref: "git@github.com:owner/world-final.git", autoPushEnabled: false },
+        { label: "private", root: "/private-world", priority: 0, ref: "git@github.com:team/world-private.git", autoPushEnabled: true },
+      ],
+    })}\n`,
+    "utf8",
+  );
+  writeFileSync(
+    profilesPath,
+    `${JSON.stringify({
+      profiles: [
+        { name: "anthropic-main", kind: "anthropic", apiKeyEnv: "ANTHROPIC_API_KEY", model: "claude-live", capabilities: ["chat"] },
+        { name: "openrouter", kind: "openai-compat", apiKeyEnv: "OPENROUTER_API_KEY", model: "openrouter/live", capabilities: ["chat"] },
+        {
+          name: "private-finetune",
+          kind: "openai-compat",
+          apiKeyEnv: "VIVARIUM_OAI_COMPAT_API_KEY",
+          model: "fine-tune",
+          capabilities: ["chat"],
+        },
+      ],
+    })}\n`,
+    "utf8",
+  );
+  writeFileSync(credentialsPath, "encrypted credential bytes\n", "utf8");
+  writeFileSync(
+    evidencePath,
+    `${JSON.stringify({
+      starterPack: { primaryDomain: "coding", skillCount: 20, traceCount: 3, curriculum: "domains/coding/curriculum.md" },
+      realGoals: [
+        { id: "goal-1", date: "2026-05-01", evidence: "docs/live/goal-1.md" },
+        { id: "goal-2", date: "2026-05-02", evidence: "docs/live/goal-2.md" },
+        { id: "goal-3", date: "2026-05-04", evidence: "docs/live/goal-3.md" },
+        { id: "goal-4", date: "2026-05-06", evidence: "docs/live/goal-4.md" },
+        { id: "goal-5", date: "2026-05-08", evidence: "docs/live/goal-5.md" },
+      ],
+      providerSmokes: {
+        anthropic: "docs/live/provider-anthropic.md",
+        openRouter: "docs/live/provider-openrouter.md",
+        privateOaiCompat: "docs/live/provider-private.md",
+      },
+      internalCredentialSmoke: "docs/live/internal-api-smoke.md",
+      worldSubscriptions: {
+        canonical: "git@github.com:owner/world-final.git",
+        privateFork: "git@github.com:team/world-private.git",
+      },
+      behaviorLoop: {
+        antiPatternAvoided: "run-anti-pattern",
+        tracesRead: ["trace-a", "trace-b"],
+        recoverReplan: "run-recover",
+        destructiveHold: "run-destructive-hold",
+        refusal: "run-refusal",
+      },
+      dreamArtifacts: {
+        skillCandidates: ["skill-a", "skill-b"],
+        internalSkill: "proposals/skills/coding/internal/SKILL.md",
+        publicSkill: "proposals/skills/coding/public/SKILL.md",
+        antiPattern: "proposals/anti-patterns/coding/failure/ANTI-PATTERN.md",
+        trace: "proposals/traces/coding/workflow/TRACE.md",
+      },
+      publicContribution: {
+        publicSkillPr: "https://github.com/owner/world-final/pull/1",
+        autoMerge: "https://github.com/owner/world-final/actions/runs/1",
+        canonicalSkill: "domains/coding/skills/public/SKILL.md",
+        positiveSignals: 5,
+        externalPulls: 3,
+      },
+      publishedArtifacts: {
+        antiPattern: "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
+        trace: "domains/coding/traces/workflow/TRACE.md",
+        run: "runs/run-live-001/RUN.md",
+        secondInstallRead: "docs/live/second-install-read.md",
+      },
+      curationStats: {
+        featuredPick: "featured/current.md",
+        stats: "STATS.md",
+        top5SkillSharePercent: 30,
+      },
+      twoWeekImprovement: {
+        followupDate: "2026-05-22",
+        baselineMetric: 120,
+        followupMetric: 90,
+        improvementPercent: 25,
+        contributorProfile: "contributors/live-agent.json",
+        competingDiscussion: "https://github.com/owner/world-final/discussions/2",
+      },
+    })}\n`,
+    "utf8",
+  );
+
+  return { subscriptionsPath, profilesPath, credentialsPath, evidencePath };
 }
 
 describe("doctorCommand", () => {
@@ -107,6 +242,7 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("github.auth:invalid");
     expect(result.checks).toContain("docker:installed");
     expect(result.checks).toContain("docker.compose:missing");
+    expect(result.checks).toContain("v1.evidencePath:missing");
   });
 
   test("returns next actions for failed live readiness checks", () => {
@@ -153,6 +289,13 @@ describe("doctorCommand", () => {
       expect.objectContaining({
         check: "github.auth:invalid",
         command: expect.stringContaining("gh auth status"),
+      }),
+    );
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "v1.evidencePath:missing",
+        env: expect.arrayContaining(["VIVARIUM_V1_EVIDENCE_PATH"]),
+        guide: "docs/guides/live-readiness.md#v1-evidence-manifest",
       }),
     );
   });
@@ -234,8 +377,41 @@ describe("doctorCommand", () => {
         "github.owner:placeholder",
         "github.repositoryId:placeholder",
         "github.discussionCategoryId:placeholder",
+        "v1.evidencePath:missing",
       ]),
     );
+  });
+
+  test("reports missing v1 loop evidence from an incomplete evidence manifest", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-evidence-incomplete-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        starterPack: { primaryDomain: "coding", skillCount: 20, traceCount: 3, curriculum: "domains/coding/curriculum.md" },
+        realGoals: [
+          { id: "goal-1", date: "2026-05-01", evidence: "docs/live/goal-1.md" },
+          { id: "goal-2", date: "2026-05-02", evidence: "docs/live/goal-2.md" },
+        ],
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.starterPack:configured");
+    expect(result.checks).toContain("v1.realGoals:missing");
+    expect(result.checks).toContain("v1.providerSmokes:missing");
+    expect(result.checks).toContain("v1.publicContribution:missing");
+    expect(result.checks).toContain("v1.twoWeekImprovement:missing");
   });
 
   test("reports missing GitHub target metadata as live readiness blockers", () => {
@@ -532,5 +708,59 @@ describe("doctorCommand", () => {
     expect(result.ok).toBe(false);
     expect(result.checks).toContain("agent.remote:mismatch");
     expect(result.checks).toContain("world.remote:mismatch");
+  });
+
+  test("accepts a complete v1 evidence manifest with otherwise configured live readiness inputs", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-live-ready-"));
+    const files = writeLiveReadyFiles(root);
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        VIVARIUM_WORLD_SUBSCRIPTIONS_PATH: files.subscriptionsPath,
+        VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world-final.git",
+        VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
+        ANTHROPIC_API_KEY: "configured",
+        OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
+        VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_PROVIDER_PROFILES_PATH: files.profilesPath,
+        VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
+        VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
+        VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE: "private-finetune",
+        VIVARIUM_CREDENTIALS_PATH: files.credentialsPath,
+        VIVARIUM_INTERNAL_API_CREDENTIAL_NAME: "INTERNAL_API_TOKEN",
+        VIVARIUM_INTERNAL_API_HEALTH_URL: "https://internal.example/health",
+        VIVARIUM_V1_EVIDENCE_PATH: files.evidencePath,
+        GITHUB_TOKEN: "configured",
+      },
+      runner: readyRunner,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.nextActions).toEqual([]);
+    expect(result.checks).toEqual(
+      expect.arrayContaining([
+        "v1.evidencePath:configured",
+        "v1.starterPack:configured",
+        "v1.realGoals:configured",
+        "v1.providerSmokes:configured",
+        "v1.internalCredentialSmoke:configured",
+        "v1.worldSubscriptions:configured",
+        "v1.behaviorLoop:configured",
+        "v1.dreamArtifacts:configured",
+        "v1.publicContribution:configured",
+        "v1.publishedArtifacts:configured",
+        "v1.curationStats:configured",
+        "v1.twoWeekImprovement:configured",
+      ]),
+    );
   });
 });
