@@ -574,6 +574,33 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("v1.behaviorLoop:missing");
   });
 
+  test("requires v1 world subscriptions to name distinct inspectable refs", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-world-subscription-evidence-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        worldSubscriptions: {
+          canonical: "yes",
+          privateFork: "yes",
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.worldSubscriptions:missing");
+  });
+
   test("rejects public contribution counts without inspectable signal and pull evidence", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-public-contribution-evidence-"));
     const evidencePath = join(root, "v1-evidence.json");

@@ -270,6 +270,19 @@ function evidenceReferenceArray(value: unknown, context: V1EvidenceReferenceCont
   return textArray(value).filter((item) => evidenceReference(item, context));
 }
 
+function worldSubscriptionReference(value: unknown): string | undefined {
+  const text = textValue(value);
+  if (text === undefined) {
+    return undefined;
+  }
+
+  if (isUrlReference(text) || /^git@[^:]+:[^/]+\/[^/]+(?:\.git)?$/.test(text) || /^(?:ssh|git):\/\/.+/.test(text)) {
+    return text;
+  }
+
+  return undefined;
+}
+
 function dateMillis(value: unknown): number | undefined {
   const text = textValue(value);
   if (text === undefined) {
@@ -302,6 +315,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const lastGoal = realGoalDates.length === 0 ? undefined : Math.max(...realGoalDates);
   const providerSmokes = asRecord(manifest.providerSmokes);
   const worldSubscriptions = asRecord(manifest.worldSubscriptions);
+  const canonicalWorldSubscription = worldSubscriptionReference(worldSubscriptions?.canonical);
+  const privateForkWorldSubscription = worldSubscriptionReference(worldSubscriptions?.privateFork);
   const behaviorLoop = asRecord(manifest.behaviorLoop);
   const dreamArtifacts = asRecord(manifest.dreamArtifacts);
   const publicContribution = asRecord(manifest.publicContribution);
@@ -340,7 +355,9 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
     v1Check("internalCredentialSmoke", evidenceReference(manifest.internalCredentialSmoke, context)),
     v1Check(
       "worldSubscriptions",
-      textValue(worldSubscriptions?.canonical) !== undefined && textValue(worldSubscriptions?.privateFork) !== undefined,
+      canonicalWorldSubscription !== undefined &&
+        privateForkWorldSubscription !== undefined &&
+        canonicalWorldSubscription !== privateForkWorldSubscription,
     ),
     v1Check(
       "behaviorLoop",
