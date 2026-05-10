@@ -141,6 +141,37 @@ describe("self-tools", () => {
     expect(tools.world.lineage(skillId("coding.inspect-before-edit"), "coding")).toContain("https://github.com/obra/superpowers");
   });
 
+  test("reports world skill regressions through local state and GitHub issues", async () => {
+    const state = new InMemoryStateRepository();
+    const captured: { readonly title: string; readonly body: string; readonly labels: readonly string[] }[] = [];
+    const tools = createSelfTools({
+      state,
+      world: createLocalWorldReader({ root: "../the-world" }),
+      github: {
+        async createIssue(request) {
+          captured.push(request);
+          return { url: "https://github.com/owner/world/issues/42", number: 42 };
+        },
+      },
+    });
+    const id = skillId("coding.inspect-before-edit");
+
+    const result = await tools.world.reportRegression({
+      skillId: id,
+      domain: "coding",
+      reason: "The skill skipped local conventions.",
+    });
+
+    expect(result.candidateId).toBe("anti-pattern-coding.inspect-before-edit");
+    expect(result.issue).toEqual({ url: "https://github.com/owner/world/issues/42", number: 42 });
+    expect(state.listAntiPatternCandidates("coding")[0]?.why).toBe("The skill skipped local conventions.");
+    expect(captured[0]).toMatchObject({
+      title: "Regression: coding.inspect-before-edit",
+      labels: ["regression", "skill-regression", "domain:coding"],
+    });
+    expect(captured[0]?.body).toContain("The skill skipped local conventions.");
+  });
+
   test("publishes runs through subscribed worlds", () => {
     const root = mkdtempSync(join(tmpdir(), "self-tools-world-publish-run-"));
     const canonicalWorld = join(root, "canonical");

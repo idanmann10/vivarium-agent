@@ -15,6 +15,8 @@ import {
   type LocalWorldReader,
   type LocalWorldSearchRequest,
   type LocalWorldSearchResult,
+  type GitHubWorldClient,
+  type NumberedGitHubUrl,
   type PersistedWorldSubscription,
   type ProposalWorldTarget,
   type SubscribeWorldRequest,
@@ -24,6 +26,7 @@ import {
 export interface SelfToolsDependencies {
   readonly state: StateRepository;
   readonly world: LocalWorldReader;
+  readonly github?: Pick<GitHubWorldClient, "createIssue">;
   readonly worldRoot?: string;
   readonly worldSubscriptionsPath?: string;
 }
@@ -76,6 +79,18 @@ export interface WorldPublishTraceRequest {
 export interface WorldPublishResult {
   readonly target: ProposalWorldTarget;
   readonly path: string;
+}
+
+export interface WorldReportRegressionRequest {
+  readonly skillId: SkillId;
+  readonly reason: string;
+  readonly domain?: string;
+  readonly runId?: RunId;
+}
+
+export interface WorldReportRegressionResult {
+  readonly candidateId: string;
+  readonly issue?: NumberedGitHubUrl;
 }
 
 export interface WorldContributorSummary {
@@ -132,6 +147,7 @@ export interface SelfTools {
     contributors(domain?: string): readonly WorldContributorSummary[];
     featured(): readonly string[];
     stats(): string;
+    reportRegression(request: WorldReportRegressionRequest): Promise<WorldReportRegressionResult>;
   };
   readonly curriculum: {
     advance(domain: string, stepIndex: number): void;
@@ -277,6 +293,24 @@ function pulledSkillRecord(id: SkillId, domain: string, body: string): LocalSkil
   };
 }
 
+function recordSkillRegression(
+  state: StateRepository,
+  request: Required<Pick<WorldReportRegressionRequest, "skillId" | "reason" | "domain">> & Pick<WorldReportRegressionRequest, "runId">,
+): string {
+  const candidateId = `anti-pattern-${String(request.skillId)}`;
+  state.upsertAntiPatternCandidate({
+    id: candidateId,
+    domain: request.domain,
+    name: `Regression: ${String(request.skillId)}`,
+    description: `Skill ${String(request.skillId)} produced a reported regression.`,
+    why: request.reason,
+    insteadDo: "Review the regression before using this skill again.",
+    evidenceRunIds: request.runId === undefined ? [] : [String(request.runId)],
+    createdAt: new Date().toISOString(),
+  });
+  return candidateId;
+}
+
 interface ContributorJson {
   readonly handle?: string;
   readonly domains?: readonly string[];
@@ -323,7 +357,7 @@ function featuredIds(root: string): readonly string[] {
     .filter((line) => line.length > 0);
 }
 
-export function createSelfTools({ state, world, worldRoot, worldSubscriptionsPath }: SelfToolsDependencies): SelfTools {
+export function createSelfTools({ state, world, github, worldRoot, worldSubscriptionsPath }: SelfToolsDependencies): SelfTools {
   return {
     memory: {
       write(request) {
@@ -585,6 +619,27 @@ export function createSelfTools({ state, world, worldRoot, worldSubscriptionsPat
       },
       stats() {
         return readFileSync(join(primaryWorldRoot(worldRoot, worldSubscriptionsPath), "STATS.md"), "utf8");
+      },
+      async reportRegression(request) {
+        const domain = request.domain ?? "coding";
+        const runId = request.runId ?? latestRunId(state, domain);
+        const candidateId = recordSkillRegression(
+          state,
+          runId === undefined
+            ? { skillId: request.skillId, reason: request.reason, domain }
+            : { skillId: request.skillId, reason: request.reason, domain, runId },
+        );
+        const issue = await github?.createIssue({
+          title: `Regression: ${String(request.skillId)}`,
+          body:
+            `Skill: ${String(request.skillId)}\n\n` +
+            `Domain: ${domain}\n\n` +
+            `Reason:\n${request.reason}\n\n` +
+            `Evidence run: ${runId === undefined ? "not supplied" : String(runId)}`,
+          labels: ["regression", "skill-regression", `domain:${domain}`],
+        });
+
+        return issue === undefined ? { candidateId } : { candidateId, issue };
       },
     },
     curriculum: {
