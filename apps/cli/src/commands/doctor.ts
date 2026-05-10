@@ -288,6 +288,14 @@ function distinctEvidenceReferenceCount(value: unknown, context: V1EvidenceRefer
   return new Set(textArray(value).flatMap((item) => evidenceReferenceIdentity(item, context) ?? [])).size;
 }
 
+function agentEvidenceRecords(value: unknown, context: V1EvidenceReferenceContext): readonly { readonly agent: string; readonly evidence: string }[] {
+  return recordArray(value).flatMap((record) => {
+    const agent = textValue(record.agent);
+    const evidence = evidenceReferenceIdentity(record.evidence, context);
+    return agent === undefined || evidence === undefined ? [] : [{ agent, evidence }];
+  });
+}
+
 function worldSubscriptionReference(value: unknown): string | undefined {
   const text = textValue(value);
   if (text === undefined) {
@@ -351,11 +359,10 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const behaviorLoop = asRecord(manifest.behaviorLoop);
   const dreamArtifacts = asRecord(manifest.dreamArtifacts);
   const publicContribution = asRecord(manifest.publicContribution);
-  const publicContributionPullUses = recordArray(publicContribution?.externalPullUses).flatMap((pullUse) => {
-    const agent = textValue(pullUse.agent);
-    const evidence = evidenceReferenceIdentity(pullUse.evidence, context);
-    return agent === undefined || evidence === undefined ? [] : [{ agent, evidence }];
-  });
+  const publicContributionPositiveSignals = agentEvidenceRecords(publicContribution?.positiveSignals, context);
+  const publicContributionPositiveSignalAgents = new Set(publicContributionPositiveSignals.map((signal) => signal.agent));
+  const publicContributionPositiveSignalEvidence = new Set(publicContributionPositiveSignals.map((signal) => signal.evidence));
+  const publicContributionPullUses = agentEvidenceRecords(publicContribution?.externalPullUses, context);
   const publicContributionPullUseAgents = new Set(publicContributionPullUses.map((pullUse) => pullUse.agent));
   const publicContributionPullUseEvidence = new Set(publicContributionPullUses.map((pullUse) => pullUse.evidence));
   const publishedArtifacts = asRecord(manifest.publishedArtifacts);
@@ -440,7 +447,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         evidenceReference(publicContribution?.autoMerge, context) &&
         evidenceReference(publicContribution?.canonicalSkill, context) &&
         (numberValue(publicContribution?.contributorTrust) ?? 0) >= 0.5 &&
-        distinctEvidenceReferenceCount(publicContribution?.positiveSignalEvidence, context) >= 5 &&
+        publicContributionPositiveSignalAgents.size >= 5 &&
+        publicContributionPositiveSignalEvidence.size >= 5 &&
         publicContributionPullUseAgents.size >= 3 &&
         publicContributionPullUseEvidence.size >= 3,
     ),
@@ -887,7 +895,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record public skill PR, math gate, contributor trust, K=5 distinct positive signals, auto-merge, canonical landing, and three distinct other-agent pull/use evidence records.",
+          "Record public skill PR, math gate, contributor trust, K=5 distinct positive-signal agent/evidence records, auto-merge, canonical landing, and three distinct other-agent pull/use evidence records.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.publishedArtifacts":
