@@ -174,6 +174,38 @@ const packageReadmes = {
   "packages/world": ["retrieval", "subscriptions", "proposal", "GitHub", "visibility"],
 } as const;
 
+const topLevelDocs = {
+  "docs/README.md": [
+    "thesis.md",
+    "architecture/",
+    "concepts/",
+    "guides/",
+    "reference/",
+    "math/",
+    "demos/",
+  ],
+  "docs/thesis.md": [
+    "kernel",
+    "world",
+    "Generative Agents",
+    "Voyager",
+    "DGM",
+    "MAGELLAN",
+    "sleep consolidation",
+    "identity",
+    "cultural transmission",
+    "local-first",
+  ],
+  "docs/demos/README.md": [
+    "local-e2e.cast",
+    "asciinema v2",
+    "init",
+    "run",
+    "world transmission-smoke",
+    "verify:sqlite-stack",
+  ],
+} as const;
+
 describe("reference docs", () => {
   test("documents every top-level self-tool group", () => {
     for (const tool of selfToolDocs) {
@@ -268,6 +300,15 @@ describe("reference docs", () => {
   test("documents app and package ownership readmes", () => {
     for (const [path, terms] of Object.entries(packageReadmes)) {
       const body = readFileSync(join(path, "README.md"), "utf8");
+      for (const term of terms) {
+        expect(body).toContain(term);
+      }
+    }
+  });
+
+  test("documents top-level thesis and doc navigation", () => {
+    for (const [path, terms] of Object.entries(topLevelDocs)) {
+      const body = readFileSync(path, "utf8");
       for (const term of terms) {
         expect(body).toContain(term);
       }
