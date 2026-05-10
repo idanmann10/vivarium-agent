@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 export interface DoctorResult {
   readonly ok: boolean;
@@ -113,6 +113,34 @@ function requiredFileCheck(env: Readonly<Record<string, string | undefined>>, en
   return existsSync(value) ? `${label}:configured` : `${label}:unavailable`;
 }
 
+function providerProfileNames(env: Readonly<Record<string, string | undefined>>): ReadonlySet<string> | undefined {
+  const profilesPath = env[providerProfilesPathEnv]?.trim();
+  if (profilesPath === undefined || profilesPath.length === 0 || !existsSync(profilesPath)) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(readFileSync(profilesPath, "utf8")) as { readonly profiles?: readonly { readonly name?: unknown }[] };
+    return new Set((parsed.profiles ?? []).flatMap((profile) => (typeof profile.name === "string" ? [profile.name] : [])));
+  } catch {
+    return new Set();
+  }
+}
+
+function providerProfileCheck(
+  env: Readonly<Record<string, string | undefined>>,
+  names: ReadonlySet<string> | undefined,
+  envName: string,
+  label: string,
+): string {
+  const value = env[envName]?.trim();
+  if (value === undefined || value.length === 0) {
+    return `${label}:missing`;
+  }
+
+  return names === undefined || names.has(value) ? `${label}:configured` : `${label}:unavailable`;
+}
+
 function hasRequiredEnv(env: Readonly<Record<string, string | undefined>>, envName: string): boolean {
   const value = env[envName]?.trim();
   return value !== undefined && value.length > 0;
@@ -157,6 +185,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
   const env = options.env ?? process.env;
   const agentRoot = options.agentRoot ?? process.cwd();
   const worldRoot = options.worldRoot ?? process.cwd();
+  const profiles = providerProfileNames(env);
   const checks = [
     repoNameCheck(env, agentRepoNameEnv, "the-agent", "agent"),
     repoNameCheck(env, worldRepoNameEnv, "the-world", "world"),
@@ -170,9 +199,9 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     requiredEnvCheck(env, openRouterApiKeyEnv, "provider.openrouter"),
     privateOaiCompatCheck(env),
     requiredFileCheck(env, providerProfilesPathEnv, "provider.profilesPath"),
-    requiredEnvCheck(env, anthropicProviderProfileEnv, "provider.anthropicProfile"),
-    requiredEnvCheck(env, openRouterProviderProfileEnv, "provider.openrouterProfile"),
-    requiredEnvCheck(env, privateOaiCompatProviderProfileEnv, "provider.privateOaiCompatProfile"),
+    providerProfileCheck(env, profiles, anthropicProviderProfileEnv, "provider.anthropicProfile"),
+    providerProfileCheck(env, profiles, openRouterProviderProfileEnv, "provider.openrouterProfile"),
+    providerProfileCheck(env, profiles, privateOaiCompatProviderProfileEnv, "provider.privateOaiCompatProfile"),
     requiredFileCheck(env, credentialsPathEnv, "credentials.path"),
     requiredEnvCheck(env, internalApiCredentialNameEnv, "internalApi.credentialName"),
     requiredEnvCheck(env, internalApiHealthUrlEnv, "internalApi.healthUrl"),

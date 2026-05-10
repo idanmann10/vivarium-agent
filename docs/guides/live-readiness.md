@@ -136,7 +136,7 @@ bun apps/cli/src/index.ts run \
 
 One-off run flags also remain available. Use `--provider-kind openai` or `--provider-kind anthropic` without `--provider-base-url` for first-party providers.
 
-`doctor --live` expects `VIVARIUM_PROVIDER_PROFILES_PATH` to point at the file created by `providers configure`.
+`doctor --live` expects `VIVARIUM_PROVIDER_PROFILES_PATH` to point at the file created by `providers configure`, and it checks that each `VIVARIUM_*_PROVIDER_PROFILE` value is present in that file.
 
 ## Internal API Credential
 

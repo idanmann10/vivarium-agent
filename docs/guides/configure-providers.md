@@ -62,7 +62,8 @@ bun apps/cli/src/index.ts providers configure \
 ```
 
 `doctor --live` reports `provider.profilesPath:unavailable` until the file at
-`VIVARIUM_PROVIDER_PROFILES_PATH` exists.
+`VIVARIUM_PROVIDER_PROFILES_PATH` exists. It reports a provider profile as unavailable when the
+matching `VIVARIUM_*_PROVIDER_PROFILE` value is not present in that file.
 
 List configured profiles:
 

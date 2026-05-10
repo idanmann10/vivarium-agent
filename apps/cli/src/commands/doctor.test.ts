@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -251,5 +251,63 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("world.subscriptionsPath:unavailable");
     expect(result.checks).toContain("provider.profilesPath:unavailable");
     expect(result.checks).toContain("credentials.path:unavailable");
+  });
+
+  test("reports configured provider profile names missing from the profiles file", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-provider-profiles-"));
+    const profilesPath = join(root, "provider-profiles.json");
+    writeFileSync(
+      profilesPath,
+      `${JSON.stringify({
+        profiles: [
+          {
+            name: "unrelated",
+            kind: "openai-compat",
+            apiKeyEnv: "OPENROUTER_API_KEY",
+            model: "openrouter/test-model",
+            capabilities: ["chat"],
+            contextWindow: 128000,
+            costClass: "medium",
+          },
+        ],
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        VIVARIUM_WORLD_SUBSCRIPTIONS_PATH: "/tmp/vivarium-world-subscriptions.json",
+        VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world.git",
+        VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
+        ANTHROPIC_API_KEY: "configured",
+        OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
+        VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_PROVIDER_PROFILES_PATH: profilesPath,
+        VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
+        VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
+        VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE: "private-finetune",
+        VIVARIUM_CREDENTIALS_PATH: "/tmp/vivarium-credentials.enc",
+        VIVARIUM_INTERNAL_API_CREDENTIAL_NAME: "INTERNAL_API_TOKEN",
+        VIVARIUM_INTERNAL_API_HEALTH_URL: "https://internal.example/health",
+        GITHUB_TOKEN: "configured",
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("provider.profilesPath:configured");
+    expect(result.checks).toContain("provider.anthropicProfile:unavailable");
+    expect(result.checks).toContain("provider.openrouterProfile:unavailable");
+    expect(result.checks).toContain("provider.privateOaiCompatProfile:unavailable");
   });
 });
