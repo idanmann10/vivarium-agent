@@ -2,9 +2,13 @@
 
 Short-lived command surface for local runtime operations.
 
+The CLI owns argument parsing, command dispatch, human-readable output, and
+smoke-test wrappers. Runtime behavior belongs in packages; this app should stay
+thin and route through `src/dispatcher.ts`.
+
 Implemented command groups include:
 
-- `init`, `run`, `status`, and `doctor`
+- `init`, `run`, `status`, `doctor`, and `doctor --live`
 - `credentials add/list/smoke`
 - `providers configure/list/smoke`
 - `skills list`
@@ -15,3 +19,8 @@ Implemented command groups include:
 Commands are routed through `src/dispatcher.ts` so parser behavior is covered independently from command
 implementations. Live provider and GitHub commands require the caller to provide real environment-backed
 credentials.
+
+Use the CLI for local handoff checks such as provider profile smoke tests,
+encrypted credential smoke tests, GitHub read/write guards, daemon status, and
+world transmission-smoke. Reusable logic should move into `packages/*` before it
+grows command-specific state.

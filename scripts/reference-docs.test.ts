@@ -153,6 +153,27 @@ const guideDocs = {
   "publish-a-run": ["publishable", "anonymization", "world.publishRun", "visibility", "PII"],
 } as const;
 
+const packageReadmes = {
+  "apps/cli": ["dispatcher", "init", "doctor --live", "providers", "world transmission-smoke"],
+  "apps/daemon": ["status", "run", "dream", "Dream scheduler", "MCP"],
+  "packages/core": ["types", "kernel", "pure math", "no I/O", "decision thresholds"],
+  "packages/eval": ["compounding", "benchmark", "before", "after", "Dream"],
+  "packages/providers": ["OpenAI", "Anthropic", "OpenAI-compatible", "capabilities", "costClass"],
+  "packages/runtime": [
+    "Plan",
+    "Predict",
+    "Execute",
+    "Monitor",
+    "Recover",
+    "Validate",
+    "Reflect",
+    "Dream",
+  ],
+  "packages/state": ["SQLite", "migrations", "memory", "StateRepository", "semantic facts"],
+  "packages/tools": ["SelfTools", "external tools", "credentials", "anonymization", "safety"],
+  "packages/world": ["retrieval", "subscriptions", "proposal", "GitHub", "visibility"],
+} as const;
+
 describe("reference docs", () => {
   test("documents every top-level self-tool group", () => {
     for (const tool of selfToolDocs) {
@@ -241,6 +262,15 @@ describe("reference docs", () => {
     for (const doc of Object.keys(guideDocs)) {
       const body = readFileSync(join("docs", "guides", `${doc}.md`), "utf8");
       expect(body).not.toContain("placeholder");
+    }
+  });
+
+  test("documents app and package ownership readmes", () => {
+    for (const [path, terms] of Object.entries(packageReadmes)) {
+      const body = readFileSync(join(path, "README.md"), "utf8");
+      for (const term of terms) {
+        expect(body).toContain(term);
+      }
     }
   });
 });
