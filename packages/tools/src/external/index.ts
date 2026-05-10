@@ -1,7 +1,16 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
-export const externalToolsets = ["web", "file", "terminal", "code", "http", "mcp", "computer-use"] as const;
+export const externalToolsets = [
+  "web",
+  "file",
+  "terminal",
+  "code",
+  "http",
+  "mcp",
+  "anthropic-native",
+  "computer-use",
+] as const;
 
 export type ExternalToolset = (typeof externalToolsets)[number];
 
@@ -88,6 +97,25 @@ export interface McpToolRequest {
   };
 }
 
+export interface AnthropicNativeMessage {
+  readonly role: "user" | "assistant";
+  readonly content: string;
+}
+
+export interface AnthropicNativeMessagesCreateToolRequest {
+  readonly name: "anthropic-native.messages.create";
+  readonly args: {
+    readonly model: string;
+    readonly maxTokens: number;
+    readonly messages: readonly AnthropicNativeMessage[];
+    readonly system?: string;
+    readonly tools?: readonly unknown[];
+    readonly toolChoice?: unknown;
+    readonly credentialName?: string;
+    readonly apiKey?: string;
+  };
+}
+
 export interface ComputerScreenshotToolRequest {
   readonly name: "computer.screenshot";
   readonly args: Record<string, never>;
@@ -144,6 +172,7 @@ export type ExternalToolRequest =
   | TerminalToolRequest
   | CodeToolRequest
   | McpToolRequest
+  | AnthropicNativeMessagesCreateToolRequest
   | ComputerScreenshotToolRequest
   | ComputerClickToolRequest
   | ComputerTypeToolRequest
@@ -182,6 +211,10 @@ export interface ComputerUseAdapter {
   readonly focusWindow?: (request: ComputerFocusWindowToolRequest["args"]) => Promise<unknown>;
 }
 
+export interface AnthropicNativeAdapter {
+  readonly createMessage: (request: AnthropicNativeMessagesCreateToolRequest["args"]) => Promise<unknown>;
+}
+
 export interface ExternalToolAdapters {
   readonly fetch?: (request: Request) => Promise<Response>;
   readonly searchWeb?: (query: string) => Promise<readonly WebSearchResult[]>;
@@ -189,6 +222,7 @@ export interface ExternalToolAdapters {
   readonly runTerminal?: (command: string) => Promise<ProcessToolResult>;
   readonly executeCode?: (request: CodeToolRequest["args"]) => Promise<ProcessToolResult>;
   readonly callMcp?: (request: McpToolRequest["args"]) => Promise<unknown>;
+  readonly anthropicNative?: AnthropicNativeAdapter;
   readonly computer?: ComputerUseAdapter;
 }
 
@@ -365,6 +399,14 @@ export async function dispatchExternalTool(
       return missingAdapter(request.name);
     }
     return attempt(() => executeCode(request.args));
+  }
+
+  if (request.name === "anthropic-native.messages.create") {
+    const createMessage = adapters.anthropicNative?.createMessage;
+    if (createMessage === undefined) {
+      return missingAdapter(request.name);
+    }
+    return attempt(() => createMessage(request.args));
   }
 
   if (request.name === "computer.screenshot") {

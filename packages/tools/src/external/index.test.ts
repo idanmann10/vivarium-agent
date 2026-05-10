@@ -6,6 +6,48 @@ import { describe, expect, test } from "bun:test";
 import { createAllowlistedFileAdapter, dispatchExternalTool } from "./index.js";
 
 describe("dispatchExternalTool", () => {
+  test("routes Anthropic native message requests through an injected adapter", async () => {
+    let capturedApiKey = "";
+    const result = await dispatchExternalTool(
+      {
+        name: "anthropic-native.messages.create",
+        args: {
+          model: "claude-test",
+          maxTokens: 256,
+          messages: [{ role: "user", content: "Summarize this trace" }],
+          system: "Use concise output.",
+          tools: [{ name: "lookup", description: "Look up context" }],
+          toolChoice: { type: "auto" },
+          apiKey: "anthropic-key",
+        },
+      },
+      {
+        anthropicNative: {
+          createMessage: async (request) => {
+            capturedApiKey = request.apiKey ?? "";
+            return {
+              model: request.model,
+              text: request.messages[0]?.content,
+              toolCount: request.tools?.length ?? 0,
+              toolChoice: request.toolChoice,
+            };
+          },
+        },
+      },
+    );
+
+    expect(capturedApiKey).toBe("anthropic-key");
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        model: "claude-test",
+        text: "Summarize this trace",
+        toolCount: 1,
+        toolChoice: { type: "auto" },
+      },
+    });
+  });
+
   test("routes generic HTTP requests through the injected fetch adapter", async () => {
     const result = await dispatchExternalTool(
       {

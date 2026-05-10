@@ -1,6 +1,8 @@
 import type { CredentialRecord, CredentialStore } from "./credentials/store.js";
 import {
   dispatchExternalTool,
+  type AnthropicNativeMessage,
+  type AnthropicNativeMessagesCreateToolRequest,
   type ComputerScrollToolRequest,
   type ExternalToolAdapters,
   type ExternalToolRequest,
@@ -103,6 +105,22 @@ function isComputerScrollDirection(value: unknown): value is ComputerScrollToolR
   return value === "up" || value === "down" || value === "left" || value === "right";
 }
 
+function isAnthropicNativeMessage(value: unknown): value is AnthropicNativeMessage {
+  return (
+    isRecord(value) &&
+    (value.role === "user" || value.role === "assistant") &&
+    typeof value.content === "string"
+  );
+}
+
+function parseAnthropicNativeMessages(value: unknown): readonly AnthropicNativeMessage[] | undefined {
+  if (!Array.isArray(value) || !value.every(isAnthropicNativeMessage)) {
+    return undefined;
+  }
+
+  return value;
+}
+
 function parseExternalRequest(request: ToolDispatchRequest): ExternalToolRequest | undefined {
   if (!isRecord(request.args)) {
     return undefined;
@@ -168,6 +186,32 @@ function parseExternalRequest(request: ToolDispatchRequest): ExternalToolRequest
 
   if (request.name === "mcp.call" && typeof request.args.server === "string" && typeof request.args.tool === "string") {
     return { name: request.name, args: { server: request.args.server, tool: request.args.tool, input: request.args.input } };
+  }
+
+  if (
+    request.name === "anthropic-native.messages.create" &&
+    typeof request.args.model === "string" &&
+    typeof request.args.maxTokens === "number"
+  ) {
+    const messages = parseAnthropicNativeMessages(request.args.messages);
+    if (messages === undefined) {
+      return undefined;
+    }
+
+    const system = optionalString(request.args.system);
+    const credentialName = optionalString(request.args.credentialName);
+    const tools = Array.isArray(request.args.tools) ? request.args.tools : undefined;
+    const toolChoice = request.args.toolChoice;
+    const args: AnthropicNativeMessagesCreateToolRequest["args"] = {
+      model: request.args.model,
+      maxTokens: request.args.maxTokens,
+      messages,
+      ...(system === undefined ? {} : { system }),
+      ...(tools === undefined ? {} : { tools }),
+      ...(toolChoice === undefined ? {} : { toolChoice }),
+      ...(credentialName === undefined ? {} : { credentialName }),
+    };
+    return { name: request.name, args };
   }
 
   if (request.name === "computer.screenshot") {
@@ -302,6 +346,20 @@ async function dispatchExternal(
         },
       };
     }
+  }
+
+  if (request.name === "anthropic-native.messages.create" && request.args.credentialName !== undefined) {
+    const credential = options.credentials?.get(request.args.credentialName);
+    if (credential === undefined) {
+      return { ok: false, error: `Missing credential: ${request.args.credentialName}` };
+    }
+    nextRequest = {
+      ...request,
+      args: {
+        ...request.args,
+        apiKey: credential.value,
+      },
+    };
   }
 
   if (request.name === "computer.click" || request.name === "computer.type") {

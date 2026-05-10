@@ -97,6 +97,51 @@ describe("createToolDispatcher", () => {
     });
   });
 
+  test("parses Anthropic native requests and injects credentials", async () => {
+    const credentials = createMemoryCredentialStore([
+      {
+        kind: "api_key",
+        name: "ANTHROPIC_API_KEY",
+        purpose: "Anthropic native tools",
+        value: "anthropic-secret",
+      },
+    ]);
+    let capturedApiKey = "";
+    const dispatcher = createToolDispatcher({
+      credentials,
+      externalAdapters: {
+        anthropicNative: {
+          createMessage: async (request) => {
+            capturedApiKey = request.apiKey ?? "";
+            return {
+              model: request.model,
+              messageCount: request.messages.length,
+            };
+          },
+        },
+      },
+    });
+
+    await expect(
+      dispatcher.dispatch({
+        name: "anthropic-native.messages.create",
+        args: {
+          credentialName: "ANTHROPIC_API_KEY",
+          model: "claude-test",
+          maxTokens: 512,
+          messages: [{ role: "user", content: "Draft a tool-use plan" }],
+        },
+      }),
+    ).resolves.toEqual({
+      ok: true,
+      value: {
+        model: "claude-test",
+        messageCount: 1,
+      },
+    });
+    expect(capturedApiKey).toBe("anthropic-secret");
+  });
+
   test("surfaces prompt-injection warnings from external tool output", async () => {
     const events: ToolDispatchEvent[] = [];
     const dispatcher = createToolDispatcher({

@@ -3,6 +3,9 @@ export { createSelfTools } from "./builtin/self-tools.js";
 export type { SelfTools, SelfToolsDependencies } from "./builtin/self-tools.js";
 export { createAllowlistedFileAdapter, dispatchExternalTool, externalToolsets } from "./external/index.js";
 export type {
+  AnthropicNativeAdapter,
+  AnthropicNativeMessage,
+  AnthropicNativeMessagesCreateToolRequest,
   ComputerUseAdapter,
   ExternalToolAdapters,
   ExternalToolRequest,
