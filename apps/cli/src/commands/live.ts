@@ -24,6 +24,12 @@ export type LiveSetupCommandResult =
       readonly written: false;
       readonly requiresConfirmation?: true;
       readonly wouldWrite?: readonly string[];
+      readonly providerProfiles?: readonly string[];
+      readonly credentialName?: string;
+      readonly paths?: {
+        readonly providerProfilesPath: string;
+        readonly credentialsPath: string;
+      };
       readonly missing?: readonly string[];
       readonly placeholders?: readonly string[];
       readonly invalid?: readonly string[];
@@ -252,21 +258,26 @@ export function liveSetupCommand(options: LiveSetupCommandOptions): LiveSetupCom
     return invalid;
   }
 
-  if (!options.confirmWrite) {
-    return {
-      ok: false,
-      written: false,
-      requiresConfirmation: true,
-      wouldWrite: ["providerProfiles", "credential"],
-    };
-  }
-
   const providerProfilesPath = required(options.env, "VIVARIUM_PROVIDER_PROFILES_PATH");
   const anthropicProfile = required(options.env, "VIVARIUM_ANTHROPIC_PROVIDER_PROFILE");
   const openRouterProfile = required(options.env, "VIVARIUM_OPENROUTER_PROVIDER_PROFILE");
   const privateProfile = required(options.env, "VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE");
   const credentialsPath = required(options.env, "VIVARIUM_CREDENTIALS_PATH");
   const credentialName = required(options.env, "VIVARIUM_INTERNAL_API_CREDENTIAL_NAME");
+  const providerProfiles = [anthropicProfile, openRouterProfile, privateProfile];
+  const paths = { providerProfilesPath, credentialsPath };
+
+  if (!options.confirmWrite) {
+    return {
+      ok: false,
+      written: false,
+      requiresConfirmation: true,
+      wouldWrite: ["providerProfiles", "credential"],
+      providerProfiles,
+      credentialName,
+      paths,
+    };
+  }
 
   configureProviderProfileCommand({
     profilesPath: providerProfilesPath,
@@ -312,9 +323,9 @@ export function liveSetupCommand(options: LiveSetupCommandOptions): LiveSetupCom
   return {
     ok: true,
     written: true,
-    providerProfiles: [anthropicProfile, openRouterProfile, privateProfile],
+    providerProfiles,
     credentialName,
-    paths: { providerProfilesPath, credentialsPath },
+    paths,
   };
 }
 

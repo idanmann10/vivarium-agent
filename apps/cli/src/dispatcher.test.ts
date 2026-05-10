@@ -841,6 +841,9 @@ describe("dispatchCliCommand", () => {
         written: false,
         requiresConfirmation: true,
         wouldWrite: ["providerProfiles", "credential"],
+        providerProfiles: ["anthropic-main", "openrouter", "private-finetune"],
+        credentialName: "INTERNAL_API_TOKEN",
+        paths: { providerProfilesPath: profilesPath, credentialsPath },
       },
     });
     expect(existsSync(profilesPath)).toBe(false);

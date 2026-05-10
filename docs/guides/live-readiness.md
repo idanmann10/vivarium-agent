@@ -113,6 +113,7 @@ bun apps/cli/src/main.ts live setup \
 ```
 
 Without `--confirm-write`, this command reports what it would write and exits without creating files.
+The dry run includes the target provider profile path, credential store path, provider profile names, and credential name so you can verify the env file before any secret-bearing local files are created.
 
 You can also save profiles individually. `docs/guides/configure-providers.md` shows the full Anthropic, OpenRouter, and private-compatible profile setup required before `doctor --live` is clear:
 
