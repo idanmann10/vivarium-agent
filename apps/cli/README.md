@@ -18,7 +18,8 @@ Implemented command groups include:
 
 Commands are routed through `src/dispatcher.ts` so parser behavior is covered independently from command
 implementations. Live provider and GitHub commands require the caller to provide real environment-backed
-credentials.
+credentials. `doctor --live` can load a filled readiness handoff file with
+`--env-file live-readiness.local.env`.
 
 Use the CLI for local handoff checks such as provider profile smoke tests,
 encrypted credential smoke tests, GitHub read/write guards, daemon status, and

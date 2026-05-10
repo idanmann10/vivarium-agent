@@ -89,6 +89,40 @@ describe("dispatchCliCommand", () => {
     });
   });
 
+  test("routes live doctor checks through a copied env file", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-env-"));
+    const envPath = join(root, "live-readiness.local.env");
+    write(
+      envPath,
+      [
+        "# Filled from docs/live-readiness.env.example",
+        'export VIVARIUM_AGENT_REPO_NAME="agent-final"',
+        "export VIVARIUM_WORLD_REPO_NAME=world-final",
+        'export ANTHROPIC_API_KEY="configured"',
+        'export GITHUB_TOKEN="configured"',
+        'export GH_TOKEN="$GITHUB_TOKEN"',
+      ].join("\n"),
+    );
+
+    const result = await dispatchCliCommand(["doctor", "--live", "--env-file", envPath, "--agent-root", "/agent", "--world-root", "/world"], {
+      doctorRunner: deterministicDoctorRunner,
+    });
+    const checks = (result.result as { checks: readonly string[] }).checks;
+
+    expect(checks).toEqual(
+      expect.arrayContaining([
+        "agent.name:configured",
+        "world.name:configured",
+        "provider.env:configured",
+        "provider.anthropic:configured",
+        "github.env:configured",
+      ]),
+    );
+    expect(checks).not.toContain("agent.name:missing");
+    expect(checks).not.toContain("world.name:missing");
+    expect(checks).not.toContain("github.env:missing");
+  });
+
   test("routes init, skills, and world commands with explicit paths", async () => {
     const worldRoot = createWorldFixture();
     const statePath = join(mkdtempSync(join(tmpdir(), "cli-dispatch-state-")), "state.db");

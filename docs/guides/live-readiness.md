@@ -12,6 +12,7 @@ Run the readiness check from `the-agent`:
 
 ```bash
 bun apps/cli/src/index.ts doctor --live \
+  --env-file live-readiness.local.env \
   --agent-root /Users/idanmann/Vivarium/the-agent \
   --world-root /Users/idanmann/Vivarium/the-world
 ```
@@ -21,7 +22,7 @@ Path-based checks report `:unavailable` when the env var is set but the expected
 When the world subscription registry exists, canonical/private world refs also report `:unavailable` if the configured refs are not present in that registry.
 For live-readiness mode, the JSON result also includes `nextActions` for every non-passing check. Each action names the failed check, the env vars or command needed to clear it, and the guide section to read before making live changes.
 
-Use `docs/live-readiness.env.example` as a copyable environment skeleton. Copy it to `live-readiness.local.env` before filling values; that filename is ignored because filled copies contain provider keys, GitHub tokens, and internal API metadata.
+Use `docs/live-readiness.env.example` as a copyable environment skeleton. Copy it to `live-readiness.local.env` before filling values, then pass it to `doctor --live` with `--env-file live-readiness.local.env`; that filename is ignored because filled copies contain provider keys, GitHub tokens, and internal API metadata.
 
 ## Naming Gate
 

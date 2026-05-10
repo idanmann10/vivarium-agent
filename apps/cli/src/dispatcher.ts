@@ -1,5 +1,6 @@
 import type { Capability, CostClass, CredentialKind } from "../../../packages/core/src/index.js";
 import type { HttpMethod } from "../../../packages/tools/src/external/index.js";
+import { readFileSync } from "node:fs";
 import { addCredentialCommand, credentialSmokeCommand, listCredentialsCommand } from "./commands/credentials.js";
 import { daemonSmokeCommand } from "./commands/daemon.js";
 import { doctorCommand, type DoctorCommandRunner } from "./commands/doctor.js";
@@ -96,6 +97,52 @@ function integerFlag(flags: FlagMap, name: string): number | undefined {
 
 function booleanFlag(flags: FlagMap, name: string): boolean {
   return flags.has(name);
+}
+
+function stripEnvQuotes(value: string): string {
+  if (
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
+  ) {
+    return value.slice(1, -1);
+  }
+
+  return value;
+}
+
+function interpolateEnvValue(value: string, env: Readonly<Record<string, string | undefined>>): string {
+  return value.replace(/\$(?:{([A-Za-z_][A-Za-z0-9_]*)}|([A-Za-z_][A-Za-z0-9_]*))/g, (_match, braced: string | undefined, bare: string | undefined) => {
+    const name = braced ?? bare;
+    return name === undefined ? "" : env[name] ?? "";
+  });
+}
+
+function readEnvFile(path: string, baseEnv: Readonly<Record<string, string | undefined>>): Readonly<Record<string, string | undefined>> {
+  const env: Record<string, string | undefined> = { ...baseEnv };
+  const body = readFileSync(path, "utf8");
+
+  for (const line of body.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (trimmed.length === 0 || trimmed.startsWith("#")) {
+      continue;
+    }
+
+    const assignment = trimmed.startsWith("export ") ? trimmed.slice("export ".length).trim() : trimmed;
+    const separator = assignment.indexOf("=");
+    if (separator < 1) {
+      usage(`Invalid env file line in ${path}: ${line}`);
+    }
+
+    const name = assignment.slice(0, separator).trim();
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
+      usage(`Invalid env var name in ${path}: ${name}`);
+    }
+
+    const value = stripEnvQuotes(assignment.slice(separator + 1).trim());
+    env[name] = interpolateEnvValue(value, env);
+  }
+
+  return env;
 }
 
 function output(command: CliCommand, result: unknown): CliDispatchResult {
@@ -436,6 +483,8 @@ export async function dispatchCliCommand(argv: readonly string[], options: CliDi
     case "doctor": {
       const agentRoot = value(flags, "agent-root");
       const worldRoot = value(flags, "world-root");
+      const envFile = value(flags, "env-file");
+      const env = envFile === undefined ? options.env : readEnvFile(envFile, options.env ?? process.env);
       return output(
         command,
         doctorCommand({
@@ -443,7 +492,7 @@ export async function dispatchCliCommand(argv: readonly string[], options: CliDi
           ...(agentRoot === undefined ? {} : { agentRoot }),
           ...(worldRoot === undefined ? {} : { worldRoot }),
           ...(options.doctorRunner === undefined ? {} : { runner: options.doctorRunner }),
-          ...(options.env === undefined ? {} : { env: options.env }),
+          ...(env === undefined ? {} : { env }),
         }),
       );
     }
