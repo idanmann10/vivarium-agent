@@ -121,6 +121,9 @@ describe("SQLiteStateRepository", () => {
           updatedAt: "2026-05-09T00:00:02.000Z",
         },
       ]);
+      expect(state.deleteSemanticFact("fact-sqlite")).toBe(true);
+      expect(state.listSemanticFacts("coding")).toEqual([]);
+      expect(state.deleteSemanticFact("fact-sqlite")).toBe(false);
       expect(state.listAntiPatternCandidates("coding")[0]?.name).toBe("Avoid SQLite retry loops");
       expect(state.listTraceCandidates("coding")[0]?.steps[0]?.annotation).toContain("reopen");
       expect(state.getIdentity()?.summary).toBe("SQLite-backed local agent.");

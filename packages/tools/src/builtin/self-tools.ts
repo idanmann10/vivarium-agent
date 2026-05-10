@@ -20,7 +20,7 @@ export interface SelfTools {
     write(request: MemoryWriteRequest): { readonly id: string };
     recall(query: string, limit?: number): readonly string[];
     list(domain?: string): readonly string[];
-    forget(id: string): false;
+    forget(id: string): boolean;
     summarize(): string;
   };
   readonly skills: {
@@ -104,8 +104,8 @@ export function createSelfTools({ state, world }: SelfToolsDependencies): SelfTo
       list(domain) {
         return state.listSemanticFacts(domain).map((fact) => fact.fact);
       },
-      forget() {
-        return false;
+      forget(id) {
+        return state.deleteSemanticFact(id);
       },
       summarize() {
         return state.getIdentity()?.summary ?? "No identity summary recorded yet.";

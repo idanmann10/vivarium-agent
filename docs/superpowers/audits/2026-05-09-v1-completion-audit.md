@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation over the shared state repository, aggregate compounding benchmark eval, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, SQLite-backed self-tools, read-only world pull/search paths, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, computer-use click/type confirmation safety, concrete world maintenance workflows, independent validator machine-fingerprint trust gates, and coding starter-pack depth, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation over the shared state repository, aggregate compounding benchmark eval, state memory modules for all five roadmap memory systems, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, SQLite-backed self-tools, read-only world pull/search paths, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, computer-use click/type confirmation safety, concrete world maintenance workflows, independent validator machine-fingerprint trust gates, and coding starter-pack depth, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -25,7 +25,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 0 repo skeleton | `the-agent` has 2 apps + 7 packages; `the-world` has required top-level files and workflows | Mostly complete locally |
 | Phase 0 world seed content | World validator reports 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, 1 contributor; coding domain has 20 skills and 3 traces | Complete locally |
 | Phase 0 GitHub Discussion open | `the-world/proposals/0001-phase-0-bootstrap-rfc.md` and `.github/DISCUSSION_TEMPLATE/rfc.yml` exist; no live GitHub Discussion can be verified without a remote | Incomplete externally |
-| Phase 1 state schema/migrations/all memory implementations | `packages/state/src/` includes memory modules, `SQLiteStateRepository`, and versioned migration runner | Partially complete |
+| Phase 1 state schema/migrations/all memory implementations | `packages/state/src/` includes working, episodic, semantic, procedural, and identity memory modules; `StateRepository` and `SQLiteStateRepository` cover local state, semantic deletion, and versioned migrations | Complete locally; production SQLite stack decision remains |
 | Phase 1 semantic facts storage | `SemanticFactRecord` exists in state repositories; `0002_semantic_facts.sql` creates the table; in-memory and SQLite tests verify upsert/list/persistence | Complete locally |
 | Phase 1 providers | OpenAI, Anthropic, OpenAI-compatible adapters and router exist with mocked HTTP tests | Complete locally; live credentials unverified |
 | Phase 1 builtin self-tools | `createSelfTools` covers memory, skills, anti-pattern candidates, trace candidates, runs, episodes, world search, curriculum, and confidence against the shared state repository shape, including SQLite | Complete locally |
@@ -61,7 +61,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 ## Fresh Evidence Used
 
 - `sed -n '1882,2085p' goal.md`: phase, v1 done, and out-of-scope criteria.
-- `git -C the-agent status --short`: clean after the Dream state repository, compounding eval, and audit update commits; prior safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, CLI dispatcher, SQLite self-tools, publishable run queue, tool-output warning, credential-argument safety, persistent daily rate-limit, computer-use confirmation, and world pull read-path changes are tracked in follow-up commits.
+- `git -C the-agent status --short`: clean after the Dream state repository, compounding eval, state memory implementation, and audit update commits; prior safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, CLI dispatcher, SQLite self-tools, publishable run queue, tool-output warning, credential-argument safety, persistent daily rate-limit, computer-use confirmation, and world pull read-path changes are tracked in follow-up commits.
 - `git -C the-world status --short`: clean after concrete maintenance workflow and coding starter-pack depth commits.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
@@ -77,20 +77,21 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun test packages/runtime/src/orchestrator.test.ts packages/tools/src/builtin/self-tools.test.ts`: 8 tests passed, including anonymized publishable run queueing.
 - `bun test packages/tools/src/dispatcher.test.ts packages/tools/src/safety/pipeline.test.ts`: 9 tests passed, including tool-output prompt-injection warnings, per-run rate-limit blocking, and credential-argument blocking.
 - `bun test apps/cli/src/commands/init.test.ts packages/tools/src/dispatcher.test.ts packages/state/src/repository.test.ts packages/state/src/sqlite-repository.test.ts packages/state/src/storage/migrations.test.ts`: 17 tests passed, including persistent daily tool usage counts, migration `0004_tool_usage`, and dispatcher per-day rate-limit blocking.
+- `bun test packages/state/src/repository.test.ts packages/state/src/sqlite-repository.test.ts packages/state/src/memory/index.test.ts packages/tools/src/builtin/self-tools.test.ts`: 11 tests passed, including all five state memory modules, semantic deletion, and self-tool `memory.forget`.
 - `bun test packages/tools/src/external/index.test.ts packages/tools/src/dispatcher.test.ts packages/tools/src/safety/pipeline.test.ts`: 18 tests passed, including computer-use adapter routing and click/type confirmation safety.
 - `bun test packages/world/src/pull.test.ts apps/cli/src/commands/world.test.ts apps/cli/src/dispatcher.test.ts`: 10 tests passed, including injectable git clone/update, non-git destination rejection, `world pull` command helper, and CLI routing against a local git remote.
 - `the-world bun run lint`: world validator reports 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, 1 contributor.
 - `the-world bun test scripts`: 10 tests passed, including independent validator machine-fingerprint counting, concrete workflow command checks, and coding starter-pack depth.
 - `the-world bun run typecheck`: TypeScript passed.
 - `the-world bun run build`: 8 required files present.
-- `bun run lint`: scanned 170 TypeScript files.
+- `bun run lint`: scanned 171 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 100 tests passed, 0 failed.
+- `bun run test`: 101 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value remaining gaps after the compounding eval slice are live external verification and deployment decisions:
+The highest-value remaining gaps after the state memory implementation slice are live external verification and deployment decisions:
 
 1. Verify live provider credentials and live model calls once credential names and values are available.
 2. Verify live GitHub remotes, Discussions, PR creation, and auto-merge settings once repository targets and credentials are available.

@@ -1,1 +1,11 @@
 export const memorySystems = ["working", "episodic", "semantic", "procedural", "identity"] as const;
+export { createEpisodicMemory } from "./episodic.js";
+export type { EpisodicMemory, EpisodicMemoryConfig } from "./episodic.js";
+export { createIdentityMemory } from "./identity.js";
+export type { IdentityMemory, IdentityMemoryConfig } from "./identity.js";
+export { createProceduralMemory } from "./procedural.js";
+export type { ProceduralMemory, ProceduralMemoryConfig } from "./procedural.js";
+export { createSemanticMemory } from "./semantic.js";
+export type { SemanticMemory, SemanticMemoryConfig } from "./semantic.js";
+export { applyWorkingMemoryBudget } from "./working.js";
+export type { WorkingMemoryBudget } from "./working.js";

@@ -89,6 +89,7 @@ export interface StateRepository {
   listLocalSkills(): readonly LocalSkillRecord[];
   upsertSemanticFact(fact: SemanticFactRecord): void;
   listSemanticFacts(domain?: string): readonly SemanticFactRecord[];
+  deleteSemanticFact(id: string): boolean;
   upsertAntiPatternCandidate(candidate: AntiPatternCandidateRecord): void;
   listAntiPatternCandidates(domain?: string): readonly AntiPatternCandidateRecord[];
   upsertTraceCandidate(candidate: TraceCandidateRecord): void;
@@ -214,6 +215,10 @@ export class InMemoryStateRepository implements StateRepository {
     return [...this.#semanticFacts.values()]
       .filter((fact) => domain === undefined || fact.domain === domain)
       .sort((left, right) => left.id.localeCompare(right.id));
+  }
+
+  deleteSemanticFact(id: string): boolean {
+    return this.#semanticFacts.delete(id);
   }
 
   upsertAntiPatternCandidate(candidate: AntiPatternCandidateRecord): void {

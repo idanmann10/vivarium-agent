@@ -179,6 +179,16 @@ export class SQLiteStateRepository implements StateRepository {
     return rows.map((row) => JSON.parse(row.json) as SemanticFactRecord);
   }
 
+  deleteSemanticFact(id: string): boolean {
+    const existing = this.#db.query("SELECT json FROM semantic_facts WHERE id = ?").get(id) as JsonRow | null;
+    if (existing === null) {
+      return false;
+    }
+
+    this.#db.query("DELETE FROM semantic_facts WHERE id = ?").run(id);
+    return true;
+  }
+
   upsertAntiPatternCandidate(candidate: AntiPatternCandidateRecord): void {
     this.#db
       .query("INSERT OR REPLACE INTO dream_candidates (id, kind, domain, json) VALUES (?, 'anti-pattern', ?, ?)")

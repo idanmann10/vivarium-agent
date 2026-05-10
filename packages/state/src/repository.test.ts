@@ -207,5 +207,8 @@ describe("InMemoryStateRepository", () => {
       },
     ]);
     expect(state.listSemanticFacts()).toHaveLength(2);
+    expect(state.deleteSemanticFact("fact-api-rate-limit")).toBe(true);
+    expect(state.listSemanticFacts("coding")).toEqual([]);
+    expect(state.deleteSemanticFact("fact-api-rate-limit")).toBe(false);
   });
 });

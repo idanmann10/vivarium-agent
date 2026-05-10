@@ -89,13 +89,15 @@ describe("self-tools", () => {
     });
 
     const fact = tools.memory.write({ domain: "coding", subject: "Self tools", content: "SQLite tools persist." });
+    expect(tools.memory.forget(fact.id)).toBe(true);
+    const keptFact = tools.memory.write({ domain: "coding", subject: "Self tools", content: "SQLite tools remain." });
     tools.skills.use(skill, true);
     tools.antiPatterns.flag(skill, "The skill skipped evidence.", "coding");
     tools.traces.author(run, ["Started with persisted state."], "coding");
     state.close();
 
     const reopened = new SQLiteStateRepository(statePath);
-    expect(reopened.listSemanticFacts("coding").map((item) => item.id)).toEqual([fact.id]);
+    expect(reopened.listSemanticFacts("coding").map((item) => item.id)).toEqual([keptFact.id]);
     expect(reopened.listLocalSkills()[0]?.uses).toBe(1);
     expect(reopened.listLocalSkills()[0]?.helped).toBe(1);
     expect(reopened.listAntiPatternCandidates("coding")[0]?.evidenceRunIds).toEqual([String(run)]);
