@@ -365,6 +365,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const publicContributionPullUses = agentEvidenceRecords(publicContribution?.externalPullUses, context);
   const publicContributionPullUseAgents = new Set(publicContributionPullUses.map((pullUse) => pullUse.agent));
   const publicContributionPullUseEvidence = new Set(publicContributionPullUses.map((pullUse) => pullUse.evidence));
+  const dreamInternalSkillEvidence = evidenceReferenceIdentity(dreamArtifacts?.internalSkill, context);
+  const dreamPublicSkillEvidence = evidenceReferenceIdentity(dreamArtifacts?.publicSkill, context);
   const publishedArtifacts = asRecord(manifest.publishedArtifacts);
   const publishedTracePlanReadEvidence = evidenceReferenceIdentity(publishedArtifacts?.tracePlanRead, context);
   const publishedRunPlanReadEvidence = evidenceReferenceIdentity(publishedArtifacts?.runPlanRead, context);
@@ -439,10 +441,11 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
     v1Check(
       "dreamArtifacts",
       distinctEvidenceReferenceCount(dreamArtifacts?.skillCandidates, context) >= 2 &&
-        evidenceReference(dreamArtifacts?.internalSkill, context) &&
+        dreamInternalSkillEvidence !== undefined &&
         evidenceReference(dreamArtifacts?.internalSkillPrivateFork, context) &&
         evidenceReference(dreamArtifacts?.internalSkillCanonicalAbsence, context) &&
-        evidenceReference(dreamArtifacts?.publicSkill, context) &&
+        dreamPublicSkillEvidence !== undefined &&
+        dreamInternalSkillEvidence !== dreamPublicSkillEvidence &&
         evidenceReference(dreamArtifacts?.antiPattern, context) &&
         evidenceReference(dreamArtifacts?.trace, context) &&
         evidenceReference(dreamArtifacts?.traceSourceRun, context) &&
@@ -901,7 +904,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record nightly Dream evidence for two distinct skill candidates, internal and public skills, proof the internal skill was pushed to the private fork only, one anti-pattern, and one trace auto-extracted from an instructive run with annotations.",
+          "Record nightly Dream evidence for two distinct skill candidates, distinct internal and public skills, proof the internal skill was pushed to the private fork only, one anti-pattern, and one trace auto-extracted from an instructive run with annotations.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.publicContribution":

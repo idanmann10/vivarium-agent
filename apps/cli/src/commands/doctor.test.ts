@@ -442,6 +442,7 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.dreamArtifacts:missing")).toContain("internal and public skills");
     expect(actions.get("v1.dreamArtifacts:missing")).toContain("private fork only");
     expect(actions.get("v1.dreamArtifacts:missing")).toContain("distinct");
+    expect(actions.get("v1.dreamArtifacts:missing")).toContain("distinct internal and public");
     expect(actions.get("v1.dreamArtifacts:missing")).toContain("instructive run");
     expect(actions.get("v1.dreamArtifacts:missing")).toContain("annotations");
     expect(actions.get("v1.publicContribution:missing")).toContain("math gate");
@@ -1081,6 +1082,56 @@ describe("doctorCommand", () => {
           skillCandidates: ["docs/live/skill-candidate-a.md", "docs/live/skill-candidate-b.md"],
           internalSkill: "proposals/skills/coding/internal/SKILL.md",
           publicSkill: "proposals/skills/coding/public/SKILL.md",
+          antiPattern: "proposals/anti-patterns/coding/failure/ANTI-PATTERN.md",
+          trace: "proposals/traces/coding/workflow/TRACE.md",
+          traceSourceRun: "docs/live/dream-trace-source-run.md",
+          traceAnnotations: "docs/live/dream-trace-annotations.md",
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.dreamArtifacts:missing");
+  });
+
+  test("requires v1 dream internal and public skill evidence to be distinct", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-dream-skill-distinct-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    const localEvidencePaths = [
+      "docs/live/skill-candidate-a.md",
+      "docs/live/skill-candidate-b.md",
+      "proposals/skills/coding/shared/SKILL.md",
+      "docs/live/internal-skill-private-fork.md",
+      "docs/live/internal-skill-canonical-absence.md",
+      "proposals/anti-patterns/coding/failure/ANTI-PATTERN.md",
+      "proposals/traces/coding/workflow/TRACE.md",
+      "docs/live/dream-trace-source-run.md",
+      "docs/live/dream-trace-annotations.md",
+    ];
+    for (const path of localEvidencePaths) {
+      const absolutePath = join(root, path);
+      mkdirSync(dirname(absolutePath), { recursive: true });
+      writeFileSync(absolutePath, "dream evidence\n", "utf8");
+    }
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        dreamArtifacts: {
+          skillCandidates: ["docs/live/skill-candidate-a.md", "docs/live/skill-candidate-b.md"],
+          internalSkill: "proposals/skills/coding/shared/SKILL.md",
+          internalSkillPrivateFork: "docs/live/internal-skill-private-fork.md",
+          internalSkillCanonicalAbsence: "docs/live/internal-skill-canonical-absence.md",
+          publicSkill: "proposals/skills/coding/shared/SKILL.md",
           antiPattern: "proposals/anti-patterns/coding/failure/ANTI-PATTERN.md",
           trace: "proposals/traces/coding/workflow/TRACE.md",
           traceSourceRun: "docs/live/dream-trace-source-run.md",
