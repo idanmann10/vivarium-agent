@@ -68,13 +68,13 @@ Build the daemon, mount `../the-world` read-only at `/world`, set daemon env var
 
 Document `docker compose up --build vivarium-daemon` and `/status` verification.
 
-- [ ] **Step 4: Verify Compose config**
+- [x] **Step 4: Verify Compose config**
 
 Run: `docker compose config`
 
 Expected: command exits 0.
 
-Result in this workspace: BLOCKED. `docker compose config` fails with `docker: unknown command: docker compose`; `docker-compose config` is not installed. The YAML was parsed with Ruby and contains the expected service and restart policy, but Compose CLI execution remains unverified.
+Result in this workspace: PASS after installing Homebrew `docker-compose` 5.1.3 and adding `/opt/homebrew/lib/docker/cli-plugins` to Docker's `cliPluginsExtraDirs`. `docker compose config` renders the `vivarium-daemon` service, `docker compose up -d --build` builds and starts it, `docker compose ps` reports the service healthy, and `daemon smoke --status-url http://127.0.0.1:8787/status` returns `ok: true` when run outside the sandbox.
 
 ### Task 4: Verify, Audit, and Commit
 

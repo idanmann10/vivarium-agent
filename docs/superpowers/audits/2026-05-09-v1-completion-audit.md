@@ -36,12 +36,12 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 1 all 8 primitives implemented | Plan, Predict, Execute, Monitor, Recover, Validate, Reflect, and Dream have metadata; lifecycle primitives have modules and tests; orchestrator delegates to lifecycle modules | Complete locally |
 | Phase 1 attention budget enforcement | `applyAttentionLimits` caps skills, traces, tools, and recent episodes, enforces `maxWorkingTokens`, and returns budget metadata; orchestrator uses attention-limited world context before Plan | Complete locally |
 | Phase 1 read-only world paths | Local reader, retrieval, multi-world search, proposed anti-pattern/trace/run search, published-run search, injectable git clone/update pull tests, and a pull-then-search transmission smoke helper exist; CLI routes `world pull` and `world transmission-smoke` against local git remotes | Complete locally |
-| Phase 1 daemon | Daemon service, HTTP lifecycle transport, MCP manifest, daemon-owned Dream scheduler loop, executable daemon main, Dockerfile, and Compose supervisor artifacts exist with tests | Complete locally; Compose CLI execution unverified because Docker Compose is unavailable in this workspace |
+| Phase 1 daemon | Daemon service, HTTP lifecycle transport, MCP manifest, daemon-owned Dream scheduler loop, executable daemon main, Dockerfile, and Compose supervisor artifacts exist with tests; Docker Compose 5.1.3 builds and starts a healthy daemon container locally | Complete locally |
 | Phase 1 CLI | `dispatchCliCommand` routes `init`, `run`, `credentials add/list`, `skills list`, `world search`, `world pull`, `world transmission-smoke`, `providers smoke`, `github smoke`, `github discussion`, `github pull-request`, `github workflow-runs`, `daemon smoke`, `status`, and `doctor`; init runs migrations, installs starter skills, discovers starter traces/curriculum, returns provider/credential prompts, run can use the initialized SQLite state file, `doctor --live` reports remote/env/GitHub auth/Docker Compose readiness blockers, `providers smoke` can exercise a configured provider adapter, `github smoke` can exercise read access to a configured GitHub world repo, `github discussion` can open the guarded Phase 0 RFC Discussion, `github pull-request` can open a guarded contribution PR, `github workflow-runs` can inspect Actions status, `world transmission-smoke` can verify a second local install pulls and discovers an accepted artifact, `daemon smoke` can exercise the daemon status endpoint, and `docs/guides/live-readiness.md` documents the required live handoff | Complete locally |
 | Phase 1 e2e run/recover | `tests/e2e-run.test.ts` and `tests/e2e-recover.test.ts` pass in current test suite | Complete locally |
 | Phase 1 done scenario | A developer can run a synthetic local goal; runtime tests verify anti-patterns are loaded into Plan before execution; e2e tests verify local `init` then `run` against one SQLite state file; real provider config and credential use are not verified | Incomplete |
 | Phase 2 Dream primitive | Deterministic `runDream` exists with promotion/pruning/habituation/identity/confidence behavior, generated anti-pattern/trace candidate IDs, and a SQLite-backed StateRepository regression test | Complete locally |
-| Phase 2 scheduler | `shouldRunDream` helper and `createDreamScheduler` start/stop interval loop exist with deterministic tests; daemon Compose supervisor artifacts provide local restart policy | Complete locally; Compose execution unverified |
+| Phase 2 scheduler | `shouldRunDream` helper and `createDreamScheduler` start/stop interval loop exist with deterministic tests; daemon Compose supervisor artifacts provide local restart policy and have been executed locally | Complete locally |
 | Phase 2 candidate pipelines | Skill candidate handling exists; Dream now generates anti-pattern candidates from failed/low-score runs and annotated trace candidates from successful high-score runs, with in-memory and SQLite persistence | Complete locally |
 | Phase 2 confidence storage | In-memory and SQLite confidence buckets exist | Complete locally |
 | Phase 2 compounding eval | `packages/eval/src/compounding.ts` scores aggregate synthetic before/after benchmark cases with per-case deltas; `tests/e2e-dream.test.ts` feeds Dream promotion output into the aggregate evaluator | Complete locally |
@@ -67,11 +67,14 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `git -C the-agent remote -v` and `git -C the-world remote -v`: no remotes configured.
 - `env | sort | rg '^(ANTHROPIC|OPENAI|OPENROUTER|GITHUB|GH_|VIVARIUM|THE_AGENT|INTERNAL|OAI|MODEL)'`: only `GH_PAGER=cat` is present; no provider or GitHub token env vars are configured.
 - `gh auth status`: all configured GitHub accounts report invalid tokens.
-- `docker --version`: Docker is installed; `docker compose` and `docker-compose` are unavailable.
-- `bun apps/cli/src/index.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: returns `ok: false` with missing remotes, missing provider/GitHub token env, invalid GitHub auth, installed Docker, and missing Compose.
+- `docker --version`: Docker 29.4.1 is installed.
+- `docker compose version`: Docker Compose 5.1.3 is installed through Homebrew's Docker CLI plugin path.
+- `docker-compose version`: Docker Compose 5.1.3 standalone command is installed.
+- `bun apps/cli/src/index.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: returns `ok: false` with missing remotes, missing provider/GitHub token env, invalid GitHub auth, installed Docker, and installed Compose.
 - `bun apps/cli/src/index.ts providers smoke --kind openai --api-key-env VIVARIUM_MISSING_PROVIDER_KEY --model gpt-test`: returns a missing-env result without attempting a provider call.
 - `bun apps/cli/src/index.ts github smoke --owner owner --repo world --token-env VIVARIUM_MISSING_GITHUB_TOKEN`: returns a missing-env result without attempting a GitHub API call.
 - `bun apps/cli/src/index.ts daemon smoke --status-url http://127.0.0.1:9/status`: returns `ok: false` because no daemon is listening at the test endpoint.
+- `bun apps/cli/src/index.ts daemon smoke --status-url http://127.0.0.1:8787/status`: returns `ok: true` with `daemonStatus: "running"` against the Compose daemon when run outside the sandbox.
 - `bun apps/cli/src/index.ts github discussion ...` without `--confirm-write`: returns a refusal before reading credentials or attempting a GitHub API call.
 - `bun apps/cli/src/index.ts github pull-request ...` without `--confirm-write`: returns a refusal before reading credentials or attempting a GitHub API call.
 - `bun apps/cli/src/index.ts github workflow-runs --owner owner --repo world --token-env VIVARIUM_MISSING_GITHUB_TOKEN --branch main --limit 2`: returns a missing-env result without attempting a GitHub API call.
@@ -95,8 +98,9 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun test packages/tools/src/anonymizer/pipeline.test.ts packages/providers/src/router.test.ts`: 5 tests passed, including provider anonymizer fallback.
 - `bun test apps/daemon/src/scheduler.test.ts`: 4 tests passed, including daemon Dream scheduler start/stop behavior.
 - `bun test apps/daemon/src/main.test.ts`: 3 tests passed, including daemon environment defaults, custom host/port/world-root parsing, and invalid port rejection.
-- `docker compose config`: blocked by missing Docker Compose subcommand; `docker-compose config`: blocked because `docker-compose` is not installed.
-- Ruby YAML parse of `docker-compose.yml`: passed and confirmed the `vivarium-daemon` service and `restart: unless-stopped` setting.
+- `docker compose config`: renders the local `vivarium-daemon` service with its healthcheck, read-only world mount, port mapping, and restart policy.
+- `docker compose up -d --build`: builds the daemon image after the Dockerfile installs native build prerequisites for `better-sqlite3`, starts the container, and `docker compose ps` reports it healthy.
+- `curl http://127.0.0.1:8787/status`: returns `{"status":"running","runs":0,"confidenceBuckets":0}` against the Compose daemon from the sandbox.
 - `bun test apps/cli/src/commands/doctor.test.ts`: 2 tests passed, including default offline doctor stability and injected live-readiness blocker reporting.
 - `bun test apps/cli/src/commands/providers.test.ts`: 2 tests passed, including missing-env behavior and OpenAI-compatible smoke completion through injected fetch.
 - `bun test apps/cli/src/commands/github.test.ts`: 8 tests passed, including missing-env behavior, GitHub repository metadata parsing, guarded Discussion/PR refusal, confirmed Discussion/PR creation, and workflow-run parsing through injected fetch.
@@ -115,18 +119,18 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `the-world bun test scripts`: 10 tests passed, including independent validator machine-fingerprint counting, concrete workflow command checks, and coding starter-pack depth.
 - `the-world bun run typecheck`: TypeScript passed.
 - `the-world bun run build`: 8 required files present.
-- `bun run lint`: scanned 184 TypeScript files.
+- `bun run lint`: scanned 185 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 146 tests passed, 0 failed.
+- `bun run test`: 147 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value remaining gaps after the recorded local demo, world transmission-smoke CLI, proposed anti-pattern/trace/run retrieval, and Node-side `better-sqlite3` verifier are live external verification and deployment execution:
+The highest-value remaining gaps after the recorded local demo, world transmission-smoke CLI, proposed anti-pattern/trace/run retrieval, Node-side `better-sqlite3` verifier, and local Compose daemon execution are live external verification:
 
 1. Verify live provider credentials and live model calls once credential names and values are available.
 2. Verify live GitHub remotes, Discussions, PR creation, and auto-merge settings once repository targets and credentials are available.
 3. Run a real cross-install/canonical-world contribution loop after remotes and credentials exist.
-4. Verify Docker Compose execution for the long-running daemon in an environment with Compose installed.
+4. Run a real end-to-end v1 contribution loop after remotes, credentials, and live providers exist.
 
-Live provider credentials, real GitHub remotes, real GitHub Discussions, live cross-install cultural transmission, and Compose execution still require user-provided decisions, tooling, or external access.
+Live provider credentials, real GitHub remotes, real GitHub Discussions, and live cross-install cultural transmission still require user-provided decisions, tooling, or external access.

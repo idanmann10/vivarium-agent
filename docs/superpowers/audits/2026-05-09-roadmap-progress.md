@@ -45,7 +45,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` compounding benchmark eval slice implemented after Dream state repository execution.
 - `the-agent` state memory implementations slice implemented after compounding benchmark eval.
 - `the-agent` CLI install-flow shared-state slice implemented after state memory modules.
-- `the-agent` local daemon Compose supervision artifacts implemented after CLI install-flow state; Compose CLI execution remains unverified because this workspace lacks `docker compose` and `docker-compose`.
+- `the-agent` local daemon Compose supervision artifacts implemented after CLI install-flow state; Docker Compose 5.1.3 is installed locally, `docker compose config` renders the service, and `docker compose up -d --build` starts a healthy daemon container.
 - `the-agent` Drizzle schema artifact slice implemented after credential kind coverage; `better-sqlite3` package installation is present, Bun runtime execution remains unsupported, and Node-side migration execution is verified by `bun run verify:sqlite-stack`.
 - `the-agent` live verification blocker evidence recorded in `9876160`.
 - `the-agent` CLI live-readiness doctor implemented after blocker evidence capture, exposing remote/env/GitHub auth/Docker Compose preflight checks through `doctor --live`.
@@ -74,9 +74,9 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 
 `the-agent`:
 
-- `bun run lint`: scanned 184 TypeScript files.
+- `bun run lint`: scanned 185 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 146 tests passed, 0 failed.
+- `bun run test`: 147 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 - `bun run verify:sqlite-stack`: Node and `better-sqlite3` ran migrations `0001_initial` through `0004_tool_usage`, created all runtime storage tables, and inserted/read `skill-smoke`.
 - `bun run record:local-e2e-demo`: generated `docs/demos/local-e2e.cast`.
@@ -94,13 +94,17 @@ Live/external checks:
 - `env | sort | rg '^(ANTHROPIC|OPENAI|OPENROUTER|GITHUB|GH_|VIVARIUM|THE_AGENT|INTERNAL|OAI|MODEL)'`: only `GH_PAGER=cat` is present; no provider or GitHub token env vars are configured.
 - `gh auth status`: configured GitHub accounts report invalid tokens.
 - `docker --version`: Docker 29.4.1 is installed.
-- `docker compose version`: unavailable because this Docker CLI has no `compose` subcommand.
-- `command -v docker-compose`: no standalone `docker-compose` executable found.
-- `bun apps/cli/src/index.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: returns `ok: false` with `agent.remote:missing`, `world.remote:missing`, `provider.env:missing`, `github.env:missing`, `github.auth:invalid`, `docker:installed`, and `docker.compose:missing`.
+- `docker compose version`: Docker Compose 5.1.3 is installed through Homebrew's Docker CLI plugin path.
+- `docker-compose version`: Docker Compose 5.1.3 standalone command is installed.
+- `docker compose config`: renders the local `vivarium-daemon` service with its healthcheck, read-only world mount, port mapping, and restart policy.
+- `docker compose up -d --build`: builds the daemon image after the Dockerfile installs native build prerequisites for `better-sqlite3`, starts the container, and `docker compose ps` reports it healthy.
+- `bun apps/cli/src/index.ts daemon smoke --status-url http://127.0.0.1:8787/status`: returns `ok: true` with `daemonStatus: "running"` when run outside the sandbox; `curl http://127.0.0.1:8787/status` returns the same status JSON inside the sandbox.
+- `bun apps/cli/src/index.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: returns `ok: false` with `agent.remote:missing`, `world.remote:missing`, `provider.env:missing`, `github.env:missing`, `github.auth:invalid`, `docker:installed`, and `docker.compose:installed`.
 - `docs/guides/live-readiness.md`: records the handoff path for clearing current external blockers and re-running v1 live verification.
 - `bun apps/cli/src/index.ts providers smoke --kind openai --api-key-env VIVARIUM_MISSING_PROVIDER_KEY --model gpt-test`: returns a missing-env result without attempting a provider call.
 - `bun apps/cli/src/index.ts github smoke --owner owner --repo world --token-env VIVARIUM_MISSING_GITHUB_TOKEN`: returns a missing-env result without attempting a GitHub API call.
 - `bun apps/cli/src/index.ts daemon smoke --status-url http://127.0.0.1:9/status`: returns `ok: false` because no daemon is listening at the test endpoint.
+- `bun apps/cli/src/index.ts daemon smoke --status-url http://127.0.0.1:8787/status`: returns `ok: true` against the Compose daemon when run outside the sandbox.
 - `bun apps/cli/src/index.ts github discussion ...` without `--confirm-write`: returns a refusal before reading credentials or attempting a GitHub API call.
 - `bun apps/cli/src/index.ts github pull-request ...` without `--confirm-write`: returns a refusal before reading credentials or attempting a GitHub API call.
 - `bun apps/cli/src/index.ts github workflow-runs --owner owner --repo world --token-env VIVARIUM_MISSING_GITHUB_TOKEN --branch main --limit 2`: returns a missing-env result without attempting a GitHub API call.
@@ -131,8 +135,8 @@ Live/external checks:
 - Versioned SQL migrations are implemented on top of `bun:sqlite`; Drizzle schema artifacts and package dependencies are present; Node-side `better-sqlite3` migration execution is verified, while Bun runtime loading of `better-sqlite3` remains unsupported.
 - GitHub PR/issue/Discussion client code, math-gated proposal PR helper, and local trust/held-review gate logic are implemented and tested; live PR creation, auto-merge execution, and remote repository settings require actual GitHub remotes and credentials.
 - End-to-end cultural transmission is verified locally, including a second-install pull-then-search smoke path, but not against a canonical GitHub world remote.
-- Daemon service, HTTP transport lifecycle, daemon-owned Dream scheduler loop, MCP tool manifest, and local Compose supervisor artifacts are implemented and tested locally where possible; Compose CLI execution remains blocked by missing local Docker Compose tooling.
-- The CLI now exposes live blocker checks through `doctor --live`, but resolving the reported blockers still requires remotes, credentials, and Compose-capable tooling.
+- Daemon service, HTTP transport lifecycle, daemon-owned Dream scheduler loop, MCP tool manifest, and local Compose supervisor artifacts are implemented and executed locally with Docker Compose.
+- The CLI now exposes live blocker checks through `doctor --live`, but resolving the reported blockers still requires remotes and credentials.
 
 ## Next Decision
 
@@ -142,4 +146,4 @@ To finish the production roadmap rather than the local executable slices, provid
 2. Whether to use real GitHub API writes in this workspace.
 3. Provider credentials/environment names to support live model calls.
 4. Whether to keep the current `bun:sqlite` runtime plus Node-verified `better-sqlite3`/Drizzle stack artifacts, or migrate the runtime itself away from Bun's SQLite path.
-5. Which deployment supervisor should own the long-running daemon process.
+5. Whether to keep the local Docker Compose supervisor as the v1 deployment supervisor.
