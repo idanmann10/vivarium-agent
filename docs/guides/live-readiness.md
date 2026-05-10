@@ -593,17 +593,19 @@ The live doctor checks the manifest for: coding starter pack depth with distinct
 After the external prerequisites are configured:
 
 1. Re-run `doctor --live` to confirm the setup blockers that remain.
-2. Save a provider profile with `providers configure`, then run `providers smoke --profile`.
-3. Run `run` with `--provider-profiles-path`, `--provider-profile`, and `--world-subscriptions-path` against a small real goal.
-4. Add and smoke one internal API credential with `credentials add` and `credentials smoke`.
-5. Run `github smoke` for the canonical world remote.
-6. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.
-7. Create a live world contribution PR from a generated artifact with `github pull-request --confirm-write`.
-8. Verify the world workflows and trust gates on GitHub with `github workflow-runs`.
-9. Save canonical and private fork subscriptions with `world subscribe`, then verify retrieval with `world search --subscriptions-path`.
-10. Pull the accepted contribution into a second local install with `world transmission-smoke`.
-11. Run the Compose daemon and verify `/status` with `daemon smoke`.
-12. Initialize `VIVARIUM_V1_EVIDENCE_PATH` with `live evidence-init`, then fill it with the real v1 loop evidence collected during the week-long and two-week follow-up windows.
-13. Re-run `doctor --live`; do not claim v1 live verification until all setup and `v1.*` checks report configured, ok, or installed.
+2. Run `live setup --env-file live-readiness.local.env` without `--confirm-write`; fill every missing, copied-template, or invalid value until the dry run reports the exact provider profile path, credential store path, profile names, and credential name it would create.
+3. Run `live setup --env-file live-readiness.local.env --confirm-write` to save the provider profile file and encrypted credential store.
+4. Run `providers smoke --profile` for the Anthropic, OpenRouter, and private OpenAI-compatible profiles.
+5. Run `credentials smoke` for the encrypted internal API credential.
+6. Run `run` with `--provider-profiles-path`, `--provider-profile`, and `--world-subscriptions-path` against a small real goal.
+7. Run `github smoke` for the canonical world remote.
+8. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.
+9. Create a live world contribution PR from a generated artifact with `github pull-request --confirm-write`.
+10. Verify the world workflows and trust gates on GitHub with `github workflow-runs`.
+11. Save canonical and private fork subscriptions with `world subscribe`, then verify retrieval with `world search --subscriptions-path`.
+12. Pull the accepted contribution into a second local install with `world transmission-smoke`.
+13. Run the Compose daemon and verify `/status` with `daemon smoke`.
+14. Initialize `VIVARIUM_V1_EVIDENCE_PATH` with `live evidence-init`, then fill it with the real v1 loop evidence collected during the week-long and two-week follow-up windows.
+15. Re-run `doctor --live`; do not claim v1 live verification until all setup and `v1.*` checks report configured, ok, or installed.
 
 Record the resulting command output in `docs/superpowers/audits/2026-05-10-v1-completion-audit-refresh.md`.
