@@ -24,6 +24,8 @@ Switch the migration test to better-sqlite3 and run it.
 
 Result: FAIL. Bun reports `'better-sqlite3' is not yet supported in Bun`.
 
+Follow-up: `scripts/verify-better-sqlite3.cjs` now runs the same runtime migration SQL through Node and `better-sqlite3`; the public command is `bun run verify:sqlite-stack`.
+
 - [x] **Step 3: Add Drizzle schema coverage test**
 
 Add a test that imports `stateDrizzleTableNames` and `stateDrizzleTables` and compares them to `storageTables`.

@@ -46,7 +46,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` state memory implementations slice implemented after compounding benchmark eval.
 - `the-agent` CLI install-flow shared-state slice implemented after state memory modules.
 - `the-agent` local daemon Compose supervision artifacts implemented after CLI install-flow state; Compose CLI execution remains unverified because this workspace lacks `docker compose` and `docker-compose`.
-- `the-agent` Drizzle schema artifact slice implemented after credential kind coverage; `better-sqlite3` package installation is present, but direct execution remains blocked by Bun's unsupported native module error.
+- `the-agent` Drizzle schema artifact slice implemented after credential kind coverage; `better-sqlite3` package installation is present, Bun runtime execution remains unsupported, and Node-side migration execution is verified by `bun run verify:sqlite-stack`.
 - `the-agent` live verification blocker evidence recorded in `9876160`.
 - `the-agent` CLI live-readiness doctor implemented after blocker evidence capture, exposing remote/env/GitHub auth/Docker Compose preflight checks through `doctor --live`.
 - `the-agent` live-readiness guide added after `doctor --live`, documenting the exact remotes, provider env, GitHub auth, Compose, and cross-install verification steps still required.
@@ -58,6 +58,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` GitHub workflow-runs CLI implemented after guarded PR creation, giving live workflow/trust-gate verification a concrete read-only `github workflow-runs` path.
 - `the-agent` world transmission-smoke CLI implemented after workflow-runs checks, giving cross-install verification a concrete pull-then-search path for a second local install.
 - `the-agent` math-gated world proposal PR helper implemented after transmission-smoke, wiring `shouldPushToWorld` evidence to `GitHubWorldClient.createPullRequest` with tests for pass/fail gates.
+- `the-agent` proposed anti-pattern retrieval and Node-side `better-sqlite3` migration verifier implemented after the gated proposal PR helper.
 - `the-world` Phase 0 committed at `81b28a2`.
 - `the-world` Phase 3 maintenance scripts committed at `866c121`.
 - `the-world` trust-gates slice committed at `719f0a1`.
@@ -70,10 +71,11 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 
 `the-agent`:
 
-- `bun run lint`: scanned 182 TypeScript files.
+- `bun run lint`: scanned 183 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 138 tests passed, 0 failed.
+- `bun run test`: 141 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
+- `bun run verify:sqlite-stack`: Node and `better-sqlite3` ran migrations `0001_initial` through `0004_tool_usage`, created all runtime storage tables, and inserted/read `skill-smoke`.
 
 `the-world`:
 
@@ -120,7 +122,7 @@ Live/external checks:
 ## Remaining Blockers For Full Roadmap Completion
 
 - Anthropic/OpenAI/OpenRouter-compatible adapters are implemented and tested with mocked fetch; live calls still require API keys and runtime configuration.
-- Versioned SQL migrations are implemented on top of `bun:sqlite`; Drizzle schema artifacts and package dependencies are present, but direct `better-sqlite3` execution is blocked under Bun by the runtime's unsupported native module error.
+- Versioned SQL migrations are implemented on top of `bun:sqlite`; Drizzle schema artifacts and package dependencies are present; Node-side `better-sqlite3` migration execution is verified, while Bun runtime loading of `better-sqlite3` remains unsupported.
 - GitHub PR/issue/Discussion client code, math-gated proposal PR helper, and local trust/held-review gate logic are implemented and tested; live PR creation, auto-merge execution, and remote repository settings require actual GitHub remotes and credentials.
 - End-to-end cultural transmission is verified locally, including a second-install pull-then-search smoke path, but not against a canonical GitHub world remote.
 - Daemon service, HTTP transport lifecycle, daemon-owned Dream scheduler loop, MCP tool manifest, and local Compose supervisor artifacts are implemented and tested locally where possible; Compose CLI execution remains blocked by missing local Docker Compose tooling.
@@ -133,5 +135,5 @@ To finish the production roadmap rather than the local executable slices, provid
 1. Final repo names and GitHub remote targets for agent/world.
 2. Whether to use real GitHub API writes in this workspace.
 3. Provider credentials/environment names to support live model calls.
-4. Whether to keep the current `bun:sqlite` plus versioned SQL migration base or migrate the repository to the roadmap's `better-sqlite3`/Drizzle stack.
+4. Whether to keep the current `bun:sqlite` runtime plus Node-verified `better-sqlite3`/Drizzle stack artifacts, or migrate the runtime itself away from Bun's SQLite path.
 5. Which deployment supervisor should own the long-running daemon process.
