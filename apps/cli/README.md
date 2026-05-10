@@ -12,6 +12,10 @@ Implemented command groups include:
 - `credentials add/list/smoke`
 - `providers configure/list/smoke`
 - `skills list`
+- `dream run`
+- `identity summary/stage/history`
+- `curriculum read/progress/advance`
+- `publish list/run/trace`
 - `world search/pull/subscribe/subscriptions/transmission-smoke`
 - `github smoke/discussion/pull-request/workflow-runs`
 - `daemon smoke`

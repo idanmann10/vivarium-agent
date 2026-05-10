@@ -1,11 +1,15 @@
-import type { Capability, CostClass, CredentialKind } from "../../../packages/core/src/index.js";
+import type { Capability, CostClass, CredentialKind, Visibility } from "../../../packages/core/src/index.js";
 import type { HttpMethod } from "../../../packages/tools/src/external/index.js";
 import { readFileSync } from "node:fs";
 import { addCredentialCommand, credentialSmokeCommand, listCredentialsCommand } from "./commands/credentials.js";
+import { curriculumAdvanceCommand, curriculumProgressCommand, curriculumReadCommand } from "./commands/curriculum.js";
 import { daemonSmokeCommand } from "./commands/daemon.js";
 import { doctorCommand, type DoctorCommandRunner } from "./commands/doctor.js";
+import { dreamCommand } from "./commands/dream.js";
 import { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand, githubWorkflowRunsCommand } from "./commands/github.js";
+import { identityHistoryCommand, identityStageCommand, identitySummaryCommand } from "./commands/identity.js";
 import { runInitCommand } from "./commands/init.js";
+import { publishListCommand, publishRunCommand, publishTraceCommand } from "./commands/publish.js";
 import {
   configureProviderProfileCommand,
   listProviderProfilesCommand,
@@ -355,6 +359,120 @@ export async function dispatchCliCommand(argv: readonly string[], options: CliDi
       }
 
       usage('Unknown world subcommand. Use "search", "subscribe", "subscriptions", "pull", or "transmission-smoke".');
+    case "dream": {
+      if (subcommand !== "run") {
+        usage('Unknown dream subcommand. Use "run".');
+      }
+      const domain = value(flags, "domain");
+      return output(
+        command,
+        dreamCommand({
+          statePath: required(flags, "state-path"),
+          ...(domain === undefined ? {} : { domain }),
+        }),
+      );
+    }
+    case "identity": {
+      if (subcommand === "summary") {
+        return output(command, identitySummaryCommand({ statePath: required(flags, "state-path") }));
+      }
+
+      if (subcommand === "stage") {
+        return output(
+          command,
+          identityStageCommand({
+            statePath: required(flags, "state-path"),
+            domain: required(flags, "domain"),
+          }),
+        );
+      }
+
+      if (subcommand === "history") {
+        const limit = integerFlag(flags, "limit");
+        return output(
+          command,
+          identityHistoryCommand({
+            statePath: required(flags, "state-path"),
+            ...(limit === undefined ? {} : { limit }),
+          }),
+        );
+      }
+
+      usage('Unknown identity subcommand. Use "summary", "stage", or "history".');
+    }
+    case "curriculum": {
+      if (subcommand === "read") {
+        return output(
+          command,
+          curriculumReadCommand({
+            worldRoot: required(flags, "world-root"),
+            domain: required(flags, "domain"),
+          }),
+        );
+      }
+
+      if (subcommand === "progress") {
+        return output(
+          command,
+          curriculumProgressCommand({
+            statePath: required(flags, "state-path"),
+            domain: required(flags, "domain"),
+          }),
+        );
+      }
+
+      if (subcommand === "advance") {
+        const stepIndex = integerFlag(flags, "step");
+        if (stepIndex === undefined) {
+          usage("Missing required --step");
+        }
+        return output(
+          command,
+          curriculumAdvanceCommand({
+            statePath: required(flags, "state-path"),
+            domain: required(flags, "domain"),
+            stepIndex,
+          }),
+        );
+      }
+
+      usage('Unknown curriculum subcommand. Use "read", "progress", or "advance".');
+    }
+    case "publish": {
+      if (subcommand === "list") {
+        return output(command, publishListCommand({ statePath: required(flags, "state-path") }));
+      }
+
+      if (subcommand === "run") {
+        return output(
+          command,
+          publishRunCommand({
+            statePath: required(flags, "state-path"),
+            worldRoot: required(flags, "world-root"),
+            worldSubscriptionsPath: required(flags, "world-subscriptions-path"),
+            runId: required(flags, "run-id"),
+            visibility: required(flags, "visibility") as Visibility,
+            contributor: required(flags, "contributor"),
+          }),
+        );
+      }
+
+      if (subcommand === "trace") {
+        return output(
+          command,
+          publishTraceCommand({
+            statePath: required(flags, "state-path"),
+            worldRoot: required(flags, "world-root"),
+            worldSubscriptionsPath: required(flags, "world-subscriptions-path"),
+            traceId: required(flags, "trace-id"),
+            visibility: required(flags, "visibility") as Visibility,
+            contributor: required(flags, "contributor"),
+          }),
+        );
+      }
+
+      usage('Unknown publish subcommand. Use "list", "run", or "trace".');
+    }
     case "providers": {
       if (subcommand === "configure") {
         const baseUrl = value(flags, "base-url");

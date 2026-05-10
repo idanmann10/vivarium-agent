@@ -201,6 +201,40 @@ describe("dispatchCliCommand", () => {
     expect(world.result).toMatchObject({ results: [{ title: "Red Green" }] });
   });
 
+  test("routes advertised dream, identity, curriculum, and publish commands", async () => {
+    const worldRoot = createWorldFixture();
+    const statePath = join(mkdtempSync(join(tmpdir(), "cli-dispatch-roadmap-commands-")), "state.db");
+
+    await dispatchCliCommand(["init", "--domain", "coding", "--world-root", worldRoot, "--state-path", statePath]);
+
+    await expect(dispatchCliCommand(["identity", "summary", "--state-path", statePath])).resolves.toMatchObject({
+      command: "identity",
+      result: { summary: "Newborn local agent initialized for coding." },
+    });
+    await expect(dispatchCliCommand(["identity", "stage", "--state-path", statePath, "--domain", "coding"])).resolves.toMatchObject({
+      command: "identity",
+      result: { domain: "coding", stage: "newborn" },
+    });
+    await expect(dispatchCliCommand(["curriculum", "read", "--world-root", worldRoot, "--domain", "coding"])).resolves.toMatchObject({
+      command: "curriculum",
+      result: { domain: "coding", body: "# Coding Curriculum\n" },
+    });
+    await expect(
+      dispatchCliCommand(["curriculum", "advance", "--state-path", statePath, "--domain", "coding", "--step", "2"]),
+    ).resolves.toMatchObject({
+      command: "curriculum",
+      result: { domain: "coding", progress: { currentStepIndex: 2, completedSteps: [0, 2] } },
+    });
+    await expect(dispatchCliCommand(["dream", "run", "--state-path", statePath, "--domain", "coding"])).resolves.toMatchObject({
+      command: "dream",
+      result: { identitySummary: "Dream consolidated 1 local skills across coding." },
+    });
+    await expect(dispatchCliCommand(["publish", "list", "--state-path", statePath])).resolves.toMatchObject({
+      command: "publish",
+      result: { publishables: [] },
+    });
+  });
+
   test("routes world pull with a local git remote", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-world-pull-"));
     const remote = join(root, "remote.git");

@@ -23,6 +23,8 @@ export { describeInitCommand, runInitCommand } from "./commands/init.js";
 export type { InitCommandOptions, InitCommandResult, StarterArtifact } from "./commands/init.js";
 export { runCommand } from "./commands/run.js";
 export type { RunCommandOptions, RunCommandResult, RunProviderKind } from "./commands/run.js";
+export { dreamCommand } from "./commands/dream.js";
+export type { DreamCommandOptions } from "./commands/dream.js";
 export { statusCommand } from "./commands/status.js";
 export { doctorCommand } from "./commands/doctor.js";
 export { addCredentialCommand, credentialSmokeCommand, listCredentialsCommand } from "./commands/credentials.js";
@@ -45,6 +47,31 @@ export type {
   ProviderSmokeCommandResult,
   ProviderSmokeKind,
 } from "./commands/providers.js";
+export { curriculumAdvanceCommand, curriculumProgressCommand, curriculumReadCommand } from "./commands/curriculum.js";
+export type {
+  CurriculumAdvanceCommandOptions,
+  CurriculumProgressCommandResult,
+  CurriculumReadCommandOptions,
+  CurriculumReadCommandResult,
+  CurriculumStateCommandOptions,
+} from "./commands/curriculum.js";
+export { identityHistoryCommand, identityStageCommand, identitySummaryCommand } from "./commands/identity.js";
+export type {
+  IdentityCommandOptions,
+  IdentityHistoryCommandOptions,
+  IdentityHistoryCommandResult,
+  IdentityHistoryItem,
+  IdentityStageCommandOptions,
+  IdentityStageCommandResult,
+  IdentitySummaryCommandResult,
+} from "./commands/identity.js";
+export { publishListCommand, publishRunCommand, publishTraceCommand } from "./commands/publish.js";
+export type {
+  PublishListCommandOptions,
+  PublishListCommandResult,
+  PublishRunCommandOptions,
+  PublishTraceCommandOptions,
+} from "./commands/publish.js";
 export { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand, githubWorkflowRunsCommand } from "./commands/github.js";
 export type {
   GitHubDiscussionCommandOptions,
