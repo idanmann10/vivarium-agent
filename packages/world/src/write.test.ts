@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { proposeAntiPattern, proposeSkill, proposeSkillPullRequest, proposeTrace } from "./push.js";
+import { proposeAntiPattern, proposeRun, proposeSkill, proposeSkillPullRequest, proposeTrace } from "./push.js";
 import { publishRun } from "./runs.js";
 import { publishTrace } from "./traces.js";
 
@@ -89,6 +89,32 @@ describe("local world writes", () => {
     );
     expect(readFileSync(join(root, "proposals", "traces", "coding", "trace-from-dream", "meta.yaml"), "utf8")).toContain(
       "evidence_run_id: run-instructive",
+    );
+  });
+
+  test("proposes a run artifact with redacted body and metadata", () => {
+    const root = mkdtempSync(join(tmpdir(), "world-write-run-proposal-"));
+
+    const path = proposeRun({
+      worldRoot: root,
+      runId: "run-publishable",
+      domain: "coding",
+      goal: "Debug a reusable deployment failure",
+      outcome: "Captured the health-check guardrail.",
+      contributor: "agent-a",
+      body: "Redacted run transcript.",
+      sourceRunId: "run-local",
+    });
+
+    expect(path).toBe(join(root, "proposals", "runs", "run-publishable", "RUN.md"));
+    expect(readFileSync(path, "utf8")).toContain("# Goal\n\nDebug a reusable deployment failure");
+    expect(readFileSync(path, "utf8")).toContain("# Outcome\n\nCaptured the health-check guardrail.");
+    expect(readFileSync(path, "utf8")).toContain("# Transcript\n\nRedacted run transcript.");
+    expect(readFileSync(join(root, "proposals", "runs", "run-publishable", "episodes.jsonl"), "utf8")).toContain(
+      '"kind":"run_proposal"',
+    );
+    expect(readFileSync(join(root, "proposals", "runs", "run-publishable", "meta.yaml"), "utf8")).toContain(
+      "source_run_id: run-local",
     );
   });
 

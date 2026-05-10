@@ -43,6 +43,17 @@ export interface ProposeTraceRequest {
   readonly evidenceRunId?: string;
 }
 
+export interface ProposeRunRequest {
+  readonly worldRoot: string;
+  readonly runId: string;
+  readonly domain: string;
+  readonly goal: string;
+  readonly outcome: string;
+  readonly contributor: string;
+  readonly body: string;
+  readonly sourceRunId?: string;
+}
+
 export interface SkillPushGateEvidence {
   readonly lowerBound: number;
   readonly uses: number;
@@ -117,6 +128,25 @@ export function proposeTrace(request: ProposeTraceRequest): string {
   writeFileSync(
     join(directory, "meta.yaml"),
     `domain: ${request.domain}\nvisibility: public\ncontributor: ${request.contributor}\n${request.evidenceRunId === undefined ? "" : `evidence_run_id: ${request.evidenceRunId}\n`}`,
+  );
+  return path;
+}
+
+export function proposeRun(request: ProposeRunRequest): string {
+  const directory = join(request.worldRoot, "proposals", "runs", request.runId);
+  mkdirSync(directory, { recursive: true });
+  const path = join(directory, "RUN.md");
+  writeFileSync(
+    path,
+    `# Goal\n\n${request.goal}\n\n# Outcome\n\n${request.outcome}\n\n# Transcript\n\n${request.body}\n\n# Provenance\n\nProposed locally by ${request.contributor}.\n`,
+  );
+  writeFileSync(
+    join(directory, "episodes.jsonl"),
+    `${JSON.stringify({ kind: "run_proposal", sourceRunId: request.sourceRunId ?? request.runId })}\n`,
+  );
+  writeFileSync(
+    join(directory, "meta.yaml"),
+    `id: ${request.runId}\ndomain: ${request.domain}\nvisibility: public\ncontributor: ${request.contributor}\n${request.sourceRunId === undefined ? "" : `source_run_id: ${request.sourceRunId}\n`}`,
   );
   return path;
 }

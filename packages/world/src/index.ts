@@ -14,9 +14,10 @@ export type {
 export { worldOperations } from "./operations.js";
 export { pullWorld } from "./pull.js";
 export type { GitCommand, GitCommandRunner, PullWorldRequest, PullWorldResult } from "./pull.js";
-export { proposeAntiPattern, proposeSkill, proposeSkillPullRequest, proposeTrace } from "./push.js";
+export { proposeAntiPattern, proposeRun, proposeSkill, proposeSkillPullRequest, proposeTrace } from "./push.js";
 export type {
   ProposeAntiPatternRequest,
+  ProposeRunRequest,
   ProposeSkillPullRequestRequest,
   ProposeSkillPullRequestResult,
   ProposeSkillRequest,

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { createLocalWorldReader } from "./local-reader.js";
-import { proposeAntiPattern, proposeTrace } from "./push.js";
+import { proposeAntiPattern, proposeRun, proposeTrace } from "./push.js";
 import { publishRun } from "./runs.js";
 
 describe("local world reader", () => {
@@ -102,6 +102,33 @@ describe("local world reader", () => {
         kind: "trace",
         id: "proposals/traces/coding/trace-from-dream/TRACE.md",
         title: "Trace From Dream",
+      }),
+    ]);
+  });
+
+  test("retrieves proposed runs by domain and query", () => {
+    const root = mkdtempSync(join(tmpdir(), "world-reader-run-proposal-"));
+    proposeRun({
+      worldRoot: root,
+      runId: "run-publishable",
+      domain: "coding",
+      goal: "Debug a reusable deployment failure",
+      outcome: "Captured the health-check guardrail.",
+      contributor: "agent-a",
+      body: "Redacted transcript with deployment health-check evidence.",
+      sourceRunId: "run-local",
+    });
+
+    const results = createLocalWorldReader({ root }).search({
+      domain: "coding",
+      query: "deployment health-check",
+    });
+
+    expect(results).toEqual([
+      expect.objectContaining({
+        kind: "run",
+        id: "proposals/runs/run-publishable/RUN.md",
+        title: "Debug a reusable deployment failure",
       }),
     ]);
   });

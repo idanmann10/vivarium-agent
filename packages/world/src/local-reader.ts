@@ -86,7 +86,7 @@ export function createLocalWorldReader({ root }: LocalWorldReaderOptions): Local
       const artifactFiles = [...walk(domainRoot), ...proposalRoots.flatMap((proposalRoot) => walk(proposalRoot))].filter(
         (path) => path.endsWith("SKILL.md") || path.endsWith("ANTI-PATTERN.md") || path.endsWith("TRACE.md"),
       );
-      const runFiles = walk(join(root, "runs")).filter((path) => {
+      const runFiles = [join(root, "runs"), join(root, "proposals", "runs")].flatMap((runRoot) => walk(runRoot)).filter((path) => {
         if (!path.endsWith("RUN.md")) {
           return false;
         }
