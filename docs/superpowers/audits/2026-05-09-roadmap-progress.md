@@ -39,6 +39,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` computer-use routing and confirmation safety slice implemented after persistent daily tool rate limits.
 - `the-agent` world pull read-path slice implemented after computer-use confirmation safety.
 - `the-agent` Dream state repository slice implemented after world pull read paths.
+- `the-agent` compounding benchmark eval slice implemented after Dream state repository execution.
 - `the-world` Phase 0 committed at `81b28a2`.
 - `the-world` Phase 3 maintenance scripts committed at `866c121`.
 - `the-world` trust-gates slice committed at `719f0a1`.
@@ -53,7 +54,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 
 - `bun run lint`: scanned 170 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 98 tests passed, 0 failed.
+- `bun run test`: 100 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 `the-world`:
@@ -74,7 +75,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 | Use GStack | URL cited in plan and seed lineage for role/command-shaped review patterns | Complete |
 | Phase 0 bootstrap | Two local repos, tooling, core types/math/kernel, world seed content, validators | Complete locally |
 | Phase 1 agent works alone | Offline deterministic runtime, state, SQLite persistence, semantic facts storage, versioned SQL migration runner, local provider, Anthropic/OpenAI/OpenAI-compatible HTTP adapters, encrypted credential store, typed tool dispatcher, web/HTTP/file/terminal/code/MCP/computer-use external adapters, SQLite-backed self-tools, HTTP/tool safety with output prompt-injection warnings, per-run and persistent per-day rate limits, credential-argument blocking, computer-use click/type confirmation, run-level harmful refusal and destructive confirmation behavior, world read/search/pull paths, concrete primitive modules, attention-limited world context selection with token-budget accounting, daemon service, HTTP transport lifecycle, daemon-owned Dream scheduler loop, MCP tool manifest, CLI init/run/credentials/skills/world search/pull/status/doctor dispatcher and helpers, e2e run/recover | Local slice partially complete |
-| Phase 2 Dream | Offline deterministic Dream, promotion/pruning/habits/identity/confidence/anonymizer/eval/e2e, StateRepository-backed Dream execution including SQLite, provider-backed anonymizer fallback, anti-pattern candidate generation, annotated trace candidate extraction, SQLite-backed candidate queue, and anonymized publishable run queueing from Reflect | Local slice complete |
+| Phase 2 Dream | Offline deterministic Dream, promotion/pruning/habits/identity/confidence/anonymizer/eval/e2e, StateRepository-backed Dream execution including SQLite, provider-backed anonymizer fallback, anti-pattern candidate generation, annotated trace candidate extraction, SQLite-backed candidate queue, aggregate compounding benchmark eval, and anonymized publishable run queueing from Reflect | Local slice complete |
 | Phase 3 world integration | Local proposal/publish, multi-world retrieval, GitHub PR/issue/Discussion client with mocked tests, world maintenance scripts, concrete archive/auto-merge workflows, trust gates, independent validator machine-fingerprint counting, held-review listing, cultural transmission e2e | Local slice complete |
 
 ## Remaining Blockers For Full Roadmap Completion

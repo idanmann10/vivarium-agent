@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { scoreCompoundingImprovement } from "../packages/eval/src/index.js";
+import { runCompoundingEvaluation } from "../packages/eval/src/index.js";
 import { agentId, skillId } from "../packages/core/src/index.js";
 import { runDream } from "../packages/runtime/src/index.js";
 import { InMemoryStateRepository } from "../packages/state/src/index.js";
@@ -39,16 +39,25 @@ describe("dream e2e", () => {
       body: anonymizeText("Contact idan@example.com with Bearer sk-token from /Users/idanmann/project"),
     });
 
-    const compounding = scoreCompoundingImprovement({
-      beforeProceduralHits: 1,
-      afterProceduralHits: state.listLocalSkills().filter((skill) => skill.status === "promoted").length,
-      beforeValidationScore: 0.6,
-      afterValidationScore: 0.8,
+    const compounding = runCompoundingEvaluation({
+      benchmarkName: "dream-compounding",
+      cases: [
+        {
+          id: "promote-local-skill",
+          domain: "coding",
+          before: { proceduralHits: 0, validationScore: 0.6 },
+          after: {
+            proceduralHits: state.listLocalSkills().filter((skill) => skill.status === "promoted").length,
+            validationScore: 0.8,
+          },
+        },
+      ],
     });
 
     expect(dream.promoted).toEqual(["coding.promote-me"]);
     expect(state.getIdentity()?.devStages.coding).toBe("journeyman");
     expect(state.listPublishableArtifacts()[0]?.body).toContain("[REDACTED_EMAIL]");
     expect(compounding.improved).toBe(true);
+    expect(compounding.cases[0]?.id).toBe("promote-local-skill");
   });
 });
