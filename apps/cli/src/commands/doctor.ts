@@ -32,6 +32,9 @@ const worldRepoNameEnv = "VIVARIUM_WORLD_REPO_NAME";
 const githubOwnerEnv = "VIVARIUM_GITHUB_OWNER";
 const githubRepositoryIdEnv = "VIVARIUM_GITHUB_REPOSITORY_ID";
 const githubDiscussionCategoryIdEnv = "VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID";
+const worldSubscriptionsPathEnv = "VIVARIUM_WORLD_SUBSCRIPTIONS_PATH";
+const canonicalWorldRefEnv = "VIVARIUM_CANONICAL_WORLD_REF";
+const privateWorldRefEnv = "VIVARIUM_PRIVATE_WORLD_REF";
 const anthropicApiKeyEnv = "ANTHROPIC_API_KEY";
 const openRouterApiKeyEnv = "OPENROUTER_API_KEY";
 const privateOaiCompatApiKeyEnv = "VIVARIUM_OAI_COMPAT_API_KEY";
@@ -144,6 +147,9 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     repoNameCheck(env, worldRepoNameEnv, "the-world", "world"),
     hasRemote(runner, agentRoot) ? "agent.remote:configured" : "agent.remote:missing",
     hasRemote(runner, worldRoot) ? "world.remote:configured" : "world.remote:missing",
+    requiredEnvCheck(env, worldSubscriptionsPathEnv, "world.subscriptionsPath"),
+    requiredEnvCheck(env, canonicalWorldRefEnv, "world.canonicalRef"),
+    requiredEnvCheck(env, privateWorldRefEnv, "world.privateForkRef"),
     hasProviderEnv(env) ? "provider.env:configured" : "provider.env:missing",
     requiredEnvCheck(env, anthropicApiKeyEnv, "provider.anthropic"),
     requiredEnvCheck(env, openRouterApiKeyEnv, "provider.openrouter"),

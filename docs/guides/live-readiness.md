@@ -1,7 +1,7 @@
 ---
 title: Live Readiness
 description: Clear the external blockers required before v1 live verification.
-when_to_read: When `doctor --live` reports missing final names, remotes, credentials, GitHub auth, or Docker Compose.
+when_to_read: When `doctor --live` reports missing final names, remotes, world subscriptions, credentials, GitHub auth, or Docker Compose.
 ---
 
 # Live Readiness
@@ -16,7 +16,7 @@ bun apps/cli/src/index.ts doctor --live \
   --world-root /Users/idanmann/Vivarium/the-world
 ```
 
-A live-ready workspace should report configured agent/world names, configured agent/world remotes, configured provider and GitHub token environment, valid GitHub auth, installed Docker, and installed Docker Compose.
+A live-ready workspace should report configured agent/world names, configured agent/world remotes, canonical/private world subscription metadata, configured provider and GitHub token environment, valid GitHub auth, installed Docker, and installed Docker Compose.
 
 ## Naming Gate
 
@@ -250,30 +250,36 @@ Use this to verify the validator, stats, trust-gate, and archive workflows that 
 After the canonical world and a private fork are available locally, save both subscriptions and verify that retrieval searches both while preserving source labels:
 
 ```bash
+export VIVARIUM_WORLD_SUBSCRIPTIONS_PATH=/tmp/vivarium-world-subscriptions.json
+export VIVARIUM_CANONICAL_WORLD_REF=<canonical-world-remote-url>
+export VIVARIUM_PRIVATE_WORLD_REF=<private-world-remote-url>
+```
+
+```bash
 bun apps/cli/src/index.ts world subscribe \
-  --subscriptions-path /tmp/vivarium-world-subscriptions.json \
+  --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" \
   --world-root /tmp/vivarium-world-canonical \
   --world-label canonical \
-  --world-ref <canonical-world-remote-url> \
+  --world-ref "$VIVARIUM_CANONICAL_WORLD_REF" \
   --priority 1
 
 bun apps/cli/src/index.ts world subscribe \
-  --subscriptions-path /tmp/vivarium-world-subscriptions.json \
+  --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" \
   --world-root /tmp/vivarium-world-private \
   --world-label private \
-  --world-ref <private-world-remote-url> \
+  --world-ref "$VIVARIUM_PRIVATE_WORLD_REF" \
   --priority 0 \
   --auto-push
 
 bun apps/cli/src/index.ts world subscriptions \
-  --subscriptions-path /tmp/vivarium-world-subscriptions.json
+  --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH"
 ```
 
 Search through the saved registry:
 
 ```bash
 bun apps/cli/src/index.ts world search \
-  --subscriptions-path /tmp/vivarium-world-subscriptions.json \
+  --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" \
   --domain coding \
   --query "<artifact title or distinctive phrase>" \
   --limit 3
@@ -286,7 +292,7 @@ bun apps/cli/src/index.ts run \
   --goal "<small real coding goal>" \
   --domain coding \
   --state-path /tmp/vivarium-live-state.db \
-  --world-subscriptions-path /tmp/vivarium-world-subscriptions.json \
+  --world-subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" \
   --provider-profiles-path /tmp/vivarium-provider-profiles.json \
   --provider-profile openrouter
 ```
@@ -312,7 +318,7 @@ After a contribution has landed in the canonical world remote, verify that a sep
 
 ```bash
 bun apps/cli/src/index.ts world transmission-smoke \
-  --remote <canonical-world-remote-url> \
+  --remote "$VIVARIUM_CANONICAL_WORLD_REF" \
   --destination /tmp/vivarium-world-second-install \
   --ref main \
   --domain coding \
