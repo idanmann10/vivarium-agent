@@ -303,6 +303,19 @@ function agentEvidenceRecord(value: unknown, context: V1EvidenceReferenceContext
   return agent === undefined || evidence === undefined ? undefined : { agent, evidence };
 }
 
+function orderedEvidenceSequence(value: unknown, expectedSteps: readonly string[], context: V1EvidenceReferenceContext): boolean {
+  const records = recordArray(value);
+  const evidence = records.flatMap((record, index) => {
+    if (textValue(record.step) !== expectedSteps[index]) {
+      return [];
+    }
+    const reference = evidenceReferenceIdentity(record.evidence, context);
+    return reference === undefined ? [] : [reference];
+  });
+
+  return records.length === expectedSteps.length && evidence.length === expectedSteps.length && new Set(evidence).size === expectedSteps.length;
+}
+
 function worldSubscriptionReference(value: unknown): string | undefined {
   const text = textValue(value);
   if (text === undefined) {
@@ -417,6 +430,13 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const canonicalWorldSubscription = worldSubscriptionReference(worldSubscriptions?.canonical);
   const privateForkWorldSubscription = worldSubscriptionReference(worldSubscriptions?.privateFork);
   const behaviorLoop = asRecord(manifest.behaviorLoop);
+  const destructiveEndpoint = asRecord(behaviorLoop?.destructiveEndpoint);
+  const destructiveEndpointRun = evidenceReferenceIdentity(destructiveEndpoint?.run, context);
+  const destructiveEndpointSequence = orderedEvidenceSequence(
+    destructiveEndpoint?.sequence,
+    ["hold", "escalation", "confirmation", "continuation"],
+    context,
+  );
   const dreamArtifacts = asRecord(manifest.dreamArtifacts);
   const publicContribution = asRecord(manifest.publicContribution);
   const publicContributionContributorAgent = textValue(publicContribution?.contributorAgent);
@@ -502,6 +522,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         evidenceReference(behaviorLoop?.destructiveEscalation, context) &&
         evidenceReference(behaviorLoop?.destructiveConfirmation, context) &&
         evidenceReference(behaviorLoop?.destructiveContinuation, context) &&
+        destructiveEndpointRun !== undefined &&
+        destructiveEndpointSequence &&
         evidenceReference(behaviorLoop?.refusal, context),
     ),
     v1Check(
@@ -973,7 +995,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record live behavior-loop evidence for anti-pattern use before unfamiliar territory, two distinct traces read that demonstrate similar workflows, Monitor tool-failure detection, Recover re-plan, destructive hold/escalation/confirmation/continuation, and refusal.",
+          "Record live behavior-loop evidence for anti-pattern use before unfamiliar territory, two distinct traces read that demonstrate similar workflows, Monitor tool-failure detection, Recover re-plan, one ordered destructive-endpoint run sequence that holds, escalates, receives confirmation, and continues, and refusal.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.dreamArtifacts":

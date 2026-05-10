@@ -260,6 +260,15 @@ function writeLiveReadyFiles(root: string): Readonly<{
         destructiveEscalation: "docs/live/destructive-escalation.md",
         destructiveConfirmation: "docs/live/destructive-confirmation.md",
         destructiveContinuation: "docs/live/destructive-continuation.md",
+        destructiveEndpoint: {
+          run: "runs/run-live-001/RUN.md",
+          sequence: [
+            { step: "hold", evidence: "docs/live/destructive-hold.md" },
+            { step: "escalation", evidence: "docs/live/destructive-escalation.md" },
+            { step: "confirmation", evidence: "docs/live/destructive-confirmation.md" },
+            { step: "continuation", evidence: "docs/live/destructive-continuation.md" },
+          ],
+        },
         refusal: "docs/live/refusal.md",
       },
       dreamArtifacts: {
@@ -476,6 +485,7 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.providerSmokes:missing")).toContain("distinct");
     expect(actions.get("v1.behaviorLoop:missing")).toContain("unfamiliar territory");
     expect(actions.get("v1.behaviorLoop:missing")).toContain("similar workflows");
+    expect(actions.get("v1.behaviorLoop:missing")).toContain("ordered destructive-endpoint run sequence");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("fourteen days");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("faster");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("similar goals");
@@ -1208,6 +1218,41 @@ describe("doctorCommand", () => {
       })}\n`,
       "utf8",
     );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.behaviorLoop:missing");
+  });
+
+  test("requires v1 destructive endpoint evidence to hold escalate confirm and continue in order", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-destructive-sequence-"));
+    const { evidencePath } = writeLiveReadyFiles(root);
+    const manifest = JSON.parse(readFileSync(evidencePath, "utf8")) as {
+      behaviorLoop: {
+        destructiveEndpoint?: {
+          run: string;
+          sequence: { step: string; evidence: string }[];
+        };
+      };
+    };
+    manifest.behaviorLoop.destructiveEndpoint = {
+      run: "runs/run-live-001/RUN.md",
+      sequence: [
+        { step: "hold", evidence: "docs/live/destructive-hold.md" },
+        { step: "confirmation", evidence: "docs/live/destructive-confirmation.md" },
+        { step: "escalation", evidence: "docs/live/destructive-escalation.md" },
+        { step: "continuation", evidence: "docs/live/destructive-continuation.md" },
+      ],
+    };
+    writeFileSync(evidencePath, `${JSON.stringify(manifest)}\n`, "utf8");
 
     const result = doctorCommand({
       mode: "live-readiness",
