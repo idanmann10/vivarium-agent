@@ -43,6 +43,12 @@ describe("lifecycle primitives", () => {
     const execution = await runExecutePrimitive({ goal: "write a primitive test", provider, tool: "local-provider.execute" });
     const monitor = runMonitorPrimitive({ observation: execution.observation, forceFailure: true });
     const recovery = await runRecoverPrimitive({ goal: "write a primitive test", provider, signal: monitor });
+    const escalation = await runRecoverPrimitive({
+      goal: "write a primitive test",
+      provider,
+      signal: monitor,
+      canRecover: false,
+    });
     const validation = await runValidatePrimitive({ output: execution.observation, provider });
     const reflection = runReflectPrimitive({ validationScore: validation.score, surprises: ["interesting mismatch"] });
 
@@ -51,6 +57,7 @@ describe("lifecycle primitives", () => {
     expect(String(execution.observation)).toContain("Observation:");
     expect(monitor.offTrackScore).toBeGreaterThan(0.6);
     expect(recovery.decision).toBe("replan");
+    expect(escalation.decision).toBe("escalate");
     expect(validation.passed).toBe(true);
     expect(reflection.reflection.publishable).toBe(true);
   });

@@ -5,6 +5,7 @@ export interface RecoverPrimitiveRequest {
   readonly goal: string;
   readonly provider: LocalProvider;
   readonly signal: MonitorPrimitivePayload;
+  readonly canRecover?: boolean;
 }
 
 export interface RecoverPrimitivePayload {
@@ -13,8 +14,16 @@ export interface RecoverPrimitivePayload {
 }
 
 export async function runRecoverPrimitive(request: RecoverPrimitiveRequest): Promise<RecoverPrimitivePayload> {
+  const reason = await request.provider.complete({ kind: "recover", input: request.goal });
+  if (request.canRecover === false) {
+    return {
+      decision: "escalate",
+      reason,
+    };
+  }
+
   return {
     decision: request.signal.offTrackScore > 0.6 ? "replan" : "narrow",
-    reason: await request.provider.complete({ kind: "recover", input: request.goal }),
+    reason,
   };
 }
