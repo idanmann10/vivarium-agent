@@ -58,4 +58,23 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("docker:installed");
     expect(result.checks).toContain("docker.compose:missing");
   });
+
+  test("reports placeholder repo names as live readiness blockers", () => {
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "the-agent",
+        VIVARIUM_WORLD_REPO_NAME: "the-world",
+        OPENROUTER_API_KEY: "configured",
+        GITHUB_TOKEN: "configured",
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("agent.name:placeholder");
+    expect(result.checks).toContain("world.name:placeholder");
+  });
 });

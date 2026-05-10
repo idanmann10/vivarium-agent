@@ -27,6 +27,8 @@ export interface DoctorCommandOptions {
 
 const providerEnvPrefixes = ["ANTHROPIC", "OPENAI", "OPENROUTER", "OAI"] as const;
 const githubEnvNames = ["GITHUB_TOKEN", "GH_TOKEN"] as const;
+const agentRepoNameEnv = "VIVARIUM_AGENT_REPO_NAME";
+const worldRepoNameEnv = "VIVARIUM_WORLD_REPO_NAME";
 
 function defaultRunner({ command, args, cwd }: DoctorCommandRun): DoctorCommandRunResult {
   try {
@@ -68,6 +70,15 @@ function hasGithubEnv(env: Readonly<Record<string, string | undefined>>): boolea
   });
 }
 
+function repoNameCheck(env: Readonly<Record<string, string | undefined>>, envName: string, placeholder: string, label: string): string {
+  const value = env[envName]?.trim();
+  if (value === undefined || value.length === 0) {
+    return `${label}.name:missing`;
+  }
+
+  return value === placeholder ? `${label}.name:placeholder` : `${label}.name:configured`;
+}
+
 function githubAuthCheck(runner: DoctorCommandRunner): string {
   const result = run(runner, "gh", ["auth", "status"]);
   if (result.exitCode === 0) {
@@ -100,6 +111,8 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
   const agentRoot = options.agentRoot ?? process.cwd();
   const worldRoot = options.worldRoot ?? process.cwd();
   const checks = [
+    repoNameCheck(env, agentRepoNameEnv, "the-agent", "agent"),
+    repoNameCheck(env, worldRepoNameEnv, "the-world", "world"),
     hasRemote(runner, agentRoot) ? "agent.remote:configured" : "agent.remote:missing",
     hasRemote(runner, worldRoot) ? "world.remote:configured" : "world.remote:missing",
     hasProviderEnv(env) ? "provider.env:configured" : "provider.env:missing",

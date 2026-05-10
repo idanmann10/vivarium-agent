@@ -1,7 +1,7 @@
 ---
 title: Live Readiness
 description: Clear the external blockers required before v1 live verification.
-when_to_read: When `doctor --live` reports missing remotes, credentials, GitHub auth, or Docker Compose.
+when_to_read: When `doctor --live` reports missing final names, remotes, credentials, GitHub auth, or Docker Compose.
 ---
 
 # Live Readiness
@@ -16,7 +16,7 @@ bun apps/cli/src/index.ts doctor --live \
   --world-root /Users/idanmann/Vivarium/the-world
 ```
 
-A live-ready workspace should report configured agent/world remotes, configured provider and GitHub token environment, valid GitHub auth, installed Docker, and installed Docker Compose.
+A live-ready workspace should report configured agent/world names, configured agent/world remotes, configured provider and GitHub token environment, valid GitHub auth, installed Docker, and installed Docker Compose.
 
 ## Naming Gate
 
@@ -31,6 +31,13 @@ agent repo name: <final-agent-repo>
 world repo name: <final-world-repo>
 canonical owner: <github-owner-or-org>
 private fork owner: <github-owner-or-org>
+```
+
+Export the final names for `doctor --live`:
+
+```bash
+export VIVARIUM_AGENT_REPO_NAME=<final-agent-repo>
+export VIVARIUM_WORLD_REPO_NAME=<final-world-repo>
 ```
 
 After names are chosen, either keep the local checkout paths as compatibility aliases or rename the
