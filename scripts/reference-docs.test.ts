@@ -214,6 +214,7 @@ const liveReadinessEnvVars = [
   "VIVARIUM_CREDENTIALS_PATH",
   "VIVARIUM_INTERNAL_API_CREDENTIAL_NAME",
   "VIVARIUM_INTERNAL_API_HEALTH_URL",
+  "VIVARIUM_V1_EVIDENCE_PATH",
   "GITHUB_TOKEN",
   "GH_TOKEN",
 ] as const;
@@ -374,6 +375,28 @@ describe("reference docs", () => {
     expect(body).toContain("live-readiness.local.env");
     for (const envVar of liveReadinessEnvVars) {
       expect(body).toContain(`export ${envVar}=`);
+    }
+  });
+
+  test("uses inspectable references in the live-readiness evidence manifest example", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    for (const opaqueReference of [
+      "run-id-or-audit-link",
+      '"trace-a"',
+      '"trace-b"',
+      '"skill-a"',
+      '"skill-b"',
+      "proposal path or PR",
+    ]) {
+      expect(body).not.toContain(opaqueReference);
+    }
+    for (const inspectableReference of [
+      "docs/live/anti-pattern-avoided.md",
+      "docs/live/trace-a.md",
+      "docs/live/skill-candidate-a.md",
+      "https://github.com/owner/world/pull/1",
+    ]) {
+      expect(body).toContain(inspectableReference);
     }
   });
 

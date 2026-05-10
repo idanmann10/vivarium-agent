@@ -411,18 +411,18 @@ The manifest is a compact index of evidence, not a substitute for the underlying
     "privateFork": "git@github.com:team/world-private.git"
   },
   "behaviorLoop": {
-    "antiPatternAvoided": "run-id-or-audit-link",
-    "tracesRead": ["trace-a", "trace-b"],
-    "recoverReplan": "run-id-or-audit-link",
-    "destructiveHold": "run-id-or-audit-link",
-    "refusal": "run-id-or-audit-link"
+    "antiPatternAvoided": "docs/live/anti-pattern-avoided.md",
+    "tracesRead": ["docs/live/trace-a.md", "docs/live/trace-b.md"],
+    "recoverReplan": "docs/live/recover-replan.md",
+    "destructiveHold": "docs/live/destructive-hold.md",
+    "refusal": "docs/live/refusal.md"
   },
   "dreamArtifacts": {
-    "skillCandidates": ["skill-a", "skill-b"],
-    "internalSkill": "private-world proposal path or PR",
-    "publicSkill": "public-world proposal path or PR",
-    "antiPattern": "anti-pattern proposal path",
-    "trace": "trace proposal path"
+    "skillCandidates": ["docs/live/skill-candidate-a.md", "docs/live/skill-candidate-b.md"],
+    "internalSkill": "proposals/skills/coding/internal-example/SKILL.md",
+    "publicSkill": "https://github.com/owner/world/pull/1",
+    "antiPattern": "proposals/anti-patterns/coding/example/ANTI-PATTERN.md",
+    "trace": "proposals/traces/coding/example/TRACE.md"
   },
   "publicContribution": {
     "publicSkillPr": "https://github.com/owner/world/pull/1",
