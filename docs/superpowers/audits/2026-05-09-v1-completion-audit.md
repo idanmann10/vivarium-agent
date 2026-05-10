@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, and a daemon-owned Dream scheduler loop, but the audit still finds uncovered v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, and a CLI dispatcher, but the audit still finds uncovered v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -36,7 +36,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 1 attention budget enforcement | `applyAttentionLimits` caps skills, traces, tools, and recent episodes, enforces `maxWorkingTokens`, and returns budget metadata; orchestrator uses attention-limited world context before Plan | Complete locally |
 | Phase 1 read-only world paths | Local reader, retrieval, and multi-world search tests exist | Partially complete |
 | Phase 1 daemon | Daemon service, HTTP lifecycle transport, MCP manifest, and daemon-owned Dream scheduler loop exist with tests | Complete locally; deployment supervisor unverified |
-| Phase 1 CLI | `init`, `run`, `credentials`, `skills`, `world`, `status`, and `doctor` helpers exist; init runs migrations, installs starter skills, discovers starter traces/curriculum, and returns provider/credential prompts; no interactive parser UX yet | Complete locally |
+| Phase 1 CLI | `dispatchCliCommand` routes `init`, `run`, `credentials add/list`, `skills list`, `world search`, `status`, and `doctor`; init runs migrations, installs starter skills, discovers starter traces/curriculum, and returns provider/credential prompts | Complete locally |
 | Phase 1 e2e run/recover | `tests/e2e-run.test.ts` and `tests/e2e-recover.test.ts` pass in current test suite | Complete locally |
 | Phase 1 done scenario | A developer can run a synthetic local goal; real provider config, credential use, anti-pattern automatic lookup, and full CLI install flow are not verified | Incomplete |
 | Phase 2 Dream primitive | Deterministic `runDream` exists with promotion/pruning/habituation/identity/confidence behavior and now returns generated anti-pattern/trace candidate IDs | Partially complete |
@@ -52,7 +52,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 3 world workflows | Auto-merge, validation, archive, nightly stats, stale workflows exist in `the-world/.github/workflows/` | Partially complete |
 | Phase 3 anti-gaming and trust gates | Trust scripts and held-review listing exist; independent machine fingerprinting is not fully implemented | Partially complete |
 | Phase 3 done scenario | No canonical remote world, second install, live PR, auto-merge, cross-install pull, featured maintainer pick, or recognizable live STATS loop verified | Incomplete externally |
-| v1 starter pack init | `runInitCommand` discovers starter skills/traces, installs starter skills in SQLite, records migrations, returns curriculum path and prompts; actual 20-30 skill availability depends on world content and no interactive prompt UX exists | Partially complete |
+| v1 starter pack init | `runInitCommand` discovers starter skills/traces, installs starter skills in SQLite, records migrations, returns curriculum path and prompts; `dispatchCliCommand` routes init argv; actual 20-30 skill availability still depends on selected world/domain content | Partially complete |
 | v1 real goals over a week | Synthetic tests only | Incomplete externally |
 | v1 destructive action confirmation | `runGoal` tests verify unconfirmed destructive goals escalate before execution and confirmed destructive goals continue through validation/reflection | Complete locally |
 | v1 harmful request refusal | `runGoal` tests verify harmful goals emit `refusal` and stop before planning | Complete locally |
@@ -61,7 +61,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 ## Fresh Evidence Used
 
 - `sed -n '1882,2085p' goal.md`: phase, v1 done, and out-of-scope criteria.
-- `git -C the-agent status --short`: clean before the safety slice; safety, Dream candidate-generation, attention token-budget, provider anonymizer, and daemon scheduler changes are tracked in follow-up commits.
+- `git -C the-agent status --short`: clean before the safety slice; safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, and CLI dispatcher changes are tracked in follow-up commits.
 - `git -C the-world status --short`: clean.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
@@ -70,14 +70,15 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun test packages/runtime/src/attention.test.ts`: 2 tests passed, including working-token budget enforcement.
 - `bun test packages/tools/src/anonymizer/pipeline.test.ts packages/providers/src/router.test.ts`: 5 tests passed, including provider anonymizer fallback.
 - `bun test apps/daemon/src/scheduler.test.ts`: 4 tests passed, including daemon Dream scheduler start/stop behavior.
-- `bun run lint`: scanned 167 TypeScript files.
+- `bun test apps/cli/src/dispatcher.test.ts`: 4 tests passed, including CLI parser routing for local commands.
+- `bun run lint`: scanned 169 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 75 tests passed, 0 failed.
+- `bun run test`: 79 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value remaining gap after the daemon scheduler slice is live external verification:
+The highest-value remaining gap after the CLI dispatcher slice is live external verification:
 
 1. Verify live provider credentials and live model calls once credential names and values are available.
 2. Verify live GitHub remotes, Discussions, PR creation, and auto-merge settings once repository targets and credentials are available.
