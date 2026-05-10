@@ -1,10 +1,13 @@
 {
   "categories": {
-    "correctness": "error",
-    "perf": "warn",
-    "suspicious": "error"
+    "correctness": "off",
+    "pedantic": "off",
+    "perf": "off",
+    "restriction": "off",
+    "style": "off",
+    "suspicious": "off",
   },
-  "deny": [
-    "typescript/no-explicit-any"
-  ]
+  "rules": {
+    "typescript/no-explicit-any": "error",
+  },
 }

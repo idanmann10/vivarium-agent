@@ -13,15 +13,8 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ES2023",
-    "types": [
-      "bun"
-    ],
+    "types": ["bun"],
     "verbatimModuleSyntax": true
   },
-  "include": [
-    "apps/**/*.ts",
-    "packages/**/*.ts",
-    "scripts/**/*.ts",
-    "tests/**/*.ts"
-  ]
+  "include": ["apps/**/*.ts", "packages/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts"]
 }
