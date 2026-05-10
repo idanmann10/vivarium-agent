@@ -2,7 +2,7 @@ export const pushMode = "write-gated";
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { shouldPushToWorld } from "../../core/src/index.js";
+import { shouldPushToWorld, type Visibility } from "../../core/src/index.js";
 
 import type { GitHubWorldClient, NumberedGitHubUrl } from "./github.js";
 
@@ -14,6 +14,7 @@ export interface ProposeSkillRequest {
   readonly description: string;
   readonly body: string;
   readonly contributor: string;
+  readonly visibility?: Visibility;
 }
 
 export interface ProposeAntiPatternRequest {
@@ -26,6 +27,7 @@ export interface ProposeAntiPatternRequest {
   readonly insteadDo: string;
   readonly contributor: string;
   readonly evidenceRunIds?: readonly string[];
+  readonly visibility?: Visibility;
 }
 
 export interface ProposeTraceStep {
@@ -41,6 +43,7 @@ export interface ProposeTraceRequest {
   readonly contributor: string;
   readonly steps: readonly ProposeTraceStep[];
   readonly evidenceRunId?: string;
+  readonly visibility?: Visibility;
 }
 
 export interface ProposeRunRequest {
@@ -52,6 +55,29 @@ export interface ProposeRunRequest {
   readonly contributor: string;
   readonly body: string;
   readonly sourceRunId?: string;
+  readonly visibility?: Visibility;
+}
+
+export interface ProposalWorldTarget {
+  readonly label: string;
+  readonly root: string;
+  readonly priority: number;
+  readonly autoPushEnabled?: boolean;
+}
+
+export interface SelectProposalWorldTargetRequest {
+  readonly worlds: readonly ProposalWorldTarget[];
+  readonly visibility: Visibility;
+}
+
+export interface ProposeSkillToSubscribedWorldRequest extends Omit<ProposeSkillRequest, "worldRoot"> {
+  readonly worlds: readonly ProposalWorldTarget[];
+  readonly visibility: Visibility;
+}
+
+export interface ProposeSkillToSubscribedWorldResult {
+  readonly target: ProposalWorldTarget;
+  readonly path: string;
 }
 
 export interface SkillPushGateEvidence {
@@ -83,15 +109,50 @@ export type ProposeSkillPullRequestResult =
       readonly reason: "Push gate not satisfied";
     };
 
+function proposalVisibility(visibility: Visibility | undefined): Visibility {
+  return visibility ?? "public";
+}
+
+export function selectProposalWorldTarget(request: SelectProposalWorldTargetRequest): ProposalWorldTarget {
+  const worlds = [...request.worlds].toSorted((left, right) => left.priority - right.priority || left.label.localeCompare(right.label));
+  if (worlds.length === 0) {
+    throw new Error("No world subscriptions configured");
+  }
+
+  if (request.visibility === "public") {
+    return worlds.find((world) => world.autoPushEnabled !== true) ?? worlds[0]!;
+  }
+
+  return worlds.find((world) => world.autoPushEnabled === true) ?? worlds[0]!;
+}
+
 export function proposeSkill(request: ProposeSkillRequest): string {
   const directory = join(request.worldRoot, "proposals", "skills", request.domain, request.slug);
   mkdirSync(directory, { recursive: true });
   const path = join(directory, "SKILL.md");
+  const visibility = proposalVisibility(request.visibility);
   writeFileSync(
     path,
-    `---\nid: ${request.domain}.${request.slug}\nname: ${request.name}\ndescription: ${request.description}\ndomain: ${request.domain}\nvisibility: public\ncontributor: ${request.contributor}\n---\n\n# ${request.name}\n\n${request.body}\n\n# Provenance\n\nProposed locally by ${request.contributor}.\n`,
+    `---\nid: ${request.domain}.${request.slug}\nname: ${request.name}\ndescription: ${request.description}\ndomain: ${request.domain}\nvisibility: ${visibility}\ncontributor: ${request.contributor}\n---\n\n# ${request.name}\n\n${request.body}\n\n# Provenance\n\nProposed locally by ${request.contributor}.\n`,
   );
   return path;
+}
+
+export function proposeSkillToSubscribedWorld(request: ProposeSkillToSubscribedWorldRequest): ProposeSkillToSubscribedWorldResult {
+  const target = selectProposalWorldTarget({ worlds: request.worlds, visibility: request.visibility });
+  return {
+    target,
+    path: proposeSkill({
+      worldRoot: target.root,
+      domain: request.domain,
+      slug: request.slug,
+      name: request.name,
+      description: request.description,
+      body: request.body,
+      contributor: request.contributor,
+      visibility: request.visibility,
+    }),
+  };
 }
 
 function evidenceMarkdown(evidenceRunIds: readonly string[] = []): string {
@@ -102,9 +163,10 @@ export function proposeAntiPattern(request: ProposeAntiPatternRequest): string {
   const directory = join(request.worldRoot, "proposals", "anti-patterns", request.domain, request.slug);
   mkdirSync(directory, { recursive: true });
   const path = join(directory, "ANTI-PATTERN.md");
+  const visibility = proposalVisibility(request.visibility);
   writeFileSync(
     path,
-    `---\nid: ${request.domain}.${request.slug}\nname: ${request.name}\ndomain: ${request.domain}\nvisibility: public\ncontributor: ${request.contributor}\n---\n\n# ${request.name}\n\n## What Not To Do\n\n${request.description}\n\n## Why\n\n${request.why}\n\n## Instead Do\n\n${request.insteadDo}\n\n## Evidence\n\n${evidenceMarkdown(request.evidenceRunIds)}\n\n# Provenance\n\nProposed locally by ${request.contributor}.\n`,
+    `---\nid: ${request.domain}.${request.slug}\nname: ${request.name}\ndomain: ${request.domain}\nvisibility: ${visibility}\ncontributor: ${request.contributor}\n---\n\n# ${request.name}\n\n## What Not To Do\n\n${request.description}\n\n## Why\n\n${request.why}\n\n## Instead Do\n\n${request.insteadDo}\n\n## Evidence\n\n${evidenceMarkdown(request.evidenceRunIds)}\n\n# Provenance\n\nProposed locally by ${request.contributor}.\n`,
   );
   return path;
 }
@@ -113,9 +175,10 @@ export function proposeTrace(request: ProposeTraceRequest): string {
   const directory = join(request.worldRoot, "proposals", "traces", request.domain, request.slug);
   mkdirSync(directory, { recursive: true });
   const path = join(directory, "TRACE.md");
+  const visibility = proposalVisibility(request.visibility);
   writeFileSync(
     path,
-    `---\nid: ${request.domain}.${request.slug}\ntitle: ${request.title}\ndomain: ${request.domain}\nvisibility: public\ncontributor: ${request.contributor}\n---\n\n# Goal\n\n${request.title}\n\n${request.steps
+    `---\nid: ${request.domain}.${request.slug}\ntitle: ${request.title}\ndomain: ${request.domain}\nvisibility: ${visibility}\ncontributor: ${request.contributor}\n---\n\n# Goal\n\n${request.title}\n\n${request.steps
       .map((step, index) => `## Step ${index + 1}\n\n${step.action}\n\nAnnotation: ${step.annotation}`)
       .join("\n\n")}\n\n# Provenance\n\nProposed locally by ${request.contributor}.\n`,
   );
@@ -127,7 +190,7 @@ export function proposeTrace(request: ProposeTraceRequest): string {
   );
   writeFileSync(
     join(directory, "meta.yaml"),
-    `domain: ${request.domain}\nvisibility: public\ncontributor: ${request.contributor}\n${request.evidenceRunId === undefined ? "" : `evidence_run_id: ${request.evidenceRunId}\n`}`,
+    `domain: ${request.domain}\nvisibility: ${visibility}\ncontributor: ${request.contributor}\n${request.evidenceRunId === undefined ? "" : `evidence_run_id: ${request.evidenceRunId}\n`}`,
   );
   return path;
 }
@@ -136,6 +199,7 @@ export function proposeRun(request: ProposeRunRequest): string {
   const directory = join(request.worldRoot, "proposals", "runs", request.runId);
   mkdirSync(directory, { recursive: true });
   const path = join(directory, "RUN.md");
+  const visibility = proposalVisibility(request.visibility);
   writeFileSync(
     path,
     `# Goal\n\n${request.goal}\n\n# Outcome\n\n${request.outcome}\n\n# Transcript\n\n${request.body}\n\n# Provenance\n\nProposed locally by ${request.contributor}.\n`,
@@ -146,7 +210,7 @@ export function proposeRun(request: ProposeRunRequest): string {
   );
   writeFileSync(
     join(directory, "meta.yaml"),
-    `id: ${request.runId}\ndomain: ${request.domain}\nvisibility: public\ncontributor: ${request.contributor}\n${request.sourceRunId === undefined ? "" : `source_run_id: ${request.sourceRunId}\n`}`,
+    `id: ${request.runId}\ndomain: ${request.domain}\nvisibility: ${visibility}\ncontributor: ${request.contributor}\n${request.sourceRunId === undefined ? "" : `source_run_id: ${request.sourceRunId}\n`}`,
   );
   return path;
 }

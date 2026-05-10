@@ -64,6 +64,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` saved world subscription registry implemented after credential smoke, exposing `world subscribe`, `world subscriptions`, and `world search --subscriptions-path` for reusable canonical + private-fork retrieval.
 - `the-agent` saved provider profile registry implemented after saved world subscriptions, exposing `providers configure`, `providers list`, `providers smoke --profile`, and `run --provider-profile` for reusable Anthropic/OpenRouter/private-compatible configuration.
 - `the-agent` run-level world subscription retrieval implemented after saved provider profiles, letting `run --world-subscriptions-path` load planning context from canonical + private fork registries.
+- `the-agent` visibility-aware proposal target selection implemented after run-level subscriptions, routing internal/private skill proposals to auto-push private worlds and public proposals to canonical/non-auto-push worlds.
 - `the-agent` proposed anti-pattern retrieval and Node-side `better-sqlite3` migration verifier implemented after the gated proposal PR helper.
 - `the-agent` local end-to-end demo recorder implemented after the SQLite stack verifier; `docs/demos/local-e2e.cast` records init, run, second-install world transmission-smoke, and SQLite stack verification as an asciinema v2 cast.
 - `the-agent` proposed trace proposal/retrieval slice implemented after the local demo recorder, writing annotated trace proposals and retrieving them with frontmatter titles through the local world reader.
@@ -83,7 +84,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 
 - `bun run lint`: scanned 187 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 156 tests passed, 0 failed.
+- `bun run test`: 164 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 - `bun run verify:sqlite-stack`: Node and `better-sqlite3` ran migrations `0001_initial` through `0004_tool_usage`, created all runtime storage tables, and inserted/read `skill-smoke`.
 - `bun run record:local-e2e-demo`: generated `docs/demos/local-e2e.cast`.
@@ -116,9 +117,9 @@ Live/external checks:
 - `bun apps/cli/src/index.ts github pull-request ...` without `--confirm-write`: returns a refusal before reading credentials or attempting a GitHub API call.
 - `bun apps/cli/src/index.ts github workflow-runs --owner owner --repo world --token-env VIVARIUM_MISSING_GITHUB_TOKEN --branch main --limit 2`: returns a missing-env result without attempting a GitHub API call.
 - `bun test packages/world/src/pull.test.ts apps/cli/src/commands/world.test.ts apps/cli/src/dispatcher.test.ts`: 20 tests passed, including local second-install world transmission verification and repeated-root CLI search routing.
-- `bun test packages/world/src/write.test.ts packages/world/src/github.test.ts tests/e2e-world-integration.test.ts`: 9 tests passed, including trace and run proposal writing, math-gated proposal PR creation, mocked GitHub writes, and local cultural transmission.
+- `bun test packages/world/src/write.test.ts packages/world/src/github.test.ts tests/e2e-world-integration.test.ts`: 11 tests passed, including trace and run proposal writing, visibility-aware proposal target selection, math-gated proposal PR creation, mocked GitHub writes, and local cultural transmission.
 - `bun test packages/world/src/local-reader.test.ts packages/world/src/retrieve.test.ts packages/runtime/src/attention.test.ts`: 8 tests passed, including proposed trace/run retrieval, published-run retrieval across worlds, and attention selection.
-- `bun test packages/world/src/write.test.ts packages/world/src/local-reader.test.ts packages/world/src/retrieve.test.ts tests/e2e-world-integration.test.ts`: 14 tests passed, including proposed trace/run artifact writing and retrieval across the local reader/search path.
+- `bun test packages/world/src/write.test.ts packages/world/src/local-reader.test.ts packages/world/src/retrieve.test.ts tests/e2e-world-integration.test.ts`: 15 tests passed, including visibility-aware proposal target selection and proposed trace/run artifact writing and retrieval across the local reader/search path.
 - `bun test packages/tools/src/external/index.test.ts packages/tools/src/dispatcher.test.ts packages/tools/src/safety/pipeline.test.ts`: 21 tests passed, including Anthropic-native external adapter routing, credential injection, and Docker terminal sandbox command construction.
 
 ## Prompt-To-Artifact Checklist

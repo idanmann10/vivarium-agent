@@ -28,6 +28,7 @@ bun apps/cli/src/index.ts world subscribe \
 ```
 
 `priority: 0` is searched first. Use `--auto-push` only for the fork where internal-only artifacts are allowed to be proposed.
+Visibility-aware proposal helpers route `internal` and `private` skill proposals to an auto-push world and route `public` proposals to the first non-auto-push world.
 
 Search saved subscriptions:
 

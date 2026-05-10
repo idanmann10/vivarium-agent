@@ -49,7 +49,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 2 anonymizer | Regex anonymizer exists with tests; provider-backed scrubber path redacts before and after provider calls and falls back deterministically on provider failure | Complete locally; live provider credentials unverified |
 | Phase 2 publishability queue | Reflect-marked publishable runs are anonymized and queued locally; publishable artifacts and Dream candidate queues are stored locally | Complete locally |
 | Phase 2 done scenario | Dream primitive tests verify first anti-pattern generation and first trace extraction with annotations from local run history; orchestrator tests verify first publishable run queued locally | Complete locally |
-| Phase 3 GitHub write paths | GitHub client can create PRs/issues/Discussions using mocked fetch; `proposeSkillPullRequest` creates a local proposal and only opens a PR when `shouldPushToWorld` evidence passes | Complete locally; live GitHub unverified |
+| Phase 3 GitHub write paths | GitHub client can create PRs/issues/Discussions using mocked fetch; `proposeSkillPullRequest` creates a local proposal and only opens a PR when `shouldPushToWorld` evidence passes; visibility-aware proposal helpers can route `internal` and `private` skill proposals to an auto-push private world while public proposals route to a canonical/non-auto-push world | Complete locally; live GitHub unverified |
 | Phase 3 multi-world subscriptions | Multi-world retrieval tests cover skills and published runs with source labels; CLI tests cover repeated world roots plus saved subscription registries with source labels; local-reader tests cover proposed anti-pattern, trace, and run discovery used by the same search path | Complete locally |
 | Phase 3 world workflows | Auto-merge, validation, archive-regression, nightly stats, and stale workflows exist in `the-world/.github/workflows/`; tests reject placeholder workflow bodies and require concrete archive/auto-merge commands | Complete locally; live GitHub execution unverified |
 | Phase 3 anti-gaming and trust gates | Trust scripts, held-review listing, and independent positive validator machine-fingerprint counting exist with tests | Complete locally; live reviewer identity unverified |
@@ -58,7 +58,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | v1 real goals over a week | Synthetic tests only | Incomplete externally |
 | v1 destructive action confirmation | `runGoal` tests verify unconfirmed destructive goals escalate before execution and confirmed destructive goals continue through validation/reflection | Complete locally |
 | v1 harmful request refusal | `runGoal` tests verify harmful goals emit `refusal` and stop before planning | Complete locally |
-| v1 public/private fork contribution loop | Local/mocked pieces exist; live fork/canonical flow not verified | Incomplete externally |
+| v1 public/private fork contribution loop | Local/mocked pieces exist, including visibility-aware public/internal proposal target selection; live fork/canonical flow not verified | Incomplete externally |
 
 ## Fresh Evidence Used
 
@@ -80,7 +80,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun apps/cli/src/index.ts github pull-request ...` without `--confirm-write`: returns a refusal before reading credentials or attempting a GitHub API call.
 - `bun apps/cli/src/index.ts github workflow-runs --owner owner --repo world --token-env VIVARIUM_MISSING_GITHUB_TOKEN --branch main --limit 2`: returns a missing-env result without attempting a GitHub API call.
 - `bun test packages/world/src/pull.test.ts apps/cli/src/commands/world.test.ts apps/cli/src/dispatcher.test.ts`: 26 tests passed, including local second-install world transmission verification, repeated-root CLI search routing, saved subscription routing, and run-level subscription routing.
-- `bun test packages/world/src/write.test.ts packages/world/src/github.test.ts tests/e2e-world-integration.test.ts`: 9 tests passed, including trace and run proposal writing, math-gated proposal PR creation, mocked GitHub writes, and local cultural transmission.
+- `bun test packages/world/src/write.test.ts packages/world/src/github.test.ts tests/e2e-world-integration.test.ts`: 11 tests passed, including trace and run proposal writing, visibility-aware proposal target selection, math-gated proposal PR creation, mocked GitHub writes, and local cultural transmission.
 - `bun test packages/world/src/local-reader.test.ts packages/world/src/retrieve.test.ts packages/runtime/src/attention.test.ts`: 8 tests passed, including proposed trace/run retrieval, published-run retrieval across worlds, and attention selection.
 - `docs/guides/live-readiness.md`: records the exact external prerequisites and verification sequence needed to clear the remaining live blockers.
 - `rg --files` and shallow file listings verified `the-agent` app/package skeleton, root metadata, CI workflows, and per-package README/AGENTS files; `the-world` top-level files, templates, and workflows are present.
@@ -119,14 +119,14 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun test packages/core/src/types/episode.test.ts`: 1 test passed, including every episode kind and field set in `episodeShapeManifest`.
 - `bun test apps/cli/src/commands/world.test.ts apps/cli/src/dispatcher.test.ts`: 23 tests passed, including command and dispatcher multi-world search with source labels, saved world subscription registries, run-level world subscription routing, saved provider profile routing, and local world pull/transmission routing.
 - `bun test packages/world/src/pull.test.ts apps/cli/src/commands/world.test.ts apps/cli/src/dispatcher.test.ts`: 26 tests passed, including injectable git clone/update, non-git destination rejection, `world pull`, repeated-root `world search`, saved-subscription `world search`, run-level world subscription routing, saved provider profile routing, `world transmission-smoke`, and CLI routing against a local git remote.
-- `bun test packages/world/src/write.test.ts packages/world/src/local-reader.test.ts packages/world/src/retrieve.test.ts tests/e2e-world-integration.test.ts`: 14 tests passed, including proposed trace/run artifact writing and retrieval.
+- `bun test packages/world/src/write.test.ts packages/world/src/local-reader.test.ts packages/world/src/retrieve.test.ts tests/e2e-world-integration.test.ts`: 15 tests passed, including visibility-aware proposal target selection, proposed trace/run artifact writing, and retrieval.
 - `the-world bun run lint`: world validator reports 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, 1 contributor.
 - `the-world bun test scripts`: 10 tests passed, including independent validator machine-fingerprint counting, concrete workflow command checks, and coding starter-pack depth.
 - `the-world bun run typecheck`: TypeScript passed.
 - `the-world bun run build`: 8 required files present.
 - `bun run lint`: scanned 187 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 163 tests passed, 0 failed.
+- `bun run test`: 164 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work

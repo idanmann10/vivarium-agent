@@ -3,7 +3,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { proposeAntiPattern, proposeRun, proposeSkill, proposeSkillPullRequest, proposeTrace } from "./push.js";
+import {
+  proposeAntiPattern,
+  proposeRun,
+  proposeSkill,
+  proposeSkillPullRequest,
+  proposeSkillToSubscribedWorld,
+  proposeTrace,
+  selectProposalWorldTarget,
+} from "./push.js";
 import { publishRun } from "./runs.js";
 import { publishTrace } from "./traces.js";
 
@@ -38,6 +46,47 @@ describe("local world writes", () => {
     expect(readFileSync(skillPath, "utf8")).toContain("# Local Skill");
     expect(readFileSync(runPath, "utf8")).toContain("# Outcome");
     expect(readFileSync(tracePath, "utf8")).toContain("# Goal");
+  });
+
+  test("routes public and internal skill proposals to the correct subscribed world", () => {
+    const root = mkdtempSync(join(tmpdir(), "world-write-targets-"));
+    const canonicalWorld = join(root, "canonical");
+    const privateWorld = join(root, "private");
+    const worlds = [
+      { label: "private", root: privateWorld, priority: 0, autoPushEnabled: true },
+      { label: "canonical", root: canonicalWorld, priority: 1, autoPushEnabled: false },
+    ];
+
+    expect(selectProposalWorldTarget({ worlds, visibility: "internal" })).toEqual(worlds[0]!);
+    expect(selectProposalWorldTarget({ worlds, visibility: "public" })).toEqual(worlds[1]!);
+
+    const internal = proposeSkillToSubscribedWorld({
+      worlds,
+      visibility: "internal",
+      domain: "coding",
+      slug: "internal-skill",
+      name: "Internal Skill",
+      description: "An internal-only skill.",
+      body: "Use private context.",
+      contributor: "agent-a",
+    });
+    const publicProposal = proposeSkillToSubscribedWorld({
+      worlds,
+      visibility: "public",
+      domain: "coding",
+      slug: "public-skill",
+      name: "Public Skill",
+      description: "A public skill.",
+      body: "Use shared context.",
+      contributor: "agent-a",
+    });
+
+    expect(internal.target.label).toBe("private");
+    expect(internal.path).toBe(join(privateWorld, "proposals", "skills", "coding", "internal-skill", "SKILL.md"));
+    expect(readFileSync(internal.path, "utf8")).toContain("visibility: internal");
+    expect(publicProposal.target.label).toBe("canonical");
+    expect(publicProposal.path).toBe(join(canonicalWorld, "proposals", "skills", "coding", "public-skill", "SKILL.md"));
+    expect(readFileSync(publicProposal.path, "utf8")).toContain("visibility: public");
   });
 
   test("proposes an anti-pattern artifact with evidence", () => {
