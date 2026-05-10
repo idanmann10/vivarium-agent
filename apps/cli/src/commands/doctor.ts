@@ -440,7 +440,9 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         evidenceReference(dreamArtifacts?.internalSkill, context) &&
         evidenceReference(dreamArtifacts?.publicSkill, context) &&
         evidenceReference(dreamArtifacts?.antiPattern, context) &&
-        evidenceReference(dreamArtifacts?.trace, context),
+        evidenceReference(dreamArtifacts?.trace, context) &&
+        evidenceReference(dreamArtifacts?.traceSourceRun, context) &&
+        evidenceReference(dreamArtifacts?.traceAnnotations, context),
     ),
     v1Check(
       "publicContribution",
@@ -894,7 +896,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.dreamArtifacts":
       return {
         check,
-        action: "Record nightly Dream evidence for two distinct skill candidates, internal and public skills, one anti-pattern, and one trace.",
+        action:
+          "Record nightly Dream evidence for two distinct skill candidates, internal and public skills, one anti-pattern, and one trace auto-extracted from an instructive run with annotations.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.publicContribution":
