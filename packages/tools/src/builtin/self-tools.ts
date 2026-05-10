@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import type { RunId, SkillId } from "../../../core/src/ids.js";
 import type { Episode, Run, TraceStep, Visibility } from "../../../core/src/index.js";
@@ -23,6 +24,7 @@ import {
 export interface SelfToolsDependencies {
   readonly state: StateRepository;
   readonly world: LocalWorldReader;
+  readonly worldRoot?: string;
   readonly worldSubscriptionsPath?: string;
 }
 
@@ -76,6 +78,12 @@ export interface WorldPublishResult {
   readonly path: string;
 }
 
+export interface WorldContributorSummary {
+  readonly handle: string;
+  readonly domains: readonly string[];
+  readonly trustScore: number;
+}
+
 export interface SelfTools {
   readonly memory: {
     write(request: MemoryWriteRequest): { readonly id: string };
@@ -120,6 +128,10 @@ export interface SelfTools {
     publishTrace(request: WorldPublishTraceRequest): WorldPublishResult;
     subscribe(request: Omit<SubscribeWorldRequest, "subscriptionsPath">): { readonly subscriptions: readonly PersistedWorldSubscription[] };
     listSubscriptions(): readonly PersistedWorldSubscription[];
+    lineage(skillId: SkillId, domain: string): readonly string[];
+    contributors(domain?: string): readonly WorldContributorSummary[];
+    featured(): readonly string[];
+    stats(): string;
   };
   readonly curriculum: {
     advance(domain: string, stepIndex: number): void;
@@ -150,6 +162,26 @@ function requireWorldSubscriptionsPath(worldSubscriptionsPath: string | undefine
   }
 
   return worldSubscriptionsPath;
+}
+
+function worldRoots(worldRoot: string | undefined, worldSubscriptionsPath: string | undefined): readonly string[] {
+  if (worldSubscriptionsPath !== undefined) {
+    const subscriptions = listWorldSubscriptions(worldSubscriptionsPath);
+    if (subscriptions.length > 0) {
+      return subscriptions.map((subscription) => subscription.root);
+    }
+  }
+
+  return worldRoot === undefined ? [] : [worldRoot];
+}
+
+function primaryWorldRoot(worldRoot: string | undefined, worldSubscriptionsPath: string | undefined): string {
+  const roots = worldRoots(worldRoot, worldSubscriptionsPath);
+  if (roots.length === 0) {
+    throw new Error("No world root configured");
+  }
+
+  return roots[0]!;
 }
 
 function searchSubscribedWorlds(
@@ -245,7 +277,53 @@ function pulledSkillRecord(id: SkillId, domain: string, body: string): LocalSkil
   };
 }
 
-export function createSelfTools({ state, world, worldSubscriptionsPath }: SelfToolsDependencies): SelfTools {
+interface ContributorJson {
+  readonly handle?: string;
+  readonly domains?: readonly string[];
+  readonly trustScore?: number;
+}
+
+interface LineageJson {
+  readonly id?: string;
+  readonly inspired_by?: readonly string[];
+  readonly competes_with?: readonly string[];
+}
+
+function contributorSummaries(root: string, domain?: string): readonly WorldContributorSummary[] {
+  const contributorsRoot = join(root, "contributors");
+  if (!existsSync(contributorsRoot)) {
+    return [];
+  }
+
+  return readdirSync(contributorsRoot)
+    .filter((entry) => entry.endsWith(".json"))
+    .map((entry) => JSON.parse(readFileSync(join(contributorsRoot, entry), "utf8")) as ContributorJson)
+    .filter((profile): profile is Required<Pick<ContributorJson, "handle" | "domains" | "trustScore">> => {
+      return profile.handle !== undefined && profile.domains !== undefined && profile.trustScore !== undefined;
+    })
+    .filter((profile) => domain === undefined || profile.domains.includes(domain))
+    .map((profile) => ({
+      handle: profile.handle,
+      domains: profile.domains,
+      trustScore: profile.trustScore,
+    }))
+    .toSorted((left, right) => right.trustScore - left.trustScore || left.handle.localeCompare(right.handle));
+}
+
+function featuredIds(root: string): readonly string[] {
+  const path = join(root, "featured", "current.md");
+  if (!existsSync(path)) {
+    return [];
+  }
+
+  return readFileSync(path, "utf8")
+    .split("\n")
+    .filter((line) => line.startsWith("- "))
+    .map((line) => line.slice(2).trim())
+    .filter((line) => line.length > 0);
+}
+
+export function createSelfTools({ state, world, worldRoot, worldSubscriptionsPath }: SelfToolsDependencies): SelfTools {
   return {
     memory: {
       write(request) {
@@ -482,6 +560,31 @@ export function createSelfTools({ state, world, worldSubscriptionsPath }: SelfTo
         }
 
         return listWorldSubscriptions(worldSubscriptionsPath);
+      },
+      lineage(id, domain) {
+        const source = worldSearchResults(world, worldSubscriptionsPath, { domain, query: String(id), limit: 8 }).find((result) => {
+          return result.kind === "skill" && frontmatterValue(readFileSync(result.path, "utf8"), "id") === String(id);
+        });
+        if (source === undefined) {
+          return [String(id)];
+        }
+
+        const lineagePath = source.path.replace(/SKILL\.md$/, "lineage.json");
+        if (!existsSync(lineagePath)) {
+          return [String(id)];
+        }
+
+        const lineage = JSON.parse(readFileSync(lineagePath, "utf8")) as LineageJson;
+        return [lineage.id ?? String(id), ...(lineage.inspired_by ?? []), ...(lineage.competes_with ?? [])];
+      },
+      contributors(domain) {
+        return worldRoots(worldRoot, worldSubscriptionsPath).flatMap((root) => contributorSummaries(root, domain));
+      },
+      featured() {
+        return featuredIds(primaryWorldRoot(worldRoot, worldSubscriptionsPath));
+      },
+      stats() {
+        return readFileSync(join(primaryWorldRoot(worldRoot, worldSubscriptionsPath), "STATS.md"), "utf8");
       },
     },
     curriculum: {

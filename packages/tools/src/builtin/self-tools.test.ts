@@ -127,6 +127,20 @@ describe("self-tools", () => {
     expect(state.listLocalSkills().map((skill) => skill.id)).toEqual([id]);
   });
 
+  test("reads world metadata self-tools", () => {
+    const state = new InMemoryStateRepository();
+    const tools = createSelfTools({
+      state,
+      world: createLocalWorldReader({ root: "../the-world" }),
+      worldRoot: "../the-world",
+    });
+
+    expect(tools.world.stats()).toContain("Skills: 40");
+    expect(tools.world.featured()).toContain("coding.inspect-before-edit");
+    expect(tools.world.contributors("coding")[0]).toMatchObject({ handle: "maintainer", trustScore: 0.75 });
+    expect(tools.world.lineage(skillId("coding.inspect-before-edit"), "coding")).toContain("https://github.com/obra/superpowers");
+  });
+
   test("publishes runs through subscribed worlds", () => {
     const root = mkdtempSync(join(tmpdir(), "self-tools-world-publish-run-"));
     const canonicalWorld = join(root, "canonical");
