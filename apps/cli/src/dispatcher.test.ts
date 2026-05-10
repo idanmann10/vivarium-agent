@@ -234,6 +234,31 @@ describe("dispatchCliCommand", () => {
     });
   });
 
+  test("routes configured provider runs without credentials", async () => {
+    const worldRoot = createWorldFixture();
+    const run = await dispatchCliCommand([
+      "run",
+      "--goal",
+      "write a provider-backed test",
+      "--world-root",
+      worldRoot,
+      "--provider-kind",
+      "openai",
+      "--provider-api-key-env",
+      "VIVARIUM_MISSING_PROVIDER_KEY",
+      "--provider-model",
+      "gpt-test",
+    ]);
+
+    expect(run.result).toEqual({
+      success: false,
+      runId: null,
+      provider: { kind: "openai", id: "run-openai", model: "gpt-test" },
+      episodeKinds: [],
+      error: "Missing provider environment variable: VIVARIUM_MISSING_PROVIDER_KEY",
+    });
+  });
+
   test("routes provider smoke checks without credentials", async () => {
     await expect(
       dispatchCliCommand([

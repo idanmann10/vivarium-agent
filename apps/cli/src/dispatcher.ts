@@ -5,7 +5,7 @@ import { doctorCommand } from "./commands/doctor.js";
 import { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand, githubWorkflowRunsCommand } from "./commands/github.js";
 import { runInitCommand } from "./commands/init.js";
 import { providerSmokeCommand, type ProviderSmokeKind } from "./commands/providers.js";
-import { runCommand } from "./commands/run.js";
+import { runCommand, type RunProviderKind } from "./commands/run.js";
 import { listSkillsCommand } from "./commands/skills.js";
 import { statusCommand } from "./commands/status.js";
 import { pullWorldCommand, searchWorldCommand, verifyWorldTransmissionCommand } from "./commands/world.js";
@@ -114,6 +114,10 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
       const domain = value(flags, "domain");
       const worldRoot = value(flags, "world-root");
       const statePath = value(flags, "state-path");
+      const providerKind = value(flags, "provider-kind") as RunProviderKind | undefined;
+      const providerApiKeyEnv = value(flags, "provider-api-key-env");
+      const providerModel = value(flags, "provider-model");
+      const providerBaseUrl = value(flags, "provider-base-url");
       return output(
         command,
         await runCommand({
@@ -122,6 +126,10 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
           ...(worldRoot === undefined ? {} : { worldRoot }),
           ...(statePath === undefined ? {} : { statePath }),
           ...(booleanFlag(flags, "force-failure") ? { forceFailure: true } : {}),
+          ...(providerKind === undefined ? {} : { providerKind }),
+          ...(providerApiKeyEnv === undefined ? {} : { providerApiKeyEnv }),
+          ...(providerModel === undefined ? {} : { providerModel }),
+          ...(providerBaseUrl === undefined ? {} : { providerBaseUrl }),
         }),
       );
     }

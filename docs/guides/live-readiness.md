@@ -62,6 +62,22 @@ bun apps/cli/src/index.ts providers smoke \
   --base-url <provider-base-url>
 ```
 
+After smoke succeeds, run a real goal through the same provider path:
+
+```bash
+bun apps/cli/src/index.ts run \
+  --goal "<small real coding goal>" \
+  --domain coding \
+  --world-root /Users/idanmann/Vivarium/the-world \
+  --state-path /tmp/vivarium-live-state.db \
+  --provider-kind openai-compat \
+  --provider-api-key-env OPENROUTER_API_KEY \
+  --provider-model <model> \
+  --provider-base-url <provider-base-url>
+```
+
+Use `--provider-kind openai` or `--provider-kind anthropic` without `--provider-base-url` for first-party providers.
+
 ## GitHub Auth
 
 GitHub writes need a valid authenticated CLI session or token environment. Use one of these paths:
@@ -194,11 +210,12 @@ After the external prerequisites are configured:
 
 1. Re-run `doctor --live`.
 2. Run `providers smoke` for one configured provider.
-3. Run `github smoke` for the canonical world remote.
-4. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.
-5. Create a live world contribution PR from a generated artifact with `github pull-request --confirm-write`.
-6. Verify the world workflows and trust gates on GitHub with `github workflow-runs`.
-7. Pull the accepted contribution into a second local install with `world transmission-smoke`.
-8. Run the Compose daemon and verify `/status` with `daemon smoke`.
+3. Run `run` with `--provider-kind`, `--provider-api-key-env`, and `--provider-model` against a small real goal.
+4. Run `github smoke` for the canonical world remote.
+5. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.
+6. Create a live world contribution PR from a generated artifact with `github pull-request --confirm-write`.
+7. Verify the world workflows and trust gates on GitHub with `github workflow-runs`.
+8. Pull the accepted contribution into a second local install with `world transmission-smoke`.
+9. Run the Compose daemon and verify `/status` with `daemon smoke`.
 
 Record the resulting command output in `docs/superpowers/audits/2026-05-09-v1-completion-audit.md`.
