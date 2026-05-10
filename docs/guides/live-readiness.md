@@ -392,6 +392,33 @@ The manifest is a compact index of evidence, not a substitute for the underlying
     "skillCount": 20,
     "traceCount": 3,
     "curriculum": "domains/coding/curriculum.md",
+    "skillReferences": [
+      "domains/coding/skills/starter-1/SKILL.md",
+      "domains/coding/skills/starter-2/SKILL.md",
+      "domains/coding/skills/starter-3/SKILL.md",
+      "domains/coding/skills/starter-4/SKILL.md",
+      "domains/coding/skills/starter-5/SKILL.md",
+      "domains/coding/skills/starter-6/SKILL.md",
+      "domains/coding/skills/starter-7/SKILL.md",
+      "domains/coding/skills/starter-8/SKILL.md",
+      "domains/coding/skills/starter-9/SKILL.md",
+      "domains/coding/skills/starter-10/SKILL.md",
+      "domains/coding/skills/starter-11/SKILL.md",
+      "domains/coding/skills/starter-12/SKILL.md",
+      "domains/coding/skills/starter-13/SKILL.md",
+      "domains/coding/skills/starter-14/SKILL.md",
+      "domains/coding/skills/starter-15/SKILL.md",
+      "domains/coding/skills/starter-16/SKILL.md",
+      "domains/coding/skills/starter-17/SKILL.md",
+      "domains/coding/skills/starter-18/SKILL.md",
+      "domains/coding/skills/starter-19/SKILL.md",
+      "domains/coding/skills/starter-20/SKILL.md"
+    ],
+    "traceReferences": [
+      "domains/coding/traces/starter-1/TRACE.md",
+      "domains/coding/traces/starter-2/TRACE.md",
+      "domains/coding/traces/starter-3/TRACE.md"
+    ],
     "firstRunReferences": ["docs/live/starter-run-1.md", "docs/live/starter-run-2.md"]
   },
   "realGoals": [
@@ -480,7 +507,7 @@ The manifest is a compact index of evidence, not a substitute for the underlying
 }
 ```
 
-The live doctor checks the manifest for: coding starter pack depth and distinct first-run references, five distinct real goals with distinct run evidence spanning at least seven days, all three provider smoke records, internal credential smoke evidence, distinct remote-style canonical and private subscriptions, anti-pattern/two distinct traces/Monitor tool-failure/recover/destructive hold, escalation, confirmation, and continuation/refusal behavior evidence, two distinct Dream skill candidates plus Dream artifacts, public skill PR/math-gate/auto-merge/canonical skill evidence, contributor trust of at least 0.5 at the public skill gate, five distinct inspectable positive-signal artifacts, three distinct inspectable external pull/use artifacts, published anti-pattern/trace/run evidence, separate evidence that another agent read the published trace and run during Plan, featured and `STATS.md` evidence with at least 30% of skills from the top five contributors, a follow-up measurement at least fourteen days after the last recorded goal, inspectable evidence that the improvement came from other agents using or refining the skill, and contributor-profile summary evidence covering at least one public skill, one anti-pattern, one trace, one published run, two internal-only skills, and public trust of at least 0.61.
+The live doctor checks the manifest for: coding starter pack depth with distinct installed skill and trace references matching the counts, distinct first-run references, five distinct real goals with distinct run evidence spanning at least seven days, all three provider smoke records, internal credential smoke evidence, distinct remote-style canonical and private subscriptions, anti-pattern/two distinct traces/Monitor tool-failure/recover/destructive hold, escalation, confirmation, and continuation/refusal behavior evidence, two distinct Dream skill candidates plus Dream artifacts, public skill PR/math-gate/auto-merge/canonical skill evidence, contributor trust of at least 0.5 at the public skill gate, five distinct inspectable positive-signal artifacts, three distinct inspectable external pull/use artifacts, published anti-pattern/trace/run evidence, separate evidence that another agent read the published trace and run during Plan, featured and `STATS.md` evidence with at least 30% of skills from the top five contributors, a follow-up measurement at least fourteen days after the last recorded goal, inspectable evidence that the improvement came from other agents using or refining the skill, and contributor-profile summary evidence covering at least one public skill, one anti-pattern, one trace, one published run, two internal-only skills, and public trust of at least 0.61.
 
 ## Verification Sequence
 

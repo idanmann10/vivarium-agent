@@ -310,6 +310,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const starterPack = asRecord(manifest.starterPack);
   const skillCount = numberValue(starterPack?.skillCount);
   const traceCount = numberValue(starterPack?.traceCount);
+  const starterSkillReferenceCount = distinctEvidenceReferenceCount(starterPack?.skillReferences, context);
+  const starterTraceReferenceCount = distinctEvidenceReferenceCount(starterPack?.traceReferences, context);
   const realGoals: ReadonlyArray<Readonly<Record<string, unknown>>> = Array.isArray(manifest.realGoals)
     ? manifest.realGoals.flatMap((goal) => {
         const record = asRecord(goal);
@@ -347,6 +349,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         traceCount !== undefined &&
         traceCount >= 3 &&
         traceCount <= 5 &&
+        starterSkillReferenceCount === skillCount &&
+        starterTraceReferenceCount === traceCount &&
         evidenceReference(starterPack?.curriculum, context) &&
         distinctEvidenceReferenceCount(starterPack?.firstRunReferences, context) >= 2,
     ),
@@ -798,7 +802,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.starterPack":
       return {
         check,
-        action: "Record live init evidence showing coding starter-pack skills, traces, curriculum, and distinct first-run references were installed.",
+        action:
+          "Record live init evidence showing distinct installed coding starter-pack skills, distinct installed starter traces, curriculum, and distinct first-run references.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.realGoals":

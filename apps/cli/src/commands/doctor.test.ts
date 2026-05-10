@@ -122,6 +122,8 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
   const evidencePath = join(root, "v1-evidence.json");
   const localEvidencePaths = [
     "domains/coding/curriculum.md",
+    ...Array.from({ length: 20 }, (_, index) => `domains/coding/skills/starter-${index + 1}/SKILL.md`),
+    ...Array.from({ length: 3 }, (_, index) => `domains/coding/traces/starter-${index + 1}/TRACE.md`),
     "docs/live/starter-run-1.md",
     "docs/live/starter-run-2.md",
     "docs/live/goal-1.md",
@@ -211,6 +213,8 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
         skillCount: 20,
         traceCount: 3,
         curriculum: "domains/coding/curriculum.md",
+        skillReferences: Array.from({ length: 20 }, (_, index) => `domains/coding/skills/starter-${index + 1}/SKILL.md`),
+        traceReferences: Array.from({ length: 3 }, (_, index) => `domains/coding/traces/starter-${index + 1}/TRACE.md`),
         firstRunReferences: ["docs/live/starter-run-1.md", "docs/live/starter-run-2.md"],
       },
       realGoals: [
@@ -420,6 +424,7 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.publicContribution:missing")).toContain("distinct");
     expect(actions.get("v1.curationStats:missing")).toContain("30%");
     expect(actions.get("v1.realGoals:missing")).toContain("distinct");
+    expect(actions.get("v1.starterPack:missing")).toContain("distinct installed");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("fourteen days");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("profile counts");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("other-agent refinement evidence");
@@ -493,7 +498,15 @@ describe("doctorCommand", () => {
   test("reports missing v1 loop evidence from an incomplete evidence manifest", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-evidence-incomplete-"));
     const evidencePath = join(root, "v1-evidence.json");
-    for (const path of ["domains/coding/curriculum.md", "docs/live/starter-run-1.md", "docs/live/starter-run-2.md"]) {
+    const starterSkillReferences = Array.from({ length: 20 }, (_, index) => `domains/coding/skills/starter-${index + 1}/SKILL.md`);
+    const starterTraceReferences = Array.from({ length: 3 }, (_, index) => `domains/coding/traces/starter-${index + 1}/TRACE.md`);
+    for (const path of [
+      "domains/coding/curriculum.md",
+      ...starterSkillReferences,
+      ...starterTraceReferences,
+      "docs/live/starter-run-1.md",
+      "docs/live/starter-run-2.md",
+    ]) {
       const absolutePath = join(root, path);
       mkdirSync(dirname(absolutePath), { recursive: true });
       writeFileSync(absolutePath, "starter evidence\n", "utf8");
@@ -506,6 +519,8 @@ describe("doctorCommand", () => {
           skillCount: 20,
           traceCount: 3,
           curriculum: "domains/coding/curriculum.md",
+          skillReferences: starterSkillReferences,
+          traceReferences: starterTraceReferences,
           firstRunReferences: ["docs/live/starter-run-1.md", "docs/live/starter-run-2.md"],
         },
         realGoals: [
@@ -543,6 +558,41 @@ describe("doctorCommand", () => {
       evidencePath,
       `${JSON.stringify({
         starterPack: { primaryDomain: "coding", skillCount: 20, traceCount: 3, curriculum: "domains/coding/curriculum.md" },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.starterPack:missing");
+  });
+
+  test("requires v1 starter pack counts to cite installed skills and traces", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-starter-artifacts-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    for (const path of ["domains/coding/curriculum.md", "docs/live/starter-run-1.md", "docs/live/starter-run-2.md"]) {
+      const absolutePath = join(root, path);
+      mkdirSync(dirname(absolutePath), { recursive: true });
+      writeFileSync(absolutePath, "starter evidence\n", "utf8");
+    }
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        starterPack: {
+          primaryDomain: "coding",
+          skillCount: 20,
+          traceCount: 3,
+          curriculum: "domains/coding/curriculum.md",
+          firstRunReferences: ["docs/live/starter-run-1.md", "docs/live/starter-run-2.md"],
+        },
       })}\n`,
       "utf8",
     );
