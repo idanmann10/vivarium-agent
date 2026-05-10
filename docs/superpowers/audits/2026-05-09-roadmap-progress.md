@@ -44,6 +44,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-world` trust-gates slice committed at `719f0a1`.
 - `the-world` independent validator fingerprint slice implemented after trust gates.
 - `the-world` concrete maintenance workflow slice committed at `9ecdff0`.
+- `the-world` coding starter-pack depth slice implemented after concrete maintenance workflows.
 - Superpowers and GStack URLs are recorded in Phase 0 plan and seed skill lineage.
 
 ## Fresh Verification Evidence
@@ -57,9 +58,9 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 
 `the-world`:
 
-- `bun run lint`: world validator reports 30 skills, 6 anti-patterns, 6 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, 1 contributor.
+- `bun run lint`: world validator reports 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, 1 contributor.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 9 tests passed, 0 failed.
+- `bun run test`: 10 tests passed, 0 failed.
 - `bun run build`: 8 required files present.
 
 ## Prompt-To-Artifact Checklist
