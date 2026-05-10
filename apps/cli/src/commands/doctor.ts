@@ -362,8 +362,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
       evidenceReference(publicContribution?.publicSkillPr, context) &&
         evidenceReference(publicContribution?.autoMerge, context) &&
         evidenceReference(publicContribution?.canonicalSkill, context) &&
-        (numberValue(publicContribution?.positiveSignals) ?? 0) >= 5 &&
-        (numberValue(publicContribution?.externalPulls) ?? 0) >= 3,
+        evidenceReferenceArray(publicContribution?.positiveSignalEvidence, context).length >= 5 &&
+        evidenceReferenceArray(publicContribution?.externalPullEvidence, context).length >= 3,
     ),
     v1Check(
       "publishedArtifacts",

@@ -428,8 +428,18 @@ The manifest is a compact index of evidence, not a substitute for the underlying
     "publicSkillPr": "https://github.com/owner/world/pull/1",
     "autoMerge": "https://github.com/owner/world/actions/runs/1",
     "canonicalSkill": "domains/coding/skills/example/SKILL.md",
-    "positiveSignals": 5,
-    "externalPulls": 3
+    "positiveSignalEvidence": [
+      "docs/live/signal-1.md",
+      "docs/live/signal-2.md",
+      "docs/live/signal-3.md",
+      "docs/live/signal-4.md",
+      "docs/live/signal-5.md"
+    ],
+    "externalPullEvidence": [
+      "docs/live/external-pull-1.md",
+      "docs/live/external-pull-2.md",
+      "docs/live/external-pull-3.md"
+    ]
   },
   "publishedArtifacts": {
     "antiPattern": "domains/coding/anti-patterns/example/ANTI-PATTERN.md",
@@ -453,7 +463,7 @@ The manifest is a compact index of evidence, not a substitute for the underlying
 }
 ```
 
-The live doctor checks the manifest for: coding starter pack depth, five real goals spanning at least seven days, all three provider smoke records, internal credential smoke evidence, canonical and private subscriptions, anti-pattern/trace/recover/destructive-hold/refusal behavior evidence, Dream artifacts, public skill PR/auto-merge/cross-install pull evidence, published anti-pattern/trace/run evidence, featured and `STATS.md` evidence, and a follow-up measurement at least fourteen days after the last recorded goal.
+The live doctor checks the manifest for: coding starter pack depth, five real goals spanning at least seven days, all three provider smoke records, internal credential smoke evidence, canonical and private subscriptions, anti-pattern/trace/recover/destructive-hold/refusal behavior evidence, Dream artifacts, public skill PR/auto-merge/canonical skill evidence, five inspectable positive-signal artifacts, three inspectable external pull/use artifacts, published anti-pattern/trace/run evidence, featured and `STATS.md` evidence, and a follow-up measurement at least fourteen days after the last recorded goal.
 
 ## Verification Sequence
 

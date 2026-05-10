@@ -144,6 +144,14 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
     "proposals/anti-patterns/coding/failure/ANTI-PATTERN.md",
     "proposals/traces/coding/workflow/TRACE.md",
     "domains/coding/skills/public/SKILL.md",
+    "docs/live/signal-1.md",
+    "docs/live/signal-2.md",
+    "docs/live/signal-3.md",
+    "docs/live/signal-4.md",
+    "docs/live/signal-5.md",
+    "docs/live/external-pull-1.md",
+    "docs/live/external-pull-2.md",
+    "docs/live/external-pull-3.md",
     "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
     "domains/coding/traces/workflow/TRACE.md",
     "runs/run-live-001/RUN.md",
@@ -225,8 +233,14 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
         publicSkillPr: "https://github.com/owner/world-final/pull/1",
         autoMerge: "https://github.com/owner/world-final/actions/runs/1",
         canonicalSkill: "domains/coding/skills/public/SKILL.md",
-        positiveSignals: 5,
-        externalPulls: 3,
+        positiveSignalEvidence: [
+          "docs/live/signal-1.md",
+          "docs/live/signal-2.md",
+          "docs/live/signal-3.md",
+          "docs/live/signal-4.md",
+          "docs/live/signal-5.md",
+        ],
+        externalPullEvidence: ["docs/live/external-pull-1.md", "docs/live/external-pull-2.md", "docs/live/external-pull-3.md"],
       },
       publishedArtifacts: {
         antiPattern: "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
@@ -523,6 +537,39 @@ describe("doctorCommand", () => {
     expect(result.ok).toBe(false);
     expect(result.checks).toContain("v1.evidencePath:configured");
     expect(result.checks).toContain("v1.behaviorLoop:missing");
+  });
+
+  test("rejects public contribution counts without inspectable signal and pull evidence", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-public-contribution-evidence-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    const canonicalSkill = join(root, "domains/coding/skills/public/SKILL.md");
+    mkdirSync(dirname(canonicalSkill), { recursive: true });
+    writeFileSync(canonicalSkill, "canonical skill evidence\n", "utf8");
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        publicContribution: {
+          publicSkillPr: "https://github.com/owner/world-final/pull/1",
+          autoMerge: "https://github.com/owner/world-final/actions/runs/1",
+          canonicalSkill: "domains/coding/skills/public/SKILL.md",
+          positiveSignals: 5,
+          externalPulls: 3,
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.publicContribution:missing");
   });
 
   test("reports missing GitHub target metadata as live readiness blockers", () => {
