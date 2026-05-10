@@ -11,6 +11,7 @@ describe("agent workflows", () => {
     const ci = workflow("ci.yml");
 
     expect(ci).toContain("bun run lint");
+    expect(ci).toContain("bun run knip");
     expect(ci).toContain("bun run typecheck");
     expect(ci).toContain("bun run test");
     expect(ci).toContain("bun run build");
