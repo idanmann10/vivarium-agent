@@ -11,14 +11,14 @@ Private worlds are Git forks with restricted access and higher subscription prio
 Save the canonical world and private fork in a local subscription registry:
 
 ```bash
-bun apps/cli/src/index.ts world subscribe \
+bun apps/cli/src/main.ts world subscribe \
   --subscriptions-path ~/.the-agent/world-subscriptions.json \
   --world-root ~/worlds/canonical \
   --world-label canonical \
   --world-ref git@github.com:<owner>/<canonical-world>.git \
   --priority 1
 
-bun apps/cli/src/index.ts world subscribe \
+bun apps/cli/src/main.ts world subscribe \
   --subscriptions-path ~/.the-agent/world-subscriptions.json \
   --world-root ~/worlds/team-private \
   --world-label team-private \
@@ -33,7 +33,7 @@ Visibility-aware proposal helpers route `internal` and `private` skill proposals
 Search saved subscriptions:
 
 ```bash
-bun apps/cli/src/index.ts world search \
+bun apps/cli/src/main.ts world search \
   --subscriptions-path ~/.the-agent/world-subscriptions.json \
   --domain coding \
   --query "<topic>"

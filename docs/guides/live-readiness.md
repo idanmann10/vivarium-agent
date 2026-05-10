@@ -11,7 +11,7 @@ Use this guide after the local test suite is green and before claiming v1 is liv
 Run the readiness check from `the-agent`:
 
 ```bash
-bun apps/cli/src/index.ts doctor --live \
+bun apps/cli/src/main.ts doctor --live \
   --env-file live-readiness.local.env \
   --agent-root /Users/idanmann/Vivarium/the-agent \
   --world-root /Users/idanmann/Vivarium/the-world
@@ -101,7 +101,7 @@ Keep secrets out of git and shell history where possible.
 Save the OpenRouter live provider as one profile. `docs/guides/configure-providers.md` shows the full Anthropic, OpenRouter, and private-compatible profile setup required before `doctor --live` is clear:
 
 ```bash
-bun apps/cli/src/index.ts providers configure \
+bun apps/cli/src/main.ts providers configure \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --name "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE" \
   --kind openai-compat \
@@ -119,7 +119,7 @@ For OpenAI or Anthropic profiles, use `--kind openai` or `--kind anthropic` and 
 Then run a provider smoke completion through the saved profile:
 
 ```bash
-bun apps/cli/src/index.ts providers smoke \
+bun apps/cli/src/main.ts providers smoke \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
 ```
@@ -127,7 +127,7 @@ bun apps/cli/src/index.ts providers smoke \
 The one-off smoke flags still work when you do not need to save the profile:
 
 ```bash
-bun apps/cli/src/index.ts providers smoke \
+bun apps/cli/src/main.ts providers smoke \
   --kind openai \
   --api-key-env OPENAI_API_KEY \
   --model <model>
@@ -136,7 +136,7 @@ bun apps/cli/src/index.ts providers smoke \
 For Anthropic, use `--kind anthropic --api-key-env ANTHROPIC_API_KEY`. For OpenAI-compatible providers, include a base URL:
 
 ```bash
-bun apps/cli/src/index.ts providers smoke \
+bun apps/cli/src/main.ts providers smoke \
   --kind openai-compat \
   --api-key-env OPENROUTER_API_KEY \
   --model <model> \
@@ -146,7 +146,7 @@ bun apps/cli/src/index.ts providers smoke \
 After smoke succeeds, run a real goal through the same provider path:
 
 ```bash
-bun apps/cli/src/index.ts run \
+bun apps/cli/src/main.ts run \
   --goal "<small real coding goal>" \
   --domain coding \
   --world-root /Users/idanmann/Vivarium/the-world \
@@ -164,7 +164,7 @@ One-off run flags also remain available. Use `--provider-kind openai` or `--prov
 After adding an internal API credential, smoke it through the encrypted keychain and HTTP dispatcher:
 
 ```bash
-bun apps/cli/src/index.ts credentials add \
+bun apps/cli/src/main.ts credentials add \
   --path "$VIVARIUM_CREDENTIALS_PATH" \
   --master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY" \
   --kind bearer \
@@ -172,7 +172,7 @@ bun apps/cli/src/index.ts credentials add \
   --purpose "Call internal API" \
   --value "$VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE"
 
-bun apps/cli/src/index.ts credentials smoke \
+bun apps/cli/src/main.ts credentials smoke \
   --path "$VIVARIUM_CREDENTIALS_PATH" \
   --master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY" \
   --name "$VIVARIUM_INTERNAL_API_CREDENTIAL_NAME" \
@@ -224,7 +224,7 @@ export VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID=<discussion-category-node-id>
 Then run a read-only GitHub smoke check:
 
 ```bash
-bun apps/cli/src/index.ts github smoke \
+bun apps/cli/src/main.ts github smoke \
   --owner <owner> \
   --repo <world-repo> \
   --token-env GITHUB_TOKEN
@@ -235,7 +235,7 @@ The command reports repository visibility, default branch, Discussions availabil
 Open the Phase 0 RFC Discussion only after the target repository ID and Discussion category ID are known:
 
 ```bash
-bun apps/cli/src/index.ts github discussion \
+bun apps/cli/src/main.ts github discussion \
   --owner <owner> \
   --repo <world-repo> \
   --token-env GITHUB_TOKEN \
@@ -251,7 +251,7 @@ Without `--confirm-write`, the command refuses before reading credentials or cal
 After a generated artifact has been committed to a branch, open a contribution PR:
 
 ```bash
-bun apps/cli/src/index.ts github pull-request \
+bun apps/cli/src/main.ts github pull-request \
   --owner <owner> \
   --repo <world-repo> \
   --token-env GITHUB_TOKEN \
@@ -267,7 +267,7 @@ Without `--confirm-write`, the command refuses before reading credentials or cal
 After the Discussion or PR is open, inspect workflow runs:
 
 ```bash
-bun apps/cli/src/index.ts github workflow-runs \
+bun apps/cli/src/main.ts github workflow-runs \
   --owner <owner> \
   --repo <world-repo> \
   --token-env GITHUB_TOKEN \
@@ -292,14 +292,14 @@ export VIVARIUM_PRIVATE_WORLD_REF=<private-world-remote-url>
 ```
 
 ```bash
-bun apps/cli/src/index.ts world subscribe \
+bun apps/cli/src/main.ts world subscribe \
   --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" \
   --world-root /tmp/vivarium-world-canonical \
   --world-label canonical \
   --world-ref "$VIVARIUM_CANONICAL_WORLD_REF" \
   --priority 1
 
-bun apps/cli/src/index.ts world subscribe \
+bun apps/cli/src/main.ts world subscribe \
   --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" \
   --world-root /tmp/vivarium-world-private \
   --world-label private \
@@ -307,14 +307,14 @@ bun apps/cli/src/index.ts world subscribe \
   --priority 0 \
   --auto-push
 
-bun apps/cli/src/index.ts world subscriptions \
+bun apps/cli/src/main.ts world subscriptions \
   --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH"
 ```
 
 Search through the saved registry:
 
 ```bash
-bun apps/cli/src/index.ts world search \
+bun apps/cli/src/main.ts world search \
   --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" \
   --domain coding \
   --query "<artifact title or distinctive phrase>" \
@@ -324,7 +324,7 @@ bun apps/cli/src/index.ts world search \
 Use the same saved registry for real runs:
 
 ```bash
-bun apps/cli/src/index.ts run \
+bun apps/cli/src/main.ts run \
   --goal "<small real coding goal>" \
   --domain coding \
   --state-path /tmp/vivarium-live-state.db \
@@ -336,7 +336,7 @@ bun apps/cli/src/index.ts run \
 For one-off checks without writing the registry, repeated roots still work:
 
 ```bash
-bun apps/cli/src/index.ts world search \
+bun apps/cli/src/main.ts world search \
   --world-root /tmp/vivarium-world-private \
   --world-label private \
   --world-root /tmp/vivarium-world-canonical \
@@ -356,7 +356,7 @@ It also checks that `VIVARIUM_CANONICAL_WORLD_REF` and `VIVARIUM_PRIVATE_WORLD_R
 After a contribution has landed in the canonical world remote, verify that a separate local install can pull the remote and retrieve the accepted artifact:
 
 ```bash
-bun apps/cli/src/index.ts world transmission-smoke \
+bun apps/cli/src/main.ts world transmission-smoke \
   --remote "$VIVARIUM_CANONICAL_WORLD_REF" \
   --destination /tmp/vivarium-world-second-install \
   --ref main \
@@ -382,7 +382,7 @@ At least one Compose command must succeed. Then verify the daemon supervisor:
 ```bash
 docker compose -f /Users/idanmann/Vivarium/the-agent/docker-compose.yml config
 docker compose -f /Users/idanmann/Vivarium/the-agent/docker-compose.yml up --build vivarium-daemon
-bun apps/cli/src/index.ts daemon smoke --status-url http://127.0.0.1:8787/status
+bun apps/cli/src/main.ts daemon smoke --status-url http://127.0.0.1:8787/status
 ```
 
 ## V1 Evidence Manifest

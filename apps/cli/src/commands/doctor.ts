@@ -879,7 +879,7 @@ function shellQuote(value: string): string {
 }
 
 function cliCommand(context: DoctorNextActionContext, args: string): string {
-  return `bun ${shellQuote(join(context.agentRoot, "apps/cli/src/index.ts"))} ${args}`;
+  return `bun ${shellQuote(join(context.agentRoot, "apps/cli/src/main.ts"))} ${args}`;
 }
 
 function nextActionForCheck(check: string, context: DoctorNextActionContext): DoctorNextAction {

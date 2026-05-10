@@ -25,7 +25,7 @@ Keep the master key and credential value out of committed files.
 Add the encrypted record with `credentials add`:
 
 ```bash
-bun apps/cli/src/index.ts credentials add \
+bun apps/cli/src/main.ts credentials add \
   --path "$VIVARIUM_CREDENTIALS_PATH" \
   --master-key <local-master-key> \
   --kind bearer \
@@ -37,7 +37,7 @@ bun apps/cli/src/index.ts credentials add \
 Then verify dispatch without exposing the secret:
 
 ```bash
-bun apps/cli/src/index.ts credentials smoke \
+bun apps/cli/src/main.ts credentials smoke \
   --path "$VIVARIUM_CREDENTIALS_PATH" \
   --master-key <local-master-key> \
   --name "$VIVARIUM_INTERNAL_API_CREDENTIAL_NAME" \

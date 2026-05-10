@@ -45,7 +45,7 @@ const steps = [
   {
     command: "bun",
     args: [
-      "apps/cli/src/index.ts",
+      "apps/cli/src/main.ts",
       "init",
       "--domain",
       "coding",
@@ -62,7 +62,7 @@ const steps = [
   {
     command: "bun",
     args: [
-      "apps/cli/src/index.ts",
+      "apps/cli/src/main.ts",
       "run",
       "--goal",
       "validate local cultural transmission",
@@ -77,7 +77,7 @@ const steps = [
   {
     command: "bun",
     args: [
-      "apps/cli/src/index.ts",
+      "apps/cli/src/main.ts",
       "world",
       "transmission-smoke",
       "--remote",

@@ -25,7 +25,7 @@ bun run build
 Initialize a local state database with the coding starter pack from a sibling world checkout:
 
 ```bash
-bun apps/cli/src/index.ts init \
+bun apps/cli/src/main.ts init \
   --domain coding \
   --world-root ../the-world \
   --state-path .vivarium/state.db

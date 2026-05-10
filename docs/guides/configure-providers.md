@@ -26,7 +26,7 @@ Save named profiles locally for Anthropic, OpenRouter, and the private
 OpenAI-compatible target:
 
 ```bash
-bun apps/cli/src/index.ts providers configure \
+bun apps/cli/src/main.ts providers configure \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --name "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE" \
   --kind anthropic \
@@ -37,7 +37,7 @@ bun apps/cli/src/index.ts providers configure \
   --context-window 200000 \
   --cost-class expensive
 
-bun apps/cli/src/index.ts providers configure \
+bun apps/cli/src/main.ts providers configure \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --name "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE" \
   --kind openai-compat \
@@ -49,7 +49,7 @@ bun apps/cli/src/index.ts providers configure \
   --context-window 128000 \
   --cost-class medium
 
-bun apps/cli/src/index.ts providers configure \
+bun apps/cli/src/main.ts providers configure \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --name "$VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE" \
   --kind openai-compat \
@@ -69,14 +69,14 @@ matching `VIVARIUM_*_PROVIDER_PROFILE` value is not present in that file.
 List configured profiles:
 
 ```bash
-bun apps/cli/src/index.ts providers list \
+bun apps/cli/src/main.ts providers list \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH"
 ```
 
 Smoke a profile without repeating model details:
 
 ```bash
-bun apps/cli/src/index.ts providers smoke \
+bun apps/cli/src/main.ts providers smoke \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
 ```
@@ -84,7 +84,7 @@ bun apps/cli/src/index.ts providers smoke \
 Run a goal through a profile:
 
 ```bash
-bun apps/cli/src/index.ts run \
+bun apps/cli/src/main.ts run \
   --goal "<small real goal>" \
   --provider-profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --provider-profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
