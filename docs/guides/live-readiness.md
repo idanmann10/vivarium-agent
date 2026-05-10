@@ -458,12 +458,20 @@ The manifest is a compact index of evidence, not a substitute for the underlying
     "followupMetric": 90,
     "improvementPercent": 25,
     "contributorProfile": "contributors/live-agent.json",
-    "competingDiscussion": "https://github.com/owner/world/discussions/2"
+    "competingDiscussion": "https://github.com/owner/world/discussions/2",
+    "contributorProfileSummary": {
+      "publicSkills": 1,
+      "antiPatterns": 1,
+      "traces": 1,
+      "publishedRuns": 1,
+      "internalSkills": 2,
+      "publicTrust": 0.61
+    }
   }
 }
 ```
 
-The live doctor checks the manifest for: coding starter pack depth, five real goals spanning at least seven days, all three provider smoke records, internal credential smoke evidence, canonical and private subscriptions, anti-pattern/trace/recover/destructive-hold/refusal behavior evidence, Dream artifacts, public skill PR/auto-merge/canonical skill evidence, five inspectable positive-signal artifacts, three inspectable external pull/use artifacts, published anti-pattern/trace/run evidence, featured and `STATS.md` evidence with at least 30% of skills from the top five contributors, and a follow-up measurement at least fourteen days after the last recorded goal.
+The live doctor checks the manifest for: coding starter pack depth, five real goals spanning at least seven days, all three provider smoke records, internal credential smoke evidence, canonical and private subscriptions, anti-pattern/trace/recover/destructive-hold/refusal behavior evidence, Dream artifacts, public skill PR/auto-merge/canonical skill evidence, five inspectable positive-signal artifacts, three inspectable external pull/use artifacts, published anti-pattern/trace/run evidence, featured and `STATS.md` evidence with at least 30% of skills from the top five contributors, a follow-up measurement at least fourteen days after the last recorded goal, and contributor-profile summary evidence covering at least one public skill, one anti-pattern, one trace, one published run, two internal-only skills, and public trust of at least 0.61.
 
 ## Verification Sequence
 

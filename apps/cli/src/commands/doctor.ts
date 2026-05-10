@@ -308,6 +308,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const publishedArtifacts = asRecord(manifest.publishedArtifacts);
   const curationStats = asRecord(manifest.curationStats);
   const twoWeekImprovement = asRecord(manifest.twoWeekImprovement);
+  const contributorProfileSummary = asRecord(twoWeekImprovement?.contributorProfileSummary);
   const followupMillis = dateMillis(twoWeekImprovement?.followupDate);
 
   return [
@@ -387,7 +388,13 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         numberValue(twoWeekImprovement?.followupMetric) !== undefined &&
         (numberValue(twoWeekImprovement?.improvementPercent) ?? 0) > 0 &&
         evidenceReference(twoWeekImprovement?.contributorProfile, context) &&
-        evidenceReference(twoWeekImprovement?.competingDiscussion, context),
+        evidenceReference(twoWeekImprovement?.competingDiscussion, context) &&
+        (numberValue(contributorProfileSummary?.publicSkills) ?? 0) >= 1 &&
+        (numberValue(contributorProfileSummary?.antiPatterns) ?? 0) >= 1 &&
+        (numberValue(contributorProfileSummary?.traces) ?? 0) >= 1 &&
+        (numberValue(contributorProfileSummary?.publishedRuns) ?? 0) >= 1 &&
+        (numberValue(contributorProfileSummary?.internalSkills) ?? 0) >= 2 &&
+        (numberValue(contributorProfileSummary?.publicTrust) ?? 0) >= 0.61,
     ),
   ];
 }
