@@ -831,6 +831,63 @@ function providerProfileCheck(
   return names === undefined || names.has(value) ? `${label}:configured` : `${label}:unavailable`;
 }
 
+function cliResultRecord(result: DoctorCommandRunResult): Readonly<Record<string, unknown>> | undefined {
+  if (result.exitCode !== 0) {
+    return undefined;
+  }
+
+  try {
+    const parsed = asRecord(JSON.parse(result.stdout));
+    return asRecord(parsed?.result);
+  } catch {
+    return undefined;
+  }
+}
+
+function providerSmokeCheck(
+  runner: DoctorCommandRunner,
+  env: Readonly<Record<string, string | undefined>>,
+  agentRoot: string,
+  label: string,
+  profileEnv: string,
+  requiredEnvNames: readonly string[],
+): string {
+  const profilesPath = textValue(env[providerProfilesPathEnv]);
+  const profile = textValue(env[profileEnv]);
+  if (
+    profilesPath === undefined ||
+    !existsSync(profilesPath) ||
+    profile === undefined ||
+    requiredEnvNames.some((envName) => textValue(env[envName]) === undefined)
+  ) {
+    return `provider.${label}Smoke:missing`;
+  }
+
+  const result = run(
+    runner,
+    "bun",
+    [
+      "apps/cli/src/main.ts",
+      "providers",
+      "smoke",
+      "--profiles-path",
+      profilesPath,
+      "--profile",
+      profile,
+      "--prompt",
+      "Return vivarium live-readiness provider smoke ok.",
+    ],
+    env,
+    agentRoot,
+  );
+  const record = cliResultRecord(result);
+  if (record === undefined) {
+    return `provider.${label}Smoke:unavailable`;
+  }
+
+  return record.ok === true ? `provider.${label}Smoke:ok` : `provider.${label}Smoke:failed`;
+}
+
 function privateOaiCompatCheck(env: Readonly<Record<string, string | undefined>>): string {
   const statuses = [
     envValueStatus(env, privateOaiCompatApiKeyEnv),
@@ -842,6 +899,51 @@ function privateOaiCompatCheck(env: Readonly<Record<string, string | undefined>>
   }
 
   return statuses.includes("placeholder") ? "provider.privateOaiCompat:placeholder" : "provider.privateOaiCompat:missing";
+}
+
+function credentialSmokeCheck(
+  runner: DoctorCommandRunner,
+  env: Readonly<Record<string, string | undefined>>,
+  agentRoot: string,
+): string {
+  const credentialsPath = textValue(env[credentialsPathEnv]);
+  const masterKey = textValue(env[credentialsMasterKeyEnv]);
+  const name = textValue(env[internalApiCredentialNameEnv]);
+  const url = textValue(env[internalApiHealthUrlEnv]);
+  if (credentialsPath === undefined || !existsSync(credentialsPath) || masterKey === undefined || name === undefined || url === undefined) {
+    return "credentials.smoke:missing";
+  }
+
+  const result = run(
+    runner,
+    "bun",
+    [
+      "apps/cli/src/main.ts",
+      "credentials",
+      "smoke",
+      "--path",
+      credentialsPath,
+      "--master-key",
+      masterKey,
+      "--name",
+      name,
+      "--url",
+      url,
+      "--method",
+      "GET",
+    ],
+    env,
+    agentRoot,
+  );
+  const record = cliResultRecord(result);
+  if (record === undefined) {
+    return "credentials.smoke:unavailable";
+  }
+
+  const status = numberValue(record.status);
+  return record.ok === true && status !== undefined && status >= 200 && status < 300
+    ? "credentials.smoke:ok"
+    : "credentials.smoke:failed";
 }
 
 function githubAuthCheck(runner: DoctorCommandRunner, env: Readonly<Record<string, string | undefined>>): string {
@@ -1130,6 +1232,45 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         env: [privateOaiCompatProviderProfileEnv],
         guide: `${guide}#provider-environment`,
       };
+    case "provider.anthropicSmoke":
+      return {
+        check,
+        action: "Run a successful Anthropic provider smoke through the saved provider profile.",
+        env: [providerProfilesPathEnv, anthropicProviderProfileEnv, anthropicApiKeyEnv],
+        command: cliCommand(
+          context,
+          'providers smoke --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --profile "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE"',
+        ),
+        guide: `${guide}#provider-environment`,
+      };
+    case "provider.openrouterSmoke":
+      return {
+        check,
+        action: "Run a successful OpenRouter provider smoke through the saved provider profile.",
+        env: [providerProfilesPathEnv, openRouterProviderProfileEnv, openRouterApiKeyEnv],
+        command: cliCommand(
+          context,
+          'providers smoke --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"',
+        ),
+        guide: `${guide}#provider-environment`,
+      };
+    case "provider.privateOaiCompatSmoke":
+      return {
+        check,
+        action: "Run a successful private OpenAI-compatible provider smoke through the saved provider profile.",
+        env: [
+          providerProfilesPathEnv,
+          privateOaiCompatProviderProfileEnv,
+          privateOaiCompatApiKeyEnv,
+          privateOaiCompatBaseUrlEnv,
+          privateOaiCompatModelEnv,
+        ],
+        command: cliCommand(
+          context,
+          'providers smoke --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --profile "$VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE"',
+        ),
+        guide: `${guide}#provider-environment`,
+      };
     case "credentials.path":
       return {
         check,
@@ -1167,6 +1308,17 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: "Export the internal API health URL used by credential smoke tests.",
         env: [internalApiHealthUrlEnv],
+        guide: `${guide}#internal-api-credential`,
+      };
+    case "credentials.smoke":
+      return {
+        check,
+        action: "Run a successful internal API credential smoke through the encrypted credential store.",
+        env: [credentialsPathEnv, credentialsMasterKeyEnv, internalApiCredentialNameEnv, internalApiHealthUrlEnv],
+        command: cliCommand(
+          context,
+          'credentials smoke --path "$VIVARIUM_CREDENTIALS_PATH" --master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY" --name "$VIVARIUM_INTERNAL_API_CREDENTIAL_NAME" --url "$VIVARIUM_INTERNAL_API_HEALTH_URL" --method GET',
+        ),
         guide: `${guide}#internal-api-credential`,
       };
     case "github.env":
@@ -1366,11 +1518,19 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     providerProfileCheck(env, profiles, anthropicProviderProfileEnv, "provider.anthropicProfile"),
     providerProfileCheck(env, profiles, openRouterProviderProfileEnv, "provider.openrouterProfile"),
     providerProfileCheck(env, profiles, privateOaiCompatProviderProfileEnv, "provider.privateOaiCompatProfile"),
+    providerSmokeCheck(runner, env, agentRoot, "anthropic", anthropicProviderProfileEnv, [anthropicApiKeyEnv]),
+    providerSmokeCheck(runner, env, agentRoot, "openrouter", openRouterProviderProfileEnv, [openRouterApiKeyEnv]),
+    providerSmokeCheck(runner, env, agentRoot, "privateOaiCompat", privateOaiCompatProviderProfileEnv, [
+      privateOaiCompatApiKeyEnv,
+      privateOaiCompatBaseUrlEnv,
+      privateOaiCompatModelEnv,
+    ]),
     requiredFileCheck(env, credentialsPathEnv, "credentials.path"),
     requiredEnvCheck(env, credentialsMasterKeyEnv, "credentials.masterKey"),
     requiredEnvCheck(env, internalApiCredentialNameEnv, "internalApi.credentialName"),
     requiredEnvCheck(env, internalApiCredentialValueEnv, "internalApi.credentialValue"),
     requiredEnvCheck(env, internalApiHealthUrlEnv, "internalApi.healthUrl"),
+    credentialSmokeCheck(runner, env, agentRoot),
     githubEnvCheck(env),
     requiredEnvCheck(env, githubOwnerEnv, "github.owner"),
     requiredEnvCheck(env, githubRepositoryIdEnv, "github.repositoryId"),

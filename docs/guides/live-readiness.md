@@ -17,7 +17,7 @@ bun apps/cli/src/main.ts doctor --live \
   --world-root /Users/idanmann/Vivarium/the-world
 ```
 
-A live-ready workspace should report configured agent/world names, configured agent/world remotes, canonical/private world subscription metadata, configured provider environment and profile metadata, configured GitHub token environment, valid GitHub auth, a visible Phase 0 RFC Discussion, green latest agent/world GitHub Actions CI runs on `main`, installed Docker, installed Docker Compose, and a complete v1 evidence manifest.
+A live-ready workspace should report configured agent/world names, configured agent/world remotes, canonical/private world subscription metadata, configured provider environment and profile metadata, successful live provider smokes, configured internal API credential metadata, a successful credential smoke, configured GitHub token environment, valid GitHub auth, a visible Phase 0 RFC Discussion, green latest agent/world GitHub Actions CI runs on `main`, installed Docker, installed Docker Compose, and a complete v1 evidence manifest.
 Path-based checks report `:unavailable` when the env var is set but the expected local file has not been created yet.
 When the world subscription registry exists, canonical/private world refs also report `:unavailable` if the configured refs are not present in that registry.
 For live-readiness mode, the JSON result also includes `nextActions` for every non-passing check. Each action names the failed check, the env vars or command needed to clear it, and the guide section to read before making live changes.
@@ -116,12 +116,20 @@ bun apps/cli/src/main.ts providers configure \
 
 For OpenAI or Anthropic profiles, use `--kind openai` or `--kind anthropic` and omit `--base-url`.
 
-Then run a provider smoke completion through the saved profile:
+Then run provider smoke completions through the saved profiles:
 
 ```bash
 bun apps/cli/src/main.ts providers smoke \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
+  --profile "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE"
+
+bun apps/cli/src/main.ts providers smoke \
+  --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
+
+bun apps/cli/src/main.ts providers smoke \
+  --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
+  --profile "$VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE"
 ```
 
 The one-off smoke flags still work when you do not need to save the profile:
@@ -157,7 +165,7 @@ bun apps/cli/src/main.ts run \
 
 One-off run flags also remain available. Use `--provider-kind openai` or `--provider-kind anthropic` without `--provider-base-url` for first-party providers.
 
-`doctor --live` expects `VIVARIUM_PROVIDER_PROFILES_PATH` to point at the file created by `providers configure`, and it checks that each `VIVARIUM_*_PROVIDER_PROFILE` value is present in that file.
+`doctor --live` expects `VIVARIUM_PROVIDER_PROFILES_PATH` to point at the file created by `providers configure`, checks that each `VIVARIUM_*_PROVIDER_PROFILE` value is present in that file, and runs the three saved-profile smoke probes. It reports `provider.anthropicSmoke:ok`, `provider.openrouterSmoke:ok`, and `provider.privateOaiCompatSmoke:ok` only when those provider calls succeed.
 
 ## Internal API Credential
 
@@ -192,7 +200,7 @@ export VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE=<redacted-internal-api-token>
 export VIVARIUM_INTERNAL_API_HEALTH_URL=<internal-health-url>
 ```
 
-`doctor --live` expects `VIVARIUM_CREDENTIALS_PATH` to point at the encrypted file created by `credentials add`, and it expects the master key, credential name, credential value, and health URL to be exported so the credential add and smoke commands can run from the same filled local env file.
+`doctor --live` expects `VIVARIUM_CREDENTIALS_PATH` to point at the encrypted file created by `credentials add`, and it expects the master key, credential name, credential value, and health URL to be exported so the credential add and smoke commands can run from the same filled local env file. It reports `credentials.smoke:ok` only when the encrypted credential can call the configured health URL and receive a 2xx status.
 
 ## GitHub Auth
 

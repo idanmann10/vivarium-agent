@@ -86,6 +86,41 @@ const readyRunner: DoctorCommandRunner = (run) => {
     return { exitCode: 0, stdout: "Docker Compose version v2.32.4", stderr: "" };
   }
 
+  if (text.includes(" providers smoke ") && text.includes("--profile anthropic-main")) {
+    return {
+      exitCode: 0,
+      stdout: '{"command":"providers","result":{"ok":true,"kind":"anthropic","model":"claude","responsePreview":"ok","responseLength":2}}',
+      stderr: "",
+    };
+  }
+
+  if (text.includes(" providers smoke ") && text.includes("--profile openrouter")) {
+    return {
+      exitCode: 0,
+      stdout:
+        '{"command":"providers","result":{"ok":true,"kind":"openai-compat","model":"openrouter/test-model","responsePreview":"ok","responseLength":2}}',
+      stderr: "",
+    };
+  }
+
+  if (text.includes(" providers smoke ") && text.includes("--profile private-finetune")) {
+    return {
+      exitCode: 0,
+      stdout:
+        '{"command":"providers","result":{"ok":true,"kind":"openai-compat","model":"private-finetune","responsePreview":"ok","responseLength":2}}',
+      stderr: "",
+    };
+  }
+
+  if (text.includes(" credentials smoke ")) {
+    return {
+      exitCode: 0,
+      stdout:
+        '{"command":"credentials","result":{"ok":true,"credentialName":"INTERNAL_API_TOKEN","url":"https://internal.example/health","method":"GET","status":200,"bodyPreview":"ok"}}',
+      stderr: "",
+    };
+  }
+
   if (text === "gh run list --repo owner/agent-final --branch main --workflow CI --limit 1 --json status,conclusion") {
     return { exitCode: 0, stdout: '[{"status":"completed","conclusion":"success"}]', stderr: "" };
   }
@@ -119,6 +154,46 @@ const missingGitHubLiveRunner: DoctorCommandRunner = (run) => {
 
   if (text.startsWith("gh api graphql")) {
     return { exitCode: 0, stdout: '{"data":{"repository":{"discussions":{"nodes":[]}}}}', stderr: "" };
+  }
+
+  return readyRunner(run);
+};
+
+const failedLiveSmokeRunner: DoctorCommandRunner = (run) => {
+  const text = [run.command, ...run.args].join(" ");
+
+  if (text.includes(" providers smoke ") && text.includes("--profile anthropic-main")) {
+    return {
+      exitCode: 0,
+      stdout: '{"command":"providers","result":{"ok":false,"kind":"anthropic","model":"claude","error":"provider rejected request"}}',
+      stderr: "",
+    };
+  }
+
+  if (text.includes(" providers smoke ") && text.includes("--profile openrouter")) {
+    return {
+      exitCode: 0,
+      stdout: '{"command":"providers","result":{"ok":false,"kind":"openai-compat","model":"openrouter/test-model","error":"provider rejected request"}}',
+      stderr: "",
+    };
+  }
+
+  if (text.includes(" providers smoke ") && text.includes("--profile private-finetune")) {
+    return {
+      exitCode: 0,
+      stdout:
+        '{"command":"providers","result":{"ok":false,"kind":"openai-compat","model":"private-finetune","error":"provider rejected request"}}',
+      stderr: "",
+    };
+  }
+
+  if (text.includes(" credentials smoke ")) {
+    return {
+      exitCode: 0,
+      stdout:
+        '{"command":"credentials","result":{"ok":true,"credentialName":"INTERNAL_API_TOKEN","url":"https://internal.example/health","method":"GET","status":401,"bodyPreview":"unauthorized"}}',
+      stderr: "",
+    };
   }
 
   return readyRunner(run);
@@ -3035,6 +3110,50 @@ describe("doctorCommand", () => {
     expect(seenTokens).toEqual(["configured-token", "configured-token", "configured-token"]);
   });
 
+  test("reports failed provider and credential smoke probes as live readiness blockers", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-live-smoke-"));
+    const files = writeLiveReadyFiles(root);
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      nowMillis: Date.parse("2026-05-23T00:00:00.000Z"),
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        VIVARIUM_WORLD_SUBSCRIPTIONS_PATH: files.subscriptionsPath,
+        VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world-final.git",
+        VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
+        ANTHROPIC_API_KEY: "configured",
+        OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
+        VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_PROVIDER_PROFILES_PATH: files.profilesPath,
+        VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
+        VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
+        VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE: "private-finetune",
+        VIVARIUM_CREDENTIALS_PATH: files.credentialsPath,
+        VIVARIUM_CREDENTIALS_MASTER_KEY: "configured",
+        VIVARIUM_INTERNAL_API_CREDENTIAL_NAME: "INTERNAL_API_TOKEN",
+        VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE: "configured",
+        VIVARIUM_INTERNAL_API_HEALTH_URL: "https://internal.example/health",
+        VIVARIUM_V1_EVIDENCE_PATH: files.evidencePath,
+        GITHUB_TOKEN: "configured",
+      },
+      runner: failedLiveSmokeRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("provider.anthropicSmoke:failed");
+    expect(result.checks).toContain("provider.openrouterSmoke:failed");
+    expect(result.checks).toContain("provider.privateOaiCompatSmoke:failed");
+    expect(result.checks).toContain("credentials.smoke:failed");
+  });
+
   test("accepts a complete v1 evidence manifest with otherwise configured live readiness inputs", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-live-ready-"));
     const files = writeLiveReadyFiles(root);
@@ -3079,6 +3198,10 @@ describe("doctorCommand", () => {
         "github.discussion:configured",
         "github.agentCi:ok",
         "github.worldCi:ok",
+        "provider.anthropicSmoke:ok",
+        "provider.openrouterSmoke:ok",
+        "provider.privateOaiCompatSmoke:ok",
+        "credentials.smoke:ok",
         "v1.evidencePath:configured",
         "v1.starterPack:configured",
         "v1.realGoals:configured",

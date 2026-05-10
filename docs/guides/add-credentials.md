@@ -13,7 +13,9 @@ For v1 live readiness, record the internal API credential metadata in env vars b
 
 ```bash
 export VIVARIUM_CREDENTIALS_PATH=/tmp/vivarium-credentials.enc
+export VIVARIUM_CREDENTIALS_MASTER_KEY=<local-master-key>
 export VIVARIUM_INTERNAL_API_CREDENTIAL_NAME=INTERNAL_API_TOKEN
+export VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE=<redacted-internal-api-token>
 export VIVARIUM_INTERNAL_API_HEALTH_URL=<internal-health-url>
 ```
 
@@ -47,3 +49,6 @@ bun apps/cli/src/main.ts credentials smoke \
 
 The smoke response should show status metadata only. If the command prints a
 credential value, treat it as a blocking safety bug.
+
+`doctor --live` runs the same smoke probe and reports `credentials.smoke:ok` only when the
+health endpoint returns a 2xx status through the encrypted credential.

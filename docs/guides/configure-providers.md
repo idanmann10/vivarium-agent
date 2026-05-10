@@ -73,13 +73,24 @@ bun apps/cli/src/main.ts providers list \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH"
 ```
 
-Smoke a profile without repeating model details:
+Smoke every v1 profile without repeating model details:
 
 ```bash
 bun apps/cli/src/main.ts providers smoke \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
+  --profile "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE"
+
+bun apps/cli/src/main.ts providers smoke \
+  --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
+
+bun apps/cli/src/main.ts providers smoke \
+  --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
+  --profile "$VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE"
 ```
+
+`doctor --live` runs these saved-profile smokes and keeps provider readiness blocked until all
+three calls succeed.
 
 Run a goal through a profile:
 
