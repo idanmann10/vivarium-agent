@@ -178,7 +178,8 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
     "STATS.md",
     "contributors/live-agent.json",
     "docs/live/similar-goals.md",
-    "docs/live/refinement-evidence.md",
+    "docs/live/refinement-1.md",
+    "docs/live/refinement-2.md",
   ];
 
   writeFileSync(
@@ -310,7 +311,10 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
         competingDiscussion: "https://github.com/owner/world-final/discussions/2",
         competingSkillReferences: ["domains/coding/skills/public/SKILL.md", "domains/coding/skills/public-variant/SKILL.md"],
         similarGoalsEvidence: "docs/live/similar-goals.md",
-        refinementEvidence: "docs/live/refinement-evidence.md",
+        refinementEvidence: [
+          { agent: "refinement-agent-a", evidence: "docs/live/refinement-1.md" },
+          { agent: "refinement-agent-b", evidence: "docs/live/refinement-2.md" },
+        ],
         contributorProfileSummary: {
           publicSkills: 1,
           antiPatterns: 1,
@@ -468,7 +472,7 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("profile counts");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("GitHub Discussion URL");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("competing skill variant references");
-    expect(actions.get("v1.twoWeekImprovement:missing")).toContain("other-agent refinement evidence");
+    expect(actions.get("v1.twoWeekImprovement:missing")).toContain("other-agent refinement agent/evidence");
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("trace and run Plan-read agent/evidence");
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("other-agent");
   });
@@ -1907,6 +1911,72 @@ describe("doctorCommand", () => {
           contributorProfile: "contributors/live-agent.json",
           competingDiscussion: "https://github.com/owner/world-final/discussions/2",
           competingSkillReferences: ["domains/coding/skills/public/SKILL.md", "domains/coding/skills/public-variant/SKILL.md"],
+          refinementEvidence: "docs/live/refinement-evidence.md",
+          contributorProfileSummary: {
+            publicSkills: 1,
+            antiPatterns: 1,
+            traces: 1,
+            publishedRuns: 1,
+            internalSkills: 2,
+            publicTrust: 0.61,
+          },
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.twoWeekImprovement:missing");
+  });
+
+  test("requires v1 two-week refinement evidence to name other agents", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-two-week-refinement-agents-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    const localEvidencePaths = [
+      "docs/live/goal-1.md",
+      "docs/live/goal-2.md",
+      "docs/live/goal-3.md",
+      "docs/live/goal-4.md",
+      "docs/live/goal-5.md",
+      "contributors/live-agent.json",
+      "docs/live/similar-goals.md",
+      "docs/live/refinement-evidence.md",
+      "domains/coding/skills/public/SKILL.md",
+      "domains/coding/skills/public-variant/SKILL.md",
+    ];
+    for (const path of localEvidencePaths) {
+      const absolutePath = join(root, path);
+      mkdirSync(dirname(absolutePath), { recursive: true });
+      writeFileSync(absolutePath, "two-week refinement agents evidence\n", "utf8");
+    }
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        realGoals: [
+          { id: "goal-1", date: "2026-05-01", evidence: "docs/live/goal-1.md" },
+          { id: "goal-2", date: "2026-05-02", evidence: "docs/live/goal-2.md" },
+          { id: "goal-3", date: "2026-05-04", evidence: "docs/live/goal-3.md" },
+          { id: "goal-4", date: "2026-05-06", evidence: "docs/live/goal-4.md" },
+          { id: "goal-5", date: "2026-05-08", evidence: "docs/live/goal-5.md" },
+        ],
+        twoWeekImprovement: {
+          followupDate: "2026-05-22",
+          baselineMetric: 120,
+          followupMetric: 90,
+          improvementPercent: 25,
+          contributorProfile: "contributors/live-agent.json",
+          competingDiscussion: "https://github.com/owner/world-final/discussions/2",
+          competingSkillReferences: ["domains/coding/skills/public/SKILL.md", "domains/coding/skills/public-variant/SKILL.md"],
+          similarGoalsEvidence: "docs/live/similar-goals.md",
           refinementEvidence: "docs/live/refinement-evidence.md",
           contributorProfileSummary: {
             publicSkills: 1,
