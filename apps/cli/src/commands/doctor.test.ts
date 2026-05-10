@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -55,6 +55,32 @@ const mismatchedRemoteRunner: DoctorCommandRunner = (run) => {
 
   return blockedRunner(run);
 };
+
+const missingDockerRunner: DoctorCommandRunner = (run) => {
+  const text = [run.command, ...run.args].join(" ");
+  if (text === "docker --version" || text === "docker compose version" || text === "docker-compose version") {
+    return { exitCode: 1, stdout: "", stderr: "missing docker" };
+  }
+
+  return blockedRunner(run);
+};
+
+function markdownHeadingAnchors(markdown: string): ReadonlySet<string> {
+  return new Set(
+    [...markdown.matchAll(/^##+ (.+)$/gm)].flatMap(([, heading]) =>
+      heading === undefined
+        ? []
+        : [
+            heading
+              .replace(/`/g, "")
+              .toLowerCase()
+              .replace(/[^\w\s-]/g, "")
+              .trim()
+              .replace(/\s+/g, "-"),
+          ],
+    ),
+  );
+}
 
 describe("doctorCommand", () => {
   test("keeps the default offline-local checks stable", () => {
@@ -116,6 +142,24 @@ describe("doctorCommand", () => {
         command: expect.stringContaining("gh auth status"),
       }),
     );
+  });
+
+  test("returns next-action guide anchors that exist in the live-readiness guide", () => {
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { GH_PAGER: "cat" },
+      runner: missingDockerRunner,
+    });
+    const anchors = markdownHeadingAnchors(readFileSync("docs/guides/live-readiness.md", "utf8"));
+
+    for (const action of result.nextActions ?? []) {
+      const [, anchor] = action.guide.split("#");
+      if (anchor !== undefined) {
+        expect(anchors.has(anchor), `${action.check} guide ${action.guide} should reference an existing heading`).toBe(true);
+      }
+    }
   });
 
   test("reports placeholder repo names as live readiness blockers", () => {

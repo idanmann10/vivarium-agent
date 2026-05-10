@@ -282,7 +282,7 @@ function nextActionForCheck(check: string): DoctorNextAction {
         action: "Create a world subscription registry and export its path.",
         env: [worldSubscriptionsPathEnv],
         command: "bun apps/cli/src/index.ts world subscribe --subscriptions-path \"$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH\" --world-root <world-root> --world-label canonical --world-ref <world-ref>",
-        guide: `${guide}#world-subscriptions`,
+        guide: `${guide}#multi-world-subscriptions`,
       };
     case "world.canonicalRef":
       return {
@@ -290,7 +290,7 @@ function nextActionForCheck(check: string): DoctorNextAction {
         action: "Export the canonical world ref and ensure it exists in the subscription registry.",
         env: [canonicalWorldRefEnv],
         command: "bun apps/cli/src/index.ts world subscribe --subscriptions-path \"$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH\" --world-root <canonical-world-root> --world-label canonical --world-ref \"$VIVARIUM_CANONICAL_WORLD_REF\"",
-        guide: `${guide}#world-subscriptions`,
+        guide: `${guide}#multi-world-subscriptions`,
       };
     case "world.privateForkRef":
       return {
@@ -298,7 +298,7 @@ function nextActionForCheck(check: string): DoctorNextAction {
         action: "Export the private fork world ref and ensure it exists in the subscription registry.",
         env: [privateWorldRefEnv],
         command: "bun apps/cli/src/index.ts world subscribe --subscriptions-path \"$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH\" --world-root <private-world-root> --world-label private --world-ref \"$VIVARIUM_PRIVATE_WORLD_REF\" --auto-push",
-        guide: `${guide}#world-subscriptions`,
+        guide: `${guide}#multi-world-subscriptions`,
       };
     case "provider.env":
       return {
@@ -421,14 +421,14 @@ function nextActionForCheck(check: string): DoctorNextAction {
         check,
         action: "Install Docker before daemon supervision checks.",
         command: "docker --version",
-        guide: `${guide}#final-live-verification`,
+        guide: `${guide}#docker-compose`,
       };
     case "docker.compose":
       return {
         check,
         action: "Install Docker Compose before daemon supervision checks.",
         command: "docker compose version",
-        guide: `${guide}#final-live-verification`,
+        guide: `${guide}#docker-compose`,
       };
     default:
       return {
