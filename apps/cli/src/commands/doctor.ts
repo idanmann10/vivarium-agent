@@ -810,7 +810,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.publishedArtifacts":
       return {
         check,
-        action: "Record published anti-pattern, trace, run, and second-install read evidence.",
+        action: "Record published anti-pattern, trace, run, and separate trace and run Plan-read evidence.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.curationStats":

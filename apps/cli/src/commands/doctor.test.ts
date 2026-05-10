@@ -675,6 +675,12 @@ describe("doctorCommand", () => {
     expect(result.ok).toBe(false);
     expect(result.checks).toContain("v1.evidencePath:configured");
     expect(result.checks).toContain("v1.publishedArtifacts:missing");
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "v1.publishedArtifacts:missing",
+        action: expect.stringContaining("trace and run Plan-read evidence"),
+      }),
+    );
   });
 
   test("requires v1 curation stats to show the roadmap top-five contributor concentration", () => {
