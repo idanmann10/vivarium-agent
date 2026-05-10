@@ -1,5 +1,46 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["apps/*/src/index.ts", "packages/*/src/index.ts", "scripts/*.ts"],
-  "project": ["apps/**/*.ts", "packages/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts"]
+  "ignoreDependencies": ["drizzle-kit", "turbo", "vitest"],
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.ts", "tests/**/*.ts"],
+      "project": ["scripts/**/*.ts", "tests/**/*.ts"]
+    },
+    "apps/cli": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "apps/daemon": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/core": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/eval": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/providers": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/runtime": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/state": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/tools": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/world": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    }
+  }
 }

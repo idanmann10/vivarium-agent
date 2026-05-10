@@ -10,6 +10,7 @@ credentials and remotes.
 ## Commands
 
 - `bun run lint`
+- `bun run knip`
 - `bun run typecheck`
 - `bun run test`
 - `bun run build`

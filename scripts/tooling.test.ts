@@ -6,8 +6,24 @@ interface PackageJson {
   readonly devDependencies?: Record<string, string>;
 }
 
+interface KnipWorkspaceConfig {
+  readonly entry?: readonly string[];
+  readonly project?: readonly string[];
+}
+
+interface KnipConfig {
+  readonly entry?: readonly string[];
+  readonly project?: readonly string[];
+  readonly ignoreDependencies?: readonly string[];
+  readonly workspaces?: Record<string, KnipWorkspaceConfig>;
+}
+
 function rootPackage(): PackageJson {
   return JSON.parse(readFileSync("package.json", "utf8")) as PackageJson;
+}
+
+function knipConfig(): KnipConfig {
+  return JSON.parse(readFileSync("knip.json", "utf8")) as KnipConfig;
 }
 
 describe("root toolchain wiring", () => {
@@ -24,5 +40,36 @@ describe("root toolchain wiring", () => {
 
     expect(scripts?.lint).toContain("oxlint");
     expect(scripts?.["format:check"]).toContain("oxfmt --check");
+  });
+
+  test("exposes a workspace-aware Knip dependency gate", () => {
+    const packageJson = rootPackage();
+    const config = knipConfig();
+
+    expect(packageJson.scripts?.knip ?? "").toContain(
+      "knip --include dependencies,unlisted,unresolved --no-config-hints",
+    );
+    expect(config.entry).toBeUndefined();
+    expect(config.project).toBeUndefined();
+    expect(config.ignoreDependencies).toEqual(
+      expect.arrayContaining(["drizzle-kit", "turbo", "vitest"]),
+    );
+
+    for (const workspace of [
+      ".",
+      "apps/cli",
+      "apps/daemon",
+      "packages/core",
+      "packages/eval",
+      "packages/providers",
+      "packages/runtime",
+      "packages/state",
+      "packages/tools",
+      "packages/world",
+    ]) {
+      expect(Object.hasOwn(config.workspaces ?? {}, workspace)).toBe(true);
+      expect(config.workspaces?.[workspace]?.entry?.length).toBeGreaterThan(0);
+      expect(config.workspaces?.[workspace]?.project?.length).toBeGreaterThan(0);
+    }
   });
 });
