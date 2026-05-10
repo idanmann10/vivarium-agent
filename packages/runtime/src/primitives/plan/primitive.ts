@@ -6,12 +6,14 @@ export interface PlanPrimitiveContext {
   readonly skills: readonly LocalWorldSearchResult[];
   readonly traces: readonly LocalWorldSearchResult[];
   readonly antiPatterns: readonly LocalWorldSearchResult[];
+  readonly runs: readonly LocalWorldSearchResult[];
 }
 
 export interface PlanPrimitiveRequest {
   readonly goal: string;
   readonly provider: LocalProvider;
   readonly context: PlanPrimitiveContext;
+  readonly identitySummary?: string;
 }
 
 export interface PlanPrimitivePayload {
@@ -22,11 +24,18 @@ export interface PlanPrimitivePayload {
 
 export async function runPlanPrimitive(request: PlanPrimitiveRequest): Promise<PlanPrimitivePayload> {
   const plan = await request.provider.complete({ kind: "plan", input: request.goal });
-  const contextTitles = [...request.context.skills, ...request.context.traces, ...request.context.antiPatterns].map(
-    (result) => result.title,
-  );
+  const contextTitles = [
+    ...request.context.skills,
+    ...request.context.traces,
+    ...request.context.antiPatterns,
+    ...request.context.runs,
+  ].map((result) => result.title);
+  const identityLine =
+    request.identitySummary === undefined || request.identitySummary.length === 0
+      ? ""
+      : `\nIdentity: ${request.identitySummary}`;
   return {
-    plan: `${plan}\nLoaded: ${contextTitles.join(", ")}`,
+    plan: `${plan}${identityLine}\nLoaded: ${contextTitles.join(", ")}`,
     skillsLoaded: request.context.skills.map((result) => skillId(result.id)),
     tracesLoaded: request.context.traces.map((result) => traceId(result.id)),
   };

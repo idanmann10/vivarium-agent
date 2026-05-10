@@ -26,10 +26,14 @@ describe("lifecycle primitives", () => {
         skills: [result("skill", "skill-a")],
         traces: [result("trace", "trace-a")],
         antiPatterns: [result("anti-pattern", "anti-a")],
+        runs: [result("run", "run-a")],
       },
+      identitySummary: "Agent prefers test-first plans.",
     });
 
     expect(payload.plan).toContain("Plan:");
+    expect(payload.plan).toContain("Identity: Agent prefers test-first plans.");
+    expect(payload.plan).toContain("run-a");
     expect(payload.skillsLoaded).toEqual([skillId("skill-a")]);
     expect(payload.tracesLoaded).toEqual([traceId("trace-a")]);
   });

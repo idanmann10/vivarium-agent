@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { skillId } from "../../core/src/index.js";
+import { agentId, skillId } from "../../core/src/index.js";
 import { createLocalProvider } from "../../providers/src/index.js";
 import { InMemoryStateRepository } from "../../state/src/index.js";
 import { createSelfTools } from "../../tools/src/index.js";
@@ -90,6 +90,31 @@ describe("runGoal", () => {
 
     expect(result.success).toBe(true);
     expect(plan?.plan).toContain("Habitual Branch Cleanup");
+  });
+
+  test("passes current identity summary into planning context", async () => {
+    const harness = createHarness();
+    harness.state.setIdentity({
+      agentId: agentId("local-agent"),
+      name: "local-agent",
+      devStages: { coding: "apprentice" },
+      runsCompleted: 4,
+      summary: "Agent should inspect before editing.",
+      updatedAt: "local",
+    });
+
+    const result = await runGoal({
+      goal: "write a test before implementation",
+      domain: "coding",
+      agentName: "local-agent",
+      provider: harness.provider,
+      tools: harness.tools,
+    });
+
+    const plan = harness.state.listEpisodes(result.runId).find((episode) => episode.kind === "plan");
+
+    expect(result.success).toBe(true);
+    expect(plan?.plan).toContain("Identity: Agent should inspect before editing.");
   });
 
   test("uses focused attention limits from self-tools", async () => {

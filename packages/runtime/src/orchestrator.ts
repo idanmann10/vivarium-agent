@@ -143,6 +143,7 @@ export async function runGoal(request: RunGoalRequest): Promise<RunGoalResult> {
       goal: request.goal,
       provider: request.provider,
       context: attention,
+      identitySummary: request.tools.identity.summary(),
     })),
   });
 
