@@ -42,6 +42,7 @@ describe("dispatchCliCommand", () => {
     await expect(dispatchCliCommand(["doctor", "--live", "--agent-root", "/agent", "--world-root", "/world"])).resolves.toMatchObject({
       command: "doctor",
       result: {
+        nextActions: expect.arrayContaining([expect.objectContaining({ check: expect.stringMatching(/^agent\.name:/) })]),
         checks: expect.arrayContaining([
           expect.stringMatching(/^agent\.remote:/),
           expect.stringMatching(/^world\.remote:/),

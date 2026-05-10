@@ -19,6 +19,7 @@ bun apps/cli/src/index.ts doctor --live \
 A live-ready workspace should report configured agent/world names, configured agent/world remotes, canonical/private world subscription metadata, configured provider environment and profile metadata, configured GitHub token environment, valid GitHub auth, installed Docker, and installed Docker Compose.
 Path-based checks report `:unavailable` when the env var is set but the expected local file has not been created yet.
 When the world subscription registry exists, canonical/private world refs also report `:unavailable` if the configured refs are not present in that registry.
+For live-readiness mode, the JSON result also includes `nextActions` for every non-passing check. Each action names the failed check, the env vars or command needed to clear it, and the guide section to read before making live changes.
 
 ## Naming Gate
 

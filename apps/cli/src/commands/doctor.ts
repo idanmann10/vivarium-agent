@@ -3,6 +3,15 @@ import { existsSync, readFileSync } from "node:fs";
 export interface DoctorResult {
   readonly ok: boolean;
   readonly checks: readonly string[];
+  readonly nextActions?: readonly DoctorNextAction[];
+}
+
+export interface DoctorNextAction {
+  readonly check: string;
+  readonly action: string;
+  readonly env?: readonly string[];
+  readonly command?: string;
+  readonly guide: string;
 }
 
 export interface DoctorCommandRun {
@@ -230,6 +239,206 @@ function dockerCheck(runner: DoctorCommandRunner): readonly string[] {
   return [dockerStatus, standaloneCompose.exitCode === 0 ? "docker.compose:installed" : "docker.compose:missing"];
 }
 
+function isPassingCheck(check: string): boolean {
+  return check.endsWith(":configured") || check.endsWith(":ok") || check.endsWith(":installed");
+}
+
+function nextActionForCheck(check: string): DoctorNextAction {
+  const guide = "docs/guides/live-readiness.md";
+  const [name = check] = check.split(":");
+
+  switch (name) {
+    case "agent.name":
+      return {
+        check,
+        action: "Choose the final agent repo name and export it for live readiness.",
+        env: [agentRepoNameEnv],
+        guide: `${guide}#naming-gate`,
+      };
+    case "world.name":
+      return {
+        check,
+        action: "Choose the final world repo name and export it for live readiness.",
+        env: [worldRepoNameEnv],
+        guide: `${guide}#naming-gate`,
+      };
+    case "agent.remote":
+      return {
+        check,
+        action: "Add the canonical GitHub remote for the agent repo.",
+        command: "git remote add origin git@github.com:<owner>/<agent-repo>.git",
+        guide: `${guide}#git-remotes`,
+      };
+    case "world.remote":
+      return {
+        check,
+        action: "Add the canonical GitHub remote for the world repo.",
+        command: "git remote add origin git@github.com:<owner>/<world-repo>.git",
+        guide: `${guide}#git-remotes`,
+      };
+    case "world.subscriptionsPath":
+      return {
+        check,
+        action: "Create a world subscription registry and export its path.",
+        env: [worldSubscriptionsPathEnv],
+        command: "bun apps/cli/src/index.ts world subscribe --subscriptions-path \"$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH\" --world-root <world-root> --world-label canonical --world-ref <world-ref>",
+        guide: `${guide}#world-subscriptions`,
+      };
+    case "world.canonicalRef":
+      return {
+        check,
+        action: "Export the canonical world ref and ensure it exists in the subscription registry.",
+        env: [canonicalWorldRefEnv],
+        command: "bun apps/cli/src/index.ts world subscribe --subscriptions-path \"$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH\" --world-root <canonical-world-root> --world-label canonical --world-ref \"$VIVARIUM_CANONICAL_WORLD_REF\"",
+        guide: `${guide}#world-subscriptions`,
+      };
+    case "world.privateForkRef":
+      return {
+        check,
+        action: "Export the private fork world ref and ensure it exists in the subscription registry.",
+        env: [privateWorldRefEnv],
+        command: "bun apps/cli/src/index.ts world subscribe --subscriptions-path \"$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH\" --world-root <private-world-root> --world-label private --world-ref \"$VIVARIUM_PRIVATE_WORLD_REF\" --auto-push",
+        guide: `${guide}#world-subscriptions`,
+      };
+    case "provider.env":
+      return {
+        check,
+        action: "Export at least one provider API key before live provider smoke tests.",
+        env: [anthropicApiKeyEnv, openRouterApiKeyEnv, privateOaiCompatApiKeyEnv],
+        guide: `${guide}#provider-environment`,
+      };
+    case "provider.anthropic":
+      return {
+        check,
+        action: "Export the Anthropic API key for v1 provider coverage.",
+        env: [anthropicApiKeyEnv],
+        guide: `${guide}#provider-environment`,
+      };
+    case "provider.openrouter":
+      return {
+        check,
+        action: "Export the OpenRouter API key and save an OpenRouter provider profile.",
+        env: [openRouterApiKeyEnv, openRouterProviderProfileEnv],
+        command: "bun apps/cli/src/index.ts providers configure --profiles-path \"$VIVARIUM_PROVIDER_PROFILES_PATH\" --name \"$VIVARIUM_OPENROUTER_PROVIDER_PROFILE\" --kind openai-compat --api-key-env OPENROUTER_API_KEY --model <model> --base-url <provider-base-url> --capability chat --capability json_mode --context-window <context-window> --cost-class medium",
+        guide: `${guide}#provider-environment`,
+      };
+    case "provider.privateOaiCompat":
+      return {
+        check,
+        action: "Export the private OpenAI-compatible provider key, base URL, and model.",
+        env: [privateOaiCompatApiKeyEnv, privateOaiCompatBaseUrlEnv, privateOaiCompatModelEnv],
+        guide: `${guide}#provider-environment`,
+      };
+    case "provider.profilesPath":
+      return {
+        check,
+        action: "Export the provider profiles path and create the configured provider profiles.",
+        env: [providerProfilesPathEnv],
+        command: "bun apps/cli/src/index.ts providers configure --profiles-path \"$VIVARIUM_PROVIDER_PROFILES_PATH\" --name <profile> --kind <provider-kind> --api-key-env <KEY_ENV> --model <model> --capability chat --context-window <context-window> --cost-class medium",
+        guide: `${guide}#provider-environment`,
+      };
+    case "provider.anthropicProfile":
+      return {
+        check,
+        action: "Export and create the Anthropic provider profile.",
+        env: [anthropicProviderProfileEnv],
+        guide: `${guide}#provider-environment`,
+      };
+    case "provider.openrouterProfile":
+      return {
+        check,
+        action: "Export and create the OpenRouter provider profile.",
+        env: [openRouterProviderProfileEnv],
+        guide: `${guide}#provider-environment`,
+      };
+    case "provider.privateOaiCompatProfile":
+      return {
+        check,
+        action: "Export and create the private OpenAI-compatible provider profile.",
+        env: [privateOaiCompatProviderProfileEnv],
+        guide: `${guide}#provider-environment`,
+      };
+    case "credentials.path":
+      return {
+        check,
+        action: "Create the encrypted credential store and export its path.",
+        env: [credentialsPathEnv],
+        command: "bun apps/cli/src/index.ts credentials add --path \"$VIVARIUM_CREDENTIALS_PATH\" --master-key <local-master-key> --kind bearer --name INTERNAL_API_TOKEN --purpose \"Call internal API\" --value <redacted>",
+        guide: `${guide}#internal-api-credential`,
+      };
+    case "internalApi.credentialName":
+      return {
+        check,
+        action: "Export the encrypted credential name used for the internal API smoke test.",
+        env: [internalApiCredentialNameEnv],
+        guide: `${guide}#internal-api-credential`,
+      };
+    case "internalApi.healthUrl":
+      return {
+        check,
+        action: "Export the internal API health URL used by credential smoke tests.",
+        env: [internalApiHealthUrlEnv],
+        guide: `${guide}#internal-api-credential`,
+      };
+    case "github.env":
+      return {
+        check,
+        action: "Export a GitHub token for live GitHub smoke and write checks.",
+        env: [...githubEnvNames],
+        guide: `${guide}#github-auth`,
+      };
+    case "github.owner":
+      return {
+        check,
+        action: "Export the GitHub owner or organization for the canonical world repo.",
+        env: [githubOwnerEnv],
+        guide: `${guide}#github-auth`,
+      };
+    case "github.repositoryId":
+      return {
+        check,
+        action: "Export the GitHub GraphQL repository ID for Discussion creation.",
+        env: [githubRepositoryIdEnv],
+        guide: `${guide}#github-auth`,
+      };
+    case "github.discussionCategoryId":
+      return {
+        check,
+        action: "Export the GitHub Discussion category ID for the Phase 0 RFC.",
+        env: [githubDiscussionCategoryIdEnv],
+        guide: `${guide}#github-auth`,
+      };
+    case "github.auth":
+      return {
+        check,
+        action: "Refresh GitHub CLI authentication or export a valid GitHub token.",
+        env: [...githubEnvNames],
+        command: "gh auth status",
+        guide: `${guide}#github-auth`,
+      };
+    case "docker":
+      return {
+        check,
+        action: "Install Docker before daemon supervision checks.",
+        command: "docker --version",
+        guide: `${guide}#final-live-verification`,
+      };
+    case "docker.compose":
+      return {
+        check,
+        action: "Install Docker Compose before daemon supervision checks.",
+        command: "docker compose version",
+        guide: `${guide}#final-live-verification`,
+      };
+    default:
+      return {
+        check,
+        action: "Inspect this live-readiness check and clear it before claiming v1 live verification.",
+        guide,
+      };
+  }
+}
+
 function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
   const runner = options.runner ?? defaultRunner;
   const env = options.env ?? process.env;
@@ -264,7 +473,11 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     ...dockerCheck(runner),
   ];
 
-  return { ok: checks.every((check) => check.endsWith(":configured") || check.endsWith(":ok") || check.endsWith(":installed")), checks };
+  return {
+    ok: checks.every(isPassingCheck),
+    checks,
+    nextActions: checks.filter((check) => !isPassingCheck(check)).map(nextActionForCheck),
+  };
 }
 
 export function doctorCommand(options: DoctorCommandOptions = {}): DoctorResult {

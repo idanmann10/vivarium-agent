@@ -83,6 +83,41 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("docker.compose:missing");
   });
 
+  test("returns next actions for failed live readiness checks", () => {
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { GH_PAGER: "cat" },
+      runner: blockedRunner,
+    });
+
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "agent.name:missing",
+        env: expect.arrayContaining(["VIVARIUM_AGENT_REPO_NAME"]),
+      }),
+    );
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "agent.remote:missing",
+        command: expect.stringContaining("git remote add origin"),
+      }),
+    );
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "provider.openrouter:missing",
+        env: expect.arrayContaining(["OPENROUTER_API_KEY"]),
+      }),
+    );
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "github.auth:invalid",
+        command: expect.stringContaining("gh auth status"),
+      }),
+    );
+  });
+
   test("reports placeholder repo names as live readiness blockers", () => {
     const result = doctorCommand({
       mode: "live-readiness",
