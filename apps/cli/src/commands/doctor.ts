@@ -429,6 +429,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const dreamInternalSkillEvidence = evidenceReferenceIdentity(dreamArtifacts?.internalSkill, context);
   const dreamPublicSkillEvidence = evidenceReferenceIdentity(dreamArtifacts?.publicSkill, context);
   const publishedArtifacts = asRecord(manifest.publishedArtifacts);
+  const publishedArtifactsContributorAgent = textValue(publishedArtifacts?.contributorAgent);
   const publishedTracePlanRead = agentEvidenceRecord(publishedArtifacts?.tracePlanRead, context);
   const publishedRunPlanRead = agentEvidenceRecord(publishedArtifacts?.runPlanRead, context);
   const curationStats = asRecord(manifest.curationStats);
@@ -537,6 +538,9 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         evidenceReference(publishedArtifacts?.run, context) &&
         publishedTracePlanRead !== undefined &&
         publishedRunPlanRead !== undefined &&
+        publishedArtifactsContributorAgent !== undefined &&
+        publishedTracePlanRead.agent !== publishedArtifactsContributorAgent &&
+        publishedRunPlanRead.agent !== publishedArtifactsContributorAgent &&
         publishedTracePlanRead.evidence !== publishedRunPlanRead.evidence,
     ),
     v1Check(
@@ -986,7 +990,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.publishedArtifacts":
       return {
         check,
-        action: "Record published anti-pattern, trace, run, and separate other-agent trace and run Plan-read agent/evidence records.",
+        action:
+          "Record published anti-pattern, trace, run, the contributor agent identity, and separate other-agent trace and run Plan-read agent/evidence records.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.curationStats":

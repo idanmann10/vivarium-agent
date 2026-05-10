@@ -289,6 +289,7 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
         ],
       },
       publishedArtifacts: {
+        contributorAgent: "live-agent",
         antiPattern: "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
         trace: "domains/coding/traces/workflow/TRACE.md",
         run: "runs/run-live-001/RUN.md",
@@ -478,6 +479,7 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("competing skill variant references");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("other-agent refinement agent/evidence");
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("trace and run Plan-read agent/evidence");
+    expect(actions.get("v1.publishedArtifacts:missing")).toContain("contributor agent identity");
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("other-agent");
   });
 
@@ -1590,6 +1592,7 @@ describe("doctorCommand", () => {
       evidencePath,
       `${JSON.stringify({
         publishedArtifacts: {
+          contributorAgent: "live-agent",
           antiPattern: "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
           trace: "domains/coding/traces/workflow/TRACE.md",
           run: "runs/run-live-001/RUN.md",
@@ -1636,6 +1639,7 @@ describe("doctorCommand", () => {
       evidencePath,
       `${JSON.stringify({
         publishedArtifacts: {
+          contributorAgent: "live-agent",
           antiPattern: "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
           trace: "domains/coding/traces/workflow/TRACE.md",
           run: "runs/run-live-001/RUN.md",
@@ -1678,11 +1682,55 @@ describe("doctorCommand", () => {
       evidencePath,
       `${JSON.stringify({
         publishedArtifacts: {
+          contributorAgent: "live-agent",
           antiPattern: "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
           trace: "domains/coding/traces/workflow/TRACE.md",
           run: "runs/run-live-001/RUN.md",
           tracePlanRead: "docs/live/trace-plan-read.md",
           runPlanRead: "docs/live/run-plan-read.md",
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.publishedArtifacts:missing");
+  });
+
+  test("requires v1 published trace and run Plan-read agents to differ from the contributor", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-published-plan-read-other-contributor-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    const localEvidencePaths = [
+      "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
+      "domains/coding/traces/workflow/TRACE.md",
+      "runs/run-live-001/RUN.md",
+      "docs/live/trace-plan-read.md",
+      "docs/live/run-plan-read.md",
+    ];
+    for (const path of localEvidencePaths) {
+      const absolutePath = join(root, path);
+      mkdirSync(dirname(absolutePath), { recursive: true });
+      writeFileSync(absolutePath, "published artifact contributor evidence\n", "utf8");
+    }
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        publishedArtifacts: {
+          contributorAgent: "live-agent",
+          antiPattern: "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
+          trace: "domains/coding/traces/workflow/TRACE.md",
+          run: "runs/run-live-001/RUN.md",
+          tracePlanRead: { agent: "live-agent", evidence: "docs/live/trace-plan-read.md" },
+          runPlanRead: { agent: "plan-reader-b", evidence: "docs/live/run-plan-read.md" },
         },
       })}\n`,
       "utf8",
