@@ -53,6 +53,11 @@ describe("runInitCommand", () => {
 
     const state = new SQLiteStateRepository(statePath);
     expect(state.listLocalSkills().map((skill) => skill.name).sort()).toEqual(["Red Green", "Small Steps"]);
+    expect(state.getIdentity()).toMatchObject({
+      name: "local-agent",
+      devStages: { coding: "newborn" },
+      runsCompleted: 0,
+    });
     state.close();
   });
 });

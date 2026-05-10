@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-import { skillId } from "../../../../packages/core/src/index.js";
+import { agentId, skillId } from "../../../../packages/core/src/index.js";
 import { migrationVersions, SQLiteStateRepository } from "../../../../packages/state/src/index.js";
 import type { LocalSkillRecord } from "../../../../packages/state/src/index.js";
 import { createLocalWorldReader, type LocalWorldSearchResult } from "../../../../packages/world/src/index.js";
@@ -80,6 +80,14 @@ export function runInitCommand(options: InitCommandOptions): InitCommandResult {
     state.upsertLocalSkill(skillRecord(skill, options.primaryDomain));
   }
   state.advanceCurriculum(options.primaryDomain, 0);
+  state.setIdentity({
+    agentId: agentId("local-agent"),
+    name: "local-agent",
+    devStages: { [options.primaryDomain]: "newborn" },
+    runsCompleted: 0,
+    summary: `Newborn local agent initialized for ${options.primaryDomain}.`,
+    updatedAt: "local",
+  });
   state.close();
 
   return {
