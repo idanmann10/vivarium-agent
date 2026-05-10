@@ -1,4 +1,4 @@
-import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, test } from "bun:test";
@@ -746,6 +746,105 @@ describe("dispatchCliCommand", () => {
       },
       error: "Missing provider environment variable: VIVARIUM_MISSING_PROVIDER_KEY",
     });
+  });
+
+  test("routes live setup through a filled env file with explicit write confirmation", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-setup-"));
+    const envPath = join(root, "live-readiness.local.env");
+    const profilesPath = join(root, "provider-profiles.json");
+    const credentialsPath = join(root, "credentials.enc");
+    write(
+      envPath,
+      [
+        `export VIVARIUM_PROVIDER_PROFILES_PATH="${profilesPath}"`,
+        'export ANTHROPIC_API_KEY="anthropic-secret"',
+        'export VIVARIUM_ANTHROPIC_PROVIDER_PROFILE="anthropic-main"',
+        'export VIVARIUM_ANTHROPIC_MODEL="claude-test"',
+        'export VIVARIUM_ANTHROPIC_CONTEXT_WINDOW="200000"',
+        'export OPENROUTER_API_KEY="openrouter-secret"',
+        'export VIVARIUM_OPENROUTER_PROVIDER_PROFILE="openrouter"',
+        'export VIVARIUM_OPENROUTER_MODEL="openrouter/test"',
+        'export VIVARIUM_OPENROUTER_BASE_URL="https://openrouter.example/api/v1"',
+        'export VIVARIUM_OPENROUTER_CONTEXT_WINDOW="128000"',
+        'export VIVARIUM_OAI_COMPAT_API_KEY="private-secret"',
+        'export VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE="private-finetune"',
+        'export VIVARIUM_OAI_COMPAT_MODEL="private-model"',
+        'export VIVARIUM_OAI_COMPAT_BASE_URL="https://models.internal.example/v1"',
+        'export VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW="64000"',
+        `export VIVARIUM_CREDENTIALS_PATH="${credentialsPath}"`,
+        'export VIVARIUM_CREDENTIALS_MASTER_KEY="master-key"',
+        'export VIVARIUM_INTERNAL_API_CREDENTIAL_NAME="INTERNAL_API_TOKEN"',
+        'export VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE="internal-secret"',
+      ].join("\n"),
+    );
+
+    const result = await dispatchCliCommand(["live", "setup", "--env-file", envPath, "--confirm-write"]);
+    const listedProfiles = await dispatchCliCommand(["providers", "list", "--profiles-path", profilesPath]);
+    const listedCredentials = await dispatchCliCommand(["credentials", "list", "--path", credentialsPath, "--master-key", "master-key"]);
+
+    expect(result.command).toBe("live");
+    expect(result.result).toEqual({
+      ok: true,
+      written: true,
+      providerProfiles: ["anthropic-main", "openrouter", "private-finetune"],
+      credentialName: "INTERNAL_API_TOKEN",
+      paths: { providerProfilesPath: profilesPath, credentialsPath },
+    });
+    expect(listedProfiles.result).toMatchObject({
+      profiles: [
+        { name: "anthropic-main", kind: "anthropic", model: "claude-test" },
+        { name: "openrouter", kind: "openai-compat", model: "openrouter/test", baseUrl: "https://openrouter.example/api/v1" },
+        { name: "private-finetune", kind: "openai-compat", model: "private-model", baseUrl: "https://models.internal.example/v1" },
+      ],
+    });
+    expect(listedCredentials.result).toEqual({
+      credentials: [{ name: "INTERNAL_API_TOKEN", kind: "bearer", purpose: "Call internal API", scopes: [] }],
+    });
+    expect(readFileSync(credentialsPath, "utf8")).not.toContain("internal-secret");
+    expect(result.output).not.toContain("internal-secret");
+  });
+
+  test("refuses live setup writes without explicit confirmation", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-setup-refuse-"));
+    const envPath = join(root, "live-readiness.local.env");
+    const profilesPath = join(root, "provider-profiles.json");
+    const credentialsPath = join(root, "credentials.enc");
+    write(
+      envPath,
+      [
+        `export VIVARIUM_PROVIDER_PROFILES_PATH="${profilesPath}"`,
+        'export ANTHROPIC_API_KEY="anthropic-secret"',
+        'export VIVARIUM_ANTHROPIC_PROVIDER_PROFILE="anthropic-main"',
+        'export VIVARIUM_ANTHROPIC_MODEL="claude-test"',
+        'export VIVARIUM_ANTHROPIC_CONTEXT_WINDOW="200000"',
+        'export OPENROUTER_API_KEY="openrouter-secret"',
+        'export VIVARIUM_OPENROUTER_PROVIDER_PROFILE="openrouter"',
+        'export VIVARIUM_OPENROUTER_MODEL="openrouter/test"',
+        'export VIVARIUM_OPENROUTER_BASE_URL="https://openrouter.example/api/v1"',
+        'export VIVARIUM_OPENROUTER_CONTEXT_WINDOW="128000"',
+        'export VIVARIUM_OAI_COMPAT_API_KEY="private-secret"',
+        'export VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE="private-finetune"',
+        'export VIVARIUM_OAI_COMPAT_MODEL="private-model"',
+        'export VIVARIUM_OAI_COMPAT_BASE_URL="https://models.internal.example/v1"',
+        'export VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW="64000"',
+        `export VIVARIUM_CREDENTIALS_PATH="${credentialsPath}"`,
+        'export VIVARIUM_CREDENTIALS_MASTER_KEY="master-key"',
+        'export VIVARIUM_INTERNAL_API_CREDENTIAL_NAME="INTERNAL_API_TOKEN"',
+        'export VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE="internal-secret"',
+      ].join("\n"),
+    );
+
+    await expect(dispatchCliCommand(["live", "setup", "--env-file", envPath])).resolves.toMatchObject({
+      command: "live",
+      result: {
+        ok: false,
+        written: false,
+        requiresConfirmation: true,
+        wouldWrite: ["providerProfiles", "credential"],
+      },
+    });
+    expect(existsSync(profilesPath)).toBe(false);
+    expect(existsSync(credentialsPath)).toBe(false);
   });
 
   test("routes GitHub smoke checks without credentials", async () => {

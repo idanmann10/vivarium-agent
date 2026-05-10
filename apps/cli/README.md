@@ -11,6 +11,7 @@ Implemented command groups include:
 - `init`, `run`, `status`, `doctor`, and `doctor --live`
 - `credentials add/list/smoke`
 - `providers configure/list/smoke`
+- `live setup`
 - `skills list`
 - `dream run`
 - `identity summary/stage/history`
@@ -27,5 +28,7 @@ credentials. `doctor --live` can load a filled readiness handoff file with
 
 Use the CLI for local handoff checks such as provider profile smoke tests,
 encrypted credential smoke tests, GitHub read/write guards, daemon status, and
-world transmission-smoke. Reusable logic should move into `packages/*` before it
+world transmission-smoke. `live setup --env-file <file> --confirm-write` materializes
+the local provider profile file and encrypted internal API credential store from a
+filled readiness file without printing secret values. Reusable logic should move into `packages/*` before it
 grows command-specific state.

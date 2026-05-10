@@ -9,6 +9,7 @@ import { dreamCommand } from "./commands/dream.js";
 import { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand, githubWorkflowRunsCommand } from "./commands/github.js";
 import { identityHistoryCommand, identityStageCommand, identitySummaryCommand } from "./commands/identity.js";
 import { runInitCommand } from "./commands/init.js";
+import { liveSetupCommand } from "./commands/live.js";
 import { publishListCommand, publishRunCommand, publishTraceCommand } from "./commands/publish.js";
 import {
   configureProviderProfileCommand,
@@ -595,6 +596,19 @@ export async function dispatchCliCommand(argv: readonly string[], options: CliDi
       }
       const statusUrl = value(flags, "status-url");
       return output(command, await daemonSmokeCommand(statusUrl === undefined ? {} : { statusUrl }));
+    }
+    case "live": {
+      if (subcommand !== "setup") {
+        usage('Unknown live subcommand. Use "setup".');
+      }
+      const envFile = required(flags, "env-file");
+      return output(
+        command,
+        liveSetupCommand({
+          env: readEnvFile(envFile, options.env ?? process.env),
+          confirmWrite: booleanFlag(flags, "confirm-write"),
+        }),
+      );
     }
     case "status":
       return output(command, statusCommand());

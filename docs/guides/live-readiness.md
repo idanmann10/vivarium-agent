@@ -90,15 +90,31 @@ export OPENROUTER_API_KEY=<redacted>
 export VIVARIUM_OAI_COMPAT_API_KEY=<redacted>
 export VIVARIUM_OAI_COMPAT_BASE_URL=<private-oai-compatible-base-url>
 export VIVARIUM_OAI_COMPAT_MODEL=<private-fine-tune-model>
+export VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW=<private-context-window>
 export VIVARIUM_PROVIDER_PROFILES_PATH=/tmp/vivarium-provider-profiles.json
 export VIVARIUM_ANTHROPIC_PROVIDER_PROFILE=anthropic-main
+export VIVARIUM_ANTHROPIC_MODEL=<anthropic-model>
+export VIVARIUM_ANTHROPIC_CONTEXT_WINDOW=<anthropic-context-window>
 export VIVARIUM_OPENROUTER_PROVIDER_PROFILE=openrouter
+export VIVARIUM_OPENROUTER_MODEL=<openrouter-model>
+export VIVARIUM_OPENROUTER_BASE_URL=<openrouter-base-url>
+export VIVARIUM_OPENROUTER_CONTEXT_WINDOW=<openrouter-context-window>
 export VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE=private-finetune
 ```
 
 Keep secrets out of git and shell history where possible.
 
-Save the OpenRouter live provider as one profile. `docs/guides/configure-providers.md` shows the full Anthropic, OpenRouter, and private-compatible profile setup required before `doctor --live` is clear:
+Create the live provider profile file and encrypted credential store from the filled env file:
+
+```bash
+bun apps/cli/src/main.ts live setup \
+  --env-file live-readiness.local.env \
+  --confirm-write
+```
+
+Without `--confirm-write`, this command reports what it would write and exits without creating files.
+
+You can also save profiles individually. `docs/guides/configure-providers.md` shows the full Anthropic, OpenRouter, and private-compatible profile setup required before `doctor --live` is clear:
 
 ```bash
 bun apps/cli/src/main.ts providers configure \
@@ -106,11 +122,11 @@ bun apps/cli/src/main.ts providers configure \
   --name "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE" \
   --kind openai-compat \
   --api-key-env OPENROUTER_API_KEY \
-  --model <model> \
-  --base-url <provider-base-url> \
+  --model "$VIVARIUM_OPENROUTER_MODEL" \
+  --base-url "$VIVARIUM_OPENROUTER_BASE_URL" \
   --capability chat \
   --capability json_mode \
-  --context-window <context-window> \
+  --context-window "$VIVARIUM_OPENROUTER_CONTEXT_WINDOW" \
   --cost-class medium
 ```
 

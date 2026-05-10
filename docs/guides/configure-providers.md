@@ -16,10 +16,24 @@ export OPENROUTER_API_KEY=<redacted>
 export VIVARIUM_OAI_COMPAT_API_KEY=<redacted>
 export VIVARIUM_OAI_COMPAT_BASE_URL=<private-oai-compatible-base-url>
 export VIVARIUM_OAI_COMPAT_MODEL=<private-fine-tune-model>
+export VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW=<private-context-window>
 export VIVARIUM_PROVIDER_PROFILES_PATH=~/.the-agent/provider-profiles.json
 export VIVARIUM_ANTHROPIC_PROVIDER_PROFILE=anthropic-main
+export VIVARIUM_ANTHROPIC_MODEL=<anthropic-model>
+export VIVARIUM_ANTHROPIC_CONTEXT_WINDOW=<anthropic-context-window>
 export VIVARIUM_OPENROUTER_PROVIDER_PROFILE=openrouter
+export VIVARIUM_OPENROUTER_MODEL=<openrouter-model>
+export VIVARIUM_OPENROUTER_BASE_URL=<openrouter-base-url>
+export VIVARIUM_OPENROUTER_CONTEXT_WINDOW=<openrouter-context-window>
 export VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE=private-finetune
+```
+
+Create all v1 profiles from `live-readiness.local.env` with the guarded setup command:
+
+```bash
+bun apps/cli/src/main.ts live setup \
+  --env-file live-readiness.local.env \
+  --confirm-write
 ```
 
 Save named profiles locally for Anthropic, OpenRouter, and the private
@@ -31,10 +45,10 @@ bun apps/cli/src/main.ts providers configure \
   --name "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE" \
   --kind anthropic \
   --api-key-env ANTHROPIC_API_KEY \
-  --model <anthropic-model> \
+  --model "$VIVARIUM_ANTHROPIC_MODEL" \
   --capability chat \
   --capability tools \
-  --context-window 200000 \
+  --context-window "$VIVARIUM_ANTHROPIC_CONTEXT_WINDOW" \
   --cost-class expensive
 
 bun apps/cli/src/main.ts providers configure \
@@ -42,11 +56,11 @@ bun apps/cli/src/main.ts providers configure \
   --name "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE" \
   --kind openai-compat \
   --api-key-env OPENROUTER_API_KEY \
-  --model <openrouter-model> \
-  --base-url <openrouter-base-url> \
+  --model "$VIVARIUM_OPENROUTER_MODEL" \
+  --base-url "$VIVARIUM_OPENROUTER_BASE_URL" \
   --capability chat \
   --capability json_mode \
-  --context-window 128000 \
+  --context-window "$VIVARIUM_OPENROUTER_CONTEXT_WINDOW" \
   --cost-class medium
 
 bun apps/cli/src/main.ts providers configure \
@@ -58,7 +72,7 @@ bun apps/cli/src/main.ts providers configure \
   --base-url "$VIVARIUM_OAI_COMPAT_BASE_URL" \
   --capability chat \
   --capability json_mode \
-  --context-window <context-window> \
+  --context-window "$VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW" \
   --cost-class medium
 ```
 
