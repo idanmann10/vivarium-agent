@@ -301,6 +301,15 @@ function worldSubscriptionReference(value: unknown): string | undefined {
   return undefined;
 }
 
+function githubDiscussionReference(value: unknown): string | undefined {
+  const text = textValue(value);
+  if (text === undefined) {
+    return undefined;
+  }
+
+  return /^https:\/\/github\.com\/[^/]+\/[^/]+\/discussions\/\d+(?:[/?#].*)?$/.test(text) ? text : undefined;
+}
+
 function dateMillis(value: unknown): number | undefined {
   const text = textValue(value);
   if (text === undefined) {
@@ -452,7 +461,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         twoWeekFollowupMetric < twoWeekBaselineMetric &&
         (twoWeekImprovementPercent ?? 0) > 0 &&
         evidenceReference(twoWeekImprovement?.contributorProfile, context) &&
-        evidenceReference(twoWeekImprovement?.competingDiscussion, context) &&
+        githubDiscussionReference(twoWeekImprovement?.competingDiscussion) !== undefined &&
         evidenceReference(twoWeekImprovement?.refinementEvidence, context) &&
         (numberValue(contributorProfileSummary?.publicSkills) ?? 0) >= 1 &&
         (numberValue(contributorProfileSummary?.antiPatterns) ?? 0) >= 1 &&
@@ -888,7 +897,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record the two-week follow-up at least fourteen days after the last goal, faster follow-up metrics, contributor profile counts/trust, competing Discussion evidence, and other-agent refinement evidence.",
+          "Record the two-week follow-up at least fourteen days after the last goal, faster follow-up metrics, contributor profile counts/trust, a competing GitHub Discussion URL, and other-agent refinement evidence.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     default:

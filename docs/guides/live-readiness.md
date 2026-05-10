@@ -383,7 +383,7 @@ bun apps/cli/src/index.ts daemon smoke --status-url http://127.0.0.1:8787/status
 export VIVARIUM_V1_EVIDENCE_PATH=/tmp/vivarium-v1-evidence.json
 ```
 
-The manifest is a compact index of evidence, not a substitute for the underlying artifacts. Every evidence-bearing string should point to a command transcript, audit file, PR, Discussion, workflow run, run artifact, contributor profile, or other concrete evidence you can inspect. `doctor --live` accepts `http://` and `https://` evidence links as external artifacts. Local evidence references must be paths that exist relative to the manifest file, the agent root, or the world root; bare run IDs or artifact IDs alone are not enough.
+The manifest is a compact index of evidence, not a substitute for the underlying artifacts. Every evidence-bearing string should point to a command transcript, audit file, PR, Discussion, workflow run, run artifact, contributor profile, or other concrete evidence you can inspect. `doctor --live` accepts `http://` and `https://` evidence links as external artifacts. Local evidence references must be paths that exist relative to the manifest file, the agent root, or the world root; bare run IDs or artifact IDs alone are not enough. `twoWeekImprovement.competingDiscussion` is stricter than generic evidence references: it must be a `https://github.com/<owner>/<repo>/discussions/<number>` URL for the competing variant Discussion.
 
 ```json
 {
