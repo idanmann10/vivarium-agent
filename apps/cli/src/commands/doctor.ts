@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
+import { dirname, extname, isAbsolute, join, resolve } from "node:path";
 
 export interface DoctorResult {
   readonly ok: boolean;
@@ -414,28 +414,11 @@ function githubCanonicalSkillReference(value: unknown, context: V1EvidenceRefere
     : undefined;
 }
 
-function isUnderDirectory(root: string, candidate: string): boolean {
-  const path = relative(resolve(root), resolve(candidate));
-  return path.length > 0 && !path.startsWith("..") && !isAbsolute(path);
-}
-
-function isSkillArtifactPath(path: string): boolean {
-  return /(?:^|[\\/])domains[\\/][^\\/]+[\\/]skills[\\/][^\\/]+[\\/]SKILL\.md$/.test(path);
-}
-
-function canonicalSkillReference(value: unknown, context: V1EvidenceReferenceContext): string | undefined {
-  const githubReference = githubCanonicalSkillReference(value, context);
-  if (githubReference !== undefined) {
-    return githubReference;
-  }
-
-  const text = textValue(value);
-  if (text === undefined || isUrlReference(text) || !isPathLikeReference(text)) {
-    return undefined;
-  }
-
-  const candidate = resolve(isAbsolute(text) ? text : join(context.worldRoot, text));
-  return existsSync(candidate) && isUnderDirectory(context.worldRoot, candidate) && isSkillArtifactPath(candidate) ? candidate : undefined;
+function githubCanonicalSkillReferences(value: unknown, context: V1EvidenceReferenceContext): readonly string[] {
+  return textArray(value).flatMap((item) => {
+    const reference = githubCanonicalSkillReference(item, context);
+    return reference === undefined ? [] : [reference];
+  });
 }
 
 function dateMillis(value: unknown): number | undefined {
@@ -514,7 +497,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const twoWeekBaselineMetric = numberValue(twoWeekImprovement?.baselineMetric);
   const twoWeekFollowupMetric = numberValue(twoWeekImprovement?.followupMetric);
   const twoWeekImprovementPercent = numberValue(twoWeekImprovement?.improvementPercent);
-  const twoWeekCompetingSkillReferenceCount = distinctEvidenceReferenceCount(twoWeekImprovement?.competingSkillReferences, context);
+  const publicCanonicalSkill = githubCanonicalSkillReference(publicContribution?.canonicalSkill, context);
+  const twoWeekCompetingSkillReferences = new Set(githubCanonicalSkillReferences(twoWeekImprovement?.competingSkillReferences, context));
   const twoWeekContributorAgent = textValue(twoWeekImprovement?.contributorAgent);
   const twoWeekRefinements = agentEvidenceRecords(twoWeekImprovement?.refinementEvidence, context);
   const twoWeekRefinementAgents = new Set(twoWeekRefinements.map((refinement) => refinement.agent));
@@ -597,7 +581,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
       githubPullRequestReference(publicContribution?.publicSkillPr, context) !== undefined &&
         evidenceReference(publicContribution?.mathGate, context) &&
         githubActionsRunReference(publicContribution?.autoMerge, context) !== undefined &&
-        canonicalSkillReference(publicContribution?.canonicalSkill, context) !== undefined &&
+        publicCanonicalSkill !== undefined &&
         publicContributionContributorAgent !== undefined &&
         !publicContributionPositiveSignalAgents.has(publicContributionContributorAgent) &&
         !publicContributionPullUseAgents.has(publicContributionContributorAgent) &&
@@ -640,7 +624,9 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         (twoWeekImprovementPercent ?? 0) > 0 &&
         evidenceReference(twoWeekImprovement?.contributorProfile, context) &&
         githubDiscussionReference(twoWeekImprovement?.competingDiscussion, context) !== undefined &&
-        twoWeekCompetingSkillReferenceCount >= 2 &&
+        publicCanonicalSkill !== undefined &&
+        twoWeekCompetingSkillReferences.has(publicCanonicalSkill) &&
+        twoWeekCompetingSkillReferences.size >= 2 &&
         evidenceReference(twoWeekImprovement?.similarGoalsEvidence, context) &&
         twoWeekContributorAgent !== undefined &&
         !twoWeekRefinementAgents.has(twoWeekContributorAgent) &&

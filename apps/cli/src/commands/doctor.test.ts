@@ -326,7 +326,10 @@ function writeLiveReadyFiles(root: string): Readonly<{
         improvementPercent: 25,
         contributorProfile: "contributors/live-agent.json",
         competingDiscussion: "https://github.com/owner/world-final/discussions/2",
-        competingSkillReferences: ["domains/coding/skills/public/SKILL.md", "domains/coding/skills/public-variant/SKILL.md"],
+        competingSkillReferences: [
+          "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
+          "https://github.com/owner/world-final/blob/main/domains/coding/skills/public-variant/SKILL.md",
+        ],
         similarGoalsEvidence: "docs/live/similar-goals.md",
         refinementEvidence: [
           { agent: "refinement-agent-a", evidence: "docs/live/refinement-1.md" },
@@ -2356,6 +2359,68 @@ describe("doctorCommand", () => {
     expect(result.ok).toBe(false);
     expect(result.checks).toContain("v1.evidencePath:configured");
     expect(result.checks).toContain("v1.publicContribution:missing");
+    expect(result.checks).toContain("v1.twoWeekImprovement:missing");
+  });
+
+  test("requires v1 two-week competing skill references to target the configured canonical world repo", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-canonical-competing-skills-"));
+    const { evidencePath } = writeLiveReadyFiles(root);
+    const manifest = JSON.parse(readFileSync(evidencePath, "utf8")) as {
+      twoWeekImprovement: {
+        competingSkillReferences: string[];
+      };
+    };
+    manifest.twoWeekImprovement.competingSkillReferences = [
+      "domains/coding/skills/public/SKILL.md",
+      "domains/coding/skills/public-variant/SKILL.md",
+    ];
+    writeFileSync(evidencePath, `${JSON.stringify(manifest)}\n`, "utf8");
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_V1_EVIDENCE_PATH: evidencePath,
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.twoWeekImprovement:missing");
+  });
+
+  test("requires v1 two-week competing skill references to include the landed public skill", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-competing-includes-public-"));
+    const { evidencePath } = writeLiveReadyFiles(root);
+    const manifest = JSON.parse(readFileSync(evidencePath, "utf8")) as {
+      twoWeekImprovement: {
+        competingSkillReferences: string[];
+      };
+    };
+    manifest.twoWeekImprovement.competingSkillReferences = [
+      "https://github.com/owner/world-final/blob/main/domains/coding/skills/public-variant/SKILL.md",
+      "https://github.com/owner/world-final/blob/main/domains/coding/skills/third-variant/SKILL.md",
+    ];
+    writeFileSync(evidencePath, `${JSON.stringify(manifest)}\n`, "utf8");
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_V1_EVIDENCE_PATH: evidencePath,
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
     expect(result.checks).toContain("v1.twoWeekImprovement:missing");
   });
 
