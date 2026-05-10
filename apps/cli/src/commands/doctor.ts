@@ -438,6 +438,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
       "dreamArtifacts",
       distinctEvidenceReferenceCount(dreamArtifacts?.skillCandidates, context) >= 2 &&
         evidenceReference(dreamArtifacts?.internalSkill, context) &&
+        evidenceReference(dreamArtifacts?.internalSkillPrivateFork, context) &&
+        evidenceReference(dreamArtifacts?.internalSkillCanonicalAbsence, context) &&
         evidenceReference(dreamArtifacts?.publicSkill, context) &&
         evidenceReference(dreamArtifacts?.antiPattern, context) &&
         evidenceReference(dreamArtifacts?.trace, context) &&
@@ -897,7 +899,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record nightly Dream evidence for two distinct skill candidates, internal and public skills, one anti-pattern, and one trace auto-extracted from an instructive run with annotations.",
+          "Record nightly Dream evidence for two distinct skill candidates, internal and public skills, proof the internal skill was pushed to the private fork only, one anti-pattern, and one trace auto-extracted from an instructive run with annotations.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.publicContribution":
