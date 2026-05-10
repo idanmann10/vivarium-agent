@@ -506,6 +506,11 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const twoWeekRefinements = agentEvidenceRecords(twoWeekImprovement?.refinementEvidence, context);
   const twoWeekRefinementAgents = new Set(twoWeekRefinements.map((refinement) => refinement.agent));
   const twoWeekRefinementEvidence = new Set(twoWeekRefinements.map((refinement) => refinement.evidence));
+  const loopContributorAgent = publicContributionContributorAgent;
+  const publishedArtifactsUsesLoopContributor =
+    loopContributorAgent !== undefined && publishedArtifactsContributorAgent === loopContributorAgent;
+  const curationUsesLoopContributor = loopContributorAgent !== undefined && curationAgentContributor === loopContributorAgent;
+  const twoWeekUsesLoopContributor = loopContributorAgent !== undefined && twoWeekContributorAgent === loopContributorAgent;
 
   return [
     v1Check(
@@ -602,7 +607,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         evidenceReference(publishedArtifacts?.run, context) &&
         publishedTracePlanRead !== undefined &&
         publishedRunPlanRead !== undefined &&
-        publishedArtifactsContributorAgent !== undefined &&
+        publishedArtifactsUsesLoopContributor &&
         publishedTracePlanRead.agent !== publishedArtifactsContributorAgent &&
         publishedRunPlanRead.agent !== publishedArtifactsContributorAgent &&
         publishedTracePlanRead.evidence !== publishedRunPlanRead.evidence,
@@ -611,7 +616,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
       "curationStats",
       evidenceReference(curationStats?.featuredPick, context) &&
         evidenceReference(curationStats?.featuredAntiPattern, context) &&
-        curationAgentContributor !== undefined &&
+        curationUsesLoopContributor &&
         curationFeaturedContributor !== undefined &&
         curationAgentContributor !== curationFeaturedContributor &&
         evidenceReference(curationStats?.stats, context) &&
@@ -633,7 +638,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         twoWeekCompetingSkillReferences.has(publicCanonicalSkill) &&
         twoWeekCompetingSkillReferences.size >= 2 &&
         evidenceReference(twoWeekImprovement?.similarGoalsEvidence, context) &&
-        twoWeekContributorAgent !== undefined &&
+        twoWeekUsesLoopContributor &&
         !twoWeekRefinementAgents.has(twoWeekContributorAgent) &&
         twoWeekRefinementAgents.size >= 2 &&
         twoWeekRefinementEvidence.size >= 2 &&
@@ -1064,21 +1069,21 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record published anti-pattern, trace, run, the contributor agent identity, and separate other-agent trace and run Plan-read agent/evidence records.",
+          "Record published anti-pattern, trace, run, the contributor agent identity as the same public contribution contributor, and separate other-agent trace and run Plan-read agent/evidence records.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.curationStats":
       return {
         check,
         action:
-          "Record featured pick evidence including a different contributor's anti-pattern, plus STATS.md evidence showing at least 30% top-five contributor concentration.",
+          "Record featured pick evidence including a different contributor's anti-pattern, the same public contribution contributor as the curation agent contributor, plus STATS.md evidence showing at least 30% top-five contributor concentration.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.twoWeekImprovement":
       return {
         check,
         action:
-          "Record the two-week follow-up at least fourteen days after the last goal with a date that is not in the future, faster follow-up metrics on similar goals, contributor profile counts/trust, contributor agent identity, a competing GitHub Discussion URL, two distinct live competing skill variant references, similar-goal comparison evidence, and two distinct other-agent refinement agent/evidence records excluding the contributor.",
+          "Record the two-week follow-up at least fourteen days after the last goal with a date that is not in the future, faster follow-up metrics on similar goals, contributor profile counts/trust, contributor agent identity as the same public contribution contributor, a competing GitHub Discussion URL, two distinct live competing skill variant references, similar-goal comparison evidence, and two distinct other-agent refinement agent/evidence records excluding the contributor.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     default:

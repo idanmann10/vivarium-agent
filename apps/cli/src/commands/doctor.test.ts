@@ -495,12 +495,15 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("similar-goal comparison evidence");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("profile counts");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("contributor agent identity");
+    expect(actions.get("v1.twoWeekImprovement:missing")).toContain("same public contribution contributor");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("GitHub Discussion URL");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("competing skill variant references");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("other-agent refinement agent/evidence");
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("trace and run Plan-read agent/evidence");
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("contributor agent identity");
+    expect(actions.get("v1.publishedArtifacts:missing")).toContain("same public contribution contributor");
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("other-agent");
+    expect(actions.get("v1.curationStats:missing")).toContain("same public contribution contributor");
   });
 
   test("reports placeholder repo names as live readiness blockers", () => {
@@ -2421,6 +2424,45 @@ describe("doctorCommand", () => {
 
     expect(result.ok).toBe(false);
     expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.twoWeekImprovement:missing");
+  });
+
+  test("requires v1 contributor identities to stay consistent across the loop", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-loop-contributor-"));
+    const { evidencePath } = writeLiveReadyFiles(root);
+    const manifest = JSON.parse(readFileSync(evidencePath, "utf8")) as {
+      publishedArtifacts: {
+        contributorAgent: string;
+      };
+      curationStats: {
+        agentContributor: string;
+      };
+      twoWeekImprovement: {
+        contributorAgent: string;
+      };
+    };
+    manifest.publishedArtifacts.contributorAgent = "published-agent";
+    manifest.curationStats.agentContributor = "curation-agent";
+    manifest.twoWeekImprovement.contributorAgent = "followup-agent";
+    writeFileSync(evidencePath, `${JSON.stringify(manifest)}\n`, "utf8");
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      nowMillis: Date.parse("2026-05-23T00:00:00.000Z"),
+      env: {
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_V1_EVIDENCE_PATH: evidencePath,
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.publishedArtifacts:missing");
+    expect(result.checks).toContain("v1.curationStats:missing");
     expect(result.checks).toContain("v1.twoWeekImprovement:missing");
   });
 
