@@ -17,11 +17,49 @@ const selfToolDocs = [
   "publishables",
 ] as const;
 
-const documentedMethods = {
+const selfToolMethodDocs = {
+  memory: ["write(request)", "recall(query, limit?)", "list(domain?)", "forget(id)", "summarize()"],
+  skills: [
+    "list(status?)",
+    "habitual(domain?)",
+    "search(query)",
+    "view(id)",
+    "use(id, helped?)",
+    "lineage(id)",
+  ],
+  "anti-patterns": [
+    "search(context, domain?)",
+    "view(id, domain?)",
+    "flag(skillId, reason, domain?, runId?)",
+  ],
+  traces: ["search(topic, domain?)", "read(id, domain?)", "author(runId, annotations, domain?)"],
+  runs: ["create(run)", "get(id)", "update(run)", "search(query, domain?)", "read(id)"],
+  episodes: [
+    "append(episode)",
+    "list(runId)",
+    "note(request)",
+    "surprise(request)",
+    "recallRun(runId)",
+  ],
+  world: [
+    "search(request)",
+    "pull(request)",
+    "propose(request)",
+    "publishRun(request)",
+    "publishTrace(request)",
+    "subscribe(request)",
+    "listSubscriptions()",
+    "lineage(skillId, domain)",
+    "contributors(domain?)",
+    "featured()",
+    "stats()",
+    "reportRegression(request)",
+  ],
   curriculum: ["read(domain)", "progress(domain)", "advance(domain, stepIndex)"],
   identity: ["summary()", "stage(domain)", "history(limit?)"],
   attention: ["focus(request)", "defocus()", "status()"],
-  episodes: ["note(request)", "surprise(request)", "recallRun(runId)"],
+  confidence: ["record(confidence, correct)"],
+  publishables: ["queue(artifact)", "list()"],
 } as const;
 
 const referenceFormatFields = {
@@ -218,8 +256,8 @@ describe("reference docs", () => {
     }
   });
 
-  test("documents named roadmap self-tool methods", () => {
-    for (const [tool, methods] of Object.entries(documentedMethods)) {
+  test("documents implemented self-tool methods", () => {
+    for (const [tool, methods] of Object.entries(selfToolMethodDocs)) {
       const body = readFileSync(join("docs", "reference", "tools", `${tool}.md`), "utf8");
       for (const method of methods) {
         expect(body).toContain(method);
