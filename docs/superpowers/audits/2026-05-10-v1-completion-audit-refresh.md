@@ -11,14 +11,14 @@ Continue following `/Users/idanmann/Vivarium/goal.md` until the project is genui
 
 ## Current Status
 
-Not complete. Local implementation and local test gates are strong, including agent dependency gates, world CI/revalidation build coverage, anti-pattern validation coverage, domain learning artifact validation coverage, contribution proposal validation coverage, auto-merge checkpoint coverage, generated-maintenance-PR checkpoint coverage, full-gate PR template guidance, and live v1 evidence-manifest gating with URL-or-local-path evidence reference checks, but the v1 loop still lacks live external proof. The current blockers are not proxy signals; they are direct failures from `doctor --live` and direct empty Git remote inspections.
+Not complete. Local implementation and local test gates are strong, including agent dependency gates, world CI/revalidation build coverage, anti-pattern validation coverage, domain learning artifact validation coverage, contribution proposal validation coverage, auto-merge checkpoint coverage, generated-maintenance-PR checkpoint coverage, full-gate PR template guidance, and live v1 evidence-manifest gating with inspectable URL-or-local-path evidence reference checks, but the v1 loop still lacks live external proof. The current blockers are not proxy signals; they are direct failures from `doctor --live` and direct empty Git remote inspections.
 
 ## Prompt-To-Artifact Checklist
 
 | Requirement from `goal.md` | Current evidence | Status |
 | --- | --- | --- |
-| Phase 0: both repos compile/lint/test/build | Prior full gates plus latest `the-agent` and `the-world` local gate runs in this thread; agent CI/release now include `bun run knip`; world CI/manual revalidation, anti-pattern validation, domain learning artifact validation, proposal validation, auto-merge, generated maintenance PRs, and PR templates now include the current local checkpoints | Complete locally |
-| Phase 0: world has seed content of every primitive | `the-world bun run lint` previously reported 3 domains, 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, 1 contributor; domain learning artifact validator covers curricula, rubrics, and exemplars | Complete locally |
+| Phase 0: both repos compile/lint/test/build | Fresh local gates: `the-agent` `bun run typecheck`, `bun run test`, `bun run lint`, `bun run format:check`, `bun run build`, and `bun run knip` exit 0; `the-world` `bun run lint`, `bun run typecheck`, `bun run test`, and `bun run build` exit 0. Agent CI/release include `bun run knip`; world CI/manual revalidation, anti-pattern validation, domain learning artifact validation, proposal validation, auto-merge, generated maintenance PRs, and PR templates include the current local checkpoints | Complete locally |
+| Phase 0: world has seed content of every primitive | Fresh `the-world bun run lint` reports 3 domains, 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, 1 contributor; domain learning artifact validator covers curricula, rubrics, and exemplars | Complete locally |
 | Phase 0: one Discussion open demonstrating RFC format | RFC proposal and Discussion command exist, but there is no configured GitHub remote or repository/category ID | Incomplete externally |
 | Phase 1: installed agent can run a real goal with providers and credential | CLI/provider/credential paths are implemented and tested with local/mocked adapters; no Anthropic/OpenRouter/private OAI-compatible credentials or internal API target are configured | Incomplete externally |
 | Phase 1: anti-pattern lookup, curriculum advance, confidence buckets | Covered by local runtime, init, self-tool, and Dream/state tests in existing audit evidence | Complete locally |
@@ -29,7 +29,7 @@ Not complete. Local implementation and local test gates are strong, including ag
 | Phase 3: featured pick and STATS concentration | World scripts, checked-in stats, CI build gate, manual revalidation build gate, and generated maintenance PR post-mutation gates are locally verified; live maintainer workflow execution and live telemetry are unverified | Complete locally, incomplete live |
 | V1 done: five real goals over a week and two-week measurable improvement | Synthetic/local tests only | Incomplete externally |
 | Naming decision | `goal.md` still says `the-agent` and `the-world` are temporary names; `doctor --live` reports `agent.name:missing` and `world.name:missing` | Incomplete; requires user decision |
-| Live readiness handoff | `docs/live-readiness.env.example`, `docs/guides/live-readiness.md`, `doctor --live --env-file`, structured `nextActions`, and v1 evidence manifest checks exist; copied `<...>` values, missing live-loop evidence, bare evidence IDs, and missing local evidence references now report as blockers | Complete locally |
+| Live readiness handoff | `docs/live-readiness.env.example`, `docs/guides/live-readiness.md`, `doctor --live --env-file`, structured `nextActions`, and v1 evidence manifest checks exist; copied `<...>` values, missing live-loop evidence, bare evidence IDs, and missing local evidence references now report as blockers. The guide's manifest example now uses inspectable local paths or URLs, and `scripts/reference-docs.test.ts` prevents opaque placeholder references from returning | Complete locally |
 
 ## Fresh Evidence
 
@@ -41,7 +41,17 @@ Not complete. Local implementation and local test gates are strong, including ag
 - `live-readiness.local.env` is intentionally absent in this checkout; filled copies are gitignored because they may contain provider keys, GitHub tokens, and internal API metadata.
 - `bun apps/cli/src/index.ts doctor --live --env-file docs/live-readiness.env.example --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false` with copied template values classified as `:placeholder` or unavailable, not live-ready.
 - `bun apps/cli/src/index.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false`, now including `v1.evidencePath:missing` so setup readiness cannot be confused with v1 loop verification.
-- Latest agent local-gate commits: `59b8d0c docs(agent): record proposal validation gate`, `4beaaf2 docs(agent): record domain artifact validation gate`, `17b28b0 docs(agent): record anti-pattern validation gate`, `95271fd docs(agent): refresh world gate audit evidence`, `3265509 docs(agent): include knip in install verification`, `199b677 ci(agent): run knip before release`, `8fc8eba ci(agent): run knip dependency gate`, `1a3e7a4 chore(agent): enable knip dependency gate`.
+- `bun run typecheck` in `the-agent`: TypeScript passed.
+- `bun run test` in `the-agent`: 229 tests passed, 0 failed, 1215 assertions.
+- `bun run lint` in `the-agent`: repo lint scanned 191 TypeScript files, and Oxlint found 0 warnings and 0 errors.
+- `bun run format:check` in `the-agent`: all matched package/config/tooling files use the expected Oxfmt format.
+- `bun run build` in `the-agent`: 9 entrypoints present.
+- `bun run knip` in `the-agent`: exits 0 for dependency, unlisted, and unresolved dependency checks.
+- `bun run lint` in `the-world`: world validator reports 3 domains, 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, and 1 contributor.
+- `bun run typecheck` in `the-world`: TypeScript passed.
+- `bun run test` in `the-world`: 26 tests passed, 0 failed, 208 assertions.
+- `bun run build` in `the-world`: 8 required files present.
+- Latest agent local-gate commits: `3b1de16 docs(agent): align v1 evidence example`, `ba0d1b4 fix(agent): reject opaque v1 evidence refs`, `e96cb54 fix(agent): verify v1 evidence references`, `8644964 feat(agent): gate live readiness on v1 evidence`, `59b8d0c docs(agent): record proposal validation gate`, `4beaaf2 docs(agent): record domain artifact validation gate`, `17b28b0 docs(agent): record anti-pattern validation gate`, `95271fd docs(agent): refresh world gate audit evidence`, `3265509 docs(agent): include knip in install verification`.
 - Latest world local-gate commits: `6df8516 ci(world): validate contribution proposals`, `091b80c ci(world): validate domain learning artifacts`, `be012df ci(world): validate anti-pattern contributions`, `fbec50b docs(world): require full gate in PR templates`, `4478b27 ci(world): validate generated maintenance PRs`, `ad46110 ci(world): run full checkpoint before auto-merge`, `d8dc698 docs(world): require build before publishing`, `9474e60 ci(world): build during manual revalidation`, `788ad9b ci(world): add full checkpoint workflow`.
 
 ## Next Required External Inputs
