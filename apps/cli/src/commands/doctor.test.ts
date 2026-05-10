@@ -127,7 +127,13 @@ describe("doctorCommand", () => {
     expect(result.nextActions).toContainEqual(
       expect.objectContaining({
         check: "agent.remote:missing",
-        command: expect.stringContaining("git remote add origin"),
+        command: expect.stringContaining('git -C "/agent" remote add origin'),
+      }),
+    );
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "world.remote:missing",
+        command: expect.stringContaining('git -C "/world" remote add origin'),
       }),
     );
     expect(result.nextActions).toContainEqual(

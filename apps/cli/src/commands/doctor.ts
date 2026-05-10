@@ -14,6 +14,11 @@ export interface DoctorNextAction {
   readonly guide: string;
 }
 
+interface DoctorNextActionContext {
+  readonly agentRoot: string;
+  readonly worldRoot: string;
+}
+
 export interface DoctorCommandRun {
   readonly command: string;
   readonly args: readonly string[];
@@ -273,7 +278,11 @@ function isPassingCheck(check: string): boolean {
   return check.endsWith(":configured") || check.endsWith(":ok") || check.endsWith(":installed");
 }
 
-function nextActionForCheck(check: string): DoctorNextAction {
+function shellQuote(value: string): string {
+  return `"${value.replace(/["\\$`]/g, "\\$&")}"`;
+}
+
+function nextActionForCheck(check: string, context: DoctorNextActionContext): DoctorNextAction {
   const guide = "docs/guides/live-readiness.md";
   const [name = check] = check.split(":");
 
@@ -296,14 +305,14 @@ function nextActionForCheck(check: string): DoctorNextAction {
       return {
         check,
         action: "Add the canonical GitHub remote for the agent repo.",
-        command: "git remote add origin git@github.com:<owner>/<agent-repo>.git",
+        command: `git -C ${shellQuote(context.agentRoot)} remote add origin git@github.com:<owner>/<agent-repo>.git`,
         guide: `${guide}#git-remotes`,
       };
     case "world.remote":
       return {
         check,
         action: "Add the canonical GitHub remote for the world repo.",
-        command: "git remote add origin git@github.com:<owner>/<world-repo>.git",
+        command: `git -C ${shellQuote(context.worldRoot)} remote add origin git@github.com:<owner>/<world-repo>.git`,
         guide: `${guide}#git-remotes`,
       };
     case "world.subscriptionsPath":
@@ -506,7 +515,9 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
   return {
     ok: checks.every(isPassingCheck),
     checks,
-    nextActions: checks.filter((check) => !isPassingCheck(check)).map(nextActionForCheck),
+    nextActions: checks
+      .filter((check) => !isPassingCheck(check))
+      .map((check) => nextActionForCheck(check, { agentRoot, worldRoot })),
   };
 }
 
