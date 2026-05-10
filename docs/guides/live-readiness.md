@@ -18,6 +18,25 @@ bun apps/cli/src/index.ts doctor --live \
 
 A live-ready workspace should report configured agent/world remotes, configured provider and GitHub token environment, valid GitHub auth, installed Docker, and installed Docker Compose.
 
+## Naming Gate
+
+`goal.md` still treats `the-agent` and `the-world` as temporary names. Choose final names before
+creating canonical GitHub repositories so local paths, README titles, package metadata, remote URLs,
+and public Discussion/PR links do not need a second migration.
+
+Record the decision before adding remotes:
+
+```text
+agent repo name: <final-agent-repo>
+world repo name: <final-world-repo>
+canonical owner: <github-owner-or-org>
+private fork owner: <github-owner-or-org>
+```
+
+After names are chosen, either keep the local checkout paths as compatibility aliases or rename the
+directories and update commands that reference `/Users/idanmann/Vivarium/the-agent` and
+`/Users/idanmann/Vivarium/the-world`.
+
 ## Git Remotes
 
 Both repos need canonical GitHub remotes before Discussions, PRs, auto-merge, and cross-install pulls can be verified.
@@ -29,7 +48,7 @@ git -C /Users/idanmann/Vivarium/the-agent remote -v
 git -C /Users/idanmann/Vivarium/the-world remote -v
 ```
 
-Replace the placeholders with the final repo names. The roadmap still treats `the-agent` and `the-world` as temporary names.
+Replace `<agent-repo>` and `<world-repo>` with the names chosen in the naming gate.
 
 ## Provider Environment
 
