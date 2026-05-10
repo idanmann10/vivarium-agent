@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -88,6 +88,59 @@ describe("self-tools", () => {
         maxEpisodesInContext: 5,
       },
     });
+  });
+
+  test("reads curriculum state and identity self-tools", () => {
+    const root = mkdtempSync(join(tmpdir(), "self-tools-curriculum-"));
+    mkdirSync(join(root, "domains", "coding"), { recursive: true });
+    writeFileSync(join(root, "domains", "coding", "curriculum.md"), "# Coding Curriculum\n\n1. Practice tests.\n");
+    const state = new InMemoryStateRepository();
+    const run = runId("run-identity-history");
+    state.setIdentity({
+      agentId: agentId("agent-tools"),
+      name: "agent-tools",
+      devStages: { coding: "apprentice" },
+      runsCompleted: 1,
+      summary: "Agent focused on test-first coding.",
+      updatedAt: "local",
+    });
+    state.createRun({
+      id: run,
+      agentId: agentId("agent-tools"),
+      domain: "coding",
+      goal: "write tests first",
+      startedAt: "local",
+      endedAt: "local",
+      success: true,
+      score: 0.9,
+      notes: "Good run.",
+      publishable: false,
+      published: false,
+      publishedAt: null,
+      visibility: "private",
+    });
+    const tools = createSelfTools({
+      state,
+      world: createLocalWorldReader({ root }),
+      worldRoot: root,
+    });
+
+    tools.curriculum.advance("coding", 0);
+
+    expect(tools.curriculum.read("coding")).toContain("Coding Curriculum");
+    expect(tools.curriculum.progress("coding")).toMatchObject({ domain: "coding", currentStepIndex: 0 });
+    expect(tools.identity.summary()).toBe("Agent focused on test-first coding.");
+    expect(tools.identity.stage("coding")).toBe("apprentice");
+    expect(tools.identity.history(1)).toEqual([
+      {
+        runId: String(run),
+        domain: "coding",
+        goal: "write tests first",
+        success: true,
+        score: 0.9,
+        notes: "Good run.",
+      },
+    ]);
   });
 
   test("persists world subscriptions through self-tools", () => {

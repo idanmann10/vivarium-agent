@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import type { RunId, SkillId } from "../../../core/src/ids.js";
-import type { Episode, Run, TraceStep, Visibility } from "../../../core/src/index.js";
+import type { CurriculumProgress, DevStage, Episode, Run, TraceStep, Visibility } from "../../../core/src/index.js";
 import type { LocalSkillRecord, StateRepository } from "../../../state/src/index.js";
 import {
   listWorldSubscriptions,
@@ -120,6 +120,15 @@ export interface AttentionToolStatus {
   readonly usage: AttentionToolUsage;
 }
 
+export interface IdentityHistoryItem {
+  readonly runId: string;
+  readonly domain: string;
+  readonly goal: string;
+  readonly success: boolean | null;
+  readonly score: number | null;
+  readonly notes: string;
+}
+
 export interface WorldContributorSummary {
   readonly handle: string;
   readonly domains: readonly string[];
@@ -178,7 +187,14 @@ export interface SelfTools {
     reportRegression(request: WorldReportRegressionRequest): Promise<WorldReportRegressionResult>;
   };
   readonly curriculum: {
+    read(domain: string): string | undefined;
+    progress(domain: string): CurriculumProgress | undefined;
     advance(domain: string, stepIndex: number): void;
+  };
+  readonly identity: {
+    summary(): string;
+    stage(domain: string): DevStage | undefined;
+    history(limit?: number): readonly IdentityHistoryItem[];
   };
   readonly attention: {
     focus(request: AttentionFocusRequest): AttentionToolStatus;
@@ -253,6 +269,10 @@ function primaryWorldRoot(worldRoot: string | undefined, worldSubscriptionsPath:
   }
 
   return roots[0]!;
+}
+
+function curriculumRoot(worldRoot: string | undefined, worldSubscriptionsPath: string | undefined): string {
+  return worldRoots(worldRoot, worldSubscriptionsPath)[0] ?? worldRoot ?? "../the-world";
 }
 
 function searchSubscribedWorlds(
@@ -727,8 +747,35 @@ export function createSelfTools({ state, world, github, worldRoot, worldSubscrip
       },
     },
     curriculum: {
+      read(domain) {
+        const path = join(curriculumRoot(worldRoot, worldSubscriptionsPath), "domains", domain, "curriculum.md");
+        return existsSync(path) ? readFileSync(path, "utf8") : undefined;
+      },
+      progress(domain) {
+        return state.getCurriculumProgress(domain);
+      },
       advance(domain, stepIndex) {
         state.advanceCurriculum(domain, stepIndex);
+      },
+    },
+    identity: {
+      summary() {
+        return state.getIdentity()?.summary ?? "No identity summary recorded yet.";
+      },
+      stage(domain) {
+        return state.getIdentity()?.devStages[domain];
+      },
+      history(limit = 5) {
+        const runs = state.listRuns();
+        const count = Math.max(0, Math.floor(limit));
+        return runs.slice(Math.max(0, runs.length - count)).map((run) => ({
+          runId: String(run.id),
+          domain: run.domain,
+          goal: run.goal,
+          success: run.success,
+          score: run.score,
+          notes: run.notes,
+        }));
       },
     },
     attention: {
