@@ -8,7 +8,7 @@ import { providerSmokeCommand, type ProviderSmokeKind } from "./commands/provide
 import { runCommand } from "./commands/run.js";
 import { listSkillsCommand } from "./commands/skills.js";
 import { statusCommand } from "./commands/status.js";
-import { pullWorldCommand, searchWorldCommand } from "./commands/world.js";
+import { pullWorldCommand, searchWorldCommand, verifyWorldTransmissionCommand } from "./commands/world.js";
 import type { CliCommand } from "./index.js";
 
 export interface CliDispatchResult {
@@ -193,7 +193,23 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
         );
       }
 
-      usage('Unknown world subcommand. Use "search" or "pull".');
+      if (subcommand === "transmission-smoke") {
+        const ref = value(flags, "ref");
+        const limit = integerFlag(flags, "limit");
+        return output(
+          command,
+          await verifyWorldTransmissionCommand({
+            remote: required(flags, "remote"),
+            destination: required(flags, "destination"),
+            domain: required(flags, "domain"),
+            query: required(flags, "query"),
+            ...(ref === undefined ? {} : { ref }),
+            ...(limit === undefined ? {} : { limit }),
+          }),
+        );
+      }
+
+      usage('Unknown world subcommand. Use "search", "pull", or "transmission-smoke".');
     case "providers": {
       if (subcommand !== "smoke") {
         usage('Unknown providers subcommand. Use "smoke".');

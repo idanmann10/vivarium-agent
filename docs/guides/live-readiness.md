@@ -137,6 +137,22 @@ bun apps/cli/src/index.ts github workflow-runs \
 
 Use this to verify the validator, stats, trust-gate, and archive workflows that are relevant to the live contribution.
 
+## Cross-Install World Pull
+
+After a contribution has landed in the canonical world remote, verify that a separate local install can pull the remote and retrieve the accepted artifact:
+
+```bash
+bun apps/cli/src/index.ts world transmission-smoke \
+  --remote <canonical-world-remote-url> \
+  --destination /tmp/vivarium-world-second-install \
+  --ref main \
+  --domain coding \
+  --query "<accepted artifact title or distinctive phrase>" \
+  --limit 3
+```
+
+The command clones or updates the destination, searches the pulled world, and returns `ok: true` only when the expected artifact is discoverable from the second install.
+
 ## Docker Compose
 
 Daemon supervision needs either the Docker Compose plugin or the standalone `docker-compose` command.
@@ -165,7 +181,7 @@ After the external prerequisites are configured:
 4. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.
 5. Create a live world contribution PR from a generated artifact with `github pull-request --confirm-write`.
 6. Verify the world workflows and trust gates on GitHub with `github workflow-runs`.
-7. Pull the accepted contribution into a second local install.
+7. Pull the accepted contribution into a second local install with `world transmission-smoke`.
 8. Run the Compose daemon and verify `/status` with `daemon smoke`.
 
 Record the resulting command output in `docs/superpowers/audits/2026-05-09-v1-completion-audit.md`.

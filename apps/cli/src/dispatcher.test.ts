@@ -112,6 +112,49 @@ describe("dispatchCliCommand", () => {
     expect(pulled.result).toMatchObject({ mode: "cloned", remote, destination });
   });
 
+  test("routes world transmission smoke with a local git remote", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-world-transmission-"));
+    const source = join(root, "source");
+    const remote = join(root, "remote.git");
+    const destination = join(root, "second-install");
+
+    runGit(["init", source]);
+    runGit(["config", "user.email", "test@example.test"], source);
+    runGit(["config", "user.name", "Test User"], source);
+    write(
+      join(source, "domains", "coding", "skills", "accepted-contribution", "SKILL.md"),
+      "# Accepted Contribution\n\nA generated contribution accepted by maintainers.",
+    );
+    runGit(["add", "."], source);
+    runGit(["commit", "-m", "seed world"], source);
+    runGit(["init", "--bare", remote]);
+    runGit(["remote", "add", "origin", remote], source);
+    runGit(["push", "origin", "HEAD:main"], source);
+
+    const checked = await dispatchCliCommand([
+      "world",
+      "transmission-smoke",
+      "--remote",
+      remote,
+      "--destination",
+      destination,
+      "--ref",
+      "main",
+      "--domain",
+      "coding",
+      "--query",
+      "accepted contribution",
+      "--limit",
+      "1",
+    ]);
+
+    expect(checked.result).toMatchObject({
+      ok: true,
+      pull: { mode: "cloned", remote, destination, ref: "main" },
+      results: [{ kind: "skill", title: "Accepted Contribution" }],
+    });
+  });
+
   test("routes run and credentials commands", async () => {
     const worldRoot = createWorldFixture();
     const credentialsPath = join(mkdtempSync(join(tmpdir(), "cli-dispatch-credentials-")), "credentials.json");

@@ -24,6 +24,19 @@ export interface PullWorldCommandOptions {
   readonly runner?: GitCommandRunner;
 }
 
+export interface VerifyWorldTransmissionCommandOptions extends PullWorldCommandOptions {
+  readonly domain: string;
+  readonly query: string;
+  readonly limit?: number;
+}
+
+export interface VerifyWorldTransmissionCommandResult {
+  readonly ok: boolean;
+  readonly pull: PullWorldResult;
+  readonly results: readonly LocalWorldSearchResult[];
+  readonly error?: string;
+}
+
 export function searchWorldCommand(options: SearchWorldCommandOptions): SearchWorldCommandResult {
   const request = {
     domain: options.domain,
@@ -38,4 +51,22 @@ export function searchWorldCommand(options: SearchWorldCommandOptions): SearchWo
 
 export function pullWorldCommand(options: PullWorldCommandOptions): Promise<PullWorldResult> {
   return pullWorld(options);
+}
+
+export async function verifyWorldTransmissionCommand(
+  options: VerifyWorldTransmissionCommandOptions,
+): Promise<VerifyWorldTransmissionCommandResult> {
+  const pull = await pullWorldCommand(options);
+  const { results } = searchWorldCommand({
+    worldRoot: options.destination,
+    domain: options.domain,
+    query: options.query,
+    ...(options.limit === undefined ? {} : { limit: options.limit }),
+  });
+
+  if (results.length === 0) {
+    return { ok: false, pull, results, error: "No world artifacts matched query" };
+  }
+
+  return { ok: true, pull, results };
 }
