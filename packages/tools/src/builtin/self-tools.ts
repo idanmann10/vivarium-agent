@@ -1,11 +1,22 @@
 import type { RunId, SkillId } from "../../../core/src/ids.js";
 import type { Episode, Run, TraceStep } from "../../../core/src/index.js";
 import type { StateRepository } from "../../../state/src/index.js";
-import type { LocalWorldReader, LocalWorldSearchRequest, LocalWorldSearchResult } from "../../../world/src/index.js";
+import {
+  listWorldSubscriptions,
+  searchWorlds,
+  subscribeWorld,
+  type LocalWorldReader,
+  type LocalWorldSearchRequest,
+  type LocalWorldSearchResult,
+  type PersistedWorldSubscription,
+  type SubscribeWorldRequest,
+  type WorldSubscriptionSearch,
+} from "../../../world/src/index.js";
 
 export interface SelfToolsDependencies {
   readonly state: StateRepository;
   readonly world: LocalWorldReader;
+  readonly worldSubscriptionsPath?: string;
 }
 
 export interface MemoryWriteRequest {
@@ -53,6 +64,8 @@ export interface SelfTools {
   };
   readonly world: {
     search(request: LocalWorldSearchRequest): readonly LocalWorldSearchResult[];
+    subscribe(request: Omit<SubscribeWorldRequest, "subscriptionsPath">): { readonly subscriptions: readonly PersistedWorldSubscription[] };
+    listSubscriptions(): readonly PersistedWorldSubscription[];
   };
   readonly curriculum: {
     advance(domain: string, stepIndex: number): void;
@@ -77,7 +90,22 @@ function latestRunId(state: StateRepository, domain?: string): RunId | undefined
     .at(-1)?.id;
 }
 
-export function createSelfTools({ state, world }: SelfToolsDependencies): SelfTools {
+function requireWorldSubscriptionsPath(worldSubscriptionsPath: string | undefined): string {
+  if (worldSubscriptionsPath === undefined) {
+    throw new Error("No world subscriptions path configured");
+  }
+
+  return worldSubscriptionsPath;
+}
+
+function searchSubscribedWorlds(
+  worlds: readonly WorldSubscriptionSearch[],
+  request: LocalWorldSearchRequest,
+): readonly LocalWorldSearchResult[] {
+  return searchWorlds({ worlds, ...request });
+}
+
+export function createSelfTools({ state, world, worldSubscriptionsPath }: SelfToolsDependencies): SelfTools {
   return {
     memory: {
       write(request) {
@@ -224,7 +252,29 @@ export function createSelfTools({ state, world }: SelfToolsDependencies): SelfTo
     },
     world: {
       search(request) {
+        if (worldSubscriptionsPath !== undefined) {
+          const worlds = listWorldSubscriptions(worldSubscriptionsPath);
+          if (worlds.length > 0) {
+            return searchSubscribedWorlds(worlds, request);
+          }
+        }
+
         return world.search(request);
+      },
+      subscribe(request) {
+        return {
+          subscriptions: subscribeWorld({
+            ...request,
+            subscriptionsPath: requireWorldSubscriptionsPath(worldSubscriptionsPath),
+          }),
+        };
+      },
+      listSubscriptions() {
+        if (worldSubscriptionsPath === undefined) {
+          return [];
+        }
+
+        return listWorldSubscriptions(worldSubscriptionsPath);
       },
     },
     curriculum: {

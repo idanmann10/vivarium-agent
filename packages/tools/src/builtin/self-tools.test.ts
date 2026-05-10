@@ -51,6 +51,33 @@ describe("self-tools", () => {
     expect(state.getCurriculumProgress("coding")?.completedSteps).toEqual([0]);
   });
 
+  test("persists world subscriptions through self-tools", () => {
+    const root = mkdtempSync(join(tmpdir(), "self-tools-worlds-"));
+    const subscriptionsPath = join(root, "subscriptions.json");
+    const state = new InMemoryStateRepository();
+    const tools = createSelfTools({
+      state,
+      world: createLocalWorldReader({ root: "../the-world" }),
+      worldSubscriptionsPath: subscriptionsPath,
+    });
+
+    expect(tools.world.listSubscriptions()).toEqual([]);
+
+    const result = tools.world.subscribe({
+      label: "canonical",
+      root: "../the-world",
+      priority: 0,
+      ref: "main",
+      autoPushEnabled: false,
+    });
+
+    expect(result.subscriptions).toEqual([
+      { label: "canonical", root: "../the-world", priority: 0, ref: "main", autoPushEnabled: false },
+    ]);
+    expect(tools.world.listSubscriptions()).toEqual(result.subscriptions);
+    expect(tools.world.search({ domain: "coding", query: "test first" }).length).toBeGreaterThan(0);
+  });
+
   test("exposes roadmap self-tools against SQLite state", () => {
     const statePath = join(mkdtempSync(join(tmpdir(), "self-tools-state-")), "state.db");
     const state = new SQLiteStateRepository(statePath);

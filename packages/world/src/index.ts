@@ -39,6 +39,8 @@ export type {
 } from "./push.js";
 export { searchWorlds } from "./retrieve.js";
 export type { SearchWorldsRequest, SourcedWorldSearchResult, WorldSubscriptionSearch } from "./retrieve.js";
+export { listWorldSubscriptions, subscribeWorld } from "./subscriptions.js";
+export type { PersistedWorldSubscription, SubscribeWorldRequest, WorldSubscriptionsStoreOptions } from "./subscriptions.js";
 export { publishRun } from "./runs.js";
 export type { PublishRunRequest } from "./runs.js";
 export { publishTrace } from "./traces.js";
