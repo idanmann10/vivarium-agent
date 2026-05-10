@@ -6,7 +6,7 @@ import {
   type RunId,
 } from "../../core/src/index.js";
 import type { LocalProvider } from "../../providers/src/index.js";
-import { anonymizeText, type SelfTools } from "../../tools/src/index.js";
+import { anonymizeText, scanToolOutputForPromptInjection, type SelfTools } from "../../tools/src/index.js";
 import { applyAttentionLimits, type AttentionLimits } from "./attention.js";
 import { runExecutePrimitive } from "./primitives/execute/index.js";
 import { runMonitorPrimitive } from "./primitives/monitor/index.js";
@@ -165,6 +165,23 @@ export async function runGoal(request: RunGoalRequest): Promise<RunGoalResult> {
 
   append({ kind: "action", ...execution.action });
   append({ kind: "observation", content: execution.observation });
+  const injectionFindings = scanToolOutputForPromptInjection(execution.observation);
+  if (injectionFindings.length > 0) {
+    const injectionWarning = injectionFindings.map((finding) => finding.reason).join("; ");
+    append({
+      kind: "surprise",
+      prediction: prediction.prediction,
+      actual: injectionWarning,
+      magnitude: 0.8,
+      notes: "Prompt-injection warning from tool output",
+    });
+    request.tools.memory.write({
+      domain: request.domain,
+      subject: "tool-output prompt injection",
+      content: `Watch for injection: ${injectionWarning}`,
+      importance: 0.9,
+    });
+  }
 
   if (request.forceFailure === true) {
     const monitor = runMonitorPrimitive({ observation: execution.observation, forceFailure: request.forceFailure });

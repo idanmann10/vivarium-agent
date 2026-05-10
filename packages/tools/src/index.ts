@@ -37,10 +37,11 @@ export { resolveCredential } from "./credentials/resolver.js";
 export type { CredentialLookup, CredentialResolution } from "./credentials/resolver.js";
 export { anonymizeText, anonymizeTextWithProvider, markRequiresAnonymization } from "./anonymizer/pipeline.js";
 export type { ProviderAnonymizationResult } from "./anonymizer/pipeline.js";
-export { evaluateComputerUseSafety, evaluateHttpSafety } from "./safety/pipeline.js";
+export { evaluateComputerUseSafety, evaluateHttpSafety, scanToolOutputForPromptInjection } from "./safety/pipeline.js";
 export type {
   ComputerUseConfirmationLevel,
   ComputerUseSafetyRequest,
   HttpSafetyRequest,
+  OutputSafetyFinding,
   SafetyDecision,
 } from "./safety/pipeline.js";
