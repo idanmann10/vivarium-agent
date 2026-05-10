@@ -332,6 +332,50 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("provider.privateOaiCompatProfile:unavailable");
   });
 
+  test("reports configured world refs missing from the subscriptions file", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-world-subscriptions-"));
+    const subscriptionsPath = join(root, "world-subscriptions.json");
+    writeFileSync(
+      subscriptionsPath,
+      `${JSON.stringify({
+        worlds: [
+          {
+            label: "unrelated",
+            root: "/tmp/unrelated-world",
+            priority: 0,
+            ref: "git@github.com:owner/unrelated-world.git",
+            autoPushEnabled: false,
+          },
+        ],
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        VIVARIUM_WORLD_SUBSCRIPTIONS_PATH: subscriptionsPath,
+        VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world.git",
+        VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
+        OPENROUTER_API_KEY: "configured",
+        GITHUB_TOKEN: "configured",
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("world.subscriptionsPath:configured");
+    expect(result.checks).toContain("world.canonicalRef:unavailable");
+    expect(result.checks).toContain("world.privateForkRef:unavailable");
+  });
+
   test("reports remotes that do not match configured owner and repo names", () => {
     const result = doctorCommand({
       mode: "live-readiness",

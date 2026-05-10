@@ -18,6 +18,7 @@ bun apps/cli/src/index.ts doctor --live \
 
 A live-ready workspace should report configured agent/world names, configured agent/world remotes, canonical/private world subscription metadata, configured provider environment and profile metadata, configured GitHub token environment, valid GitHub auth, installed Docker, and installed Docker Compose.
 Path-based checks report `:unavailable` when the env var is set but the expected local file has not been created yet.
+When the world subscription registry exists, canonical/private world refs also report `:unavailable` if the configured refs are not present in that registry.
 
 ## Naming Gate
 
@@ -325,6 +326,7 @@ bun apps/cli/src/index.ts world search \
 Repeated `--world-root` flags are searched in order. Use priority `0` or list the private fork first when team/internal knowledge should have priority over the canonical world.
 
 `doctor --live` expects `VIVARIUM_WORLD_SUBSCRIPTIONS_PATH` to point at the registry file created by `world subscribe`.
+It also checks that `VIVARIUM_CANONICAL_WORLD_REF` and `VIVARIUM_PRIVATE_WORLD_REF` are present as saved `world subscribe --world-ref` values in that file.
 
 ## Cross-Install World Pull
 

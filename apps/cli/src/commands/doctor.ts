@@ -130,6 +130,39 @@ function requiredFileCheck(env: Readonly<Record<string, string | undefined>>, en
   return existsSync(value) ? `${label}:configured` : `${label}:unavailable`;
 }
 
+function worldSubscriptionRefs(env: Readonly<Record<string, string | undefined>>): ReadonlySet<string> | undefined {
+  const subscriptionsPath = env[worldSubscriptionsPathEnv]?.trim();
+  if (subscriptionsPath === undefined || subscriptionsPath.length === 0 || !existsSync(subscriptionsPath)) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(readFileSync(subscriptionsPath, "utf8")) as { readonly worlds?: readonly { readonly ref?: unknown }[] };
+    return new Set(
+      (parsed.worlds ?? []).flatMap((world) => {
+        const ref = typeof world.ref === "string" ? world.ref.trim() : "";
+        return ref.length > 0 ? [ref] : [];
+      }),
+    );
+  } catch {
+    return new Set();
+  }
+}
+
+function worldRefCheck(
+  env: Readonly<Record<string, string | undefined>>,
+  refs: ReadonlySet<string> | undefined,
+  envName: string,
+  label: string,
+): string {
+  const value = env[envName]?.trim();
+  if (value === undefined || value.length === 0) {
+    return `${label}:missing`;
+  }
+
+  return refs === undefined || refs.has(value) ? `${label}:configured` : `${label}:unavailable`;
+}
+
 function providerProfileNames(env: Readonly<Record<string, string | undefined>>): ReadonlySet<string> | undefined {
   const profilesPath = env[providerProfilesPathEnv]?.trim();
   if (profilesPath === undefined || profilesPath.length === 0 || !existsSync(profilesPath)) {
@@ -202,6 +235,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
   const env = options.env ?? process.env;
   const agentRoot = options.agentRoot ?? process.cwd();
   const worldRoot = options.worldRoot ?? process.cwd();
+  const worldRefs = worldSubscriptionRefs(env);
   const profiles = providerProfileNames(env);
   const checks = [
     repoNameCheck(env, agentRepoNameEnv, "the-agent", "agent"),
@@ -209,8 +243,8 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     remoteCheck(runner, agentRoot, env, agentRepoNameEnv, "the-agent", "agent"),
     remoteCheck(runner, worldRoot, env, worldRepoNameEnv, "the-world", "world"),
     requiredFileCheck(env, worldSubscriptionsPathEnv, "world.subscriptionsPath"),
-    requiredEnvCheck(env, canonicalWorldRefEnv, "world.canonicalRef"),
-    requiredEnvCheck(env, privateWorldRefEnv, "world.privateForkRef"),
+    worldRefCheck(env, worldRefs, canonicalWorldRefEnv, "world.canonicalRef"),
+    worldRefCheck(env, worldRefs, privateWorldRefEnv, "world.privateForkRef"),
     hasProviderEnv(env) ? "provider.env:configured" : "provider.env:missing",
     requiredEnvCheck(env, anthropicApiKeyEnv, "provider.anthropic"),
     requiredEnvCheck(env, openRouterApiKeyEnv, "provider.openrouter"),
