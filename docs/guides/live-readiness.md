@@ -92,6 +92,22 @@ bun apps/cli/src/index.ts github smoke \
 
 The command reports repository visibility, default branch, Discussions availability, and token permissions when GitHub returns them.
 
+Open the Phase 0 RFC Discussion only after the target repository ID and Discussion category ID are known:
+
+```bash
+bun apps/cli/src/index.ts github discussion \
+  --owner <owner> \
+  --repo <world-repo> \
+  --token-env GITHUB_TOKEN \
+  --repository-id <repository-node-id> \
+  --category-id <discussion-category-node-id> \
+  --title "Phase 0 Bootstrap RFC" \
+  --body "$(cat /Users/idanmann/Vivarium/the-world/proposals/0001-phase-0-bootstrap-rfc.md)" \
+  --confirm-write
+```
+
+Without `--confirm-write`, the command refuses before reading credentials or calling GitHub.
+
 ## Docker Compose
 
 Daemon supervision needs either the Docker Compose plugin or the standalone `docker-compose` command.
@@ -117,7 +133,7 @@ After the external prerequisites are configured:
 1. Re-run `doctor --live`.
 2. Run `providers smoke` for one configured provider.
 3. Run `github smoke` for the canonical world remote.
-4. Open the Phase 0 RFC Discussion in the world remote.
+4. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.
 5. Create a live world contribution PR from a generated artifact.
 6. Verify the world workflows and trust gates on GitHub.
 7. Pull the accepted contribution into a second local install.

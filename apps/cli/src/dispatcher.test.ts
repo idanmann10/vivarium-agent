@@ -200,6 +200,35 @@ describe("dispatchCliCommand", () => {
     });
   });
 
+  test("routes guarded GitHub discussion creation", async () => {
+    await expect(
+      dispatchCliCommand([
+        "github",
+        "discussion",
+        "--owner",
+        "owner",
+        "--repo",
+        "world",
+        "--token-env",
+        "GITHUB_TOKEN",
+        "--repository-id",
+        "R_1",
+        "--category-id",
+        "C_1",
+        "--title",
+        "Phase 0 RFC",
+        "--body",
+        "Bootstrap discussion",
+      ]),
+    ).resolves.toMatchObject({
+      command: "github",
+      result: {
+        ok: false,
+        error: "Missing --confirm-write for GitHub discussion creation",
+      },
+    });
+  });
+
   test("routes daemon smoke checks", async () => {
     await expect(dispatchCliCommand(["daemon", "smoke", "--status-url", "http://127.0.0.1:9/status"])).resolves.toMatchObject({
       command: "daemon",

@@ -1,4 +1,4 @@
-import type { GitHubFetch } from "../../../../packages/world/src/index.js";
+import { createGitHubWorldClient, type GitHubFetch } from "../../../../packages/world/src/index.js";
 
 export interface GitHubSmokeCommandOptions {
   readonly owner: string;
@@ -24,6 +24,34 @@ export type GitHubSmokeCommandResult =
       readonly defaultBranch: string;
       readonly discussionsEnabled: boolean;
       readonly permissions?: GitHubRepositoryPermissions;
+    }
+  | {
+      readonly ok: false;
+      readonly owner: string;
+      readonly repo: string;
+      readonly error: string;
+    };
+
+export interface GitHubDiscussionCommandOptions {
+  readonly owner: string;
+  readonly repo: string;
+  readonly tokenEnv: string;
+  readonly repositoryId: string;
+  readonly categoryId: string;
+  readonly title: string;
+  readonly body: string;
+  readonly confirmWrite: boolean;
+  readonly env?: Readonly<Record<string, string | undefined>>;
+  readonly fetch?: GitHubFetch;
+}
+
+export type GitHubDiscussionCommandResult =
+  | {
+      readonly ok: true;
+      readonly owner: string;
+      readonly repo: string;
+      readonly discussionId: string;
+      readonly discussionUrl: string;
     }
   | {
       readonly ok: false;
@@ -106,6 +134,48 @@ export async function githubSmokeCommand(options: GitHubSmokeCommandOptions): Pr
     }
 
     return parseRepository(options.owner, options.repo, await response.json());
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { ok: false, owner: options.owner, repo: options.repo, error: message };
+  }
+}
+
+export async function githubDiscussionCommand(options: GitHubDiscussionCommandOptions): Promise<GitHubDiscussionCommandResult> {
+  if (!options.confirmWrite) {
+    return { ok: false, owner: options.owner, repo: options.repo, error: "Missing --confirm-write for GitHub discussion creation" };
+  }
+
+  const env = options.env ?? process.env;
+  const token = env[options.tokenEnv];
+  if (token === undefined || token.length === 0) {
+    return {
+      ok: false,
+      owner: options.owner,
+      repo: options.repo,
+      error: `Missing GitHub token environment variable: ${options.tokenEnv}`,
+    };
+  }
+
+  try {
+    const discussion = await createGitHubWorldClient({
+      owner: options.owner,
+      repo: options.repo,
+      token,
+      ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
+    }).createDiscussion({
+      repositoryId: options.repositoryId,
+      categoryId: options.categoryId,
+      title: options.title,
+      body: options.body,
+    });
+
+    return {
+      ok: true,
+      owner: options.owner,
+      repo: options.repo,
+      discussionId: discussion.id,
+      discussionUrl: discussion.url,
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return { ok: false, owner: options.owner, repo: options.repo, error: message };

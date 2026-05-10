@@ -2,7 +2,7 @@ import type { CredentialKind } from "../../../packages/core/src/index.js";
 import { addCredentialCommand, listCredentialsCommand } from "./commands/credentials.js";
 import { daemonSmokeCommand } from "./commands/daemon.js";
 import { doctorCommand } from "./commands/doctor.js";
-import { githubSmokeCommand } from "./commands/github.js";
+import { githubDiscussionCommand, githubSmokeCommand } from "./commands/github.js";
 import { runInitCommand } from "./commands/init.js";
 import { providerSmokeCommand, type ProviderSmokeKind } from "./commands/providers.js";
 import { runCommand } from "./commands/run.js";
@@ -212,17 +212,34 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
       );
     }
     case "github": {
-      if (subcommand !== "smoke") {
-        usage('Unknown github subcommand. Use "smoke".');
+      if (subcommand === "smoke") {
+        return output(
+          command,
+          await githubSmokeCommand({
+            owner: required(flags, "owner"),
+            repo: required(flags, "repo"),
+            tokenEnv: required(flags, "token-env"),
+          }),
+        );
       }
-      return output(
-        command,
-        await githubSmokeCommand({
-          owner: required(flags, "owner"),
-          repo: required(flags, "repo"),
-          tokenEnv: required(flags, "token-env"),
-        }),
-      );
+
+      if (subcommand === "discussion") {
+        return output(
+          command,
+          await githubDiscussionCommand({
+            owner: required(flags, "owner"),
+            repo: required(flags, "repo"),
+            tokenEnv: required(flags, "token-env"),
+            repositoryId: required(flags, "repository-id"),
+            categoryId: required(flags, "category-id"),
+            title: required(flags, "title"),
+            body: required(flags, "body"),
+            confirmWrite: booleanFlag(flags, "confirm-write"),
+          }),
+        );
+      }
+
+      usage('Unknown github subcommand. Use "smoke" or "discussion".');
     }
     case "daemon": {
       if (subcommand !== "smoke") {
