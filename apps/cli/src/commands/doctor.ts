@@ -419,6 +419,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const behaviorLoop = asRecord(manifest.behaviorLoop);
   const dreamArtifacts = asRecord(manifest.dreamArtifacts);
   const publicContribution = asRecord(manifest.publicContribution);
+  const publicContributionContributorAgent = textValue(publicContribution?.contributorAgent);
   const publicContributionPositiveSignals = agentEvidenceRecords(publicContribution?.positiveSignals, context);
   const publicContributionPositiveSignalAgents = new Set(publicContributionPositiveSignals.map((signal) => signal.agent));
   const publicContributionPositiveSignalEvidence = new Set(publicContributionPositiveSignals.map((signal) => signal.evidence));
@@ -520,6 +521,9 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         evidenceReference(publicContribution?.mathGate, context) &&
         githubActionsRunReference(publicContribution?.autoMerge) !== undefined &&
         canonicalSkillReference(publicContribution?.canonicalSkill, context) !== undefined &&
+        publicContributionContributorAgent !== undefined &&
+        !publicContributionPositiveSignalAgents.has(publicContributionContributorAgent) &&
+        !publicContributionPullUseAgents.has(publicContributionContributorAgent) &&
         (numberValue(publicContribution?.contributorTrust) ?? 0) >= 0.5 &&
         publicContributionPositiveSignalAgents.size >= 5 &&
         publicContributionPositiveSignalEvidence.size >= 5 &&
@@ -976,7 +980,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record a GitHub public skill PR URL, math gate, contributor trust, K=5 distinct positive-signal agent/evidence records, a GitHub Actions auto-merge run URL, canonical world skill landing, and three distinct other-agent pull/use evidence records.",
+          "Record the contributor agent identity, a GitHub public skill PR URL, math gate, contributor trust, K=5 distinct other-agent positive-signal agent/evidence records, a GitHub Actions auto-merge run URL, canonical world skill landing, and three distinct other-agent pull/use evidence records.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.publishedArtifacts":
