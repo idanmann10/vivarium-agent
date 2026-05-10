@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation over the shared state repository, aggregate compounding benchmark eval, state memory modules for all five roadmap memory systems, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, shared-state CLI init-to-run flow, SQLite-backed self-tools, read-only world pull/search paths, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, computer-use click/type confirmation safety, concrete world maintenance workflows, independent validator machine-fingerprint trust gates, and coding starter-pack depth, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation over the shared state repository, aggregate compounding benchmark eval, state memory modules for all five roadmap memory systems, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, shared-state CLI init-to-run flow, local Compose daemon supervisor artifacts, SQLite-backed self-tools, read-only world pull/search paths, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, computer-use click/type confirmation safety, concrete world maintenance workflows, independent validator machine-fingerprint trust gates, and coding starter-pack depth, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -35,7 +35,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 1 all 8 primitives implemented | Plan, Predict, Execute, Monitor, Recover, Validate, Reflect, and Dream have metadata; lifecycle primitives have modules and tests; orchestrator delegates to lifecycle modules | Complete locally |
 | Phase 1 attention budget enforcement | `applyAttentionLimits` caps skills, traces, tools, and recent episodes, enforces `maxWorkingTokens`, and returns budget metadata; orchestrator uses attention-limited world context before Plan | Complete locally |
 | Phase 1 read-only world paths | Local reader, retrieval, multi-world search, and injectable git clone/update pull tests exist; CLI routes `world pull` against a local git remote | Complete locally |
-| Phase 1 daemon | Daemon service, HTTP lifecycle transport, MCP manifest, and daemon-owned Dream scheduler loop exist with tests | Complete locally; deployment supervisor unverified |
+| Phase 1 daemon | Daemon service, HTTP lifecycle transport, MCP manifest, daemon-owned Dream scheduler loop, executable daemon main, Dockerfile, and Compose supervisor artifacts exist with tests | Complete locally; Compose CLI execution unverified because Docker Compose is unavailable in this workspace |
 | Phase 1 CLI | `dispatchCliCommand` routes `init`, `run`, `credentials add/list`, `skills list`, `world search`, `world pull`, `status`, and `doctor`; init runs migrations, installs starter skills, discovers starter traces/curriculum, returns provider/credential prompts, and run can use the initialized SQLite state file | Complete locally |
 | Phase 1 e2e run/recover | `tests/e2e-run.test.ts` and `tests/e2e-recover.test.ts` pass in current test suite | Complete locally |
 | Phase 1 done scenario | A developer can run a synthetic local goal; runtime tests verify anti-patterns are loaded into Plan before execution; e2e tests verify local `init` then `run` against one SQLite state file; real provider config and credential use are not verified | Incomplete |
@@ -74,6 +74,9 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun test packages/runtime/src/attention.test.ts`: 2 tests passed, including working-token budget enforcement.
 - `bun test packages/tools/src/anonymizer/pipeline.test.ts packages/providers/src/router.test.ts`: 5 tests passed, including provider anonymizer fallback.
 - `bun test apps/daemon/src/scheduler.test.ts`: 4 tests passed, including daemon Dream scheduler start/stop behavior.
+- `bun test apps/daemon/src/main.test.ts`: 3 tests passed, including daemon environment defaults, custom host/port/world-root parsing, and invalid port rejection.
+- `docker compose config`: blocked by missing Docker Compose subcommand; `docker-compose config`: blocked because `docker-compose` is not installed.
+- Ruby YAML parse of `docker-compose.yml`: passed and confirmed the `vivarium-daemon` service and `restart: unless-stopped` setting.
 - `bun test apps/cli/src/dispatcher.test.ts`: 4 tests passed, including CLI parser routing for local commands.
 - `bun test packages/tools/src/builtin/self-tools.test.ts`: 2 tests passed, including SQLite-backed roadmap self-tools.
 - `bun test packages/runtime/src/orchestrator.test.ts packages/tools/src/builtin/self-tools.test.ts`: 8 tests passed, including anonymized publishable run queueing.
@@ -86,18 +89,18 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `the-world bun test scripts`: 10 tests passed, including independent validator machine-fingerprint counting, concrete workflow command checks, and coding starter-pack depth.
 - `the-world bun run typecheck`: TypeScript passed.
 - `the-world bun run build`: 8 required files present.
-- `bun run lint`: scanned 172 TypeScript files.
+- `bun run lint`: scanned 173 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 103 tests passed, 0 failed.
+- `bun run test`: 106 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value remaining gaps after the CLI install-flow state slice are live external verification and deployment decisions:
+The highest-value remaining gaps after the daemon Compose supervision artifact slice are live external verification and deployment execution:
 
 1. Verify live provider credentials and live model calls once credential names and values are available.
 2. Verify live GitHub remotes, Discussions, PR creation, and auto-merge settings once repository targets and credentials are available.
 3. Run a real cross-install/canonical-world contribution loop after remotes and credentials exist.
-4. Choose and verify deployment supervision for the long-running daemon.
+4. Verify Docker Compose execution for the long-running daemon in an environment with Compose installed.
 
-Live provider credentials, real GitHub remotes, real GitHub Discussions, cross-install cultural transmission, and deployment supervision still require user-provided decisions or external access.
+Live provider credentials, real GitHub remotes, real GitHub Discussions, cross-install cultural transmission, and Compose execution still require user-provided decisions, tooling, or external access.

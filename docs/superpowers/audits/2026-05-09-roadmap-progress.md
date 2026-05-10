@@ -42,6 +42,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` compounding benchmark eval slice implemented after Dream state repository execution.
 - `the-agent` state memory implementations slice implemented after compounding benchmark eval.
 - `the-agent` CLI install-flow shared-state slice implemented after state memory modules.
+- `the-agent` local daemon Compose supervision artifacts implemented after CLI install-flow state; Compose CLI execution remains unverified because this workspace lacks `docker compose` and `docker-compose`.
 - `the-world` Phase 0 committed at `81b28a2`.
 - `the-world` Phase 3 maintenance scripts committed at `866c121`.
 - `the-world` trust-gates slice committed at `719f0a1`.
@@ -54,9 +55,9 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 
 `the-agent`:
 
-- `bun run lint`: scanned 172 TypeScript files.
+- `bun run lint`: scanned 173 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 103 tests passed, 0 failed.
+- `bun run test`: 106 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 `the-world`:
@@ -76,7 +77,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 | Use Superpowers | Superpowers skills used during execution; URL cited in plan and seed lineage | Complete |
 | Use GStack | URL cited in plan and seed lineage for role/command-shaped review patterns | Complete |
 | Phase 0 bootstrap | Two local repos, tooling, core types/math/kernel, world seed content, validators | Complete locally |
-| Phase 1 agent works alone | Offline deterministic runtime, state, SQLite persistence, state memory modules for working/episodic/semantic/procedural/identity memory, semantic facts storage with deletion, versioned SQL migration runner, local provider, Anthropic/OpenAI/OpenAI-compatible HTTP adapters, encrypted credential store, typed tool dispatcher, web/HTTP/file/terminal/code/MCP/computer-use external adapters, SQLite-backed self-tools, HTTP/tool safety with output prompt-injection warnings, per-run and persistent per-day rate limits, credential-argument blocking, computer-use click/type confirmation, run-level harmful refusal and destructive confirmation behavior, automatic anti-pattern loading before execution, world read/search/pull paths, concrete primitive modules, attention-limited world context selection with token-budget accounting, daemon service, HTTP transport lifecycle, daemon-owned Dream scheduler loop, MCP tool manifest, CLI init/run/credentials/skills/world search/pull/status/doctor dispatcher and helpers, shared-state CLI init-to-run flow, e2e run/recover | Local slice partially complete |
+| Phase 1 agent works alone | Offline deterministic runtime, state, SQLite persistence, state memory modules for working/episodic/semantic/procedural/identity memory, semantic facts storage with deletion, versioned SQL migration runner, local provider, Anthropic/OpenAI/OpenAI-compatible HTTP adapters, encrypted credential store, typed tool dispatcher, web/HTTP/file/terminal/code/MCP/computer-use external adapters, SQLite-backed self-tools, HTTP/tool safety with output prompt-injection warnings, per-run and persistent per-day rate limits, credential-argument blocking, computer-use click/type confirmation, run-level harmful refusal and destructive confirmation behavior, automatic anti-pattern loading before execution, world read/search/pull paths, concrete primitive modules, attention-limited world context selection with token-budget accounting, daemon service, HTTP transport lifecycle, daemon-owned Dream scheduler loop, MCP tool manifest, local Compose supervisor artifacts, CLI init/run/credentials/skills/world search/pull/status/doctor dispatcher and helpers, shared-state CLI init-to-run flow, e2e run/recover | Local slice partially complete |
 | Phase 2 Dream | Offline deterministic Dream, promotion/pruning/habits/identity/confidence/anonymizer/eval/e2e, StateRepository-backed Dream execution including SQLite, provider-backed anonymizer fallback, anti-pattern candidate generation, annotated trace candidate extraction, SQLite-backed candidate queue, aggregate compounding benchmark eval, and anonymized publishable run queueing from Reflect | Local slice complete |
 | Phase 3 world integration | Local proposal/publish, multi-world retrieval, GitHub PR/issue/Discussion client with mocked tests, world maintenance scripts, concrete archive/auto-merge workflows, trust gates, independent validator machine-fingerprint counting, held-review listing, cultural transmission e2e | Local slice complete |
 
@@ -86,7 +87,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - Versioned SQL migrations are implemented on top of `bun:sqlite`; replacing that base with the roadmap's `better-sqlite3`/Drizzle stack remains a production stack decision.
 - GitHub PR/issue/Discussion client code and local trust/held-review gate logic are implemented and tested; live PR creation, auto-merge execution, and remote repository settings require actual GitHub remotes and credentials.
 - End-to-end cultural transmission is verified locally, not across two distinct real installs pulling from a canonical GitHub world.
-- Daemon service, HTTP transport lifecycle, daemon-owned Dream scheduler loop, and MCP tool manifest are implemented and tested locally; durable process-manager supervision remains a deployment decision.
+- Daemon service, HTTP transport lifecycle, daemon-owned Dream scheduler loop, MCP tool manifest, and local Compose supervisor artifacts are implemented and tested locally where possible; Compose CLI execution remains blocked by missing local Docker Compose tooling.
 
 ## Next Decision
 

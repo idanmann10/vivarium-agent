@@ -1,0 +1,26 @@
+services:
+  vivarium-daemon:
+    build:
+      context: .
+    command: ["bun", "apps/daemon/src/main.ts"]
+    environment:
+      VIVARIUM_DAEMON_HOST: "0.0.0.0"
+      VIVARIUM_DAEMON_PORT: "8787"
+      VIVARIUM_WORLD_ROOT: "/world"
+    ports:
+      - "8787:8787"
+    volumes:
+      - ../the-world:/world:ro
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bun",
+          "-e",
+          "fetch('http://127.0.0.1:8787/status').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
