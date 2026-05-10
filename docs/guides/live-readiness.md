@@ -17,6 +17,7 @@ bun apps/cli/src/index.ts doctor --live \
 ```
 
 A live-ready workspace should report configured agent/world names, configured agent/world remotes, canonical/private world subscription metadata, configured provider environment and profile metadata, configured GitHub token environment, valid GitHub auth, installed Docker, and installed Docker Compose.
+Path-based checks report `:unavailable` when the env var is set but the expected local file has not been created yet.
 
 ## Naming Gate
 
@@ -135,6 +136,8 @@ bun apps/cli/src/index.ts run \
 
 One-off run flags also remain available. Use `--provider-kind openai` or `--provider-kind anthropic` without `--provider-base-url` for first-party providers.
 
+`doctor --live` expects `VIVARIUM_PROVIDER_PROFILES_PATH` to point at the file created by `providers configure`.
+
 ## Internal API Credential
 
 After adding an internal API credential, smoke it through the encrypted keychain and HTTP dispatcher:
@@ -165,6 +168,8 @@ export VIVARIUM_CREDENTIALS_PATH=/tmp/vivarium-credentials.enc
 export VIVARIUM_INTERNAL_API_CREDENTIAL_NAME=INTERNAL_API_TOKEN
 export VIVARIUM_INTERNAL_API_HEALTH_URL=<internal-health-url>
 ```
+
+`doctor --live` expects `VIVARIUM_CREDENTIALS_PATH` to point at the encrypted file created by `credentials add`.
 
 ## GitHub Auth
 
@@ -315,6 +320,8 @@ bun apps/cli/src/index.ts world search \
 ```
 
 Repeated `--world-root` flags are searched in order. Use priority `0` or list the private fork first when team/internal knowledge should have priority over the canonical world.
+
+`doctor --live` expects `VIVARIUM_WORLD_SUBSCRIPTIONS_PATH` to point at the registry file created by `world subscribe`.
 
 ## Cross-Install World Pull
 

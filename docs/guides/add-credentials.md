@@ -18,3 +18,6 @@ export VIVARIUM_INTERNAL_API_HEALTH_URL=<internal-health-url>
 ```
 
 Keep the master key and credential value out of committed files.
+
+`doctor --live` reports `credentials.path:unavailable` until the encrypted file at
+`VIVARIUM_CREDENTIALS_PATH` exists.

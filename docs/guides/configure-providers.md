@@ -61,6 +61,9 @@ bun apps/cli/src/index.ts providers configure \
   --cost-class medium
 ```
 
+`doctor --live` reports `provider.profilesPath:unavailable` until the file at
+`VIVARIUM_PROVIDER_PROFILES_PATH` exists.
+
 List configured profiles:
 
 ```bash

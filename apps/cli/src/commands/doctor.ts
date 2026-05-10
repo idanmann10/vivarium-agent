@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+
 export interface DoctorResult {
   readonly ok: boolean;
   readonly checks: readonly string[];
@@ -102,6 +104,15 @@ function requiredEnvCheck(env: Readonly<Record<string, string | undefined>>, env
   return value === undefined || value.length === 0 ? `${label}:missing` : `${label}:configured`;
 }
 
+function requiredFileCheck(env: Readonly<Record<string, string | undefined>>, envName: string, label: string): string {
+  const value = env[envName]?.trim();
+  if (value === undefined || value.length === 0) {
+    return `${label}:missing`;
+  }
+
+  return existsSync(value) ? `${label}:configured` : `${label}:unavailable`;
+}
+
 function hasRequiredEnv(env: Readonly<Record<string, string | undefined>>, envName: string): boolean {
   const value = env[envName]?.trim();
   return value !== undefined && value.length > 0;
@@ -151,18 +162,18 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     repoNameCheck(env, worldRepoNameEnv, "the-world", "world"),
     hasRemote(runner, agentRoot) ? "agent.remote:configured" : "agent.remote:missing",
     hasRemote(runner, worldRoot) ? "world.remote:configured" : "world.remote:missing",
-    requiredEnvCheck(env, worldSubscriptionsPathEnv, "world.subscriptionsPath"),
+    requiredFileCheck(env, worldSubscriptionsPathEnv, "world.subscriptionsPath"),
     requiredEnvCheck(env, canonicalWorldRefEnv, "world.canonicalRef"),
     requiredEnvCheck(env, privateWorldRefEnv, "world.privateForkRef"),
     hasProviderEnv(env) ? "provider.env:configured" : "provider.env:missing",
     requiredEnvCheck(env, anthropicApiKeyEnv, "provider.anthropic"),
     requiredEnvCheck(env, openRouterApiKeyEnv, "provider.openrouter"),
     privateOaiCompatCheck(env),
-    requiredEnvCheck(env, providerProfilesPathEnv, "provider.profilesPath"),
+    requiredFileCheck(env, providerProfilesPathEnv, "provider.profilesPath"),
     requiredEnvCheck(env, anthropicProviderProfileEnv, "provider.anthropicProfile"),
     requiredEnvCheck(env, openRouterProviderProfileEnv, "provider.openrouterProfile"),
     requiredEnvCheck(env, privateOaiCompatProviderProfileEnv, "provider.privateOaiCompatProfile"),
-    requiredEnvCheck(env, credentialsPathEnv, "credentials.path"),
+    requiredFileCheck(env, credentialsPathEnv, "credentials.path"),
     requiredEnvCheck(env, internalApiCredentialNameEnv, "internalApi.credentialName"),
     requiredEnvCheck(env, internalApiHealthUrlEnv, "internalApi.healthUrl"),
     hasGithubEnv(env) ? "github.env:configured" : "github.env:missing",
