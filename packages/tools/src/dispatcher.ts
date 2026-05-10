@@ -6,7 +6,7 @@ import {
   type ExternalToolResult,
   type HttpMethod,
 } from "./external/index.js";
-import { evaluateHttpSafety, scanToolOutputForPromptInjection } from "./safety/pipeline.js";
+import { containsEmbeddedCredential, evaluateHttpSafety, scanToolOutputForPromptInjection } from "./safety/pipeline.js";
 
 export interface ToolDispatchRequest {
   readonly name: string;
@@ -38,11 +38,16 @@ export interface HttpSafetyConfig {
   readonly destructiveRequiresConfirmation: boolean;
 }
 
+export interface ToolRateLimitConfig {
+  readonly perRun?: Readonly<Record<string, number>>;
+}
+
 export interface ToolDispatcherOptions {
   readonly builtinHandlers?: Readonly<Record<string, BuiltinToolHandler>>;
   readonly externalAdapters: ExternalToolAdapters;
   readonly credentials?: CredentialStore;
   readonly httpSafety?: HttpSafetyConfig;
+  readonly rateLimits?: ToolRateLimitConfig;
   readonly onDispatch?: (event: ToolDispatchEvent) => void;
 }
 
@@ -225,6 +230,23 @@ async function dispatchExternal(
 }
 
 export function createToolDispatcher(options: ToolDispatcherOptions): ToolDispatcher {
+  const counts = new Map<string, number>();
+
+  function checkRateLimit(name: string): ToolDispatchResult | undefined {
+    const limit = options.rateLimits?.perRun?.[name];
+    if (limit === undefined) {
+      return undefined;
+    }
+
+    const nextCount = (counts.get(name) ?? 0) + 1;
+    if (nextCount > limit) {
+      return { ok: false, error: `Rate limit exceeded for ${name}`, blocked: true };
+    }
+
+    counts.set(name, nextCount);
+    return undefined;
+  }
+
   return {
     async dispatch(request) {
       const builtin = options.builtinHandlers?.[request.name];
@@ -245,6 +267,22 @@ export function createToolDispatcher(options: ToolDispatcherOptions): ToolDispat
         const reason = `Unknown or invalid tool request: ${request.name}`;
         emit(options, { name: request.name, status: "error", reason });
         return { ok: false, error: reason };
+      }
+
+      const rateLimitResult = checkRateLimit(request.name);
+      if (rateLimitResult !== undefined) {
+        emit(options, dispatchEvent(request.name, rateLimitResult));
+        return rateLimitResult;
+      }
+
+      if (containsEmbeddedCredential(external.args)) {
+        const result = {
+          ok: false,
+          error: "Tool arguments appear to contain an embedded credential",
+          blocked: true,
+        } satisfies ToolDispatchResult;
+        emit(options, dispatchEvent(request.name, result));
+        return result;
       }
 
       const result = await dispatchExternal(external, options);

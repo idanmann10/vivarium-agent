@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { evaluateHttpSafety, scanToolOutputForPromptInjection } from "./pipeline.js";
+import { containsEmbeddedCredential, evaluateHttpSafety, scanToolOutputForPromptInjection } from "./pipeline.js";
 
 describe("safety pipeline", () => {
   test("allows allowlisted read requests and blocks destructive requests without confirmation", () => {
@@ -30,5 +30,10 @@ describe("safety pipeline", () => {
       { reason: "Tool output may contain prompt injection: ignore previous instructions" },
       { reason: "Tool output may contain prompt injection: suspicious tool-use suggestion" },
     ]);
+  });
+
+  test("detects credential-like secrets embedded in tool arguments", () => {
+    expect(containsEmbeddedCredential({ body: "Bearer sk-secret-token" })).toBe(true);
+    expect(containsEmbeddedCredential({ body: "plain text" })).toBe(false);
   });
 });

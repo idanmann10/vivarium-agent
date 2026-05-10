@@ -46,3 +46,8 @@ export function scanToolOutputForPromptInjection(value: unknown): readonly Outpu
     .filter(({ pattern }) => pattern.test(text))
     .map(({ label }) => ({ reason: `Tool output may contain prompt injection: ${label}` }));
 }
+
+export function containsEmbeddedCredential(value: unknown): boolean {
+  const text = textFromValue(value);
+  return /Bearer\s+[A-Za-z0-9._-]+/.test(text) || /\b(?:sk|ghp|gho|xoxb)-[A-Za-z0-9._-]{8,}\b/.test(text);
+}

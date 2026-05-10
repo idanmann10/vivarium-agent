@@ -105,4 +105,45 @@ describe("createToolDispatcher", () => {
       }),
     );
   });
+
+  test("blocks external tool calls that exceed per-run rate limits", async () => {
+    const dispatcher = createToolDispatcher({
+      rateLimits: { perRun: { "web.search": 1 } },
+      externalAdapters: {
+        searchWeb: async (query) => [{ title: "Docs", url: "https://example.test/docs", snippet: query }],
+      },
+    });
+
+    await expect(dispatcher.dispatch({ name: "web.search", args: { query: "first" } })).resolves.toMatchObject({
+      ok: true,
+    });
+    await expect(dispatcher.dispatch({ name: "web.search", args: { query: "second" } })).resolves.toEqual({
+      ok: false,
+      error: "Rate limit exceeded for web.search",
+      blocked: true,
+    });
+  });
+
+  test("blocks credential-like secrets embedded in tool arguments", async () => {
+    const dispatcher = createToolDispatcher({
+      externalAdapters: {
+        fetch: async () => Response.json({ ok: true }),
+      },
+    });
+
+    await expect(
+      dispatcher.dispatch({
+        name: "http.request",
+        args: {
+          url: "https://api.example.test/pages",
+          method: "POST",
+          body: "Bearer sk-secret-token",
+        },
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      error: "Tool arguments appear to contain an embedded credential",
+      blocked: true,
+    });
+  });
 });
