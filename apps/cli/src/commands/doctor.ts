@@ -364,6 +364,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
       "behaviorLoop",
       evidenceReference(behaviorLoop?.antiPatternAvoided, context) &&
         evidenceReferenceArray(behaviorLoop?.tracesRead, context).length >= 2 &&
+        evidenceReference(behaviorLoop?.monitorFailurePattern, context) &&
         evidenceReference(behaviorLoop?.recoverReplan, context) &&
         evidenceReference(behaviorLoop?.destructiveHold, context) &&
         evidenceReference(behaviorLoop?.refusal, context),
@@ -810,7 +811,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.behaviorLoop":
       return {
         check,
-        action: "Record live behavior-loop evidence for anti-pattern use, two traces read, Recover re-plan, destructive hold, and refusal.",
+        action:
+          "Record live behavior-loop evidence for anti-pattern use, two traces read, Monitor tool-failure detection, Recover re-plan, destructive hold, and refusal.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.dreamArtifacts":

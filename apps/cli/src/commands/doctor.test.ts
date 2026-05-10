@@ -136,6 +136,7 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
     "docs/live/anti-pattern-avoided.md",
     "docs/live/trace-a.md",
     "docs/live/trace-b.md",
+    "docs/live/monitor-failure-pattern.md",
     "docs/live/recover-replan.md",
     "docs/live/destructive-hold.md",
     "docs/live/refusal.md",
@@ -228,6 +229,7 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
       behaviorLoop: {
         antiPatternAvoided: "docs/live/anti-pattern-avoided.md",
         tracesRead: ["docs/live/trace-a.md", "docs/live/trace-b.md"],
+        monitorFailurePattern: "docs/live/monitor-failure-pattern.md",
         recoverReplan: "docs/live/recover-replan.md",
         destructiveHold: "docs/live/destructive-hold.md",
         refusal: "docs/live/refusal.md",
@@ -599,6 +601,49 @@ describe("doctorCommand", () => {
           recoverReplan: "run-recover",
           destructiveHold: "run-destructive-hold",
           refusal: "run-refusal",
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.behaviorLoop:missing");
+  });
+
+  test("requires v1 behavior loop evidence to include monitor tool-failure detection", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-monitor-failure-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    const localEvidencePaths = [
+      "docs/live/anti-pattern-avoided.md",
+      "docs/live/trace-a.md",
+      "docs/live/trace-b.md",
+      "docs/live/recover-replan.md",
+      "docs/live/destructive-hold.md",
+      "docs/live/refusal.md",
+    ];
+    for (const path of localEvidencePaths) {
+      const absolutePath = join(root, path);
+      mkdirSync(dirname(absolutePath), { recursive: true });
+      writeFileSync(absolutePath, "behavior evidence\n", "utf8");
+    }
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        behaviorLoop: {
+          antiPatternAvoided: "docs/live/anti-pattern-avoided.md",
+          tracesRead: ["docs/live/trace-a.md", "docs/live/trace-b.md"],
+          recoverReplan: "docs/live/recover-replan.md",
+          destructiveHold: "docs/live/destructive-hold.md",
+          refusal: "docs/live/refusal.md",
         },
       })}\n`,
       "utf8",
