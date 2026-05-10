@@ -177,4 +177,38 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("world.canonicalRef:missing");
     expect(result.checks).toContain("world.privateForkRef:missing");
   });
+
+  test("reports missing provider profile metadata as live readiness blockers", () => {
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        VIVARIUM_WORLD_SUBSCRIPTIONS_PATH: "/tmp/vivarium-world-subscriptions.json",
+        VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world.git",
+        VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
+        ANTHROPIC_API_KEY: "configured",
+        OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
+        VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_CREDENTIALS_PATH: "/tmp/vivarium-credentials.enc",
+        VIVARIUM_INTERNAL_API_CREDENTIAL_NAME: "INTERNAL_API_TOKEN",
+        VIVARIUM_INTERNAL_API_HEALTH_URL: "https://internal.example/health",
+        GITHUB_TOKEN: "configured",
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("provider.profilesPath:missing");
+    expect(result.checks).toContain("provider.anthropicProfile:missing");
+    expect(result.checks).toContain("provider.openrouterProfile:missing");
+    expect(result.checks).toContain("provider.privateOaiCompatProfile:missing");
+  });
 });

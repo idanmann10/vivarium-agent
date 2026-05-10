@@ -35,6 +35,10 @@ const githubDiscussionCategoryIdEnv = "VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID";
 const worldSubscriptionsPathEnv = "VIVARIUM_WORLD_SUBSCRIPTIONS_PATH";
 const canonicalWorldRefEnv = "VIVARIUM_CANONICAL_WORLD_REF";
 const privateWorldRefEnv = "VIVARIUM_PRIVATE_WORLD_REF";
+const providerProfilesPathEnv = "VIVARIUM_PROVIDER_PROFILES_PATH";
+const anthropicProviderProfileEnv = "VIVARIUM_ANTHROPIC_PROVIDER_PROFILE";
+const openRouterProviderProfileEnv = "VIVARIUM_OPENROUTER_PROVIDER_PROFILE";
+const privateOaiCompatProviderProfileEnv = "VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE";
 const anthropicApiKeyEnv = "ANTHROPIC_API_KEY";
 const openRouterApiKeyEnv = "OPENROUTER_API_KEY";
 const privateOaiCompatApiKeyEnv = "VIVARIUM_OAI_COMPAT_API_KEY";
@@ -154,6 +158,10 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     requiredEnvCheck(env, anthropicApiKeyEnv, "provider.anthropic"),
     requiredEnvCheck(env, openRouterApiKeyEnv, "provider.openrouter"),
     privateOaiCompatCheck(env),
+    requiredEnvCheck(env, providerProfilesPathEnv, "provider.profilesPath"),
+    requiredEnvCheck(env, anthropicProviderProfileEnv, "provider.anthropicProfile"),
+    requiredEnvCheck(env, openRouterProviderProfileEnv, "provider.openrouterProfile"),
+    requiredEnvCheck(env, privateOaiCompatProviderProfileEnv, "provider.privateOaiCompatProfile"),
     requiredEnvCheck(env, credentialsPathEnv, "credentials.path"),
     requiredEnvCheck(env, internalApiCredentialNameEnv, "internalApi.credentialName"),
     requiredEnvCheck(env, internalApiHealthUrlEnv, "internalApi.healthUrl"),

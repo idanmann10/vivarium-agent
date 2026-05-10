@@ -16,14 +16,18 @@ export OPENROUTER_API_KEY=<redacted>
 export VIVARIUM_OAI_COMPAT_API_KEY=<redacted>
 export VIVARIUM_OAI_COMPAT_BASE_URL=<private-oai-compatible-base-url>
 export VIVARIUM_OAI_COMPAT_MODEL=<private-fine-tune-model>
+export VIVARIUM_PROVIDER_PROFILES_PATH=~/.the-agent/provider-profiles.json
+export VIVARIUM_ANTHROPIC_PROVIDER_PROFILE=anthropic-main
+export VIVARIUM_OPENROUTER_PROVIDER_PROFILE=openrouter
+export VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE=private-finetune
 ```
 
 Save named profiles locally:
 
 ```bash
 bun apps/cli/src/index.ts providers configure \
-  --profiles-path ~/.the-agent/provider-profiles.json \
-  --name anthropic-main \
+  --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
+  --name "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE" \
   --kind anthropic \
   --api-key-env ANTHROPIC_API_KEY \
   --model <anthropic-model> \
@@ -33,8 +37,8 @@ bun apps/cli/src/index.ts providers configure \
   --cost-class expensive
 
 bun apps/cli/src/index.ts providers configure \
-  --profiles-path ~/.the-agent/provider-profiles.json \
-  --name openrouter \
+  --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
+  --name "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE" \
   --kind openai-compat \
   --api-key-env OPENROUTER_API_KEY \
   --model <openrouter-model> \
@@ -45,8 +49,8 @@ bun apps/cli/src/index.ts providers configure \
   --cost-class medium
 
 bun apps/cli/src/index.ts providers configure \
-  --profiles-path ~/.the-agent/provider-profiles.json \
-  --name private-finetune \
+  --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
+  --name "$VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE" \
   --kind openai-compat \
   --api-key-env VIVARIUM_OAI_COMPAT_API_KEY \
   --model "$VIVARIUM_OAI_COMPAT_MODEL" \
@@ -61,15 +65,15 @@ List configured profiles:
 
 ```bash
 bun apps/cli/src/index.ts providers list \
-  --profiles-path ~/.the-agent/provider-profiles.json
+  --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH"
 ```
 
 Smoke a profile without repeating model details:
 
 ```bash
 bun apps/cli/src/index.ts providers smoke \
-  --profiles-path ~/.the-agent/provider-profiles.json \
-  --profile openrouter
+  --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
+  --profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
 ```
 
 Run a goal through a profile:
@@ -77,6 +81,6 @@ Run a goal through a profile:
 ```bash
 bun apps/cli/src/index.ts run \
   --goal "<small real goal>" \
-  --provider-profiles-path ~/.the-agent/provider-profiles.json \
-  --provider-profile openrouter
+  --provider-profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
+  --provider-profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
 ```

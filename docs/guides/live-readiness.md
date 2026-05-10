@@ -16,7 +16,7 @@ bun apps/cli/src/index.ts doctor --live \
   --world-root /Users/idanmann/Vivarium/the-world
 ```
 
-A live-ready workspace should report configured agent/world names, configured agent/world remotes, canonical/private world subscription metadata, configured provider and GitHub token environment, valid GitHub auth, installed Docker, and installed Docker Compose.
+A live-ready workspace should report configured agent/world names, configured agent/world remotes, canonical/private world subscription metadata, configured provider environment and profile metadata, configured GitHub token environment, valid GitHub auth, installed Docker, and installed Docker Compose.
 
 ## Naming Gate
 
@@ -68,16 +68,20 @@ export OPENROUTER_API_KEY=<redacted>
 export VIVARIUM_OAI_COMPAT_API_KEY=<redacted>
 export VIVARIUM_OAI_COMPAT_BASE_URL=<private-oai-compatible-base-url>
 export VIVARIUM_OAI_COMPAT_MODEL=<private-fine-tune-model>
+export VIVARIUM_PROVIDER_PROFILES_PATH=/tmp/vivarium-provider-profiles.json
+export VIVARIUM_ANTHROPIC_PROVIDER_PROFILE=anthropic-main
+export VIVARIUM_OPENROUTER_PROVIDER_PROFILE=openrouter
+export VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE=private-finetune
 ```
 
 Keep secrets out of git and shell history where possible.
 
-Save the live provider as a profile:
+Save the OpenRouter live provider as one profile. `docs/guides/configure-providers.md` shows the full Anthropic, OpenRouter, and private-compatible profile setup required before `doctor --live` is clear:
 
 ```bash
 bun apps/cli/src/index.ts providers configure \
-  --profiles-path /tmp/vivarium-provider-profiles.json \
-  --name openrouter \
+  --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
+  --name "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE" \
   --kind openai-compat \
   --api-key-env OPENROUTER_API_KEY \
   --model <model> \
@@ -94,8 +98,8 @@ Then run a provider smoke completion through the saved profile:
 
 ```bash
 bun apps/cli/src/index.ts providers smoke \
-  --profiles-path /tmp/vivarium-provider-profiles.json \
-  --profile openrouter
+  --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
+  --profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
 ```
 
 The one-off smoke flags still work when you do not need to save the profile:
@@ -125,8 +129,8 @@ bun apps/cli/src/index.ts run \
   --domain coding \
   --world-root /Users/idanmann/Vivarium/the-world \
   --state-path /tmp/vivarium-live-state.db \
-  --provider-profiles-path /tmp/vivarium-provider-profiles.json \
-  --provider-profile openrouter
+  --provider-profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
+  --provider-profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
 ```
 
 One-off run flags also remain available. Use `--provider-kind openai` or `--provider-kind anthropic` without `--provider-base-url` for first-party providers.
@@ -293,8 +297,8 @@ bun apps/cli/src/index.ts run \
   --domain coding \
   --state-path /tmp/vivarium-live-state.db \
   --world-subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" \
-  --provider-profiles-path /tmp/vivarium-provider-profiles.json \
-  --provider-profile openrouter
+  --provider-profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
+  --provider-profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
 ```
 
 For one-off checks without writing the registry, repeated roots still work:
