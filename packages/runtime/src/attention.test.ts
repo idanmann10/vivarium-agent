@@ -4,7 +4,7 @@ import { agentId, episodeId, runId, type Episode } from "../../core/src/index.js
 import type { LocalWorldSearchResult } from "../../world/src/index.js";
 import { applyAttentionLimits } from "./attention.js";
 
-function episode(index: number): Episode {
+function episode(index: number, content = `observation-${index}`): Extract<Episode, { readonly kind: "observation" }> {
   return {
     id: episodeId(`episode-${index}`),
     runId: runId("run-attention"),
@@ -12,7 +12,7 @@ function episode(index: number): Episode {
     timestamp: `2026-05-09T00:00:0${index}.000Z`,
     tags: [],
     kind: "observation",
-    content: `observation-${index}`,
+    content,
   };
 }
 
@@ -51,5 +51,32 @@ describe("applyAttentionLimits", () => {
     expect(result.antiPatterns.map((antiPattern) => antiPattern.id)).toEqual(["anti-a"]);
     expect(result.tools).toEqual(["http.request", "file.read"]);
     expect(result.episodes.map((item) => item.id)).toEqual([episodeId("episode-2"), episodeId("episode-3")]);
+  });
+
+  test("accounts for and enforces the working token budget", () => {
+    const result = applyAttentionLimits({
+      worldResults: [
+        worldResult("skill", "skill-a", 3),
+        worldResult("trace", "trace-a", 2),
+        worldResult("anti-pattern", "anti-a", 1),
+      ],
+      tools: ["http.request", "file.read"],
+      episodes: [
+        episode(1, "short observation"),
+        episode(2, "x".repeat(600)),
+        episode(3, "y".repeat(600)),
+      ],
+      limits: {
+        maxSkillsInContext: 3,
+        maxToolsActive: 2,
+        maxWorkingTokens: 80,
+        maxEpisodesInContext: 3,
+      },
+    });
+
+    expect(result.tokenBudget.maxWorkingTokens).toBe(80);
+    expect(result.tokenBudget.estimatedTokens).toBeLessThanOrEqual(80);
+    expect(result.tokenBudget.truncated).toBe(true);
+    expect(result.episodes.length).toBeLessThan(3);
   });
 });

@@ -28,6 +28,40 @@ export interface AttentionSelection {
   readonly antiPatterns: readonly LocalWorldSearchResult[];
   readonly tools: readonly string[];
   readonly episodes: readonly Episode[];
+  readonly tokenBudget: AttentionTokenBudget;
+}
+
+export interface AttentionTokenBudget {
+  readonly estimatedTokens: number;
+  readonly maxWorkingTokens: number;
+  readonly remainingTokens: number;
+  readonly truncated: boolean;
+}
+
+function estimateTokens(value: unknown): number {
+  const text = typeof value === "string" ? value : JSON.stringify(value);
+  return Math.max(1, Math.ceil(text.length / 20));
+}
+
+function takeWithinBudget<T>(
+  items: readonly T[],
+  budget: { estimatedTokens: number; truncated: boolean },
+  maxWorkingTokens: number,
+): readonly T[] {
+  const selected: T[] = [];
+
+  for (const item of items) {
+    const itemTokens = estimateTokens(item);
+    if (budget.estimatedTokens + itemTokens > maxWorkingTokens) {
+      budget.truncated = true;
+      continue;
+    }
+
+    budget.estimatedTokens += itemTokens;
+    selected.push(item);
+  }
+
+  return selected;
 }
 
 export function applyAttentionLimits({
@@ -36,11 +70,40 @@ export function applyAttentionLimits({
   episodes,
   limits = defaultAttentionLimits,
 }: ApplyAttentionLimitsRequest): AttentionSelection {
+  const budget = { estimatedTokens: 0, truncated: false };
+  const skills = takeWithinBudget(
+    worldResults.filter((result) => result.kind === "skill").slice(0, limits.maxSkillsInContext),
+    budget,
+    limits.maxWorkingTokens,
+  );
+  const traces = takeWithinBudget(
+    worldResults.filter((result) => result.kind === "trace").slice(0, limits.maxSkillsInContext),
+    budget,
+    limits.maxWorkingTokens,
+  );
+  const antiPatterns = takeWithinBudget(
+    worldResults.filter((result) => result.kind === "anti-pattern"),
+    budget,
+    limits.maxWorkingTokens,
+  );
+  const selectedTools = takeWithinBudget(tools.slice(0, limits.maxToolsActive), budget, limits.maxWorkingTokens);
+  const selectedEpisodes = takeWithinBudget(
+    episodes.slice(Math.max(0, episodes.length - limits.maxEpisodesInContext)),
+    budget,
+    limits.maxWorkingTokens,
+  );
+
   return {
-    skills: worldResults.filter((result) => result.kind === "skill").slice(0, limits.maxSkillsInContext),
-    traces: worldResults.filter((result) => result.kind === "trace").slice(0, limits.maxSkillsInContext),
-    antiPatterns: worldResults.filter((result) => result.kind === "anti-pattern"),
-    tools: tools.slice(0, limits.maxToolsActive),
-    episodes: episodes.slice(Math.max(0, episodes.length - limits.maxEpisodesInContext)),
+    skills,
+    traces,
+    antiPatterns,
+    tools: selectedTools,
+    episodes: selectedEpisodes,
+    tokenBudget: {
+      estimatedTokens: budget.estimatedTokens,
+      maxWorkingTokens: limits.maxWorkingTokens,
+      remainingTokens: Math.max(0, limits.maxWorkingTokens - budget.estimatedTokens),
+      truncated: budget.truncated,
+    },
   };
 }
