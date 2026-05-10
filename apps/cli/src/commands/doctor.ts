@@ -336,7 +336,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         traceCount !== undefined &&
         traceCount >= 3 &&
         traceCount <= 5 &&
-        evidenceReference(starterPack?.curriculum, context),
+        evidenceReference(starterPack?.curriculum, context) &&
+        evidenceReferenceArray(starterPack?.firstRunReferences, context).length >= 2,
     ),
     v1Check(
       "realGoals",
@@ -779,7 +780,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.starterPack":
       return {
         check,
-        action: "Record live init evidence showing coding starter-pack skills, traces, and curriculum were installed.",
+        action: "Record live init evidence showing coding starter-pack skills, traces, curriculum, and first-run references were installed.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.realGoals":

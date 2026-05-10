@@ -122,6 +122,8 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
   const evidencePath = join(root, "v1-evidence.json");
   const localEvidencePaths = [
     "domains/coding/curriculum.md",
+    "docs/live/starter-run-1.md",
+    "docs/live/starter-run-2.md",
     "docs/live/goal-1.md",
     "docs/live/goal-2.md",
     "docs/live/goal-3.md",
@@ -199,7 +201,13 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
   writeFileSync(
     evidencePath,
     `${JSON.stringify({
-      starterPack: { primaryDomain: "coding", skillCount: 20, traceCount: 3, curriculum: "domains/coding/curriculum.md" },
+      starterPack: {
+        primaryDomain: "coding",
+        skillCount: 20,
+        traceCount: 3,
+        curriculum: "domains/coding/curriculum.md",
+        firstRunReferences: ["docs/live/starter-run-1.md", "docs/live/starter-run-2.md"],
+      },
       realGoals: [
         { id: "goal-1", date: "2026-05-01", evidence: "docs/live/goal-1.md" },
         { id: "goal-2", date: "2026-05-02", evidence: "docs/live/goal-2.md" },
@@ -471,13 +479,21 @@ describe("doctorCommand", () => {
   test("reports missing v1 loop evidence from an incomplete evidence manifest", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-evidence-incomplete-"));
     const evidencePath = join(root, "v1-evidence.json");
-    const curriculumPath = join(root, "domains/coding/curriculum.md");
-    mkdirSync(dirname(curriculumPath), { recursive: true });
-    writeFileSync(curriculumPath, "coding curriculum evidence\n", "utf8");
+    for (const path of ["domains/coding/curriculum.md", "docs/live/starter-run-1.md", "docs/live/starter-run-2.md"]) {
+      const absolutePath = join(root, path);
+      mkdirSync(dirname(absolutePath), { recursive: true });
+      writeFileSync(absolutePath, "starter evidence\n", "utf8");
+    }
     writeFileSync(
       evidencePath,
       `${JSON.stringify({
-        starterPack: { primaryDomain: "coding", skillCount: 20, traceCount: 3, curriculum: "domains/coding/curriculum.md" },
+        starterPack: {
+          primaryDomain: "coding",
+          skillCount: 20,
+          traceCount: 3,
+          curriculum: "domains/coding/curriculum.md",
+          firstRunReferences: ["docs/live/starter-run-1.md", "docs/live/starter-run-2.md"],
+        },
         realGoals: [
           { id: "goal-1", date: "2026-05-01", evidence: "docs/live/goal-1.md" },
           { id: "goal-2", date: "2026-05-02", evidence: "docs/live/goal-2.md" },
@@ -501,6 +517,33 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("v1.providerSmokes:missing");
     expect(result.checks).toContain("v1.publicContribution:missing");
     expect(result.checks).toContain("v1.twoWeekImprovement:missing");
+  });
+
+  test("requires v1 starter pack evidence to show first runs referenced it", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-starter-first-runs-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    const curriculumPath = join(root, "domains/coding/curriculum.md");
+    mkdirSync(dirname(curriculumPath), { recursive: true });
+    writeFileSync(curriculumPath, "coding curriculum evidence\n", "utf8");
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        starterPack: { primaryDomain: "coding", skillCount: 20, traceCount: 3, curriculum: "domains/coding/curriculum.md" },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.starterPack:missing");
   });
 
   test("rejects v1 manifest sections that reference missing local evidence artifacts", () => {
