@@ -1158,6 +1158,47 @@ describe("doctorCommand", () => {
     );
   });
 
+  test("requires v1 published trace and run Plan-read evidence to be distinct", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-published-plan-read-distinct-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    const localEvidencePaths = [
+      "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
+      "domains/coding/traces/workflow/TRACE.md",
+      "runs/run-live-001/RUN.md",
+      "docs/live/plan-read.md",
+    ];
+    for (const path of localEvidencePaths) {
+      const absolutePath = join(root, path);
+      mkdirSync(dirname(absolutePath), { recursive: true });
+      writeFileSync(absolutePath, "published artifact evidence\n", "utf8");
+    }
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        publishedArtifacts: {
+          antiPattern: "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
+          trace: "domains/coding/traces/workflow/TRACE.md",
+          run: "runs/run-live-001/RUN.md",
+          tracePlanRead: "docs/live/plan-read.md",
+          runPlanRead: "docs/live/plan-read.md",
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.publishedArtifacts:missing");
+  });
+
   test("requires v1 curation stats to show the roadmap top-five contributor concentration", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-curation-stats-"));
     const evidencePath = join(root, "v1-evidence.json");

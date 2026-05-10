@@ -350,6 +350,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const publicContributionPullUseAgents = new Set(publicContributionPullUses.map((pullUse) => pullUse.agent));
   const publicContributionPullUseEvidence = new Set(publicContributionPullUses.map((pullUse) => pullUse.evidence));
   const publishedArtifacts = asRecord(manifest.publishedArtifacts);
+  const publishedTracePlanReadEvidence = evidenceReferenceIdentity(publishedArtifacts?.tracePlanRead, context);
+  const publishedRunPlanReadEvidence = evidenceReferenceIdentity(publishedArtifacts?.runPlanRead, context);
   const curationStats = asRecord(manifest.curationStats);
   const twoWeekImprovement = asRecord(manifest.twoWeekImprovement);
   const contributorProfileSummary = asRecord(twoWeekImprovement?.contributorProfileSummary);
@@ -430,8 +432,9 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
       evidenceReference(publishedArtifacts?.antiPattern, context) &&
         evidenceReference(publishedArtifacts?.trace, context) &&
         evidenceReference(publishedArtifacts?.run, context) &&
-        evidenceReference(publishedArtifacts?.tracePlanRead, context) &&
-        evidenceReference(publishedArtifacts?.runPlanRead, context),
+        publishedTracePlanReadEvidence !== undefined &&
+        publishedRunPlanReadEvidence !== undefined &&
+        publishedTracePlanReadEvidence !== publishedRunPlanReadEvidence,
     ),
     v1Check(
       "curationStats",
