@@ -273,7 +273,7 @@ function writeLiveReadyFiles(root: string): Readonly<Record<string, string>> {
         mathGate: "docs/live/math-gate.md",
         contributorTrust: 0.5,
         autoMerge: "https://github.com/owner/world-final/actions/runs/1",
-        canonicalSkill: "domains/coding/skills/public/SKILL.md",
+        canonicalSkill: "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
         positiveSignals: [
           { agent: "signal-agent-a", evidence: "docs/live/signal-1.md" },
           { agent: "signal-agent-b", evidence: "docs/live/signal-2.md" },
@@ -453,6 +453,8 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.dreamArtifacts:missing")).toContain("annotations");
     expect(actions.get("v1.publicContribution:missing")).toContain("math gate");
     expect(actions.get("v1.publicContribution:missing")).toContain("contributor trust");
+    expect(actions.get("v1.publicContribution:missing")).toContain("GitHub public skill PR URL");
+    expect(actions.get("v1.publicContribution:missing")).toContain("GitHub Actions auto-merge run URL");
     expect(actions.get("v1.publicContribution:missing")).toContain("distinct");
     expect(actions.get("v1.publicContribution:missing")).toContain("agent/evidence");
     expect(actions.get("v1.publicContribution:missing")).toContain("other-agent");
@@ -895,7 +897,7 @@ describe("doctorCommand", () => {
           mathGate: "docs/live/math-gate.md",
           contributorTrust: 0.5,
           autoMerge: "https://github.com/owner/world-final/actions/runs/1",
-          canonicalSkill: "domains/coding/skills/public/SKILL.md",
+          canonicalSkill: "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
           positiveSignals: [
             { agent: "signal-agent-a", evidence: "docs/live/signal.md" },
             { agent: "signal-agent-a", evidence: "docs/live/signal.md" },
@@ -1247,9 +1249,70 @@ describe("doctorCommand", () => {
         publicContribution: {
           publicSkillPr: "https://github.com/owner/world-final/pull/1",
           autoMerge: "https://github.com/owner/world-final/actions/runs/1",
-          canonicalSkill: "domains/coding/skills/public/SKILL.md",
+          canonicalSkill: "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
           positiveSignals: 5,
           externalPulls: 3,
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.publicContribution:missing");
+  });
+
+  test("requires v1 public contribution PR, auto-merge, and canonical landing to be remote GitHub evidence", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-public-contribution-remote-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    const localEvidencePaths = [
+      "domains/coding/skills/public/SKILL.md",
+      "docs/live/public-skill-pr.md",
+      "docs/live/math-gate.md",
+      "docs/live/auto-merge.md",
+      "docs/live/signal-1.md",
+      "docs/live/signal-2.md",
+      "docs/live/signal-3.md",
+      "docs/live/signal-4.md",
+      "docs/live/signal-5.md",
+      "docs/live/external-pull-1.md",
+      "docs/live/external-pull-2.md",
+      "docs/live/external-pull-3.md",
+    ];
+    for (const path of localEvidencePaths) {
+      const absolutePath = join(root, path);
+      mkdirSync(dirname(absolutePath), { recursive: true });
+      writeFileSync(absolutePath, "public contribution remote evidence\n", "utf8");
+    }
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        publicContribution: {
+          publicSkillPr: "docs/live/public-skill-pr.md",
+          mathGate: "docs/live/math-gate.md",
+          contributorTrust: 0.5,
+          autoMerge: "docs/live/auto-merge.md",
+          canonicalSkill: "domains/coding/skills/public/SKILL.md",
+          positiveSignals: [
+            { agent: "signal-agent-a", evidence: "docs/live/signal-1.md" },
+            { agent: "signal-agent-b", evidence: "docs/live/signal-2.md" },
+            { agent: "signal-agent-c", evidence: "docs/live/signal-3.md" },
+            { agent: "signal-agent-d", evidence: "docs/live/signal-4.md" },
+            { agent: "signal-agent-e", evidence: "docs/live/signal-5.md" },
+          ],
+          externalPullUses: [
+            { agent: "external-agent-a", evidence: "docs/live/external-pull-1.md" },
+            { agent: "external-agent-b", evidence: "docs/live/external-pull-2.md" },
+            { agent: "external-agent-c", evidence: "docs/live/external-pull-3.md" },
+          ],
         },
       })}\n`,
       "utf8",
@@ -1296,7 +1359,7 @@ describe("doctorCommand", () => {
           mathGate: "docs/live/math-gate.md",
           contributorTrust: 0.5,
           autoMerge: "https://github.com/owner/world-final/actions/runs/1",
-          canonicalSkill: "domains/coding/skills/public/SKILL.md",
+          canonicalSkill: "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
           positiveSignals: [
             { agent: "signal-agent-a", evidence: "docs/live/signal-1.md" },
             { agent: "signal-agent-a", evidence: "docs/live/signal-2.md" },
@@ -1355,7 +1418,7 @@ describe("doctorCommand", () => {
           mathGate: "docs/live/math-gate.md",
           contributorTrust: 0.5,
           autoMerge: "https://github.com/owner/world-final/actions/runs/1",
-          canonicalSkill: "domains/coding/skills/public/SKILL.md",
+          canonicalSkill: "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
           positiveSignals: [
             { agent: "signal-agent-a", evidence: "docs/live/signal-1.md" },
             { agent: "signal-agent-a", evidence: "docs/live/signal-2.md" },
@@ -1411,7 +1474,7 @@ describe("doctorCommand", () => {
         publicContribution: {
           publicSkillPr: "https://github.com/owner/world-final/pull/1",
           autoMerge: "https://github.com/owner/world-final/actions/runs/1",
-          canonicalSkill: "domains/coding/skills/public/SKILL.md",
+          canonicalSkill: "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
           positiveSignals: [
             { agent: "signal-agent-a", evidence: "docs/live/signal-1.md" },
             { agent: "signal-agent-b", evidence: "docs/live/signal-2.md" },

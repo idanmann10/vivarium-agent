@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, extname, isAbsolute, join, resolve } from "node:path";
+import { dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
 
 export interface DoctorResult {
   readonly ok: boolean;
@@ -325,6 +325,59 @@ function githubDiscussionReference(value: unknown): string | undefined {
   return /^https:\/\/github\.com\/[^/]+\/[^/]+\/discussions\/\d+(?:[/?#].*)?$/.test(text) ? text : undefined;
 }
 
+function githubPullRequestReference(value: unknown): string | undefined {
+  const text = textValue(value);
+  if (text === undefined) {
+    return undefined;
+  }
+
+  return /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+(?:[/?#].*)?$/.test(text) ? text : undefined;
+}
+
+function githubActionsRunReference(value: unknown): string | undefined {
+  const text = textValue(value);
+  if (text === undefined) {
+    return undefined;
+  }
+
+  return /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions\/runs\/\d+(?:[/?#].*)?$/.test(text) ? text : undefined;
+}
+
+function githubCanonicalSkillReference(value: unknown): string | undefined {
+  const text = textValue(value);
+  if (text === undefined) {
+    return undefined;
+  }
+
+  return /^https:\/\/github\.com\/[^/]+\/[^/]+\/blob\/[^/]+\/domains\/[^/]+\/skills\/[^/]+\/SKILL\.md(?:[/?#].*)?$/.test(text)
+    ? text
+    : undefined;
+}
+
+function isUnderDirectory(root: string, candidate: string): boolean {
+  const path = relative(resolve(root), resolve(candidate));
+  return path.length > 0 && !path.startsWith("..") && !isAbsolute(path);
+}
+
+function isSkillArtifactPath(path: string): boolean {
+  return /(?:^|[\\/])domains[\\/][^\\/]+[\\/]skills[\\/][^\\/]+[\\/]SKILL\.md$/.test(path);
+}
+
+function canonicalSkillReference(value: unknown, context: V1EvidenceReferenceContext): string | undefined {
+  const githubReference = githubCanonicalSkillReference(value);
+  if (githubReference !== undefined) {
+    return githubReference;
+  }
+
+  const text = textValue(value);
+  if (text === undefined || isUrlReference(text) || !isPathLikeReference(text)) {
+    return undefined;
+  }
+
+  const candidate = resolve(isAbsolute(text) ? text : join(context.worldRoot, text));
+  return existsSync(candidate) && isUnderDirectory(context.worldRoot, candidate) && isSkillArtifactPath(candidate) ? candidate : undefined;
+}
+
 function dateMillis(value: unknown): number | undefined {
   const text = textValue(value);
   if (text === undefined) {
@@ -463,10 +516,10 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
     ),
     v1Check(
       "publicContribution",
-      evidenceReference(publicContribution?.publicSkillPr, context) &&
+      githubPullRequestReference(publicContribution?.publicSkillPr) !== undefined &&
         evidenceReference(publicContribution?.mathGate, context) &&
-        evidenceReference(publicContribution?.autoMerge, context) &&
-        evidenceReference(publicContribution?.canonicalSkill, context) &&
+        githubActionsRunReference(publicContribution?.autoMerge) !== undefined &&
+        canonicalSkillReference(publicContribution?.canonicalSkill, context) !== undefined &&
         (numberValue(publicContribution?.contributorTrust) ?? 0) >= 0.5 &&
         publicContributionPositiveSignalAgents.size >= 5 &&
         publicContributionPositiveSignalEvidence.size >= 5 &&
@@ -923,7 +976,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record public skill PR, math gate, contributor trust, K=5 distinct positive-signal agent/evidence records, auto-merge, canonical landing, and three distinct other-agent pull/use evidence records.",
+          "Record a GitHub public skill PR URL, math gate, contributor trust, K=5 distinct positive-signal agent/evidence records, a GitHub Actions auto-merge run URL, canonical world skill landing, and three distinct other-agent pull/use evidence records.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.publishedArtifacts":
