@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, extname, isAbsolute, join } from "node:path";
+import { dirname, extname, isAbsolute, join, resolve } from "node:path";
 
 export interface DoctorResult {
   readonly ok: boolean;
@@ -250,24 +250,33 @@ function isPathLikeReference(value: string): boolean {
   return isAbsolute(value) || value.startsWith(".") || value.includes("/") || value.includes("\\") || extname(value).length > 0;
 }
 
-function evidenceReference(value: unknown, context: V1EvidenceReferenceContext): boolean {
+function evidenceReferenceIdentity(value: unknown, context: V1EvidenceReferenceContext): string | undefined {
   const text = textValue(value);
   if (text === undefined) {
-    return false;
+    return undefined;
   }
   if (isUrlReference(text)) {
-    return true;
+    return text;
   }
   if (!isPathLikeReference(text)) {
-    return false;
+    return undefined;
   }
 
   const candidates = isAbsolute(text) ? [text] : [join(context.manifestDir, text), join(context.agentRoot, text), join(context.worldRoot, text)];
-  return candidates.some((candidate) => existsSync(candidate));
+  const match = candidates.find((candidate) => existsSync(candidate));
+  return match === undefined ? undefined : resolve(match);
+}
+
+function evidenceReference(value: unknown, context: V1EvidenceReferenceContext): boolean {
+  return evidenceReferenceIdentity(value, context) !== undefined;
 }
 
 function evidenceReferenceArray(value: unknown, context: V1EvidenceReferenceContext): readonly string[] {
   return textArray(value).filter((item) => evidenceReference(item, context));
+}
+
+function distinctEvidenceReferenceCount(value: unknown, context: V1EvidenceReferenceContext): number {
+  return new Set(textArray(value).flatMap((item) => evidenceReferenceIdentity(item, context) ?? [])).size;
 }
 
 function worldSubscriptionReference(value: unknown): string | undefined {
@@ -337,7 +346,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         traceCount >= 3 &&
         traceCount <= 5 &&
         evidenceReference(starterPack?.curriculum, context) &&
-        evidenceReferenceArray(starterPack?.firstRunReferences, context).length >= 2,
+        distinctEvidenceReferenceCount(starterPack?.firstRunReferences, context) >= 2,
     ),
     v1Check(
       "realGoals",
@@ -363,7 +372,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
     v1Check(
       "behaviorLoop",
       evidenceReference(behaviorLoop?.antiPatternAvoided, context) &&
-        evidenceReferenceArray(behaviorLoop?.tracesRead, context).length >= 2 &&
+        distinctEvidenceReferenceCount(behaviorLoop?.tracesRead, context) >= 2 &&
         evidenceReference(behaviorLoop?.monitorFailurePattern, context) &&
         evidenceReference(behaviorLoop?.recoverReplan, context) &&
         evidenceReference(behaviorLoop?.destructiveHold, context) &&
@@ -374,7 +383,7 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
     ),
     v1Check(
       "dreamArtifacts",
-      evidenceReferenceArray(dreamArtifacts?.skillCandidates, context).length >= 2 &&
+      distinctEvidenceReferenceCount(dreamArtifacts?.skillCandidates, context) >= 2 &&
         evidenceReference(dreamArtifacts?.internalSkill, context) &&
         evidenceReference(dreamArtifacts?.publicSkill, context) &&
         evidenceReference(dreamArtifacts?.antiPattern, context) &&
@@ -387,8 +396,8 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         evidenceReference(publicContribution?.autoMerge, context) &&
         evidenceReference(publicContribution?.canonicalSkill, context) &&
         (numberValue(publicContribution?.contributorTrust) ?? 0) >= 0.5 &&
-        evidenceReferenceArray(publicContribution?.positiveSignalEvidence, context).length >= 5 &&
-        evidenceReferenceArray(publicContribution?.externalPullEvidence, context).length >= 3,
+        distinctEvidenceReferenceCount(publicContribution?.positiveSignalEvidence, context) >= 5 &&
+        distinctEvidenceReferenceCount(publicContribution?.externalPullEvidence, context) >= 3,
     ),
     v1Check(
       "publishedArtifacts",
@@ -785,7 +794,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.starterPack":
       return {
         check,
-        action: "Record live init evidence showing coding starter-pack skills, traces, curriculum, and first-run references were installed.",
+        action: "Record live init evidence showing coding starter-pack skills, traces, curriculum, and distinct first-run references were installed.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.realGoals":
@@ -816,20 +825,20 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Record live behavior-loop evidence for anti-pattern use, two traces read, Monitor tool-failure detection, Recover re-plan, destructive hold/escalation/confirmation/continuation, and refusal.",
+          "Record live behavior-loop evidence for anti-pattern use, two distinct traces read, Monitor tool-failure detection, Recover re-plan, destructive hold/escalation/confirmation/continuation, and refusal.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.dreamArtifacts":
       return {
         check,
-        action: "Record nightly Dream evidence for two skill candidates, internal and public skills, one anti-pattern, and one trace.",
+        action: "Record nightly Dream evidence for two distinct skill candidates, internal and public skills, one anti-pattern, and one trace.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.publicContribution":
       return {
         check,
         action:
-          "Record public skill PR, math gate, contributor trust, K=5 positive signals, auto-merge, canonical landing, and external pull evidence.",
+          "Record public skill PR, math gate, contributor trust, K=5 distinct positive signals, auto-merge, canonical landing, and distinct external pull evidence.",
         guide: `${guide}#v1-evidence-manifest`,
       };
     case "v1.publishedArtifacts":

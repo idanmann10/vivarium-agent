@@ -414,8 +414,10 @@ describe("doctorCommand", () => {
     const actions = new Map((result.nextActions ?? []).map((action) => [action.check, action.action]));
 
     expect(actions.get("v1.dreamArtifacts:missing")).toContain("internal and public skills");
+    expect(actions.get("v1.dreamArtifacts:missing")).toContain("distinct");
     expect(actions.get("v1.publicContribution:missing")).toContain("math gate");
     expect(actions.get("v1.publicContribution:missing")).toContain("contributor trust");
+    expect(actions.get("v1.publicContribution:missing")).toContain("distinct");
     expect(actions.get("v1.curationStats:missing")).toContain("30%");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("fourteen days");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("profile counts");
@@ -626,6 +628,99 @@ describe("doctorCommand", () => {
     expect(result.ok).toBe(false);
     expect(result.checks).toContain("v1.evidencePath:configured");
     expect(result.checks).toContain("v1.behaviorLoop:missing");
+  });
+
+  test("requires counted v1 evidence arrays to reference distinct artifacts", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-distinct-evidence-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    const localEvidencePaths = [
+      "domains/coding/curriculum.md",
+      "docs/live/starter-run.md",
+      "docs/live/anti-pattern-avoided.md",
+      "docs/live/trace-a.md",
+      "docs/live/monitor-failure-pattern.md",
+      "docs/live/recover-replan.md",
+      "docs/live/destructive-hold.md",
+      "docs/live/destructive-escalation.md",
+      "docs/live/destructive-confirmation.md",
+      "docs/live/destructive-continuation.md",
+      "docs/live/refusal.md",
+      "docs/live/skill-candidate.md",
+      "proposals/skills/coding/internal/SKILL.md",
+      "proposals/skills/coding/public/SKILL.md",
+      "proposals/anti-patterns/coding/failure/ANTI-PATTERN.md",
+      "proposals/traces/coding/workflow/TRACE.md",
+      "docs/live/math-gate.md",
+      "domains/coding/skills/public/SKILL.md",
+      "docs/live/signal.md",
+      "docs/live/external-pull.md",
+    ];
+    for (const path of localEvidencePaths) {
+      const absolutePath = join(root, path);
+      mkdirSync(dirname(absolutePath), { recursive: true });
+      writeFileSync(absolutePath, "v1 evidence\n", "utf8");
+    }
+    writeFileSync(
+      evidencePath,
+      `${JSON.stringify({
+        starterPack: {
+          primaryDomain: "coding",
+          skillCount: 20,
+          traceCount: 3,
+          curriculum: "domains/coding/curriculum.md",
+          firstRunReferences: ["docs/live/starter-run.md", "docs/live/starter-run.md"],
+        },
+        behaviorLoop: {
+          antiPatternAvoided: "docs/live/anti-pattern-avoided.md",
+          tracesRead: ["docs/live/trace-a.md", "docs/live/trace-a.md"],
+          monitorFailurePattern: "docs/live/monitor-failure-pattern.md",
+          recoverReplan: "docs/live/recover-replan.md",
+          destructiveHold: "docs/live/destructive-hold.md",
+          destructiveEscalation: "docs/live/destructive-escalation.md",
+          destructiveConfirmation: "docs/live/destructive-confirmation.md",
+          destructiveContinuation: "docs/live/destructive-continuation.md",
+          refusal: "docs/live/refusal.md",
+        },
+        dreamArtifacts: {
+          skillCandidates: ["docs/live/skill-candidate.md", "docs/live/skill-candidate.md"],
+          internalSkill: "proposals/skills/coding/internal/SKILL.md",
+          publicSkill: "proposals/skills/coding/public/SKILL.md",
+          antiPattern: "proposals/anti-patterns/coding/failure/ANTI-PATTERN.md",
+          trace: "proposals/traces/coding/workflow/TRACE.md",
+        },
+        publicContribution: {
+          publicSkillPr: "https://github.com/owner/world-final/pull/1",
+          mathGate: "docs/live/math-gate.md",
+          contributorTrust: 0.5,
+          autoMerge: "https://github.com/owner/world-final/actions/runs/1",
+          canonicalSkill: "domains/coding/skills/public/SKILL.md",
+          positiveSignalEvidence: [
+            "docs/live/signal.md",
+            "docs/live/signal.md",
+            "docs/live/signal.md",
+            "docs/live/signal.md",
+            "docs/live/signal.md",
+          ],
+          externalPullEvidence: ["docs/live/external-pull.md", "docs/live/external-pull.md", "docs/live/external-pull.md"],
+        },
+      })}\n`,
+      "utf8",
+    );
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("v1.evidencePath:configured");
+    expect(result.checks).toContain("v1.starterPack:missing");
+    expect(result.checks).toContain("v1.behaviorLoop:missing");
+    expect(result.checks).toContain("v1.dreamArtifacts:missing");
+    expect(result.checks).toContain("v1.publicContribution:missing");
   });
 
   test("requires v1 behavior loop evidence to include monitor tool-failure detection", () => {
