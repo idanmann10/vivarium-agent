@@ -236,4 +236,11 @@ describe("reference docs", () => {
       }
     }
   });
+
+  test("keeps guide pages free of placeholder wording", () => {
+    for (const doc of Object.keys(guideDocs)) {
+      const body = readFileSync(join("docs", "guides", `${doc}.md`), "utf8");
+      expect(body).not.toContain("placeholder");
+    }
+  });
 });

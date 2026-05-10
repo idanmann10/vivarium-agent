@@ -8,7 +8,7 @@ when_to_read: When cloud deployment is introduced.
 
 Cloud deployment is out of scope for v1.
 
-This page is a post-v1 placeholder, not a current release path. The v1 daemon is
+This page is a post-v1 note, not a current release path. The v1 daemon is
 verified locally through Docker Compose, mounted state, and a read-only world
 checkout.
 
