@@ -1,8 +1,11 @@
 # the-agent
 
-Local-first agent runtime scaffold from `goal.md`.
+Local-first agent runtime from `goal.md`.
 
-Phase 0 establishes a Bun + TypeScript workspace with two apps, seven packages, core types, pure math, and a kernel constitution. Later phases wire persistence, providers, tools, runtime primitives, world read/write paths, and dream consolidation.
+This workspace contains the core types and math, state repositories, provider adapters, tool dispatch,
+runtime primitives, CLI, daemon, and world read/write helpers. Local deterministic flows are implemented
+and tested. Live provider calls, GitHub write paths, and canonical-world contribution loops require real
+credentials and remotes.
 
 ## Commands
 
@@ -10,6 +13,9 @@ Phase 0 establishes a Bun + TypeScript workspace with two apps, seven packages, 
 - `bun run typecheck`
 - `bun run test`
 - `bun run build`
+- `bun apps/cli/src/index.ts init --domain coding --world-root ../the-world --state-path .vivarium/state.db`
+- `bun apps/cli/src/index.ts doctor --live --agent-root . --world-root ../the-world`
+- `bun apps/cli/src/index.ts daemon smoke --status-url http://127.0.0.1:8787/status`
 
 ## Influences
 
