@@ -46,6 +46,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` Drizzle schema artifact slice implemented after credential kind coverage; `better-sqlite3` package installation is present, but direct execution remains blocked by Bun's unsupported native module error.
 - `the-agent` live verification blocker evidence recorded in `9876160`.
 - `the-agent` CLI live-readiness doctor implemented after blocker evidence capture, exposing remote/env/GitHub auth/Docker Compose preflight checks through `doctor --live`.
+- `the-agent` live-readiness guide added after `doctor --live`, documenting the exact remotes, provider env, GitHub auth, Compose, and cross-install verification steps still required.
 - `the-world` Phase 0 committed at `81b28a2`.
 - `the-world` Phase 3 maintenance scripts committed at `866c121`.
 - `the-world` trust-gates slice committed at `719f0a1`.
@@ -79,6 +80,7 @@ Live/external checks:
 - `docker compose version`: unavailable because this Docker CLI has no `compose` subcommand.
 - `command -v docker-compose`: no standalone `docker-compose` executable found.
 - `bun apps/cli/src/index.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: returns `ok: false` with `agent.remote:missing`, `world.remote:missing`, `provider.env:missing`, `github.env:missing`, `github.auth:invalid`, `docker:installed`, and `docker.compose:missing`.
+- `docs/guides/live-readiness.md`: records the handoff path for clearing current external blockers and re-running v1 live verification.
 
 ## Prompt-To-Artifact Checklist
 
