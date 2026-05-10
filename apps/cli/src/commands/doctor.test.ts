@@ -140,6 +140,13 @@ describe("doctorCommand", () => {
       expect.objectContaining({
         check: "provider.openrouter:missing",
         env: expect.arrayContaining(["OPENROUTER_API_KEY"]),
+        command: expect.stringContaining('bun "/agent/apps/cli/src/index.ts" providers configure'),
+      }),
+    );
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "world.subscriptionsPath:missing",
+        command: expect.stringContaining('bun "/agent/apps/cli/src/index.ts" world subscribe'),
       }),
     );
     expect(result.nextActions).toContainEqual(

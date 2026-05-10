@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 export interface DoctorResult {
   readonly ok: boolean;
@@ -282,6 +283,10 @@ function shellQuote(value: string): string {
   return `"${value.replace(/["\\$`]/g, "\\$&")}"`;
 }
 
+function cliCommand(context: DoctorNextActionContext, args: string): string {
+  return `bun ${shellQuote(join(context.agentRoot, "apps/cli/src/index.ts"))} ${args}`;
+}
+
 function nextActionForCheck(check: string, context: DoctorNextActionContext): DoctorNextAction {
   const guide = "docs/guides/live-readiness.md";
   const [name = check] = check.split(":");
@@ -320,7 +325,10 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: "Create a world subscription registry and export its path.",
         env: [worldSubscriptionsPathEnv],
-        command: "bun apps/cli/src/index.ts world subscribe --subscriptions-path \"$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH\" --world-root <world-root> --world-label canonical --world-ref <world-ref>",
+        command: cliCommand(
+          context,
+          'world subscribe --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" --world-root <world-root> --world-label canonical --world-ref <world-ref>',
+        ),
         guide: `${guide}#multi-world-subscriptions`,
       };
     case "world.canonicalRef":
@@ -328,7 +336,10 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: "Export the canonical world ref and ensure it exists in the subscription registry.",
         env: [canonicalWorldRefEnv],
-        command: "bun apps/cli/src/index.ts world subscribe --subscriptions-path \"$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH\" --world-root <canonical-world-root> --world-label canonical --world-ref \"$VIVARIUM_CANONICAL_WORLD_REF\"",
+        command: cliCommand(
+          context,
+          'world subscribe --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" --world-root <canonical-world-root> --world-label canonical --world-ref "$VIVARIUM_CANONICAL_WORLD_REF"',
+        ),
         guide: `${guide}#multi-world-subscriptions`,
       };
     case "world.privateForkRef":
@@ -336,7 +347,10 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: "Export the private fork world ref and ensure it exists in the subscription registry.",
         env: [privateWorldRefEnv],
-        command: "bun apps/cli/src/index.ts world subscribe --subscriptions-path \"$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH\" --world-root <private-world-root> --world-label private --world-ref \"$VIVARIUM_PRIVATE_WORLD_REF\" --auto-push",
+        command: cliCommand(
+          context,
+          'world subscribe --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" --world-root <private-world-root> --world-label private --world-ref "$VIVARIUM_PRIVATE_WORLD_REF" --auto-push',
+        ),
         guide: `${guide}#multi-world-subscriptions`,
       };
     case "provider.env":
@@ -358,7 +372,10 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: "Export the OpenRouter API key and save an OpenRouter provider profile.",
         env: [openRouterApiKeyEnv, openRouterProviderProfileEnv],
-        command: "bun apps/cli/src/index.ts providers configure --profiles-path \"$VIVARIUM_PROVIDER_PROFILES_PATH\" --name \"$VIVARIUM_OPENROUTER_PROVIDER_PROFILE\" --kind openai-compat --api-key-env OPENROUTER_API_KEY --model <model> --base-url <provider-base-url> --capability chat --capability json_mode --context-window <context-window> --cost-class medium",
+        command: cliCommand(
+          context,
+          'providers configure --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --name "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE" --kind openai-compat --api-key-env OPENROUTER_API_KEY --model <model> --base-url <provider-base-url> --capability chat --capability json_mode --context-window <context-window> --cost-class medium',
+        ),
         guide: `${guide}#provider-environment`,
       };
     case "provider.privateOaiCompat":
@@ -373,7 +390,10 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: "Export the provider profiles path and create the configured provider profiles.",
         env: [providerProfilesPathEnv],
-        command: "bun apps/cli/src/index.ts providers configure --profiles-path \"$VIVARIUM_PROVIDER_PROFILES_PATH\" --name <profile> --kind <provider-kind> --api-key-env <KEY_ENV> --model <model> --capability chat --context-window <context-window> --cost-class medium",
+        command: cliCommand(
+          context,
+          'providers configure --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --name <profile> --kind <provider-kind> --api-key-env <KEY_ENV> --model <model> --capability chat --context-window <context-window> --cost-class medium',
+        ),
         guide: `${guide}#provider-environment`,
       };
     case "provider.anthropicProfile":
@@ -402,7 +422,10 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: "Create the encrypted credential store and export its path.",
         env: [credentialsPathEnv],
-        command: "bun apps/cli/src/index.ts credentials add --path \"$VIVARIUM_CREDENTIALS_PATH\" --master-key <local-master-key> --kind bearer --name INTERNAL_API_TOKEN --purpose \"Call internal API\" --value <redacted>",
+        command: cliCommand(
+          context,
+          'credentials add --path "$VIVARIUM_CREDENTIALS_PATH" --master-key <local-master-key> --kind bearer --name INTERNAL_API_TOKEN --purpose "Call internal API" --value <redacted>',
+        ),
         guide: `${guide}#internal-api-credential`,
       };
     case "internalApi.credentialName":
