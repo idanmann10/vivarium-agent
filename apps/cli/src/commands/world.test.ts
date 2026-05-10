@@ -21,6 +21,28 @@ describe("world commands", () => {
     ]);
   });
 
+  test("searches multiple subscribed worlds with source labels", () => {
+    const publicWorld = mkdtempSync(join(tmpdir(), "cli-public-world-"));
+    const privateWorld = mkdtempSync(join(tmpdir(), "cli-private-world-"));
+    write(join(publicWorld, "domains", "coding", "skills", "public-skill", "SKILL.md"), "# Public Skill\n\nShared coding pattern.");
+    write(join(privateWorld, "domains", "coding", "skills", "private-skill", "SKILL.md"), "# Private Skill\n\nTeam coding pattern.");
+
+    const results = searchWorldCommand({
+      worlds: [
+        { label: "private", root: privateWorld, priority: 0 },
+        { label: "public", root: publicWorld, priority: 1 },
+      ],
+      domain: "coding",
+      query: "coding pattern",
+      limit: 1,
+    }).results;
+
+    expect(results).toEqual([
+      expect.objectContaining({ source: "private", title: "Private Skill" }),
+      expect.objectContaining({ source: "public", title: "Public Skill" }),
+    ]);
+  });
+
   test("pulls a world through an injected git runner", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-world-pull-"));
     const destination = join(root, "canonical");

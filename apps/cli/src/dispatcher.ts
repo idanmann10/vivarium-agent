@@ -182,10 +182,23 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
 
       if (subcommand === "search") {
         const limit = integerFlag(flags, "limit");
+        const worldRoots = values(flags, "world-root");
+        const worldLabels = values(flags, "world-label");
+        if (worldLabels.length > 0 && worldLabels.length !== worldRoots.length) {
+          usage("--world-label must be provided once for each --world-root");
+        }
         return output(
           command,
           searchWorldCommand({
-            worldRoot: required(flags, "world-root"),
+            ...(worldRoots.length > 1
+              ? {
+                  worlds: worldRoots.map((root, index) => ({
+                    root,
+                    label: worldLabels[index] ?? `world-${index + 1}`,
+                    priority: index,
+                  })),
+                }
+              : { worldRoot: required(flags, "world-root") }),
             domain: required(flags, "domain"),
             query: required(flags, "query"),
             ...(limit === undefined ? {} : { limit }),

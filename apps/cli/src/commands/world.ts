@@ -1,20 +1,24 @@
 import {
   createLocalWorldReader,
   pullWorld,
+  searchWorlds,
   type GitCommandRunner,
   type LocalWorldSearchResult,
   type PullWorldResult,
+  type SourcedWorldSearchResult,
+  type WorldSubscriptionSearch,
 } from "../../../../packages/world/src/index.js";
 
 export interface SearchWorldCommandOptions {
-  readonly worldRoot: string;
+  readonly worldRoot?: string;
+  readonly worlds?: readonly WorldSubscriptionSearch[];
   readonly domain: string;
   readonly query: string;
   readonly limit?: number;
 }
 
 export interface SearchWorldCommandResult {
-  readonly results: readonly LocalWorldSearchResult[];
+  readonly results: readonly (LocalWorldSearchResult | SourcedWorldSearchResult)[];
 }
 
 export interface PullWorldCommandOptions {
@@ -42,6 +46,21 @@ export function searchWorldCommand(options: SearchWorldCommandOptions): SearchWo
     domain: options.domain,
     query: options.query,
   };
+
+  if (options.worlds !== undefined && options.worlds.length > 0) {
+    return {
+      results: searchWorlds({
+        worlds: options.worlds,
+        ...request,
+        ...(options.limit === undefined ? {} : { limit: options.limit }),
+      }),
+    };
+  }
+
+  if (options.worldRoot === undefined) {
+    throw new Error("Missing worldRoot or worlds");
+  }
+
   return {
     results: createLocalWorldReader({ root: options.worldRoot }).search(
       options.limit === undefined ? request : { ...request, limit: options.limit },

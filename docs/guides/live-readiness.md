@@ -137,6 +137,23 @@ bun apps/cli/src/index.ts github workflow-runs \
 
 Use this to verify the validator, stats, trust-gate, and archive workflows that are relevant to the live contribution.
 
+## Multi-World Subscriptions
+
+After the canonical world and a private fork are available locally, verify that retrieval searches both and preserves source labels:
+
+```bash
+bun apps/cli/src/index.ts world search \
+  --world-root /tmp/vivarium-world-private \
+  --world-label private \
+  --world-root /tmp/vivarium-world-canonical \
+  --world-label canonical \
+  --domain coding \
+  --query "<artifact title or distinctive phrase>" \
+  --limit 3
+```
+
+Repeated `--world-root` flags are searched in order. Use the private fork first when team/internal knowledge should have priority over the canonical world.
+
 ## Cross-Install World Pull
 
 After a contribution has landed in the canonical world remote, verify that a separate local install can pull the remote and retrieve the accepted artifact:

@@ -112,6 +112,39 @@ describe("dispatchCliCommand", () => {
     expect(pulled.result).toMatchObject({ mode: "cloned", remote, destination });
   });
 
+  test("routes multi-world search with source labels", async () => {
+    const publicWorld = mkdtempSync(join(tmpdir(), "cli-dispatch-public-world-"));
+    const privateWorld = mkdtempSync(join(tmpdir(), "cli-dispatch-private-world-"));
+    write(join(publicWorld, "domains", "coding", "skills", "public-skill", "SKILL.md"), "# Public Skill\n\nShared coding pattern.");
+    write(join(privateWorld, "domains", "coding", "skills", "private-skill", "SKILL.md"), "# Private Skill\n\nTeam coding pattern.");
+
+    const result = await dispatchCliCommand([
+      "world",
+      "search",
+      "--world-root",
+      privateWorld,
+      "--world-label",
+      "private",
+      "--world-root",
+      publicWorld,
+      "--world-label",
+      "public",
+      "--domain",
+      "coding",
+      "--query",
+      "coding pattern",
+      "--limit",
+      "1",
+    ]);
+
+    expect(result.result).toMatchObject({
+      results: [
+        { source: "private", title: "Private Skill" },
+        { source: "public", title: "Public Skill" },
+      ],
+    });
+  });
+
   test("routes world transmission smoke with a local git remote", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-world-transmission-"));
     const source = join(root, "source");
