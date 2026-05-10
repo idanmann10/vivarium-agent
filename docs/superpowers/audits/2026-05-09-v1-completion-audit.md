@@ -103,7 +103,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun test packages/state/src/storage/migrations.test.ts packages/state/src/storage/drizzle-schema.test.ts`: 2 tests passed, including migration idempotency and Drizzle table coverage for every runtime storage table.
 - `bun test scripts/verify-better-sqlite3.test.ts`: verifies `bun run verify:sqlite-stack`, which runs all runtime migrations through Node and `better-sqlite3`, checks table creation, and performs a sample local skill insert/read.
 - `bun test scripts/tooling.test.ts`: 2 tests passed, verifying the root package has the Phase 0 JavaScript tooling named in the roadmap and exposes OXC lint/format scripts.
-- `bun test scripts/reference-docs.test.ts`: 1 test passed, verifying every top-level self-tool group has a reference file with frontmatter.
+- `bun test scripts/reference-docs.test.ts`: 2 tests passed after first failing for missing `identity.md` and missing curriculum method docs, verifying every top-level self-tool group has a reference file with frontmatter and that curriculum, identity, and attention docs include the named roadmap methods.
 - `bun test scripts/workflows.test.ts`: 2 tests passed, verifying agent CI runs the full phase checkpoint and release/changeset workflows are not placeholders.
 - `bun test scripts/record-local-e2e-demo.test.ts`: verifies the local asciinema demo recorder creates a valid cast with init, run, world transmission-smoke, and SQLite stack verification.
 - `docs/demos/local-e2e.cast`: recorded local end-to-end asciinema v2 demo generated from real command output.
@@ -155,7 +155,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun run lint`: scanned 191 TypeScript files, then Oxlint reported 0 warnings and 0 errors with the configured no-explicit-any rule.
 - `bun run format:check`: Oxfmt reports all 9 matched root package/config and tooling test files use the correct format.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 193 tests passed, 0 failed.
+- `bun run test`: 194 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
