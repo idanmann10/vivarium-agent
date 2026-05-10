@@ -52,11 +52,12 @@ Not complete. Local implementation and local test gates are strong, including ag
 - `bun test scripts/reference-docs.test.ts -t "documents live credential commands with exported environment variables"` later failed because the credential add example still used `<redacted>` for the credential value, then passed after the command switched to `$VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE`.
 - `bun test apps/cli/src/dispatcher.test.ts -t "reports permissive live env file permissions as a readiness blocker"` first failed because `doctor --live --env-file` consumed group/world-readable env files without reporting `liveEnvFile.permissions:insecure`, then passed after the dispatcher passed the env-file path into the live doctor permission check.
 - `bun test scripts/reference-docs.test.ts -t "documents guide workflows"` first failed because `docs/guides/live-readiness.md` did not name `liveEnvFile.permissions:insecure`, then passed after documenting the exact blocker.
+- `bun test apps/cli/src/commands/doctor.test.ts -t "counts private OAI-compatible credentials as configured provider environment"` first failed because `provider.privateOaiCompat:configured` still left `provider.env:missing`, then passed after the generic provider environment check counted `VIVARIUM_OAI_COMPAT_API_KEY`.
 - `bun apps/cli/src/index.ts doctor --live --env-file docs/live-readiness.env.example --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false` with copied template values classified as `:placeholder` or unavailable, not live-ready.
 - `bun apps/cli/src/index.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false`, now including `v1.evidencePath:missing` so setup readiness cannot be confused with v1 loop verification.
 - Local disk pressure was cleared before continuing live-readiness work: `/` had only 116 MiB available and shell startup emitted `No space left on device`; after deleting regenerable Codex caches, `df -h / /System/Volumes/Data` reports 2.8 GiB available and subsequent shell/git/doctor commands no longer emit the rbenv temp-file error.
 - `bun run typecheck` in `the-agent`: TypeScript passed.
-- `bun run test` in `the-agent`: 275 tests passed, 0 failed, 1415 assertions.
+- `bun run test` in `the-agent`: 276 tests passed, 0 failed, 1420 assertions.
 - `bun run lint` in `the-agent`: repo lint scanned 196 TypeScript files, and Oxlint found 0 warnings and 0 errors.
 - `bun run format:check` in `the-agent`: all matched package/config/tooling files use the expected Oxfmt format.
 - `bun run build` in `the-agent`: 9 entrypoints present.
@@ -115,7 +116,7 @@ Not complete. Local implementation and local test gates are strong, including ag
 - `bun test apps/cli/src/commands/doctor.test.ts -t "public contribution"` first failed because three external pull/use evidence files attributed to one repeated agent configured `v1.publicContribution`, then passed after `doctor --live` required three distinct other-agent pull/use evidence records.
 - `bun test apps/cli/src/commands/doctor.test.ts -t "requires v1 public contribution positive signals from distinct agents"` first failed because five positive-signal artifacts without distinct signal-agent identities configured `v1.publicContribution`, then passed after `doctor --live` required five distinct positive-signal agent/evidence records.
 - `bun test apps/cli/src/commands/doctor.test.ts` now also checks that public-contribution next-action guidance names other-agent pull/use records.
-- `bun test apps/cli/src/commands/doctor.test.ts`: 61 tests passed, 0 failed, 277 assertions.
+- `bun test apps/cli/src/commands/doctor.test.ts`: 62 tests passed, 0 failed, 282 assertions.
 - `bun test scripts/reference-docs.test.ts`: 15 tests passed, 0 failed, 464 assertions.
 - `git diff --check` in `the-agent`: exits 0.
 - `bun run lint` in `the-world`: world validator reports 3 domains, 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, and 1 contributor.

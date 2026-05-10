@@ -181,11 +181,14 @@ function remoteCheck(
 }
 
 function providerEnvCheck(env: Readonly<Record<string, string | undefined>>): string {
-  const statuses = Object.entries(env).flatMap(([key, value]) =>
-    providerEnvPrefixes.some((prefix) => key.startsWith(prefix)) && value !== undefined && value.trim().length > 0
-      ? [isPlaceholderValue(value) ? "placeholder" : "configured"]
-      : [],
-  );
+  const statuses = [
+    ...Object.entries(env).flatMap(([key, value]) =>
+      providerEnvPrefixes.some((prefix) => key.startsWith(prefix)) && value !== undefined && value.trim().length > 0
+        ? [isPlaceholderValue(value) ? "placeholder" : "configured"]
+        : [],
+    ),
+    envValueStatus(env, privateOaiCompatApiKeyEnv),
+  ];
 
   if (statuses.includes("configured")) {
     return "provider.env:configured";

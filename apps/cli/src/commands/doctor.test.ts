@@ -2626,6 +2626,32 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("provider.privateOaiCompat:missing");
   });
 
+  test("counts private OAI-compatible credentials as configured provider environment", () => {
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        VIVARIUM_OAI_COMPAT_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
+        VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        GITHUB_TOKEN: "configured",
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("provider.env:configured");
+    expect(result.checks).toContain("provider.anthropic:missing");
+    expect(result.checks).toContain("provider.openrouter:missing");
+    expect(result.checks).toContain("provider.privateOaiCompat:configured");
+  });
+
   test("reports missing internal API credential metadata as live readiness blockers", () => {
     const result = doctorCommand({
       mode: "live-readiness",
