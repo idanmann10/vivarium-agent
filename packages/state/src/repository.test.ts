@@ -60,6 +60,18 @@ describe("InMemoryStateRepository", () => {
     ]);
   });
 
+  test("records tool usage counts by day", () => {
+    const state = new InMemoryStateRepository();
+
+    expect(state.incrementToolUsage("web.search", "2026-05-10")).toBe(1);
+    expect(state.incrementToolUsage("web.search", "2026-05-10")).toBe(2);
+    expect(state.incrementToolUsage("web.search", "2026-05-11")).toBe(1);
+
+    expect(state.getToolUsageCount("web.search", "2026-05-10")).toBe(2);
+    expect(state.getToolUsageCount("web.search", "2026-05-11")).toBe(1);
+    expect(state.getToolUsageCount("http.request", "2026-05-10")).toBe(0);
+  });
+
   test("advances curriculum progress once per step", () => {
     const state = new InMemoryStateRepository();
 

@@ -66,6 +66,12 @@ export interface DomainStats {
   readonly stage: DevStage;
 }
 
+export interface ToolUsageRecord {
+  readonly toolName: string;
+  readonly day: string;
+  readonly count: number;
+}
+
 export interface StateRepository {
   createRun(run: Run): void;
   updateRun(run: Run): void;
@@ -75,6 +81,8 @@ export interface StateRepository {
   listEpisodes(runId: RunId): readonly Episode[];
   recordPredictionOutcome(outcome: PredictionOutcome): void;
   listConfidenceBuckets(): readonly ConfidenceBucket[];
+  incrementToolUsage(toolName: string, day: string): number;
+  getToolUsageCount(toolName: string, day: string): number;
   advanceCurriculum(domain: string, stepIndex: number): void;
   getCurriculumProgress(domain: string): CurriculumProgress | undefined;
   upsertLocalSkill(skill: LocalSkillRecord): void;
@@ -95,6 +103,7 @@ export class InMemoryStateRepository implements StateRepository {
   readonly #runs = new Map<RunId, Run>();
   readonly #episodes = new Map<RunId, Episode[]>();
   readonly #confidence = new Map<string, { correct: number; total: number }>();
+  readonly #toolUsage = new Map<string, number>();
   readonly #curriculum = new Map<string, CurriculumProgress>();
   readonly #skills = new Map<SkillId, LocalSkillRecord>();
   readonly #semanticFacts = new Map<string, SemanticFactRecord>();
@@ -152,6 +161,17 @@ export class InMemoryStateRepository implements StateRepository {
     return [...this.#confidence.entries()]
       .sort(([left], [right]) => left.localeCompare(right))
       .map(([bucket, value]) => ({ bucket, correct: value.correct, total: value.total }));
+  }
+
+  incrementToolUsage(toolName: string, day: string): number {
+    const key = `${toolName}:${day}`;
+    const next = (this.#toolUsage.get(key) ?? 0) + 1;
+    this.#toolUsage.set(key, next);
+    return next;
+  }
+
+  getToolUsageCount(toolName: string, day: string): number {
+    return this.#toolUsage.get(`${toolName}:${day}`) ?? 0;
   }
 
   advanceCurriculum(domain: string, stepIndex: number): void {

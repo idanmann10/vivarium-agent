@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, SQLite-backed self-tools, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run external tool rate limits, credential-argument blocking, and independent validator machine-fingerprint trust gates, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, SQLite-backed self-tools, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, and independent validator machine-fingerprint trust gates, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -31,7 +31,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 1 builtin self-tools | `createSelfTools` covers memory, skills, anti-pattern candidates, trace candidates, runs, episodes, world search, curriculum, and confidence against the shared state repository shape, including SQLite | Complete locally |
 | Phase 1 external tools | Typed router supports web fetch/read/search, HTTP, file read/write/edit, terminal, code, and MCP-style calls through injected adapters | Complete locally |
 | Phase 1 encrypted keychain | `createEncryptedFileCredentialStore` persists AES-256-GCM encrypted credential records and tests verify no plaintext secret leakage | Complete locally; OS keychain/OAuth UX missing |
-| Phase 1 safety | HTTP safety pipeline is enforced by `createToolDispatcher`; dispatcher surfaces prompt-injection warnings from external tool output, blocks configured per-run rate-limit overages, and rejects credential-like strings in external tool arguments; `runGoal` refuses harmful goals before planning and escalates destructive goals until confirmed | Partially complete; per-day limits and computer-use system UI confirmation remain unverified |
+| Phase 1 safety | HTTP safety pipeline is enforced by `createToolDispatcher`; dispatcher surfaces prompt-injection warnings from external tool output, blocks configured per-run and persistent per-day rate-limit overages, and rejects credential-like strings in external tool arguments; `runGoal` refuses harmful goals before planning and escalates destructive goals until confirmed | Partially complete; computer-use system UI confirmation remains unverified |
 | Phase 1 all 8 primitives implemented | Plan, Predict, Execute, Monitor, Recover, Validate, Reflect, and Dream have metadata; lifecycle primitives have modules and tests; orchestrator delegates to lifecycle modules | Complete locally |
 | Phase 1 attention budget enforcement | `applyAttentionLimits` caps skills, traces, tools, and recent episodes, enforces `maxWorkingTokens`, and returns budget metadata; orchestrator uses attention-limited world context before Plan | Complete locally |
 | Phase 1 read-only world paths | Local reader, retrieval, and multi-world search tests exist | Partially complete |
@@ -61,7 +61,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 ## Fresh Evidence Used
 
 - `sed -n '1882,2085p' goal.md`: phase, v1 done, and out-of-scope criteria.
-- `git -C the-agent status --short`: clean after the tool rate/credential safety commit; prior safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, CLI dispatcher, SQLite self-tools, publishable run queue, and tool-output warning changes are tracked in follow-up commits.
+- `git -C the-agent status --short`: clean after the persistent daily rate-limit commit; prior safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, CLI dispatcher, SQLite self-tools, publishable run queue, tool-output warning, and credential-argument safety changes are tracked in follow-up commits.
 - `git -C the-world status --short`: clean.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
@@ -74,19 +74,20 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun test packages/tools/src/builtin/self-tools.test.ts`: 2 tests passed, including SQLite-backed roadmap self-tools.
 - `bun test packages/runtime/src/orchestrator.test.ts packages/tools/src/builtin/self-tools.test.ts`: 8 tests passed, including anonymized publishable run queueing.
 - `bun test packages/tools/src/dispatcher.test.ts packages/tools/src/safety/pipeline.test.ts`: 9 tests passed, including tool-output prompt-injection warnings, per-run rate-limit blocking, and credential-argument blocking.
+- `bun test apps/cli/src/commands/init.test.ts packages/tools/src/dispatcher.test.ts packages/state/src/repository.test.ts packages/state/src/sqlite-repository.test.ts packages/state/src/storage/migrations.test.ts`: 17 tests passed, including persistent daily tool usage counts, migration `0004_tool_usage`, and dispatcher per-day rate-limit blocking.
 - `the-world bun test scripts`: 8 tests passed, including independent validator machine-fingerprint counting.
 - `bun run lint`: scanned 169 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 86 tests passed, 0 failed.
+- `bun run test`: 88 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
 
-The highest-value remaining gaps after the tool rate/credential safety slice are per-day safety counters and live external verification:
+The highest-value remaining gaps after the persistent daily rate-limit safety slice are live external verification and deployment decisions:
 
-1. Add persistent per-day tool safety counters if v1 keeps the roadmap default caps.
-2. Verify live provider credentials and live model calls once credential names and values are available.
-3. Verify live GitHub remotes, Discussions, PR creation, and auto-merge settings once repository targets and credentials are available.
-4. Run a real cross-install/canonical-world contribution loop after remotes and credentials exist.
+1. Verify live provider credentials and live model calls once credential names and values are available.
+2. Verify live GitHub remotes, Discussions, PR creation, and auto-merge settings once repository targets and credentials are available.
+3. Run a real cross-install/canonical-world contribution loop after remotes and credentials exist.
+4. Choose and verify deployment supervision for the long-running daemon.
 
 Live provider credentials, real GitHub remotes, real GitHub Discussions, cross-install cultural transmission, and deployment supervision still require user-provided decisions or external access.

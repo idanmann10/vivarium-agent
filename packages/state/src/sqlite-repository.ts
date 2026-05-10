@@ -24,6 +24,10 @@ interface ConfidenceRow {
   readonly total: number;
 }
 
+interface ToolUsageRow {
+  readonly count: number;
+}
+
 interface CandidateRow {
   readonly json: string;
 }
@@ -102,6 +106,24 @@ export class SQLiteStateRepository implements StateRepository {
       .query("SELECT bucket, correct, total FROM confidence_buckets ORDER BY bucket")
       .all() as ConfidenceRow[];
     return rows.map((row) => ({ bucket: row.bucket, correct: row.correct, total: row.total }));
+  }
+
+  incrementToolUsage(toolName: string, day: string): number {
+    this.#db
+      .query(
+        `INSERT INTO tool_usage (tool_name, day, count)
+         VALUES (?, ?, 1)
+         ON CONFLICT(tool_name, day) DO UPDATE SET count = count + 1`,
+      )
+      .run(toolName, day);
+    return this.getToolUsageCount(toolName, day);
+  }
+
+  getToolUsageCount(toolName: string, day: string): number {
+    const row = this.#db
+      .query("SELECT count FROM tool_usage WHERE tool_name = ? AND day = ?")
+      .get(toolName, day) as ToolUsageRow | null;
+    return row?.count ?? 0;
   }
 
   advanceCurriculum(domain: string, stepIndex: number): void {

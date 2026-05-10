@@ -30,10 +30,12 @@ describe("runMigrations", () => {
     expect(tables.map((row) => row.name)).toContain("episodes");
     expect(tables.map((row) => row.name)).toContain("semantic_facts");
     expect(tables.map((row) => row.name)).toContain("dream_candidates");
+    expect(tables.map((row) => row.name)).toContain("tool_usage");
     expect(versions).toEqual([
       { version: "0001_initial" },
       { version: "0002_semantic_facts" },
       { version: "0003_dream_candidates" },
+      { version: "0004_tool_usage" },
     ]);
     db.close();
   });

@@ -17,9 +17,11 @@ export type {
   HttpSafetyConfig,
   ToolDispatcher,
   ToolDispatcherOptions,
+  ToolDailyUsageCounter,
   ToolDispatchEvent,
   ToolDispatchRequest,
   ToolDispatchResult,
+  ToolRateLimitConfig,
 } from "./dispatcher.js";
 export { createEncryptedFileCredentialStore, createMemoryCredentialStore } from "./credentials/store.js";
 export type { CredentialRecord, CredentialStore } from "./credentials/store.js";

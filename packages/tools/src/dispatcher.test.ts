@@ -3,6 +3,21 @@ import { describe, expect, test } from "bun:test";
 import { createMemoryCredentialStore } from "./credentials/store.js";
 import { createToolDispatcher, type ToolDispatchEvent } from "./dispatcher.js";
 
+class TestDailyUsageStore {
+  readonly #counts = new Map<string, number>();
+
+  incrementToolUsage(toolName: string, day: string): number {
+    const key = `${toolName}:${day}`;
+    const next = (this.#counts.get(key) ?? 0) + 1;
+    this.#counts.set(key, next);
+    return next;
+  }
+
+  getToolUsageCount(toolName: string, day: string): number {
+    return this.#counts.get(`${toolName}:${day}`) ?? 0;
+  }
+}
+
 describe("createToolDispatcher", () => {
   test("routes builtin handlers before external adapters", async () => {
     const dispatcher = createToolDispatcher({
@@ -122,6 +137,31 @@ describe("createToolDispatcher", () => {
       error: "Rate limit exceeded for web.search",
       blocked: true,
     });
+  });
+
+  test("blocks external tool calls that exceed per-day rate limits across dispatcher instances", async () => {
+    const dailyUsage = new TestDailyUsageStore();
+    const makeDispatcher = () =>
+      createToolDispatcher({
+        rateLimits: {
+          perDay: { "web.search": 1 },
+          dailyUsage,
+          now: () => new Date("2026-05-10T12:00:00.000Z"),
+        },
+        externalAdapters: {
+          searchWeb: async (query) => [{ title: "Docs", url: "https://example.test/docs", snippet: query }],
+        },
+      });
+
+    await expect(makeDispatcher().dispatch({ name: "web.search", args: { query: "first" } })).resolves.toMatchObject({
+      ok: true,
+    });
+    await expect(makeDispatcher().dispatch({ name: "web.search", args: { query: "second" } })).resolves.toEqual({
+      ok: false,
+      error: "Daily rate limit exceeded for web.search",
+      blocked: true,
+    });
+    expect(dailyUsage.getToolUsageCount("web.search", "2026-05-10")).toBe(2);
   });
 
   test("blocks credential-like secrets embedded in tool arguments", async () => {

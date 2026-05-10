@@ -40,6 +40,14 @@ export interface HttpSafetyConfig {
 
 export interface ToolRateLimitConfig {
   readonly perRun?: Readonly<Record<string, number>>;
+  readonly perDay?: Readonly<Record<string, number>>;
+  readonly dailyUsage?: ToolDailyUsageCounter;
+  readonly now?: () => Date;
+}
+
+export interface ToolDailyUsageCounter {
+  incrementToolUsage(toolName: string, day: string): number;
+  getToolUsageCount(toolName: string, day: string): number;
 }
 
 export interface ToolDispatcherOptions {
@@ -232,18 +240,36 @@ async function dispatchExternal(
 export function createToolDispatcher(options: ToolDispatcherOptions): ToolDispatcher {
   const counts = new Map<string, number>();
 
+  function currentUtcDay(): string {
+    return (options.rateLimits?.now?.() ?? new Date()).toISOString().slice(0, 10);
+  }
+
   function checkRateLimit(name: string): ToolDispatchResult | undefined {
     const limit = options.rateLimits?.perRun?.[name];
-    if (limit === undefined) {
+    if (limit !== undefined) {
+      const nextCount = (counts.get(name) ?? 0) + 1;
+      if (nextCount > limit) {
+        return { ok: false, error: `Rate limit exceeded for ${name}`, blocked: true };
+      }
+
+      counts.set(name, nextCount);
+    }
+
+    const dailyLimit = options.rateLimits?.perDay?.[name];
+    if (dailyLimit === undefined) {
       return undefined;
     }
 
-    const nextCount = (counts.get(name) ?? 0) + 1;
-    if (nextCount > limit) {
-      return { ok: false, error: `Rate limit exceeded for ${name}`, blocked: true };
+    const dailyUsage = options.rateLimits?.dailyUsage;
+    if (dailyUsage === undefined) {
+      return { ok: false, error: `Daily rate limit counter is not configured for ${name}`, blocked: true };
     }
 
-    counts.set(name, nextCount);
+    const dailyCount = dailyUsage.incrementToolUsage(name, currentUtcDay());
+    if (dailyCount > dailyLimit) {
+      return { ok: false, error: `Daily rate limit exceeded for ${name}`, blocked: true };
+    }
+
     return undefined;
   }
 

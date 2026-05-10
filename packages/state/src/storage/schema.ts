@@ -8,4 +8,5 @@ export const storageTables = [
   "contributors",
   "confidence_buckets",
   "dream_candidates",
+  "tool_usage",
 ] as const;

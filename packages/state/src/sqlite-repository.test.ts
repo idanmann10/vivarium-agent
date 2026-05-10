@@ -39,6 +39,8 @@ describe("SQLiteStateRepository", () => {
         domain: "coding",
       });
       state.recordPredictionOutcome({ confidence: 0.76, correct: true });
+      state.incrementToolUsage("web.search", "2026-05-10");
+      state.incrementToolUsage("web.search", "2026-05-10");
       state.advanceCurriculum("coding", 2);
       state.upsertLocalSkill({
         id: skillId("coding.sqlite"),
@@ -104,6 +106,8 @@ describe("SQLiteStateRepository", () => {
       expect(state.getRun(run)?.goal).toBe("persist state");
       expect(state.listEpisodes(run).map((episode) => episode.kind)).toEqual(["run_start"]);
       expect(state.listConfidenceBuckets()).toEqual([{ bucket: "0.7-0.8", correct: 1, total: 1 }]);
+      expect(state.getToolUsageCount("web.search", "2026-05-10")).toBe(2);
+      expect(state.incrementToolUsage("web.search", "2026-05-10")).toBe(3);
       expect(state.getCurriculumProgress("coding")?.completedSteps).toEqual([2]);
       expect(state.listLocalSkills()[0]?.name).toBe("SQLite Skill");
       expect(state.listSemanticFacts("coding")).toEqual([
