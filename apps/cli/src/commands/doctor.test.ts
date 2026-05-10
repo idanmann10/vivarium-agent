@@ -194,6 +194,50 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("world.name:placeholder");
   });
 
+  test("reports unfilled angle-bracket template values as live readiness blockers", () => {
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "<final-agent-repo>",
+        VIVARIUM_WORLD_REPO_NAME: "<final-world-repo>",
+        VIVARIUM_GITHUB_OWNER: "<github-owner-or-org>",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "<world-repository-node-id>",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "<discussion-category-node-id>",
+        VIVARIUM_CANONICAL_WORLD_REF: "<canonical-world-remote-url>",
+        VIVARIUM_PRIVATE_WORLD_REF: "<private-world-remote-url>",
+        ANTHROPIC_API_KEY: "<redacted-anthropic-key>",
+        OPENROUTER_API_KEY: "<redacted-openrouter-key>",
+        VIVARIUM_OAI_COMPAT_API_KEY: "<redacted-private-oai-compatible-key>",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "<private-oai-compatible-base-url>",
+        VIVARIUM_OAI_COMPAT_MODEL: "<private-fine-tune-model>",
+        VIVARIUM_INTERNAL_API_HEALTH_URL: "<internal-api-health-url>",
+        GITHUB_TOKEN: "<redacted-github-token>",
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toEqual(
+      expect.arrayContaining([
+        "agent.name:placeholder",
+        "world.name:placeholder",
+        "world.canonicalRef:placeholder",
+        "world.privateForkRef:placeholder",
+        "provider.env:placeholder",
+        "provider.anthropic:placeholder",
+        "provider.openrouter:placeholder",
+        "provider.privateOaiCompat:placeholder",
+        "internalApi.healthUrl:placeholder",
+        "github.env:placeholder",
+        "github.owner:placeholder",
+        "github.repositoryId:placeholder",
+        "github.discussionCategoryId:placeholder",
+      ]),
+    );
+  });
+
   test("reports missing GitHub target metadata as live readiness blockers", () => {
     const result = doctorCommand({
       mode: "live-readiness",

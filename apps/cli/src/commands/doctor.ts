@@ -65,6 +65,7 @@ const privateOaiCompatModelEnv = "VIVARIUM_OAI_COMPAT_MODEL";
 const credentialsPathEnv = "VIVARIUM_CREDENTIALS_PATH";
 const internalApiCredentialNameEnv = "VIVARIUM_INTERNAL_API_CREDENTIAL_NAME";
 const internalApiHealthUrlEnv = "VIVARIUM_INTERNAL_API_HEALTH_URL";
+type EnvValueStatus = "missing" | "placeholder" | "configured";
 
 function spawnEnv(env: Readonly<Record<string, string | undefined>>): Record<string, string | undefined> {
   const merged: Record<string, string | undefined> = {};
@@ -117,6 +118,19 @@ function run(
   });
 }
 
+function isPlaceholderValue(value: string): boolean {
+  return /^<[^>]+>$/.test(value.trim());
+}
+
+function envValueStatus(env: Readonly<Record<string, string | undefined>>, envName: string): EnvValueStatus {
+  const value = env[envName]?.trim();
+  if (value === undefined || value.length === 0) {
+    return "missing";
+  }
+
+  return isPlaceholderValue(value) ? "placeholder" : "configured";
+}
+
 function remoteCheck(
   runner: DoctorCommandRunner,
   cwd: string,
@@ -132,24 +146,42 @@ function remoteCheck(
 
   const owner = env[githubOwnerEnv]?.trim();
   const repo = env[repoNameEnv]?.trim();
-  if (owner === undefined || owner.length === 0 || repo === undefined || repo.length === 0 || repo === placeholder) {
+  if (
+    owner === undefined ||
+    owner.length === 0 ||
+    isPlaceholderValue(owner) ||
+    repo === undefined ||
+    repo.length === 0 ||
+    repo === placeholder ||
+    isPlaceholderValue(repo)
+  ) {
     return `${label}.remote:configured`;
   }
 
   return result.stdout.includes(`${owner}/${repo}`) ? `${label}.remote:configured` : `${label}.remote:mismatch`;
 }
 
-function hasProviderEnv(env: Readonly<Record<string, string | undefined>>): boolean {
-  return Object.entries(env).some(
-    ([key, value]) => value !== undefined && value.length > 0 && providerEnvPrefixes.some((prefix) => key.startsWith(prefix)),
+function providerEnvCheck(env: Readonly<Record<string, string | undefined>>): string {
+  const statuses = Object.entries(env).flatMap(([key, value]) =>
+    providerEnvPrefixes.some((prefix) => key.startsWith(prefix)) && value !== undefined && value.trim().length > 0
+      ? [isPlaceholderValue(value) ? "placeholder" : "configured"]
+      : [],
   );
+
+  if (statuses.includes("configured")) {
+    return "provider.env:configured";
+  }
+
+  return statuses.includes("placeholder") ? "provider.env:placeholder" : "provider.env:missing";
 }
 
-function hasGithubEnv(env: Readonly<Record<string, string | undefined>>): boolean {
-  return githubEnvNames.some((name) => {
-    const value = env[name];
-    return value !== undefined && value.length > 0;
-  });
+function githubEnvCheck(env: Readonly<Record<string, string | undefined>>): string {
+  const statuses = githubEnvNames.map((name) => envValueStatus(env, name));
+  if (statuses.includes("configured")) {
+    return "github.env:configured";
+  }
+
+  return statuses.includes("placeholder") ? "github.env:placeholder" : "github.env:missing";
 }
 
 function repoNameCheck(env: Readonly<Record<string, string | undefined>>, envName: string, placeholder: string, label: string): string {
@@ -158,18 +190,20 @@ function repoNameCheck(env: Readonly<Record<string, string | undefined>>, envNam
     return `${label}.name:missing`;
   }
 
-  return value === placeholder ? `${label}.name:placeholder` : `${label}.name:configured`;
+  return value === placeholder || isPlaceholderValue(value) ? `${label}.name:placeholder` : `${label}.name:configured`;
 }
 
 function requiredEnvCheck(env: Readonly<Record<string, string | undefined>>, envName: string, label: string): string {
-  const value = env[envName]?.trim();
-  return value === undefined || value.length === 0 ? `${label}:missing` : `${label}:configured`;
+  return `${label}:${envValueStatus(env, envName)}`;
 }
 
 function requiredFileCheck(env: Readonly<Record<string, string | undefined>>, envName: string, label: string): string {
   const value = env[envName]?.trim();
   if (value === undefined || value.length === 0) {
     return `${label}:missing`;
+  }
+  if (isPlaceholderValue(value)) {
+    return `${label}:placeholder`;
   }
 
   return existsSync(value) ? `${label}:configured` : `${label}:unavailable`;
@@ -204,6 +238,9 @@ function worldRefCheck(
   if (value === undefined || value.length === 0) {
     return `${label}:missing`;
   }
+  if (isPlaceholderValue(value)) {
+    return `${label}:placeholder`;
+  }
 
   return refs === undefined || refs.has(value) ? `${label}:configured` : `${label}:unavailable`;
 }
@@ -232,21 +269,24 @@ function providerProfileCheck(
   if (value === undefined || value.length === 0) {
     return `${label}:missing`;
   }
+  if (isPlaceholderValue(value)) {
+    return `${label}:placeholder`;
+  }
 
   return names === undefined || names.has(value) ? `${label}:configured` : `${label}:unavailable`;
 }
 
-function hasRequiredEnv(env: Readonly<Record<string, string | undefined>>, envName: string): boolean {
-  const value = env[envName]?.trim();
-  return value !== undefined && value.length > 0;
-}
-
 function privateOaiCompatCheck(env: Readonly<Record<string, string | undefined>>): string {
-  return hasRequiredEnv(env, privateOaiCompatApiKeyEnv) &&
-    hasRequiredEnv(env, privateOaiCompatBaseUrlEnv) &&
-    hasRequiredEnv(env, privateOaiCompatModelEnv)
-    ? "provider.privateOaiCompat:configured"
-    : "provider.privateOaiCompat:missing";
+  const statuses = [
+    envValueStatus(env, privateOaiCompatApiKeyEnv),
+    envValueStatus(env, privateOaiCompatBaseUrlEnv),
+    envValueStatus(env, privateOaiCompatModelEnv),
+  ];
+  if (statuses.every((status) => status === "configured")) {
+    return "provider.privateOaiCompat:configured";
+  }
+
+  return statuses.includes("placeholder") ? "provider.privateOaiCompat:placeholder" : "provider.privateOaiCompat:missing";
 }
 
 function githubAuthCheck(runner: DoctorCommandRunner, env: Readonly<Record<string, string | undefined>>): string {
@@ -516,7 +556,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     requiredFileCheck(env, worldSubscriptionsPathEnv, "world.subscriptionsPath"),
     worldRefCheck(env, worldRefs, canonicalWorldRefEnv, "world.canonicalRef"),
     worldRefCheck(env, worldRefs, privateWorldRefEnv, "world.privateForkRef"),
-    hasProviderEnv(env) ? "provider.env:configured" : "provider.env:missing",
+    providerEnvCheck(env),
     requiredEnvCheck(env, anthropicApiKeyEnv, "provider.anthropic"),
     requiredEnvCheck(env, openRouterApiKeyEnv, "provider.openrouter"),
     privateOaiCompatCheck(env),
@@ -527,7 +567,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     requiredFileCheck(env, credentialsPathEnv, "credentials.path"),
     requiredEnvCheck(env, internalApiCredentialNameEnv, "internalApi.credentialName"),
     requiredEnvCheck(env, internalApiHealthUrlEnv, "internalApi.healthUrl"),
-    hasGithubEnv(env) ? "github.env:configured" : "github.env:missing",
+    githubEnvCheck(env),
     requiredEnvCheck(env, githubOwnerEnv, "github.owner"),
     requiredEnvCheck(env, githubRepositoryIdEnv, "github.repositoryId"),
     requiredEnvCheck(env, githubDiscussionCategoryIdEnv, "github.discussionCategoryId"),
