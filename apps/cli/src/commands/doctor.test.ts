@@ -659,7 +659,13 @@ describe("doctorCommand", () => {
         OPENROUTER_API_KEY: "<redacted-openrouter-key>",
         VIVARIUM_OAI_COMPAT_API_KEY: "<redacted-private-oai-compatible-key>",
         VIVARIUM_OAI_COMPAT_BASE_URL: "<private-oai-compatible-base-url>",
+        VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW: "<private-context-window>",
         VIVARIUM_OAI_COMPAT_MODEL: "<private-fine-tune-model>",
+        VIVARIUM_ANTHROPIC_MODEL: "<anthropic-model>",
+        VIVARIUM_ANTHROPIC_CONTEXT_WINDOW: "<anthropic-context-window>",
+        VIVARIUM_OPENROUTER_MODEL: "<openrouter-model>",
+        VIVARIUM_OPENROUTER_BASE_URL: "<openrouter-base-url>",
+        VIVARIUM_OPENROUTER_CONTEXT_WINDOW: "<openrouter-context-window>",
         VIVARIUM_CREDENTIALS_MASTER_KEY: "<local-master-key>",
         VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE: "<redacted-internal-api-token>",
         VIVARIUM_INTERNAL_API_HEALTH_URL: "<internal-api-health-url>",
@@ -677,8 +683,14 @@ describe("doctorCommand", () => {
         "world.privateForkRef:placeholder",
         "provider.env:placeholder",
         "provider.anthropic:placeholder",
+        "provider.anthropicModel:placeholder",
+        "provider.anthropicContextWindow:placeholder",
         "provider.openrouter:placeholder",
+        "provider.openrouterModel:placeholder",
+        "provider.openrouterBaseUrl:placeholder",
+        "provider.openrouterContextWindow:placeholder",
         "provider.privateOaiCompat:placeholder",
+        "provider.privateOaiCompatContextWindow:placeholder",
         "credentials.masterKey:placeholder",
         "internalApi.credentialValue:placeholder",
         "internalApi.healthUrl:placeholder",
@@ -2736,6 +2748,97 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("provider.privateOaiCompat:missing");
   });
 
+  test("reports missing provider setup values required by live setup", () => {
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        ANTHROPIC_API_KEY: "configured",
+        OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
+        VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        GITHUB_TOKEN: "configured",
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("provider.anthropicModel:missing");
+    expect(result.checks).toContain("provider.anthropicContextWindow:missing");
+    expect(result.checks).toContain("provider.openrouterModel:missing");
+    expect(result.checks).toContain("provider.openrouterBaseUrl:missing");
+    expect(result.checks).toContain("provider.openrouterContextWindow:missing");
+    expect(result.checks).toContain("provider.privateOaiCompatContextWindow:missing");
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "provider.openrouterBaseUrl:missing",
+        env: expect.arrayContaining(["VIVARIUM_OPENROUTER_BASE_URL"]),
+      }),
+    );
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "provider.anthropicSmoke:missing",
+        env: expect.arrayContaining(["VIVARIUM_ANTHROPIC_MODEL", "VIVARIUM_ANTHROPIC_CONTEXT_WINDOW"]),
+      }),
+    );
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "provider.openrouterSmoke:missing",
+        env: expect.arrayContaining([
+          "VIVARIUM_OPENROUTER_MODEL",
+          "VIVARIUM_OPENROUTER_BASE_URL",
+          "VIVARIUM_OPENROUTER_CONTEXT_WINDOW",
+        ]),
+      }),
+    );
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "provider.privateOaiCompatSmoke:missing",
+        env: expect.arrayContaining(["VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW"]),
+      }),
+    );
+  });
+
+  test("reports invalid provider context windows required by live setup", () => {
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        ANTHROPIC_API_KEY: "configured",
+        VIVARIUM_ANTHROPIC_MODEL: "claude-live",
+        VIVARIUM_ANTHROPIC_CONTEXT_WINDOW: "0",
+        OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OPENROUTER_MODEL: "openrouter/live",
+        VIVARIUM_OPENROUTER_BASE_URL: "https://openrouter.ai/api/v1",
+        VIVARIUM_OPENROUTER_CONTEXT_WINDOW: "large",
+        VIVARIUM_OAI_COMPAT_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
+        VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW: "-1",
+        GITHUB_TOKEN: "configured",
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("provider.anthropicContextWindow:invalid");
+    expect(result.checks).toContain("provider.openrouterContextWindow:invalid");
+    expect(result.checks).toContain("provider.privateOaiCompatContextWindow:invalid");
+  });
+
   test("counts private OAI-compatible credentials as configured provider environment", () => {
     const result = doctorCommand({
       mode: "live-readiness",
@@ -2750,6 +2853,7 @@ describe("doctorCommand", () => {
         VIVARIUM_OAI_COMPAT_API_KEY: "configured",
         VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
         VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW: "128000",
         GITHUB_TOKEN: "configured",
       },
       runner: blockedRunner,
@@ -2951,6 +3055,59 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("provider.privateOaiCompatProfile:unavailable");
   });
 
+  test("does not run provider smoke probes while required provider setup values are placeholders", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-provider-smoke-placeholders-"));
+    const files = writeLiveReadyFiles(root);
+    const smokeCommands: string[] = [];
+    const runner: DoctorCommandRunner = (run) => {
+      const text = [run.command, ...run.args].join(" ");
+      if (text.includes(" providers smoke ")) {
+        smokeCommands.push(text);
+      }
+
+      return readyRunner(run);
+    };
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        VIVARIUM_WORLD_SUBSCRIPTIONS_PATH: files.subscriptionsPath,
+        VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world-final.git",
+        VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
+        ANTHROPIC_API_KEY: "<redacted-anthropic-key>",
+        VIVARIUM_ANTHROPIC_MODEL: "<anthropic-model>",
+        VIVARIUM_ANTHROPIC_CONTEXT_WINDOW: "<anthropic-context-window>",
+        OPENROUTER_API_KEY: "<redacted-openrouter-key>",
+        VIVARIUM_OPENROUTER_MODEL: "<openrouter-model>",
+        VIVARIUM_OPENROUTER_BASE_URL: "<openrouter-base-url>",
+        VIVARIUM_OPENROUTER_CONTEXT_WINDOW: "<openrouter-context-window>",
+        VIVARIUM_OAI_COMPAT_API_KEY: "<redacted-private-oai-compatible-key>",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "<private-oai-compatible-base-url>",
+        VIVARIUM_OAI_COMPAT_MODEL: "<private-fine-tune-model>",
+        VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW: "<private-context-window>",
+        VIVARIUM_PROVIDER_PROFILES_PATH: files.profilesPath,
+        VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
+        VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
+        VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE: "private-finetune",
+        GITHUB_TOKEN: "configured",
+      },
+      runner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("provider.anthropicSmoke:missing");
+    expect(result.checks).toContain("provider.openrouterSmoke:missing");
+    expect(result.checks).toContain("provider.privateOaiCompatSmoke:missing");
+    expect(smokeCommands).toEqual([]);
+  });
+
   test("reports configured world refs missing from the subscriptions file", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-world-subscriptions-"));
     const subscriptionsPath = join(root, "world-subscriptions.json");
@@ -3035,10 +3192,16 @@ describe("doctorCommand", () => {
         VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world-final.git",
         VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
         ANTHROPIC_API_KEY: "configured",
+        VIVARIUM_ANTHROPIC_MODEL: "claude-live",
+        VIVARIUM_ANTHROPIC_CONTEXT_WINDOW: "200000",
         OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OPENROUTER_MODEL: "openrouter/live",
+        VIVARIUM_OPENROUTER_BASE_URL: "https://openrouter.ai/api/v1",
+        VIVARIUM_OPENROUTER_CONTEXT_WINDOW: "128000",
         VIVARIUM_OAI_COMPAT_API_KEY: "configured",
         VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
         VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW: "128000",
         VIVARIUM_PROVIDER_PROFILES_PATH: files.profilesPath,
         VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
         VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
@@ -3087,10 +3250,16 @@ describe("doctorCommand", () => {
         VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world-final.git",
         VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
         ANTHROPIC_API_KEY: "configured",
+        VIVARIUM_ANTHROPIC_MODEL: "claude-live",
+        VIVARIUM_ANTHROPIC_CONTEXT_WINDOW: "200000",
         OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OPENROUTER_MODEL: "openrouter/live",
+        VIVARIUM_OPENROUTER_BASE_URL: "https://openrouter.ai/api/v1",
+        VIVARIUM_OPENROUTER_CONTEXT_WINDOW: "128000",
         VIVARIUM_OAI_COMPAT_API_KEY: "configured",
         VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
         VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW: "128000",
         VIVARIUM_PROVIDER_PROFILES_PATH: files.profilesPath,
         VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
         VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
@@ -3128,10 +3297,16 @@ describe("doctorCommand", () => {
         VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world-final.git",
         VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
         ANTHROPIC_API_KEY: "configured",
+        VIVARIUM_ANTHROPIC_MODEL: "claude-live",
+        VIVARIUM_ANTHROPIC_CONTEXT_WINDOW: "200000",
         OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OPENROUTER_MODEL: "openrouter/live",
+        VIVARIUM_OPENROUTER_BASE_URL: "https://openrouter.ai/api/v1",
+        VIVARIUM_OPENROUTER_CONTEXT_WINDOW: "128000",
         VIVARIUM_OAI_COMPAT_API_KEY: "configured",
         VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
         VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW: "128000",
         VIVARIUM_PROVIDER_PROFILES_PATH: files.profilesPath,
         VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
         VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
@@ -3172,10 +3347,16 @@ describe("doctorCommand", () => {
         VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world-final.git",
         VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
         ANTHROPIC_API_KEY: "configured",
+        VIVARIUM_ANTHROPIC_MODEL: "claude-live",
+        VIVARIUM_ANTHROPIC_CONTEXT_WINDOW: "200000",
         OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OPENROUTER_MODEL: "openrouter/live",
+        VIVARIUM_OPENROUTER_BASE_URL: "https://openrouter.ai/api/v1",
+        VIVARIUM_OPENROUTER_CONTEXT_WINDOW: "128000",
         VIVARIUM_OAI_COMPAT_API_KEY: "configured",
         VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
         VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW: "128000",
         VIVARIUM_PROVIDER_PROFILES_PATH: files.profilesPath,
         VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
         VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
@@ -3213,10 +3394,16 @@ describe("doctorCommand", () => {
         VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world-final.git",
         VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
         ANTHROPIC_API_KEY: "configured",
+        VIVARIUM_ANTHROPIC_MODEL: "claude-live",
+        VIVARIUM_ANTHROPIC_CONTEXT_WINDOW: "200000",
         OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OPENROUTER_MODEL: "openrouter/live",
+        VIVARIUM_OPENROUTER_BASE_URL: "https://openrouter.ai/api/v1",
+        VIVARIUM_OPENROUTER_CONTEXT_WINDOW: "128000",
         VIVARIUM_OAI_COMPAT_API_KEY: "configured",
         VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
         VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW: "128000",
         VIVARIUM_PROVIDER_PROFILES_PATH: files.profilesPath,
         VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
         VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",

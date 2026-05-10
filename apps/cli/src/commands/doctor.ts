@@ -74,10 +74,16 @@ const anthropicProviderProfileEnv = "VIVARIUM_ANTHROPIC_PROVIDER_PROFILE";
 const openRouterProviderProfileEnv = "VIVARIUM_OPENROUTER_PROVIDER_PROFILE";
 const privateOaiCompatProviderProfileEnv = "VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE";
 const anthropicApiKeyEnv = "ANTHROPIC_API_KEY";
+const anthropicModelEnv = "VIVARIUM_ANTHROPIC_MODEL";
+const anthropicContextWindowEnv = "VIVARIUM_ANTHROPIC_CONTEXT_WINDOW";
 const openRouterApiKeyEnv = "OPENROUTER_API_KEY";
+const openRouterModelEnv = "VIVARIUM_OPENROUTER_MODEL";
+const openRouterBaseUrlEnv = "VIVARIUM_OPENROUTER_BASE_URL";
+const openRouterContextWindowEnv = "VIVARIUM_OPENROUTER_CONTEXT_WINDOW";
 const privateOaiCompatApiKeyEnv = "VIVARIUM_OAI_COMPAT_API_KEY";
 const privateOaiCompatBaseUrlEnv = "VIVARIUM_OAI_COMPAT_BASE_URL";
 const privateOaiCompatModelEnv = "VIVARIUM_OAI_COMPAT_MODEL";
+const privateOaiCompatContextWindowEnv = "VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW";
 const credentialsPathEnv = "VIVARIUM_CREDENTIALS_PATH";
 const credentialsMasterKeyEnv = "VIVARIUM_CREDENTIALS_MASTER_KEY";
 const internalApiCredentialNameEnv = "VIVARIUM_INTERNAL_API_CREDENTIAL_NAME";
@@ -217,6 +223,16 @@ function repoNameCheck(env: Readonly<Record<string, string | undefined>>, envNam
 
 function requiredEnvCheck(env: Readonly<Record<string, string | undefined>>, envName: string, label: string): string {
   return `${label}:${envValueStatus(env, envName)}`;
+}
+
+function positiveIntegerEnvCheck(env: Readonly<Record<string, string | undefined>>, envName: string, label: string): string {
+  const status = envValueStatus(env, envName);
+  if (status !== "configured") {
+    return `${label}:${status}`;
+  }
+
+  const parsed = Number.parseInt(env[envName] ?? "", 10);
+  return Number.isInteger(parsed) && parsed > 0 ? `${label}:configured` : `${label}:invalid`;
 }
 
 function requiredFileCheck(env: Readonly<Record<string, string | undefined>>, envName: string, label: string): string {
@@ -1196,22 +1212,69 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         env: [anthropicApiKeyEnv],
         guide: `${guide}#provider-environment`,
       };
+    case "provider.anthropicModel":
+      return {
+        check,
+        action: "Export the Anthropic model name used by live setup when creating the Anthropic provider profile.",
+        env: [anthropicModelEnv],
+        guide: `${guide}#provider-environment`,
+      };
+    case "provider.anthropicContextWindow":
+      return {
+        check,
+        action: "Export a positive integer Anthropic context window used by live setup.",
+        env: [anthropicContextWindowEnv],
+        guide: `${guide}#provider-environment`,
+      };
     case "provider.openrouter":
       return {
         check,
         action: "Export the OpenRouter API key and save an OpenRouter provider profile.",
-        env: [openRouterApiKeyEnv, openRouterProviderProfileEnv],
+        env: [openRouterApiKeyEnv, openRouterProviderProfileEnv, openRouterModelEnv, openRouterBaseUrlEnv, openRouterContextWindowEnv],
         command: cliCommand(
           context,
-          'providers configure --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --name "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE" --kind openai-compat --api-key-env OPENROUTER_API_KEY --model <model> --base-url <provider-base-url> --capability chat --capability json_mode --context-window <context-window> --cost-class medium',
+          'providers configure --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --name "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE" --kind openai-compat --api-key-env OPENROUTER_API_KEY --model "$VIVARIUM_OPENROUTER_MODEL" --base-url "$VIVARIUM_OPENROUTER_BASE_URL" --capability chat --capability json_mode --context-window "$VIVARIUM_OPENROUTER_CONTEXT_WINDOW" --cost-class medium',
         ),
+        guide: `${guide}#provider-environment`,
+      };
+    case "provider.openrouterModel":
+      return {
+        check,
+        action: "Export the OpenRouter model name used by live setup when creating the OpenRouter provider profile.",
+        env: [openRouterModelEnv],
+        guide: `${guide}#provider-environment`,
+      };
+    case "provider.openrouterBaseUrl":
+      return {
+        check,
+        action: "Export the OpenRouter-compatible base URL used by live setup.",
+        env: [openRouterBaseUrlEnv],
+        guide: `${guide}#provider-environment`,
+      };
+    case "provider.openrouterContextWindow":
+      return {
+        check,
+        action: "Export a positive integer OpenRouter context window used by live setup.",
+        env: [openRouterContextWindowEnv],
         guide: `${guide}#provider-environment`,
       };
     case "provider.privateOaiCompat":
       return {
         check,
         action: "Export the private OpenAI-compatible provider key, base URL, and model.",
-        env: [privateOaiCompatApiKeyEnv, privateOaiCompatBaseUrlEnv, privateOaiCompatModelEnv],
+        env: [
+          privateOaiCompatApiKeyEnv,
+          privateOaiCompatBaseUrlEnv,
+          privateOaiCompatModelEnv,
+          privateOaiCompatContextWindowEnv,
+        ],
+        guide: `${guide}#provider-environment`,
+      };
+    case "provider.privateOaiCompatContextWindow":
+      return {
+        check,
+        action: "Export a positive integer private OpenAI-compatible context window used by live setup.",
+        env: [privateOaiCompatContextWindowEnv],
         guide: `${guide}#provider-environment`,
       };
     case "provider.profilesPath":
@@ -1250,7 +1313,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action: "Run a successful Anthropic provider smoke through the saved provider profile.",
-        env: [providerProfilesPathEnv, anthropicProviderProfileEnv, anthropicApiKeyEnv],
+        env: [providerProfilesPathEnv, anthropicProviderProfileEnv, anthropicApiKeyEnv, anthropicModelEnv, anthropicContextWindowEnv],
         command: cliCommand(
           context,
           'providers smoke --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --profile "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE"',
@@ -1261,7 +1324,14 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action: "Run a successful OpenRouter provider smoke through the saved provider profile.",
-        env: [providerProfilesPathEnv, openRouterProviderProfileEnv, openRouterApiKeyEnv],
+        env: [
+          providerProfilesPathEnv,
+          openRouterProviderProfileEnv,
+          openRouterApiKeyEnv,
+          openRouterModelEnv,
+          openRouterBaseUrlEnv,
+          openRouterContextWindowEnv,
+        ],
         command: cliCommand(
           context,
           'providers smoke --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"',
@@ -1278,6 +1348,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
           privateOaiCompatApiKeyEnv,
           privateOaiCompatBaseUrlEnv,
           privateOaiCompatModelEnv,
+          privateOaiCompatContextWindowEnv,
         ],
         command: cliCommand(
           context,
@@ -1526,18 +1597,34 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     worldRefCheck(env, worldRefs, privateWorldRefEnv, "world.privateForkRef"),
     providerEnvCheck(env),
     requiredEnvCheck(env, anthropicApiKeyEnv, "provider.anthropic"),
+    requiredEnvCheck(env, anthropicModelEnv, "provider.anthropicModel"),
+    positiveIntegerEnvCheck(env, anthropicContextWindowEnv, "provider.anthropicContextWindow"),
     requiredEnvCheck(env, openRouterApiKeyEnv, "provider.openrouter"),
+    requiredEnvCheck(env, openRouterModelEnv, "provider.openrouterModel"),
+    requiredEnvCheck(env, openRouterBaseUrlEnv, "provider.openrouterBaseUrl"),
+    positiveIntegerEnvCheck(env, openRouterContextWindowEnv, "provider.openrouterContextWindow"),
     privateOaiCompatCheck(env),
+    positiveIntegerEnvCheck(env, privateOaiCompatContextWindowEnv, "provider.privateOaiCompatContextWindow"),
     requiredFileCheck(env, providerProfilesPathEnv, "provider.profilesPath"),
     providerProfileCheck(env, profiles, anthropicProviderProfileEnv, "provider.anthropicProfile"),
     providerProfileCheck(env, profiles, openRouterProviderProfileEnv, "provider.openrouterProfile"),
     providerProfileCheck(env, profiles, privateOaiCompatProviderProfileEnv, "provider.privateOaiCompatProfile"),
-    providerSmokeCheck(runner, env, agentRoot, "anthropic", anthropicProviderProfileEnv, [anthropicApiKeyEnv]),
-    providerSmokeCheck(runner, env, agentRoot, "openrouter", openRouterProviderProfileEnv, [openRouterApiKeyEnv]),
+    providerSmokeCheck(runner, env, agentRoot, "anthropic", anthropicProviderProfileEnv, [
+      anthropicApiKeyEnv,
+      anthropicModelEnv,
+      anthropicContextWindowEnv,
+    ]),
+    providerSmokeCheck(runner, env, agentRoot, "openrouter", openRouterProviderProfileEnv, [
+      openRouterApiKeyEnv,
+      openRouterModelEnv,
+      openRouterBaseUrlEnv,
+      openRouterContextWindowEnv,
+    ]),
     providerSmokeCheck(runner, env, agentRoot, "privateOaiCompat", privateOaiCompatProviderProfileEnv, [
       privateOaiCompatApiKeyEnv,
       privateOaiCompatBaseUrlEnv,
       privateOaiCompatModelEnv,
+      privateOaiCompatContextWindowEnv,
     ]),
     requiredFileCheck(env, credentialsPathEnv, "credentials.path"),
     requiredEnvCheck(env, credentialsMasterKeyEnv, "credentials.masterKey"),
