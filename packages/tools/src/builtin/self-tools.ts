@@ -1,6 +1,8 @@
+import { readFileSync } from "node:fs";
+
 import type { RunId, SkillId } from "../../../core/src/ids.js";
 import type { Episode, Run, TraceStep, Visibility } from "../../../core/src/index.js";
-import type { StateRepository } from "../../../state/src/index.js";
+import type { LocalSkillRecord, StateRepository } from "../../../state/src/index.js";
 import {
   listWorldSubscriptions,
   proposeRun,
@@ -45,6 +47,16 @@ export interface WorldProposeSkillRequest {
 export interface WorldProposeSkillResult {
   readonly target: ProposalWorldTarget;
   readonly path: string;
+}
+
+export interface WorldPullSkillRequest {
+  readonly skillId: SkillId;
+  readonly domain: string;
+}
+
+export interface WorldPullSkillResult {
+  readonly skill: LocalSkillRecord;
+  readonly source: LocalWorldSearchResult;
 }
 
 export interface WorldPublishRunRequest {
@@ -102,6 +114,7 @@ export interface SelfTools {
   };
   readonly world: {
     search(request: LocalWorldSearchRequest): readonly LocalWorldSearchResult[];
+    pull(request: WorldPullSkillRequest): WorldPullSkillResult;
     propose(request: WorldProposeSkillRequest): WorldProposeSkillResult;
     publishRun(request: WorldPublishRunRequest): WorldPublishResult;
     publishTrace(request: WorldPublishTraceRequest): WorldPublishResult;
@@ -164,6 +177,21 @@ function skillProposalBody(body: string, evidenceRunIds: readonly string[] = [])
   return `${body}\n\n## Evidence\n\n${evidenceRunIds.map((id) => `- ${id}`).join("\n")}`;
 }
 
+function worldSearchResults(
+  world: LocalWorldReader,
+  worldSubscriptionsPath: string | undefined,
+  request: LocalWorldSearchRequest,
+): readonly LocalWorldSearchResult[] {
+  if (worldSubscriptionsPath !== undefined) {
+    const worlds = listWorldSubscriptions(worldSubscriptionsPath);
+    if (worlds.length > 0) {
+      return searchSubscribedWorlds(worlds, request);
+    }
+  }
+
+  return world.search(request);
+}
+
 function targetForVisibility(worldSubscriptionsPath: string | undefined, visibility: Visibility): ProposalWorldTarget {
   return selectProposalWorldTarget({ worlds: listWorldSubscriptions(requireWorldSubscriptionsPath(worldSubscriptionsPath)), visibility });
 }
@@ -189,6 +217,32 @@ function proposalTraceSteps(steps: readonly TraceStep[]): readonly { readonly ac
     action: step.action,
     annotation: step.annotation ?? "No annotation supplied.",
   }));
+}
+
+function frontmatterValue(text: string, key: string): string | undefined {
+  return text
+    .split("\n")
+    .find((line) => line.startsWith(`${key}:`))
+    ?.slice(key.length + 1)
+    .trim();
+}
+
+function localSkillStatus(value: string | undefined): LocalSkillRecord["status"] {
+  return value === "candidate" || value === "promoted" || value === "deprecated" || value === "archived" ? value : "candidate";
+}
+
+function pulledSkillRecord(id: SkillId, domain: string, body: string): LocalSkillRecord {
+  return {
+    id,
+    name: frontmatterValue(body, "name") ?? String(id),
+    domain,
+    status: localSkillStatus(frontmatterValue(body, "status")),
+    uses: 0,
+    helped: 0,
+    lastUsedRunOffset: 0,
+    habitual: false,
+    body,
+  };
 }
 
 export function createSelfTools({ state, world, worldSubscriptionsPath }: SelfToolsDependencies): SelfTools {
@@ -338,14 +392,27 @@ export function createSelfTools({ state, world, worldSubscriptionsPath }: SelfTo
     },
     world: {
       search(request) {
-        if (worldSubscriptionsPath !== undefined) {
-          const worlds = listWorldSubscriptions(worldSubscriptionsPath);
-          if (worlds.length > 0) {
-            return searchSubscribedWorlds(worlds, request);
+        return worldSearchResults(world, worldSubscriptionsPath, request);
+      },
+      pull(request) {
+        const source = worldSearchResults(world, worldSubscriptionsPath, {
+          domain: request.domain,
+          query: String(request.skillId),
+          limit: 8,
+        }).find((result) => {
+          if (result.kind !== "skill") {
+            return false;
           }
+
+          return frontmatterValue(readFileSync(result.path, "utf8"), "id") === String(request.skillId);
+        });
+        if (source === undefined) {
+          throw new Error(`World skill not found: ${String(request.skillId)}`);
         }
 
-        return world.search(request);
+        const skill = pulledSkillRecord(request.skillId, request.domain, readFileSync(source.path, "utf8"));
+        state.upsertLocalSkill(skill);
+        return { skill, source };
       },
       propose(request) {
         return proposeSkillToSubscribedWorld({

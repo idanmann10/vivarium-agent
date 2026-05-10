@@ -67,6 +67,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` visibility-aware proposal target selection implemented after run-level subscriptions, routing internal/private skill proposals to auto-push private worlds and public proposals to canonical/non-auto-push worlds.
 - `the-agent` world subscription self-tools implemented after visibility-aware routing, exposing the saved subscription registry through builtin `world.subscribe` and `world.listSubscriptions`.
 - `the-agent` world proposal self-tool implemented after subscription self-tools, exposing builtin `world.propose` over saved subscriptions, visibility routing, and evidence-linked local skill proposal files.
+- `the-agent` world pull self-tool implemented after `world.propose`, exposing builtin `world.pull` to install public world skills into local procedural memory.
 - `the-agent` run and trace publish self-tools implemented after `world.propose`, exposing builtin `world.publishRun` and `world.publishTrace` over saved subscriptions and visibility-aware proposal artifacts.
 - `the-agent` proposed anti-pattern retrieval and Node-side `better-sqlite3` migration verifier implemented after the gated proposal PR helper.
 - `the-agent` local end-to-end demo recorder implemented after the SQLite stack verifier; `docs/demos/local-e2e.cast` records init, run, second-install world transmission-smoke, and SQLite stack verification as an asciinema v2 cast.
@@ -87,7 +88,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 
 - `bun run lint`: scanned 188 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 168 tests passed, 0 failed.
+- `bun run test`: 169 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 - `bun run verify:sqlite-stack`: Node and `better-sqlite3` ran migrations `0001_initial` through `0004_tool_usage`, created all runtime storage tables, and inserted/read `skill-smoke`.
 - `bun run record:local-e2e-demo`: generated `docs/demos/local-e2e.cast`.

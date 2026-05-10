@@ -109,6 +109,24 @@ describe("self-tools", () => {
     expect(readFileSync(result.path, "utf8")).toContain("- run-1");
   });
 
+  test("pulls public world skills into local procedural memory", () => {
+    const state = new InMemoryStateRepository();
+    const tools = createSelfTools({
+      state,
+      world: createLocalWorldReader({ root: "../the-world" }),
+    });
+    const id = skillId("coding.inspect-before-edit");
+
+    const result = tools.world.pull({ skillId: id, domain: "coding" });
+
+    expect(result.skill.id).toBe(id);
+    expect(result.skill.name).toBe("Inspect Before Edit");
+    expect(result.skill.status).toBe("promoted");
+    expect(result.skill.uses).toBe(0);
+    expect(result.skill.body).toContain("Before editing, inspect");
+    expect(state.listLocalSkills().map((skill) => skill.id)).toEqual([id]);
+  });
+
   test("publishes runs through subscribed worlds", () => {
     const root = mkdtempSync(join(tmpdir(), "self-tools-world-publish-run-"));
     const canonicalWorld = join(root, "canonical");
