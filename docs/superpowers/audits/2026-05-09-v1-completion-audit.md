@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, and independent validator machine-fingerprint trust gates, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, SQLite-backed self-tools, and independent validator machine-fingerprint trust gates, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -28,7 +28,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 1 state schema/migrations/all memory implementations | `packages/state/src/` includes memory modules, `SQLiteStateRepository`, and versioned migration runner | Partially complete |
 | Phase 1 semantic facts storage | `SemanticFactRecord` exists in state repositories; `0002_semantic_facts.sql` creates the table; in-memory and SQLite tests verify upsert/list/persistence | Complete locally |
 | Phase 1 providers | OpenAI, Anthropic, OpenAI-compatible adapters and router exist with mocked HTTP tests | Complete locally; live credentials unverified |
-| Phase 1 builtin self-tools | `createSelfTools` covers runs, episodes, world search, curriculum, confidence | Partially complete |
+| Phase 1 builtin self-tools | `createSelfTools` covers memory, skills, anti-pattern candidates, trace candidates, runs, episodes, world search, curriculum, and confidence against the shared state repository shape, including SQLite | Complete locally |
 | Phase 1 external tools | Typed router supports web fetch/read/search, HTTP, file read/write/edit, terminal, code, and MCP-style calls through injected adapters | Complete locally |
 | Phase 1 encrypted keychain | `createEncryptedFileCredentialStore` persists AES-256-GCM encrypted credential records and tests verify no plaintext secret leakage | Complete locally; OS keychain/OAuth UX missing |
 | Phase 1 safety | HTTP safety pipeline exists and is enforced by `createToolDispatcher` for generic HTTP calls; `runGoal` refuses harmful goals before planning and escalates destructive goals until confirmed | Partially complete |
@@ -61,7 +61,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 ## Fresh Evidence Used
 
 - `sed -n '1882,2085p' goal.md`: phase, v1 done, and out-of-scope criteria.
-- `git -C the-agent status --short`: clean before the safety slice; safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, and CLI dispatcher changes are tracked in follow-up commits.
+- `git -C the-agent status --short`: clean before the safety slice; safety, Dream candidate-generation, attention token-budget, provider anonymizer, daemon scheduler, CLI dispatcher, and SQLite self-tools changes are tracked in follow-up commits.
 - `git -C the-world status --short`: clean.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
@@ -71,10 +71,11 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun test packages/tools/src/anonymizer/pipeline.test.ts packages/providers/src/router.test.ts`: 5 tests passed, including provider anonymizer fallback.
 - `bun test apps/daemon/src/scheduler.test.ts`: 4 tests passed, including daemon Dream scheduler start/stop behavior.
 - `bun test apps/cli/src/dispatcher.test.ts`: 4 tests passed, including CLI parser routing for local commands.
+- `bun test packages/tools/src/builtin/self-tools.test.ts`: 2 tests passed, including SQLite-backed roadmap self-tools.
 - `the-world bun test scripts`: 8 tests passed, including independent validator machine-fingerprint counting.
 - `bun run lint`: scanned 169 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 79 tests passed, 0 failed.
+- `bun run test`: 80 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work

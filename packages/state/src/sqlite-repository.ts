@@ -9,6 +9,7 @@ import type {
   PredictionOutcome,
   PublishableArtifact,
   SemanticFactRecord,
+  StateRepository,
   TraceCandidateRecord,
 } from "./repository.js";
 import { runMigrations } from "./storage/migrations.js";
@@ -27,7 +28,7 @@ interface CandidateRow {
   readonly json: string;
 }
 
-export class SQLiteStateRepository {
+export class SQLiteStateRepository implements StateRepository {
   readonly #db: Database;
 
   constructor(path: string) {

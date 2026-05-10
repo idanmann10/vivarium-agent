@@ -66,7 +66,32 @@ export interface DomainStats {
   readonly stage: DevStage;
 }
 
-export class InMemoryStateRepository {
+export interface StateRepository {
+  createRun(run: Run): void;
+  updateRun(run: Run): void;
+  getRun(id: RunId): Run | undefined;
+  listRuns(): readonly Run[];
+  appendEpisode(episode: Episode): void;
+  listEpisodes(runId: RunId): readonly Episode[];
+  recordPredictionOutcome(outcome: PredictionOutcome): void;
+  listConfidenceBuckets(): readonly ConfidenceBucket[];
+  advanceCurriculum(domain: string, stepIndex: number): void;
+  getCurriculumProgress(domain: string): CurriculumProgress | undefined;
+  upsertLocalSkill(skill: LocalSkillRecord): void;
+  listLocalSkills(): readonly LocalSkillRecord[];
+  upsertSemanticFact(fact: SemanticFactRecord): void;
+  listSemanticFacts(domain?: string): readonly SemanticFactRecord[];
+  upsertAntiPatternCandidate(candidate: AntiPatternCandidateRecord): void;
+  listAntiPatternCandidates(domain?: string): readonly AntiPatternCandidateRecord[];
+  upsertTraceCandidate(candidate: TraceCandidateRecord): void;
+  listTraceCandidates(domain?: string): readonly TraceCandidateRecord[];
+  setIdentity(identity: Identity): void;
+  getIdentity(): Identity | undefined;
+  queuePublishableArtifact(artifact: PublishableArtifact): void;
+  listPublishableArtifacts(): readonly PublishableArtifact[];
+}
+
+export class InMemoryStateRepository implements StateRepository {
   readonly #runs = new Map<RunId, Run>();
   readonly #episodes = new Map<RunId, Episode[]>();
   readonly #confidence = new Map<string, { correct: number; total: number }>();

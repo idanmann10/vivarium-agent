@@ -9,6 +9,7 @@ export type {
   PredictionOutcome,
   PublishableArtifact,
   SemanticFactRecord,
+  StateRepository,
   TraceCandidateRecord,
 } from "./repository.js";
 export { storageTables } from "./storage/schema.js";
