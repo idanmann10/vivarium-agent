@@ -17,6 +17,13 @@ describe("agent workflows", () => {
     expect(ci).toContain("bun run build");
   });
 
+  test("CI provisions the sibling world repository required by local tests", () => {
+    const ci = workflow("ci.yml");
+
+    expect(ci).toContain("https://github.com/${{ github.repository_owner }}/vivarium-world.git");
+    expect(ci).toContain("../the-world");
+  });
+
   test("release and changeset workflows are concrete", () => {
     const release = workflow("release.yml");
     const changesetBot = workflow("changeset-bot.yml");
