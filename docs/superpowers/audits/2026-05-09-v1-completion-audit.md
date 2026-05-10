@@ -38,7 +38,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 1 daemon | Daemon service, HTTP lifecycle transport, MCP manifest, and daemon-owned Dream scheduler loop exist with tests | Complete locally; deployment supervisor unverified |
 | Phase 1 CLI | `dispatchCliCommand` routes `init`, `run`, `credentials add/list`, `skills list`, `world search`, `world pull`, `status`, and `doctor`; init runs migrations, installs starter skills, discovers starter traces/curriculum, and returns provider/credential prompts | Complete locally |
 | Phase 1 e2e run/recover | `tests/e2e-run.test.ts` and `tests/e2e-recover.test.ts` pass in current test suite | Complete locally |
-| Phase 1 done scenario | A developer can run a synthetic local goal; real provider config, credential use, anti-pattern automatic lookup, and full CLI install flow are not verified | Incomplete |
+| Phase 1 done scenario | A developer can run a synthetic local goal; runtime tests verify anti-patterns are loaded into Plan before execution; real provider config, credential use, and full CLI install flow are not verified | Incomplete |
 | Phase 2 Dream primitive | Deterministic `runDream` exists with promotion/pruning/habituation/identity/confidence behavior, generated anti-pattern/trace candidate IDs, and a SQLite-backed StateRepository regression test | Complete locally |
 | Phase 2 scheduler | `shouldRunDream` helper and `createDreamScheduler` start/stop interval loop exist with deterministic tests | Complete locally; process-manager persistence unverified |
 | Phase 2 candidate pipelines | Skill candidate handling exists; Dream now generates anti-pattern candidates from failed/low-score runs and annotated trace candidates from successful high-score runs, with in-memory and SQLite persistence | Complete locally |
@@ -66,7 +66,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `rg --files` and shallow file listings verified `the-agent` app/package skeleton, root metadata, CI workflows, and per-package README/AGENTS files; `the-world` top-level files, templates, and workflows are present.
 - `rg --files` over agent runtime/tools/state/CLI packages.
 - Direct reads of `packages/runtime/src/primitives/registry.ts`, `packages/runtime/src/orchestrator.ts`, `packages/tools/src/dispatcher.ts`, `packages/tools/src/credentials/resolver.ts`, `packages/tools/src/external/index.ts`, `apps/cli/src/commands/init.ts`, `packages/state/src/storage/schema.ts`, and `packages/runtime/src/attention.ts`.
-- `bun test packages/runtime/src/orchestrator.test.ts`: 5 tests passed, including harmful refusal and destructive confirmation behavior.
+- `bun test packages/runtime/src/orchestrator.test.ts`: 7 tests passed, including harmful refusal, destructive confirmation behavior, and anti-pattern loading before execution.
 - `bun test packages/state/src/repository.test.ts packages/state/src/sqlite-repository.test.ts packages/state/src/storage/migrations.test.ts packages/runtime/src/primitives/dream/primitive.test.ts`: 11 tests passed, including Dream candidate queues and extraction.
 - `bun test packages/runtime/src/primitives/dream/primitive.test.ts`: 3 tests passed, including SQLite-backed Dream candidate persistence.
 - `bun test tests/e2e-dream.test.ts packages/eval/src/compounding.test.ts`: 4 tests passed, including aggregate compounding benchmark evaluation and Dream e2e wiring.
@@ -87,7 +87,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `the-world bun run build`: 8 required files present.
 - `bun run lint`: scanned 171 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 101 tests passed, 0 failed.
+- `bun run test`: 102 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work

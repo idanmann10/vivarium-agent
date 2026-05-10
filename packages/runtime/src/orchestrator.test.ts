@@ -46,6 +46,23 @@ describe("runGoal", () => {
     expect(harness.state.getCurriculumProgress("coding")?.completedSteps).toEqual([0]);
   });
 
+  test("loads anti-patterns into the plan before executing unfamiliar goals", async () => {
+    const harness = createHarness();
+    const result = await runGoal({
+      goal: "edit implementation before reading surrounding code",
+      domain: "coding",
+      agentName: "local-agent",
+      provider: harness.provider,
+      tools: harness.tools,
+    });
+
+    const plan = harness.state.listEpisodes(result.runId).find((episode) => episode.kind === "plan");
+
+    expect(result.success).toBe(true);
+    expect(plan).toMatchObject({ kind: "plan" });
+    expect(plan?.plan).toContain("Editing Before Reading");
+  });
+
   test("records monitor and recovery episodes after a forced failure", async () => {
     const harness = createHarness();
     const result = await runGoal({
