@@ -10,7 +10,7 @@ Run `/Users/idanmann/Vivarium/goal.md`, preserve it durably, and use the Superpo
 
 ## Completion Status
 
-Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation over the shared state repository, aggregate compounding benchmark eval, state memory modules for all five roadmap memory systems, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, shared-state CLI init-to-run flow, local Compose daemon supervisor artifacts, SQLite-backed self-tools, read-only world pull/search paths, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, computer-use click/type confirmation safety, concrete world maintenance workflows, independent validator machine-fingerprint trust gates, and coding starter-pack depth, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
+Not complete. The roadmap has substantial local implementation complete, including run-level harmful refusal, destructive confirmation behavior, local Dream candidate generation over the shared state repository, aggregate compounding benchmark eval, Drizzle schema artifacts, state memory modules for all five roadmap memory systems, attention token-budget accounting, provider-backed anonymizer fallback, daemon-owned Dream scheduler loop, CLI dispatcher, shared-state CLI init-to-run flow, local Compose daemon supervisor artifacts, SQLite-backed self-tools, read-only world pull/search paths, anonymized publishable run queueing, tool-output prompt-injection warnings, per-run and persistent per-day external tool rate limits, credential-argument blocking, computer-use click/type confirmation safety, concrete world maintenance workflows, independent validator machine-fingerprint trust gates, and coding starter-pack depth, but the audit still finds uncovered live/external v1 requirements in Phase 1, Phase 3, and the v1-done scenario.
 
 ## Prompt-To-Artifact Checklist
 
@@ -25,7 +25,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 | Phase 0 repo skeleton | `the-agent` has 2 apps + 7 packages, root metadata, workflows, and per-package README/AGENTS files; `the-world` has required top-level files, templates, and workflows | Complete locally; live CI execution unverified |
 | Phase 0 world seed content | World validator reports 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, 1 contributor; coding domain has 20 skills and 3 traces | Complete locally |
 | Phase 0 GitHub Discussion open | `the-world/proposals/0001-phase-0-bootstrap-rfc.md` and `.github/DISCUSSION_TEMPLATE/rfc.yml` exist; no live GitHub Discussion can be verified without a remote | Incomplete externally |
-| Phase 1 state schema/migrations/all memory implementations | `packages/state/src/` includes working, episodic, semantic, procedural, and identity memory modules; `StateRepository` and `SQLiteStateRepository` cover local state, semantic deletion, and versioned migrations | Complete locally; production SQLite stack decision remains |
+| Phase 1 state schema/migrations/all memory implementations | `packages/state/src/` includes working, episodic, semantic, procedural, and identity memory modules; `StateRepository` and `SQLiteStateRepository` cover local state, semantic deletion, versioned migrations, and Drizzle schema artifacts | Complete locally; direct `better-sqlite3` execution blocked by Bun runtime support |
 | Phase 1 semantic facts storage | `SemanticFactRecord` exists in state repositories; `0002_semantic_facts.sql` creates the table; in-memory and SQLite tests verify upsert/list/persistence | Complete locally |
 | Phase 1 providers | OpenAI, Anthropic, OpenAI-compatible adapters and router exist with mocked HTTP tests | Complete locally; live credentials unverified |
 | Phase 1 builtin self-tools | `createSelfTools` covers memory, skills, anti-pattern candidates, trace candidates, runs, episodes, world search, curriculum, and confidence against the shared state repository shape, including SQLite | Complete locally |
@@ -69,6 +69,7 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `bun test packages/runtime/src/orchestrator.test.ts`: 7 tests passed, including harmful refusal, destructive confirmation behavior, and anti-pattern loading before execution.
 - `bun test tests/e2e-cli-install-flow.test.ts apps/cli/src/dispatcher.test.ts tests/e2e-run.test.ts`: 7 tests passed, including local `init` then `run` against one SQLite state file.
 - `bun test packages/state/src/repository.test.ts packages/state/src/sqlite-repository.test.ts packages/state/src/storage/migrations.test.ts packages/runtime/src/primitives/dream/primitive.test.ts`: 11 tests passed, including Dream candidate queues and extraction.
+- `bun test packages/state/src/storage/migrations.test.ts packages/state/src/storage/drizzle-schema.test.ts`: 2 tests passed, including migration idempotency and Drizzle table coverage for every runtime storage table.
 - `bun test packages/runtime/src/primitives/dream/primitive.test.ts`: 3 tests passed, including SQLite-backed Dream candidate persistence.
 - `bun test tests/e2e-dream.test.ts packages/eval/src/compounding.test.ts`: 4 tests passed, including aggregate compounding benchmark evaluation and Dream e2e wiring.
 - `bun test packages/runtime/src/attention.test.ts`: 2 tests passed, including working-token budget enforcement.
@@ -90,9 +91,9 @@ Not complete. The roadmap has substantial local implementation complete, includi
 - `the-world bun test scripts`: 10 tests passed, including independent validator machine-fingerprint counting, concrete workflow command checks, and coding starter-pack depth.
 - `the-world bun run typecheck`: TypeScript passed.
 - `the-world bun run build`: 8 required files present.
-- `bun run lint`: scanned 173 TypeScript files.
+- `bun run lint`: scanned 175 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 107 tests passed, 0 failed.
+- `bun run test`: 108 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 
 ## Next Unblocked Local Work
