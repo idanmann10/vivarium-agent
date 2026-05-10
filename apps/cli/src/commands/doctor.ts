@@ -18,6 +18,7 @@ export interface DoctorCommandRun {
   readonly command: string;
   readonly args: readonly string[];
   readonly cwd?: string;
+  readonly env?: Readonly<Record<string, string | undefined>>;
 }
 
 export interface DoctorCommandRunResult {
@@ -59,10 +60,28 @@ const credentialsPathEnv = "VIVARIUM_CREDENTIALS_PATH";
 const internalApiCredentialNameEnv = "VIVARIUM_INTERNAL_API_CREDENTIAL_NAME";
 const internalApiHealthUrlEnv = "VIVARIUM_INTERNAL_API_HEALTH_URL";
 
-function defaultRunner({ command, args, cwd }: DoctorCommandRun): DoctorCommandRunResult {
+function spawnEnv(env: Readonly<Record<string, string | undefined>>): Record<string, string | undefined> {
+  const merged: Record<string, string | undefined> = {};
+  for (const [key, value] of Object.entries(process.env)) {
+    if (value !== undefined) {
+      merged[key] = value;
+    }
+  }
+  for (const [key, value] of Object.entries(env)) {
+    if (value === undefined) {
+      delete merged[key];
+      continue;
+    }
+    merged[key] = value;
+  }
+  return merged;
+}
+
+function defaultRunner({ command, args, cwd, env }: DoctorCommandRun): DoctorCommandRunResult {
   try {
     const result = Bun.spawnSync([command, ...args], {
       ...(cwd === undefined ? {} : { cwd }),
+      ...(env === undefined ? {} : { env: spawnEnv(env) }),
       stdout: "pipe",
       stderr: "pipe",
     });
@@ -77,8 +96,19 @@ function defaultRunner({ command, args, cwd }: DoctorCommandRun): DoctorCommandR
   }
 }
 
-function run(runner: DoctorCommandRunner, command: string, args: readonly string[], cwd?: string): DoctorCommandRunResult {
-  return runner(cwd === undefined ? { command, args } : { command, args, cwd });
+function run(
+  runner: DoctorCommandRunner,
+  command: string,
+  args: readonly string[],
+  env?: Readonly<Record<string, string | undefined>>,
+  cwd?: string,
+): DoctorCommandRunResult {
+  return runner({
+    command,
+    args,
+    ...(cwd === undefined ? {} : { cwd }),
+    ...(env === undefined ? {} : { env }),
+  });
 }
 
 function remoteCheck(
@@ -89,7 +119,7 @@ function remoteCheck(
   placeholder: string,
   label: string,
 ): string {
-  const result = run(runner, "git", ["remote", "-v"], cwd);
+  const result = run(runner, "git", ["remote", "-v"], env, cwd);
   if (result.exitCode !== 0 || result.stdout.trim().length === 0) {
     return `${label}.remote:missing`;
   }
@@ -213,8 +243,8 @@ function privateOaiCompatCheck(env: Readonly<Record<string, string | undefined>>
     : "provider.privateOaiCompat:missing";
 }
 
-function githubAuthCheck(runner: DoctorCommandRunner): string {
-  const result = run(runner, "gh", ["auth", "status"]);
+function githubAuthCheck(runner: DoctorCommandRunner, env: Readonly<Record<string, string | undefined>>): string {
+  const result = run(runner, "gh", ["auth", "status"], env);
   if (result.exitCode === 0) {
     return "github.auth:ok";
   }
@@ -227,15 +257,15 @@ function githubAuthCheck(runner: DoctorCommandRunner): string {
   return "github.auth:unavailable";
 }
 
-function dockerCheck(runner: DoctorCommandRunner): readonly string[] {
-  const docker = run(runner, "docker", ["--version"]);
+function dockerCheck(runner: DoctorCommandRunner, env: Readonly<Record<string, string | undefined>>): readonly string[] {
+  const docker = run(runner, "docker", ["--version"], env);
   const dockerStatus = docker.exitCode === 0 ? "docker:installed" : "docker:missing";
-  const dockerCompose = run(runner, "docker", ["compose", "version"]);
+  const dockerCompose = run(runner, "docker", ["compose", "version"], env);
   if (dockerCompose.exitCode === 0) {
     return [dockerStatus, "docker.compose:installed"];
   }
 
-  const standaloneCompose = run(runner, "docker-compose", ["version"]);
+  const standaloneCompose = run(runner, "docker-compose", ["version"], env);
   return [dockerStatus, standaloneCompose.exitCode === 0 ? "docker.compose:installed" : "docker.compose:missing"];
 }
 
@@ -469,8 +499,8 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     requiredEnvCheck(env, githubOwnerEnv, "github.owner"),
     requiredEnvCheck(env, githubRepositoryIdEnv, "github.repositoryId"),
     requiredEnvCheck(env, githubDiscussionCategoryIdEnv, "github.discussionCategoryId"),
-    githubAuthCheck(runner),
-    ...dockerCheck(runner),
+    githubAuthCheck(runner, env),
+    ...dockerCheck(runner, env),
   ];
 
   return {

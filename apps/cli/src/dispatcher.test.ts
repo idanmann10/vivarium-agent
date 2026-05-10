@@ -123,6 +123,44 @@ describe("dispatchCliCommand", () => {
     expect(checks).not.toContain("github.env:missing");
   });
 
+  test("passes copied env file values to live doctor probes", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-probe-env-"));
+    const envPath = join(root, "live-readiness.local.env");
+    write(
+      envPath,
+      [
+        'export VIVARIUM_AGENT_REPO_NAME="agent-final"',
+        'export VIVARIUM_WORLD_REPO_NAME="world-final"',
+        'export GITHUB_TOKEN="configured"',
+        'export GH_TOKEN="$GITHUB_TOKEN"',
+      ].join("\n"),
+    );
+    const envAwareDoctorRunner: DoctorCommandRunner = (run) => {
+      const text = [run.command, ...run.args].join(" ");
+      if (text === "git remote -v") {
+        return { exitCode: 1, stdout: "", stderr: "missing remote" };
+      }
+      if (text === "gh auth status") {
+        return run.env?.GH_TOKEN === "configured"
+          ? { exitCode: 0, stdout: "authenticated", stderr: "" }
+          : { exitCode: 1, stdout: "", stderr: "invalid token" };
+      }
+      if (text === "docker --version" || text === "docker compose version") {
+        return { exitCode: 0, stdout: `${text} ok`, stderr: "" };
+      }
+
+      return { exitCode: 127, stdout: "", stderr: `unexpected command: ${text}` };
+    };
+
+    const result = await dispatchCliCommand(["doctor", "--live", "--env-file", envPath, "--agent-root", "/agent", "--world-root", "/world"], {
+      doctorRunner: envAwareDoctorRunner,
+    });
+    const checks = (result.result as { checks: readonly string[] }).checks;
+
+    expect(checks).toContain("github.env:configured");
+    expect(checks).toContain("github.auth:ok");
+  });
+
   test("routes init, skills, and world commands with explicit paths", async () => {
     const worldRoot = createWorldFixture();
     const statePath = join(mkdtempSync(join(tmpdir(), "cli-dispatch-state-")), "state.db");
