@@ -22,6 +22,7 @@ export type {
 export { err, ok } from "./result.js";
 export type { Result } from "./result.js";
 export { KERNEL, kernelLines } from "./kernel.js";
+export { episodeShapeManifest } from "./types/episode.js";
 export { shouldTagSurprise, surpriseMagnitude } from "./math/surprise.js";
 export { wilsonLowerBound } from "./math/wilson.js";
 export { contributorTrust, effectiveLowerBound } from "./math/trust.js";

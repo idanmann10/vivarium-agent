@@ -51,6 +51,30 @@ export type Episode =
     })
   | (BaseEpisode & { readonly kind: "run_end"; readonly success: boolean | null; readonly score?: number });
 
+export type EpisodeKind = Episode["kind"];
+
+export type EpisodeShapeManifest = {
+  readonly [Kind in EpisodeKind]: readonly (keyof Extract<Episode, { readonly kind: Kind }>)[];
+};
+
+const baseEpisodeShapeFields = ["id", "runId", "agentId", "timestamp", "tags", "kind"] as const;
+
+export const episodeShapeManifest = {
+  action: [...baseEpisodeShapeFields, "tool", "args"],
+  monitor_signal: [...baseEpisodeShapeFields, "offTrackScore", "reasons"],
+  observation: [...baseEpisodeShapeFields, "content"],
+  plan: [...baseEpisodeShapeFields, "plan", "skillsLoaded", "tracesLoaded"],
+  prediction: [...baseEpisodeShapeFields, "prediction"],
+  recovery: [...baseEpisodeShapeFields, "decision", "reason"],
+  reflection: [...baseEpisodeShapeFields, "reflection"],
+  refusal: [...baseEpisodeShapeFields, "reason", "category"],
+  run_end: [...baseEpisodeShapeFields, "success", "score"],
+  run_start: [...baseEpisodeShapeFields, "goal", "domain"],
+  skill_used: [...baseEpisodeShapeFields, "skillId", "helped"],
+  surprise: [...baseEpisodeShapeFields, "prediction", "actual", "magnitude", "notes"],
+  validation: [...baseEpisodeShapeFields, "score", "passed", "reasons"],
+} as const satisfies EpisodeShapeManifest;
+
 export interface Reflection {
   readonly worked: readonly string[];
   readonly didntWork: readonly string[];

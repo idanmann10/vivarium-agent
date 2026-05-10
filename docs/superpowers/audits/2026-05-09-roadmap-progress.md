@@ -63,6 +63,7 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 - `the-agent` local end-to-end demo recorder implemented after the SQLite stack verifier; `docs/demos/local-e2e.cast` records init, run, second-install world transmission-smoke, and SQLite stack verification as an asciinema v2 cast.
 - `the-agent` proposed trace proposal/retrieval slice implemented after the local demo recorder, writing annotated trace proposals and retrieving them with frontmatter titles through the local world reader.
 - `the-agent` proposed run proposal/retrieval slice implemented after trace proposals, writing redacted run proposals and retrieving them through the local world reader.
+- `the-agent` episode shape snapshot manifest added after multi-world CLI search, making every episode kind and field set visible in tests per `goal.md` §18.2.
 - `the-world` Phase 0 committed at `81b28a2`.
 - `the-world` Phase 3 maintenance scripts committed at `866c121`.
 - `the-world` trust-gates slice committed at `719f0a1`.
@@ -75,9 +76,9 @@ Run `goal.md`, save it durably, and use `https://github.com/obra/superpowers` pl
 
 `the-agent`:
 
-- `bun run lint`: scanned 185 TypeScript files.
+- `bun run lint`: scanned 186 TypeScript files.
 - `bun run typecheck`: TypeScript passed.
-- `bun run test`: 149 tests passed, 0 failed.
+- `bun run test`: 150 tests passed, 0 failed.
 - `bun run build`: 9 entrypoints present.
 - `bun run verify:sqlite-stack`: Node and `better-sqlite3` ran migrations `0001_initial` through `0004_tool_usage`, created all runtime storage tables, and inserted/read `skill-smoke`.
 - `bun run record:local-e2e-demo`: generated `docs/demos/local-e2e.cast`.
@@ -126,6 +127,7 @@ Live/external checks:
 | Use GStack | URL cited in plan and seed lineage for role/command-shaped review patterns | Complete |
 | Phase 0 bootstrap | Two local repos, tooling, core types/math/kernel, world seed content, validators | Complete locally |
 | Phase checkpoint demo | `docs/demos/local-e2e.cast` records local init, run, second-install world transmission, and SQLite stack verification | Complete locally |
+| Testing guidance | Unit/integration coverage includes core math, IDs, self-tools, e2e run/recover/dream, and an episode shape snapshot manifest for every episode kind and field set | Complete locally |
 | Phase 1 agent works alone | Offline deterministic runtime, state, SQLite persistence, Drizzle schema artifacts, state memory modules for working/episodic/semantic/procedural/identity memory, semantic facts storage with deletion, versioned SQL migration runner, local provider, Anthropic/OpenAI/OpenAI-compatible HTTP adapters, encrypted credential store, typed tool dispatcher, web/HTTP/file/terminal Docker sandbox/code/MCP/anthropic-native/computer-use external adapters, SQLite-backed self-tools, HTTP/tool safety with output prompt-injection warnings, per-run and persistent per-day rate limits, credential-argument blocking, computer-use click/type confirmation, run-level harmful refusal and destructive confirmation behavior, automatic anti-pattern loading before execution, world read/search/pull/run retrieval paths, concrete primitive modules, attention-limited world context selection with token-budget accounting, daemon service, HTTP transport lifecycle, daemon-owned Dream scheduler loop, MCP tool manifest, local Compose supervisor artifacts, CLI init/run/credentials/skills/world search/pull/transmission-smoke/status/doctor/providers/github/daemon dispatcher and helpers, shared-state CLI init-to-run flow, live-readiness doctor preflight checks, provider/GitHub/daemon smoke commands, guarded GitHub Discussion and pull-request commands, GitHub workflow-runs check, e2e run/recover | Local slice partially complete |
 | Phase 2 Dream | Offline deterministic Dream, promotion/pruning/habits/identity/confidence/anonymizer/eval/e2e, StateRepository-backed Dream execution including SQLite, provider-backed anonymizer fallback, anti-pattern candidate generation, annotated trace candidate extraction, SQLite-backed candidate queue, aggregate compounding benchmark eval, and anonymized publishable run queueing from Reflect | Local slice complete |
 | Phase 3 world integration | Local proposal/publish, published-run retrieval, proposed anti-pattern/trace/run retrieval, math-gated proposal PR helper, multi-world retrieval with CLI source labels, GitHub PR/issue/Discussion client with mocked tests, world maintenance scripts, concrete archive/auto-merge workflows, trust gates, independent validator machine-fingerprint counting, held-review listing, cultural transmission e2e | Local slice complete |
