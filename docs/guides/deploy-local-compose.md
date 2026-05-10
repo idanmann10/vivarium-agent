@@ -16,7 +16,7 @@ The service exposes the daemon HTTP transport on port `8787` and mounts the sibl
 Verify the daemon:
 
 ```bash
-curl http://127.0.0.1:8787/status
+bun apps/cli/src/index.ts daemon smoke --status-url http://127.0.0.1:8787/status
 ```
 
 The Compose service uses `restart: unless-stopped` and a `/status` healthcheck. Cloud deployment remains out of scope for v1.

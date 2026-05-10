@@ -1,5 +1,6 @@
 import type { CredentialKind } from "../../../packages/core/src/index.js";
 import { addCredentialCommand, listCredentialsCommand } from "./commands/credentials.js";
+import { daemonSmokeCommand } from "./commands/daemon.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { githubSmokeCommand } from "./commands/github.js";
 import { runInitCommand } from "./commands/init.js";
@@ -222,6 +223,13 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
           tokenEnv: required(flags, "token-env"),
         }),
       );
+    }
+    case "daemon": {
+      if (subcommand !== "smoke") {
+        usage('Unknown daemon subcommand. Use "smoke".');
+      }
+      const statusUrl = value(flags, "status-url");
+      return output(command, await daemonSmokeCommand(statusUrl === undefined ? {} : { statusUrl }));
     }
     case "status":
       return output(command, statusCommand());

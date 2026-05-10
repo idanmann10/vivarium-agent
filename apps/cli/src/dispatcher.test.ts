@@ -200,6 +200,15 @@ describe("dispatchCliCommand", () => {
     });
   });
 
+  test("routes daemon smoke checks", async () => {
+    await expect(dispatchCliCommand(["daemon", "smoke", "--status-url", "http://127.0.0.1:9/status"])).resolves.toMatchObject({
+      command: "daemon",
+      result: {
+        ok: false,
+      },
+    });
+  });
+
   test("returns a usage error for unsupported commands", async () => {
     await expect(dispatchCliCommand(["unknown"])).rejects.toThrow('Unknown command "unknown"');
   });

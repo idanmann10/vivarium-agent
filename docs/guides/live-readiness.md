@@ -107,7 +107,7 @@ At least one Compose command must succeed. Then verify the daemon supervisor:
 ```bash
 docker compose -f /Users/idanmann/Vivarium/the-agent/docker-compose.yml config
 docker compose -f /Users/idanmann/Vivarium/the-agent/docker-compose.yml up --build vivarium-daemon
-curl http://127.0.0.1:8787/status
+bun apps/cli/src/index.ts daemon smoke --status-url http://127.0.0.1:8787/status
 ```
 
 ## Verification Sequence
@@ -121,6 +121,6 @@ After the external prerequisites are configured:
 5. Create a live world contribution PR from a generated artifact.
 6. Verify the world workflows and trust gates on GitHub.
 7. Pull the accepted contribution into a second local install.
-8. Run the Compose daemon and verify `/status`.
+8. Run the Compose daemon and verify `/status` with `daemon smoke`.
 
 Record the resulting command output in `docs/superpowers/audits/2026-05-09-v1-completion-audit.md`.
