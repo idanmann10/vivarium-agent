@@ -11,7 +11,7 @@ Continue following `/Users/idanmann/Vivarium/goal.md` until the project is genui
 
 ## Current Status
 
-Not complete. Local implementation and local test gates are strong, including agent dependency gates, world CI/revalidation build coverage, anti-pattern validation coverage, domain learning artifact validation coverage, contribution proposal validation coverage, auto-merge checkpoint coverage, generated-maintenance-PR checkpoint coverage, full-gate PR template guidance, and live v1 evidence-manifest gating with inspectable URL-or-local-path evidence reference checks, but the v1 loop still lacks live external proof. The current blockers are not proxy signals; they are direct failures from `doctor --live`, direct empty Git remote inspections, and one remaining roadmap file-tree mismatch in the CLI entrypoint.
+Not complete. Local implementation and local test gates are strong, including agent dependency gates, world CI/revalidation build coverage, anti-pattern validation coverage, domain learning artifact validation coverage, contribution proposal validation coverage, auto-merge checkpoint coverage, generated-maintenance-PR checkpoint coverage, full-gate PR template guidance, the dedicated CLI `main.ts` entrypoint, and live v1 evidence-manifest gating with inspectable URL-or-local-path evidence reference checks, but the v1 loop still lacks live external proof. The current blockers are not proxy signals; they are direct failures from `doctor --live` and direct empty Git remote inspections.
 
 ## Prompt-To-Artifact Checklist
 
@@ -23,7 +23,7 @@ Not complete. Local implementation and local test gates are strong, including ag
 | Phase 1: installed agent can run a real goal with providers and credential | CLI/provider/credential paths are implemented and tested with local/mocked adapters; no Anthropic/OpenRouter/private OAI-compatible credentials or internal API target are configured | Incomplete externally |
 | Phase 1: anti-pattern lookup, curriculum advance, confidence buckets | Covered by local runtime, init, self-tool, CLI command, and Dream/state tests in existing audit evidence | Complete locally |
 | Phase 1: roadmap CLI file-tree command groups | `cliCommands` advertised `dream`, `identity`, `curriculum`, and `publish`; dispatcher now routes `dream run`, `identity summary/stage/history`, `curriculum read/progress/advance`, and `publish list/run/trace` through real SQLite/runtime/world helpers. `apps/cli/src/dispatcher.test.ts` covers the previously advertised-but-unrouted command groups | Complete locally |
-| Agent repo file tree: CLI entrypoint | `goal.md` names `apps/cli/src/main.ts` as the commander setup/dispatch entrypoint, but current `apps/cli/src/` contains `index.ts` and no `main.ts`; `apps/cli/package.json` still maps the `the-agent` bin to `./src/index.ts`; `apps/cli/src/index.ts` still carries the executable `import.meta.main` block | Incomplete locally; design approval required before implementation |
+| Agent repo file tree: CLI entrypoint | `apps/cli/src/main.ts` now exists as the executable process wrapper, `apps/cli/package.json` maps `bin.the-agent` to `./src/main.ts`, and `apps/cli/src/index.ts` is the public export surface without an `import.meta.main` executable block. `apps/cli/src/index.test.ts` guards the boundary | Complete locally |
 | Phase 1: CLI app public API exports | `apps/cli/src/index.ts` now exports the implemented world pull and transmission-smoke command helpers as well as subscription/search helpers; `apps/cli/src/index.test.ts` guards the public API surface | Complete locally |
 | Phase 2: Dream produces anti-pattern, trace, publishable run, compounding eval | Covered by local Dream/eval tests in existing audit evidence | Complete locally |
 | Phase 3: public/private world subscriptions and cross-install cultural transmission | Local transmission smoke and subscription registry paths exist; no canonical/private remote refs are configured | Incomplete externally |
@@ -38,17 +38,18 @@ Not complete. Local implementation and local test gates are strong, including ag
 
 - `git remote -v` in `the-agent`: no remotes printed.
 - `git remote -v` in `the-world`: no remotes printed.
-- `test -f apps/cli/src/main.ts` in `the-agent`: exits 1.
-- `ls apps/cli/src` in `the-agent`: prints `commands`, `dispatcher.test.ts`, `dispatcher.ts`, `index.test.ts`, `index.ts`, and `lib`; no `main.ts`.
-- `apps/cli/package.json`: `bin.the-agent` is `./src/index.ts`.
-- `apps/cli/src/index.ts`: imports `dispatchCliCommand` and still executes CLI dispatch under `if (import.meta.main)`.
-- `bun apps/cli/src/index.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false`.
+- `test -f apps/cli/src/main.ts` in `the-agent`: exits 0.
+- `ls apps/cli/src` in `the-agent`: includes `main.ts` alongside `commands`, `dispatcher.test.ts`, `dispatcher.ts`, `index.test.ts`, `index.ts`, and `lib`.
+- `apps/cli/package.json`: `bin.the-agent` is `./src/main.ts`.
+- `apps/cli/src/index.ts`: no `dispatchCliCommand` import and no `import.meta.main` executable block.
+- `bun test apps/cli/src/index.test.ts`: 2 tests passed, 0 failed, including the dedicated process-entrypoint regression.
+- `bun apps/cli/src/main.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false`.
 - Real-env live blockers: final names, both remotes, world subscription path, canonical/private world refs, provider env, Anthropic/OpenRouter/private-compatible targets, provider profile metadata, encrypted credential metadata including the credential store master key and internal API credential name/value/health URL, GitHub env/owner/repository/category metadata, GitHub auth, and v1 evidence manifest path.
 - Passing live checks: `docker:installed`, `docker.compose:installed`.
 - `live-readiness.local.env` now exists as an ignored local copy of `docs/live-readiness.env.example` with `0600` permissions, so the setup checkpoint can be resumed without committing secrets.
 - `ls -l live-readiness.local.env`: `-rw-------`.
 - `git status --short --ignored live-readiness.local.env`: `!! live-readiness.local.env`.
-- `bun apps/cli/src/index.ts doctor --live --env-file live-readiness.local.env --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false` with `liveEnvFile.permissions:configured` plus placeholder/unavailable checks for names, remotes, world subscriptions, provider keys/profile paths, credential path/master-key/value metadata, internal API health URL, GitHub owner/repository/category/auth, and `v1.evidencePath:unavailable`.
+- `bun apps/cli/src/main.ts doctor --live --env-file live-readiness.local.env --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false` with `liveEnvFile.permissions:configured` plus placeholder/unavailable checks for names, remotes, world subscriptions, provider keys/profile paths, credential path/master-key/value metadata, internal API health URL, GitHub owner/repository/category/auth, and `v1.evidencePath:unavailable`.
 - `docs/live-readiness.env.example` and `docs/guides/live-readiness.md` now instruct operators to copy the local env file and run `chmod 600 live-readiness.local.env` before filling live secrets; `doctor --live --env-file` reports `liveEnvFile.permissions:insecure` for permissive filled local env files until group/world permissions are removed; `scripts/reference-docs.test.ts` guards both docs.
 - `bun test apps/cli/src/commands/doctor.test.ts -t "reports missing internal API credential metadata as live readiness blockers"` first failed because `doctor --live` did not report `credentials.masterKey:missing`, then passed after adding `VIVARIUM_CREDENTIALS_MASTER_KEY` to the live-readiness checks and next actions.
 - `scripts/reference-docs.test.ts` first failed after adding `VIVARIUM_CREDENTIALS_MASTER_KEY` to the live-readiness env-var contract, then passed after documenting the env var in `docs/live-readiness.env.example` and `docs/guides/live-readiness.md`.
@@ -59,12 +60,12 @@ Not complete. Local implementation and local test gates are strong, including ag
 - `bun test apps/cli/src/dispatcher.test.ts -t "does not require restrictive permissions for env example templates"` first failed because a permissive `live-readiness.env.example` template reported `liveEnvFile.permissions:insecure`, then passed after `doctor --live --env-file` exempted `.env.example` templates from secret-file permission checks.
 - `bun test scripts/reference-docs.test.ts -t "documents guide workflows"` first failed because `docs/guides/live-readiness.md` did not name `liveEnvFile.permissions:insecure`, then passed after documenting the exact blocker.
 - `bun test apps/cli/src/commands/doctor.test.ts -t "counts private OAI-compatible credentials as configured provider environment"` first failed because `provider.privateOaiCompat:configured` still left `provider.env:missing`, then passed after the generic provider environment check counted `VIVARIUM_OAI_COMPAT_API_KEY`.
-- `bun apps/cli/src/index.ts doctor --live --env-file docs/live-readiness.env.example --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false` with copied template values classified as `:placeholder` or unavailable, not live-ready, and without any `liveEnvFile.permissions:*` template blocker.
-- `bun apps/cli/src/index.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false`, now including `v1.evidencePath:missing` so setup readiness cannot be confused with v1 loop verification.
+- `bun apps/cli/src/main.ts doctor --live --env-file docs/live-readiness.env.example --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false` with copied template values classified as `:placeholder` or unavailable, not live-ready, and without any `liveEnvFile.permissions:*` template blocker.
+- `bun apps/cli/src/main.ts doctor --live --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world`: `ok:false`, now including `v1.evidencePath:missing` so setup readiness cannot be confused with v1 loop verification.
 - Local disk pressure was cleared before continuing live-readiness work: `/` had only 116 MiB available and shell startup emitted `No space left on device`; root-cause inspection found a 15 GiB Codex TUI log and large regenerable cache directories. The deleted log remains held open by the active Codex process until session exit, but after deleting regenerable user caches, `df -h / /System/Volumes/Data` reports 2.7 GiB available and subsequent shell/git/doctor commands no longer emit the rbenv temp-file error.
 - `bun run typecheck` in `the-agent`: TypeScript passed.
-- `bun run test` in `the-agent`: 277 tests passed, 0 failed, 1421 assertions.
-- `bun run lint` in `the-agent`: repo lint scanned 196 TypeScript files, and Oxlint found 0 warnings and 0 errors.
+- `bun run test` in `the-agent`: 278 tests passed, 0 failed, 1426 assertions.
+- `bun run lint` in `the-agent`: repo lint scanned 197 TypeScript files, and Oxlint found 0 warnings and 0 errors.
 - `bun run format:check` in `the-agent`: all matched package/config/tooling files use the expected Oxfmt format.
 - `bun run build` in `the-agent`: 9 entrypoints present.
 - `bun run knip` in `the-agent`: exits 0 for dependency, unlisted, and unresolved dependency checks.
@@ -129,7 +130,7 @@ Not complete. Local implementation and local test gates are strong, including ag
 - `bun run typecheck` in `the-world`: TypeScript passed.
 - `bun run test` in `the-world`: 26 tests passed, 0 failed, 208 assertions.
 - `bun run build` in `the-world`: 8 required files present.
-- Latest agent local-gate commits: `74a240e fix(agent): exempt live env templates from permission check`, `9659ec2 fix(agent): count private provider env readiness`, `b21d34b fix(agent): check live env file permissions`, `8395aa2 fix(agent): require internal credential value readiness`, `e71e5f1 docs(agent): use env vars in credential readiness guide`, `036be1e fix(agent): require credential master key readiness`, `1a578c2 docs(agent): document live env permissions`, `af6d6c0 docs(agent): record live env checkpoint`, `48c4fe1 docs(agent): refresh live readiness audit`, `35d2e14 fix(agent): verify published artifact refs`.
+- Latest agent local-gate commits: `e8ce4e1 docs(cli): point direct usage at main entrypoint`, `62ae977 fix(cli): split executable entrypoint`, `bad8638 docs(agent): add cli entrypoint implementation plan`, `bc346d1 docs(agent): specify cli entrypoint split`, `74a240e fix(agent): exempt live env templates from permission check`, `9659ec2 fix(agent): count private provider env readiness`, `b21d34b fix(agent): check live env file permissions`, `8395aa2 fix(agent): require internal credential value readiness`, `e71e5f1 docs(agent): use env vars in credential readiness guide`, `036be1e fix(agent): require credential master key readiness`.
 - Latest world local-gate commits: `6df8516 ci(world): validate contribution proposals`, `091b80c ci(world): validate domain learning artifacts`, `be012df ci(world): validate anti-pattern contributions`, `fbec50b docs(world): require full gate in PR templates`, `4478b27 ci(world): validate generated maintenance PRs`, `ad46110 ci(world): run full checkpoint before auto-merge`, `d8dc698 docs(world): require build before publishing`, `9474e60 ci(world): build during manual revalidation`, `788ad9b ci(world): add full checkpoint workflow`.
 
 ## Next Required External Inputs
@@ -142,6 +143,5 @@ Not complete. Local implementation and local test gates are strong, including ag
 6. Internal API credential value, credential store master key, credential name, and health URL.
 7. Live v1 evidence manifest path populated from inspectable run, PR, Discussion, workflow, stats, and contributor-profile evidence.
 8. Live run window for five real goals and later follow-up measurement.
-9. User approval for the dedicated CLI entrypoint split design before implementing the local `apps/cli/src/main.ts` roadmap alignment.
 
 Until those are available and verified, do not mark the thread goal complete.
