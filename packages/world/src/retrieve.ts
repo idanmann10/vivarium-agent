@@ -13,6 +13,8 @@ export interface SearchWorldsRequest {
   readonly domain: string;
   readonly query: string;
   readonly limit?: number;
+  readonly availableToolsets?: readonly string[];
+  readonly availableTools?: readonly string[];
 }
 
 export interface SourcedWorldSearchResult extends LocalWorldSearchResult {
@@ -25,7 +27,13 @@ export function searchWorlds(request: SearchWorldsRequest): readonly SourcedWorl
     .toSorted((left, right) => left.priority - right.priority)
     .flatMap((world) =>
       createLocalWorldReader({ root: world.root })
-        .search({ domain: request.domain, query: request.query, limit: request.limit ?? 5 })
+        .search({
+          domain: request.domain,
+          query: request.query,
+          limit: request.limit ?? 5,
+          availableToolsets: request.availableToolsets ?? [],
+          availableTools: request.availableTools ?? [],
+        })
         .map((result) => ({ ...result, source: world.label, priority: world.priority })),
     );
 }

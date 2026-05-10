@@ -29,6 +29,8 @@ export interface RunGoalRequest {
   readonly attentionLimits?: AttentionLimits;
   readonly destructiveConfirmed?: boolean;
   readonly surprises?: readonly string[];
+  readonly availableToolsets?: readonly string[];
+  readonly availableTools?: readonly string[];
 }
 
 export interface RunGoalResult {
@@ -119,7 +121,12 @@ export async function runGoal(request: RunGoalRequest): Promise<RunGoalResult> {
 
   const worldResults = preloadHabitualSkills(
     request.tools.skills.habitual(request.domain),
-    request.tools.world.search({ domain: request.domain, query: request.goal }),
+    request.tools.world.search({
+      domain: request.domain,
+      query: request.goal,
+      availableToolsets: request.availableToolsets ?? [],
+      availableTools: request.availableTools ?? [],
+    }),
   );
   const attentionRequest = {
     worldResults,

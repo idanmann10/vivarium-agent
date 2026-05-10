@@ -27,6 +27,32 @@ describe("world commands", () => {
     ]);
   });
 
+  test("passes active tool availability into local world search", () => {
+    const worldRoot = mkdtempSync(join(tmpdir(), "cli-world-tools-"));
+    write(
+      join(worldRoot, "domains", "research", "skills", "paid-web", "SKILL.md"),
+      "---\nname: Paid Web Search\nrequires_toolsets: [web]\nrequires_tools: [web.search]\n---\n\n# Paid Web Search\n\nUse web search.",
+    );
+    write(
+      join(worldRoot, "domains", "research", "skills", "free-fallback", "SKILL.md"),
+      "---\nname: Free Fallback Search\nfallback_for_toolsets: [web]\nfallback_for_tools: [web.search]\n---\n\n# Free Fallback Search\n\nUse web search.",
+    );
+
+    expect(searchWorldCommand({ worldRoot, domain: "research", query: "web search", limit: 2 }).results).toEqual([
+      expect.objectContaining({ title: "Free Fallback Search" }),
+    ]);
+    expect(
+      searchWorldCommand({
+        worldRoot,
+        domain: "research",
+        query: "web search",
+        limit: 2,
+        availableToolsets: ["web"],
+        availableTools: ["web.search"],
+      }).results,
+    ).toEqual([expect.objectContaining({ title: "Paid Web Search" })]);
+  });
+
   test("searches multiple subscribed worlds with source labels", () => {
     const publicWorld = mkdtempSync(join(tmpdir(), "cli-public-world-"));
     const privateWorld = mkdtempSync(join(tmpdir(), "cli-private-world-"));

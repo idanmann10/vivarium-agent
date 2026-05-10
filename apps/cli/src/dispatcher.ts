@@ -133,6 +133,8 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
       const providerBaseUrl = value(flags, "provider-base-url");
       const providerProfilesPath = value(flags, "provider-profiles-path");
       const providerProfile = value(flags, "provider-profile");
+      const availableToolsets = values(flags, "available-toolset");
+      const availableTools = values(flags, "available-tool");
       return output(
         command,
         await runCommand({
@@ -148,6 +150,8 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
           ...(providerBaseUrl === undefined ? {} : { providerBaseUrl }),
           ...(providerProfilesPath === undefined ? {} : { providerProfilesPath }),
           ...(providerProfile === undefined ? {} : { providerProfile }),
+          ...(availableToolsets.length === 0 ? {} : { availableToolsets }),
+          ...(availableTools.length === 0 ? {} : { availableTools }),
         }),
       );
     }
@@ -252,6 +256,8 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
         const worldRoots = values(flags, "world-root");
         const worldLabels = values(flags, "world-label");
         const subscriptionsPath = value(flags, "subscriptions-path");
+        const availableToolsets = values(flags, "available-toolset");
+        const availableTools = values(flags, "available-tool");
         if (worldLabels.length > 0 && worldLabels.length !== worldRoots.length) {
           usage("--world-label must be provided once for each --world-root");
         }
@@ -274,6 +280,8 @@ export async function dispatchCliCommand(argv: readonly string[]): Promise<CliDi
             domain: required(flags, "domain"),
             query: required(flags, "query"),
             ...(limit === undefined ? {} : { limit }),
+            ...(availableToolsets.length === 0 ? {} : { availableToolsets }),
+            ...(availableTools.length === 0 ? {} : { availableTools }),
           }),
         );
       }

@@ -24,6 +24,19 @@ function createWorldFixture(): string {
   return root;
 }
 
+function createConditionalWorldFixture(): string {
+  const root = mkdtempSync(join(tmpdir(), "cli-run-conditional-world-"));
+  write(
+    join(root, "domains", "research", "skills", "paid-web", "SKILL.md"),
+    "---\nname: Paid Web Search\nrequires_toolsets: [web]\nrequires_tools: [web.search]\n---\n\n# Paid Web Search\n\nUse web search.",
+  );
+  write(
+    join(root, "domains", "research", "skills", "free-fallback", "SKILL.md"),
+    "---\nname: Free Fallback Search\nfallback_for_toolsets: [web]\nfallback_for_tools: [web.search]\n---\n\n# Free Fallback Search\n\nUse web search.",
+  );
+  return root;
+}
+
 describe("runCommand", () => {
   test("runs a goal through a configured OpenAI-compatible provider", async () => {
     const requests: { readonly url: string; readonly init: RequestInit }[] = [];
@@ -130,6 +143,26 @@ describe("runCommand", () => {
         },
       ],
     });
+  });
+
+  test("passes active tool availability into run retrieval", async () => {
+    const worldRoot = createConditionalWorldFixture();
+
+    const fallbackRun = await runCommand({
+      goal: "use web search",
+      domain: "research",
+      worldRoot,
+    });
+    const paidRun = await runCommand({
+      goal: "use web search",
+      domain: "research",
+      worldRoot,
+      availableToolsets: ["web"],
+      availableTools: ["web.search"],
+    });
+
+    expect(fallbackRun.transparency.consulted.skills).toEqual(["domains/research/skills/free-fallback/SKILL.md"]);
+    expect(paidRun.transparency.consulted.skills).toEqual(["domains/research/skills/paid-web/SKILL.md"]);
   });
 
   test("runs a goal through a saved provider profile", async () => {

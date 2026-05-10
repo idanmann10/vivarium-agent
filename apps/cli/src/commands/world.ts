@@ -22,6 +22,8 @@ export interface SearchWorldCommandOptions {
   readonly domain: string;
   readonly query: string;
   readonly limit?: number;
+  readonly availableToolsets?: readonly string[];
+  readonly availableTools?: readonly string[];
 }
 
 export interface SearchWorldCommandResult {
@@ -70,6 +72,8 @@ export function searchWorldCommand(options: SearchWorldCommandOptions): SearchWo
   const request = {
     domain: options.domain,
     query: options.query,
+    availableToolsets: options.availableToolsets ?? [],
+    availableTools: options.availableTools ?? [],
   };
 
   if (options.worlds !== undefined && options.worlds.length > 0) {

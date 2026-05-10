@@ -272,6 +272,51 @@ describe("dispatchCliCommand", () => {
     state.close();
   });
 
+  test("routes active tool availability into world search and runs", async () => {
+    const worldRoot = mkdtempSync(join(tmpdir(), "cli-dispatch-tool-availability-"));
+    write(
+      join(worldRoot, "domains", "research", "skills", "paid-web", "SKILL.md"),
+      "---\nname: Paid Web Search\nrequires_toolsets: [web]\nrequires_tools: [web.search]\n---\n\n# Paid Web Search\n\nUse web search.",
+    );
+    write(
+      join(worldRoot, "domains", "research", "skills", "free-fallback", "SKILL.md"),
+      "---\nname: Free Fallback Search\nfallback_for_toolsets: [web]\nfallback_for_tools: [web.search]\n---\n\n# Free Fallback Search\n\nUse web search.",
+    );
+
+    const searched = await dispatchCliCommand([
+      "world",
+      "search",
+      "--world-root",
+      worldRoot,
+      "--domain",
+      "research",
+      "--query",
+      "web search",
+      "--available-toolset",
+      "web",
+      "--available-tool",
+      "web.search",
+    ]);
+    const run = await dispatchCliCommand([
+      "run",
+      "--goal",
+      "use web search",
+      "--domain",
+      "research",
+      "--world-root",
+      worldRoot,
+      "--available-toolset",
+      "web",
+      "--available-tool",
+      "web.search",
+    ]);
+
+    expect(searched.result).toMatchObject({ results: [{ title: "Paid Web Search" }] });
+    expect(run.result).toMatchObject({
+      transparency: { consulted: { skills: ["domains/research/skills/paid-web/SKILL.md"] } },
+    });
+  });
+
   test("routes world transmission smoke with a local git remote", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-world-transmission-"));
     const source = join(root, "source");

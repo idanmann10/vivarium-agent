@@ -29,6 +29,8 @@ export interface RunCommandOptions {
   readonly providerBaseUrl?: string;
   readonly providerProfilesPath?: string;
   readonly providerProfile?: string;
+  readonly availableToolsets?: readonly string[];
+  readonly availableTools?: readonly string[];
   readonly env?: Readonly<Record<string, string | undefined>>;
   readonly fetch?: ProviderFetch;
 }
@@ -294,6 +296,8 @@ export async function runCommand(options: RunCommandOptions): Promise<RunCommand
     agentName: "local-cli-agent",
     provider: selectedProvider.provider,
     tools,
+    availableToolsets: options.availableToolsets ?? [],
+    availableTools: options.availableTools ?? [],
   };
   const result = await runGoal(
     options.forceFailure === undefined ? request : { ...request, forceFailure: options.forceFailure },
