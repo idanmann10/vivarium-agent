@@ -179,7 +179,15 @@ describe("local world writes", () => {
       description: "A push-gated skill.",
       body: "Use evidence before pushing.",
       contributor: "agent-a",
-      gate: { lowerBound: 0.6, uses: 5, coverage: 0.5 },
+      gate: {
+        lowerBound: 0.6,
+        uses: 5,
+        coverage: 0.5,
+        evidenceRuns: [
+          { runId: "run-a", goal: "Debug flaky deployment" },
+          { runId: "run-b", goal: "Fix provider retry handling" },
+        ],
+      },
       client: {
         createPullRequest: async (request) => {
           calls.push(request);
@@ -201,7 +209,15 @@ describe("local world writes", () => {
     expect(result).toEqual({
       pushed: true,
       path: join(root, "proposals", "skills", "coding", "gated-skill", "SKILL.md"),
-      gate: { lowerBound: 0.6, uses: 5, coverage: 0.5 },
+      gate: {
+        lowerBound: 0.6,
+        uses: 5,
+        coverage: 0.5,
+        evidenceRuns: [
+          { runId: "run-a", goal: "Debug flaky deployment" },
+          { runId: "run-b", goal: "Fix provider retry handling" },
+        ],
+      },
       pullRequest: { url: "https://github.example/pulls/7", number: 7 },
     });
     expect(readFileSync(result.path, "utf8")).toContain("contributor_trust: 0.5");
@@ -209,6 +225,56 @@ describe("local world writes", () => {
     expect(readFileSync(result.path, "utf8")).toContain("regression_votes: 0");
     expect(readFileSync(result.path, "utf8")).toContain("positive_validators: 0");
     expect(readFileSync(result.path, "utf8")).toContain("validator_votes_json: []");
+    expect(readFileSync(result.path, "utf8")).toContain('"runId":"run-a"');
+    expect(readFileSync(result.path, "utf8")).toContain('"runId":"run-b"');
+  });
+
+  test("does not open a skill proposal pull request without cross-validated evidence", async () => {
+    const root = mkdtempSync(join(tmpdir(), "world-write-no-cross-validation-"));
+    let called = false;
+
+    const result = await proposeSkillPullRequest({
+      worldRoot: root,
+      domain: "coding",
+      slug: "single-goal-skill",
+      name: "Single Goal Skill",
+      description: "A skill with cherry-picked evidence.",
+      body: "Keep gathering evidence.",
+      contributor: "agent-a",
+      gate: {
+        lowerBound: 0.6,
+        uses: 5,
+        coverage: 0.5,
+        evidenceRuns: [
+          { runId: "run-a", goal: "Debug flaky deployment" },
+          { runId: "run-b", goal: "Debug flaky deployment" },
+        ],
+      },
+      client: {
+        createPullRequest: async () => {
+          called = true;
+          return { url: "https://github.example/pulls/9", number: 9 };
+        },
+      },
+      head: "agent-a:single-goal-skill",
+      base: "main",
+    });
+
+    expect(called).toBe(false);
+    expect(result).toEqual({
+      pushed: false,
+      path: join(root, "proposals", "skills", "coding", "single-goal-skill", "SKILL.md"),
+      gate: {
+        lowerBound: 0.6,
+        uses: 5,
+        coverage: 0.5,
+        evidenceRuns: [
+          { runId: "run-a", goal: "Debug flaky deployment" },
+          { runId: "run-b", goal: "Debug flaky deployment" },
+        ],
+      },
+      reason: "Push gate not satisfied",
+    });
   });
 
   test("does not open a skill proposal pull request when the push gate fails", async () => {
@@ -223,7 +289,15 @@ describe("local world writes", () => {
       description: "A skill without enough evidence.",
       body: "Keep learning locally.",
       contributor: "agent-a",
-      gate: { lowerBound: 0.59, uses: 5, coverage: 0.5 },
+      gate: {
+        lowerBound: 0.59,
+        uses: 5,
+        coverage: 0.5,
+        evidenceRuns: [
+          { runId: "run-a", goal: "Debug flaky deployment" },
+          { runId: "run-b", goal: "Fix provider retry handling" },
+        ],
+      },
       client: {
         createPullRequest: async () => {
           called = true;
@@ -238,7 +312,15 @@ describe("local world writes", () => {
     expect(result).toEqual({
       pushed: false,
       path: join(root, "proposals", "skills", "coding", "ungated-skill", "SKILL.md"),
-      gate: { lowerBound: 0.59, uses: 5, coverage: 0.5 },
+      gate: {
+        lowerBound: 0.59,
+        uses: 5,
+        coverage: 0.5,
+        evidenceRuns: [
+          { runId: "run-a", goal: "Debug flaky deployment" },
+          { runId: "run-b", goal: "Fix provider retry handling" },
+        ],
+      },
       reason: "Push gate not satisfied",
     });
   });

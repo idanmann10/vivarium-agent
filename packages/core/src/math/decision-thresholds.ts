@@ -2,12 +2,30 @@ export function shouldPromoteCandidate(input: { readonly lowerBound: number; rea
   return input.lowerBound >= 0.5 && input.uses >= 3;
 }
 
+export interface PushEvidenceRun {
+  readonly runId: string;
+  readonly goal: string;
+}
+
+function normalizedEvidenceGoal(goal: string): string {
+  return goal.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+export function hasCrossValidatedEvidence(evidenceRuns: readonly PushEvidenceRun[]): boolean {
+  const validEvidence = evidenceRuns.filter((run) => run.runId.trim().length > 0 && run.goal.trim().length > 0);
+  return (
+    new Set(validEvidence.map((run) => run.runId.trim())).size >= 2 &&
+    new Set(validEvidence.map((run) => normalizedEvidenceGoal(run.goal))).size >= 2
+  );
+}
+
 export function shouldPushToWorld(input: {
   readonly lowerBound: number;
   readonly uses: number;
   readonly coverage: number;
+  readonly evidenceRuns: readonly PushEvidenceRun[];
 }): boolean {
-  return input.lowerBound >= 0.6 && input.uses >= 5 && input.coverage >= 0.5;
+  return input.lowerBound >= 0.6 && input.uses >= 5 && input.coverage >= 0.5 && hasCrossValidatedEvidence(input.evidenceRuns);
 }
 
 export function shouldAutoMergeWorldSkill(input: {

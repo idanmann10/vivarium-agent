@@ -12,7 +12,28 @@ import {
 describe("decision thresholds", () => {
   test("implements promotion and push gates", () => {
     expect(shouldPromoteCandidate({ lowerBound: 0.5, uses: 3 })).toBe(true);
-    expect(shouldPushToWorld({ lowerBound: 0.6, uses: 5, coverage: 0.5 })).toBe(true);
+    expect(
+      shouldPushToWorld({
+        lowerBound: 0.6,
+        uses: 5,
+        coverage: 0.5,
+        evidenceRuns: [
+          { runId: "run-a", goal: "Debug flaky deployment" },
+          { runId: "run-b", goal: "Fix provider retry handling" },
+        ],
+      }),
+    ).toBe(true);
+    expect(
+      shouldPushToWorld({
+        lowerBound: 0.6,
+        uses: 5,
+        coverage: 0.5,
+        evidenceRuns: [
+          { runId: "run-a", goal: "Debug flaky deployment" },
+          { runId: "run-b", goal: "Debug flaky deployment" },
+        ],
+      }),
+    ).toBe(false);
   });
 
   test("implements archive, habituation, trace, and run gates", () => {

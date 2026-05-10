@@ -30,6 +30,7 @@ export { DEFAULT_RETRIEVAL_WEIGHTS, recencyScore, retrievalScore } from "./math/
 export { developmentScore, stageForScore } from "./math/stages.js";
 export { chooseWithEpsilon } from "./math/diversity.js";
 export {
+  hasCrossValidatedEvidence,
   shouldArchiveWorldSkill,
   shouldAutoMergeWorldSkill,
   shouldHabituate,
@@ -39,6 +40,7 @@ export {
   shouldPublishTrace,
   shouldPushToWorld,
 } from "./math/decision-thresholds.js";
+export type { PushEvidenceRun } from "./math/decision-thresholds.js";
 export type * from "./types/agent.js";
 export type * from "./types/anti-pattern.js";
 export type * from "./types/contributor.js";

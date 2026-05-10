@@ -2,7 +2,7 @@ export const pushMode = "write-gated";
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { shouldPushToWorld, type Visibility } from "../../core/src/index.js";
+import { shouldPushToWorld, type PushEvidenceRun, type Visibility } from "../../core/src/index.js";
 
 import type { GitHubWorldClient, NumberedGitHubUrl } from "./github.js";
 
@@ -15,6 +15,7 @@ export interface ProposeSkillRequest {
   readonly body: string;
   readonly contributor: string;
   readonly visibility?: Visibility;
+  readonly evidenceRuns?: readonly PushEvidenceRun[];
   readonly autoMergeSignals?: SkillAutoMergeSignals;
 }
 
@@ -85,6 +86,7 @@ export interface SkillPushGateEvidence {
   readonly lowerBound: number;
   readonly uses: number;
   readonly coverage: number;
+  readonly evidenceRuns: readonly PushEvidenceRun[];
 }
 
 export interface SkillAutoMergeSignals {
@@ -129,6 +131,16 @@ function skillSignalFrontmatter(signals: SkillAutoMergeSignals | undefined): str
     : `contributor_trust: ${signals.contributorTrust}\neffective_lb: ${signals.effectiveLowerBound}\nregression_votes: ${signals.regressionVotes}\npositive_validators: ${signals.positiveValidators}\nvalidator_votes_json: ${signals.validatorVotesJson}\n`;
 }
 
+function skillEvidenceFrontmatter(evidenceRuns: readonly PushEvidenceRun[] | undefined): string {
+  return evidenceRuns === undefined || evidenceRuns.length === 0
+    ? ""
+    : `evidence_run_ids_json: ${JSON.stringify(evidenceRuns)}\n`;
+}
+
+function skillEvidencePullRequestBody(evidenceRuns: readonly PushEvidenceRun[]): string {
+  return evidenceRuns.map((run) => `- ${run.runId}: ${run.goal}`).join("\n");
+}
+
 export function selectProposalWorldTarget(request: SelectProposalWorldTargetRequest): ProposalWorldTarget {
   const worlds = [...request.worlds].toSorted((left, right) => left.priority - right.priority || left.label.localeCompare(right.label));
   if (worlds.length === 0) {
@@ -149,7 +161,7 @@ export function proposeSkill(request: ProposeSkillRequest): string {
   const visibility = proposalVisibility(request.visibility);
   writeFileSync(
     path,
-    `---\nid: ${request.domain}.${request.slug}\nname: ${request.name}\ndescription: ${request.description}\ndomain: ${request.domain}\nvisibility: ${visibility}\ncontributor: ${request.contributor}\n${skillSignalFrontmatter(request.autoMergeSignals)}---\n\n# ${request.name}\n\n${request.body}\n\n# Provenance\n\nProposed locally by ${request.contributor}.\n`,
+    `---\nid: ${request.domain}.${request.slug}\nname: ${request.name}\ndescription: ${request.description}\ndomain: ${request.domain}\nvisibility: ${visibility}\ncontributor: ${request.contributor}\n${skillEvidenceFrontmatter(request.evidenceRuns)}${skillSignalFrontmatter(request.autoMergeSignals)}---\n\n# ${request.name}\n\n${request.body}\n\n# Provenance\n\nProposed locally by ${request.contributor}.\n`,
   );
   return path;
 }
@@ -167,6 +179,7 @@ export function proposeSkillToSubscribedWorld(request: ProposeSkillToSubscribedW
       body: request.body,
       contributor: request.contributor,
       visibility: request.visibility,
+      ...(request.evidenceRuns === undefined ? {} : { evidenceRuns: request.evidenceRuns }),
     }),
   };
 }
@@ -236,6 +249,7 @@ export async function proposeSkillPullRequest(
 ): Promise<ProposeSkillPullRequestResult> {
   const path = proposeSkill({
     ...request,
+    evidenceRuns: request.gate.evidenceRuns,
     autoMergeSignals: {
       contributorTrust: request.contributorTrust ?? 0.5,
       effectiveLowerBound: request.gate.lowerBound,
@@ -255,7 +269,8 @@ export async function proposeSkillPullRequest(
     body:
       request.pullRequestBody ??
       `Proposes \`${relativePath}\` after passing the local push gate.\n\n` +
-        `Evidence: lowerBound=${request.gate.lowerBound}, uses=${request.gate.uses}, coverage=${request.gate.coverage}.`,
+        `Evidence: lowerBound=${request.gate.lowerBound}, uses=${request.gate.uses}, coverage=${request.gate.coverage}.\n\n` +
+        `Evidence runs:\n${skillEvidencePullRequestBody(request.gate.evidenceRuns)}`,
     head: request.head,
     base: request.base,
   });
