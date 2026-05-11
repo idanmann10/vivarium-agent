@@ -203,6 +203,7 @@ Persisted local artifacts:
 - `docs/reference/claude-agent-formats.md` records the Claude Managed Agents `Agent` / `Environment` / `Session` / `Events` split, agent config fields (`name`, `model`, `system`, `tools`, `mcp_servers`, `skills`), the `managed-agents-2026-04-01` beta header, skill source shapes, MCP secret split, Claude Code subagent YAML frontmatter, subagent scope priority, `isolation: worktree`, agent-team reuse of subagent types, and `Agent(worker, researcher)` spawn allowlists.
 - `docs/README.md` links the new reference page.
 - `scripts/reference-docs.test.ts` now guards the Claude format reference so it stays discoverable.
+- The ignored local env file now points `VIVARIUM_V1_EVIDENCE_PATH` at `/Users/idanmann/.codex/memories/vivarium-v1-evidence.json` so the partially filled, non-secret evidence manifest is durable across shell cleanup; it currently contains only the verified canonical and private world subscription refs.
 
 Local doctor hardening completed while resuming:
 
