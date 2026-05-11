@@ -228,7 +228,17 @@ const liveReadinessEnvVars = [
 const packageReadmes = {
   "apps/cli": ["dispatcher", "init", "doctor --live", "completionGuide", "providers", "world transmission-smoke"],
   "apps/daemon": ["status", "run", "dream", "Dream scheduler", "MCP"],
-  "packages/core": ["types", "kernel", "pure math", "no I/O", "decision thresholds"],
+  "packages/core": [
+    "types",
+    "kernel",
+    "pure math",
+    "no I/O",
+    "decision thresholds",
+    "ClaudeManagedAgentCreateRequest",
+    "ClaudeManagedEnvironmentCreateRequest",
+    "ClaudeManagedSessionCreateRequest",
+    "ClaudeManagedEvent",
+  ],
   "packages/eval": ["compounding", "benchmark", "before", "after", "Dream"],
   "packages/providers": ["OpenAI", "Anthropic", "OpenAI-compatible", "capabilities", "costClass"],
   "packages/runtime": [

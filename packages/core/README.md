@@ -14,3 +14,10 @@ passed in by the caller.
 Add tests with every new type contract or formula. A runtime feature may depend
 on core types and formulas, but core must never depend on runtime, tools, state,
 providers, world, or apps.
+
+Claude compatibility types also live here so future agent-building code does not
+recreate external shapes from prose. Use `ClaudeManagedAgentCreateRequest`,
+`ClaudeManagedEnvironmentCreateRequest`, `ClaudeManagedSessionCreateRequest`,
+and `ClaudeManagedEvent` for Claude Managed Agents bridges, and read
+`docs/reference/claude-agent-formats.md` before adding Claude-facing agent
+configuration.
