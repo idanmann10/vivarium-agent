@@ -537,14 +537,17 @@ still spans 2026-05-09 through 2026-05-11 rather than at least seven days.
 
 A redacted local blocker snapshot now exists at
 `/Users/idanmann/.codex/memories/vivarium-live-blockers-2026-05-11.md`.
-It records the fresh `doctor --live` and `live setup` dry-run state, placeholder
-environment variable names without secret values, current real-goal timing, and
-draft PR heads/checks.
+It records the fresh `doctor --live` and `live setup` dry-run state at capture
+time, placeholder environment variable names without secret values, real-goal
+timing, and draft PR heads/checks. Treat the PR hashes below as point-in-time
+snapshot evidence; use `gh pr view` for the live current head after audit-only
+commits.
 
 Snapshot facts:
 
-- Agent PR head: `fe7c7fb5590ed262917593e420211b449411b561`; `changeset` and
-  `verify` are successful.
+- Agent PR head at snapshot capture:
+  `fe7c7fb5590ed262917593e420211b449411b561`; `changeset` and `verify` are
+  successful.
 - Canonical world draft PR head:
   `44da0269430f7a76b4d40308752ba2d0ae8f5fa2`; `verify` and `validate` are
   successful and draft `auto-merge` is skipped.
