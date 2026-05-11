@@ -303,12 +303,14 @@ Completion decision: still not complete. The remaining requirements require real
 
 ## 2026-05-11 Remote Handoff
 
-The local Claude-format and live-readiness hardening slice has been pushed to the existing feature branch:
+The Claude-format, live-readiness, behavior-loop, Dream-artifact, runtime Dream skill-candidate, and provider-profile metadata work has been pushed to the existing feature branches:
 
-- Branch: `phase-1-runtime-slice`.
-- Remote: `origin/phase-1-runtime-slice`. The read-only pre-commit handoff check returned `c12e1bd3a819015df080cd6d24d7d6876dbba4bf`; verify the exact latest remote head with `git ls-remote origin refs/heads/phase-1-runtime-slice` because each audit commit changes this value.
-- Recent pushed work on the branch includes the Claude agent-format reference, durable v1 evidence manifest handoff, starter-pack evidence status, current Claude/OpenRouter provider defaults, completion-checklist tightening, and remote-handoff bookkeeping.
-- Fresh correct read-only open PR check: `gh api 'repos/idanmann10/vivarium-agent/pulls?state=open&head=idanmann10:phase-1-runtime-slice'` returned `[]`.
-- Fresh correct read-only Actions check: `gh api 'repos/idanmann10/vivarium-agent/actions/runs?branch=phase-1-runtime-slice&per_page=5'` returned `{"total_count":0,"workflow_runs":[]}`. This is expected from `.github/workflows/ci.yml`, which runs on `pull_request` and pushes to `main`, not on arbitrary feature-branch pushes.
+- Agent branch: `phase-1-runtime-slice`.
+- Agent remote head after the runtime/profile push and before this audit-only follow-up commit: `4c1d1c5ebab0ad967e0aafa123297529477245dc` from `git ls-remote origin refs/heads/phase-1-runtime-slice`; verify the latest exact head with `git ls-remote` because audit commits change this value.
+- Canonical world branch: `phase-3-world-integration-slice`.
+- Canonical world remote head after the push: `e2d502a67c9e59abac44a55f777bc576aa57b12b` from `git ls-remote origin refs/heads/phase-3-world-integration-slice`.
+- Private world branch: `phase-3-world-integration-slice`.
+- Private world remote head after the push: `f89d9c5ad6f8dea8fc28d80749387cc81436b586` from `git ls-remote origin refs/heads/phase-3-world-integration-slice`.
+- Fresh correct read-only Actions checks returned no feature-branch runs: `gh api 'repos/idanmann10/vivarium-agent/actions/runs?branch=phase-1-runtime-slice&per_page=5'`, `gh api 'repos/idanmann10/vivarium-world/actions/runs?branch=phase-3-world-integration-slice&per_page=5'`, and `gh api 'repos/idanmann10/vivarium-world-private/actions/runs?branch=phase-3-world-integration-slice&per_page=5'` each returned `{"total_count":0,"workflow_runs":[]}`.
 
-Do not treat the pushed branch as CI-verified until a PR is opened or the branch is otherwise run through the full local/remote gates. Opening a draft PR is externally visible and requires explicit user approval.
+Do not treat the pushed branches as CI-verified until PRs are opened or the branches are otherwise run through the full local/remote gates. Opening draft PRs is externally visible and requires explicit user approval.
