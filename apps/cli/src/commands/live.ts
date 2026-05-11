@@ -83,8 +83,15 @@ const integerEnvNames = [
   "VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW",
 ] as const;
 
+const httpUrlEnvNames = [
+  "VIVARIUM_OPENROUTER_BASE_URL",
+  "VIVARIUM_OAI_COMPAT_BASE_URL",
+  "VIVARIUM_INTERNAL_API_HEALTH_URL",
+] as const;
+
 type RequiredEnvName = (typeof requiredEnvNames)[number];
 type IntegerEnvName = (typeof integerEnvNames)[number];
+type HttpUrlEnvName = (typeof httpUrlEnvNames)[number];
 
 const v1EvidenceSections = [
   "starterPack",
@@ -224,13 +231,35 @@ function integerEnv(env: Readonly<Record<string, string | undefined>>, name: Int
   return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
+function httpUrlEnv(env: Readonly<Record<string, string | undefined>>, name: HttpUrlEnvName): string | undefined {
+  const value = textEnv(env, name);
+  if (value === undefined || isPlaceholderValue(value)) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function isFilledNonPlaceholderEnv(env: Readonly<Record<string, string | undefined>>, name: RequiredEnvName): boolean {
+  const value = textEnv(env, name);
+  return value !== undefined && !isPlaceholderValue(value);
+}
+
 function validateLiveSetupEnv(env: Readonly<Record<string, string | undefined>>): LiveSetupCommandResult | undefined {
   const missing = requiredEnvNames.filter((name) => textEnv(env, name) === undefined);
   const placeholders = requiredEnvNames.filter((name) => {
     const value = textEnv(env, name);
     return value !== undefined && isPlaceholderValue(value);
   });
-  const invalid = integerEnvNames.filter((name) => textEnv(env, name) !== undefined && integerEnv(env, name) === undefined);
+  const invalid = [
+    ...integerEnvNames.filter((name) => isFilledNonPlaceholderEnv(env, name) && integerEnv(env, name) === undefined),
+    ...httpUrlEnvNames.filter((name) => isFilledNonPlaceholderEnv(env, name) && httpUrlEnv(env, name) === undefined),
+  ];
 
   if (missing.length > 0 || placeholders.length > 0 || invalid.length > 0) {
     return {
