@@ -3185,6 +3185,69 @@ describe("doctorCommand", () => {
     expect(smokeCommands).toEqual([]);
   });
 
+  test("does not run live smoke probes while required setup values are invalid", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-smoke-invalid-setup-"));
+    const files = writeLiveReadyFiles(root);
+    const smokeCommands: string[] = [];
+    const runner: DoctorCommandRunner = (run) => {
+      const text = [run.command, ...run.args].join(" ");
+      if (text.includes(" providers smoke ") || text.includes(" credentials smoke ")) {
+        smokeCommands.push(text);
+      }
+
+      return readyRunner(run);
+    };
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        VIVARIUM_WORLD_SUBSCRIPTIONS_PATH: files.subscriptionsPath,
+        VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world-final.git",
+        VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
+        ANTHROPIC_API_KEY: "configured",
+        VIVARIUM_ANTHROPIC_MODEL: "claude-live",
+        VIVARIUM_ANTHROPIC_CONTEXT_WINDOW: "0",
+        OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OPENROUTER_MODEL: "openrouter/live",
+        VIVARIUM_OPENROUTER_BASE_URL: "openrouter.ai/api/v1",
+        VIVARIUM_OPENROUTER_CONTEXT_WINDOW: "128000",
+        VIVARIUM_OAI_COMPAT_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "ftp://models.internal.example/v1",
+        VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW: "128000",
+        VIVARIUM_PROVIDER_PROFILES_PATH: files.profilesPath,
+        VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
+        VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
+        VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE: "private-finetune",
+        VIVARIUM_CREDENTIALS_PATH: files.credentialsPath,
+        VIVARIUM_CREDENTIALS_MASTER_KEY: "master-key",
+        VIVARIUM_INTERNAL_API_CREDENTIAL_NAME: "INTERNAL_API_TOKEN",
+        VIVARIUM_INTERNAL_API_HEALTH_URL: "internal.example/health",
+        VIVARIUM_V1_EVIDENCE_PATH: files.evidencePath,
+        GITHUB_TOKEN: "configured",
+      },
+      runner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("provider.anthropicContextWindow:invalid");
+    expect(result.checks).toContain("provider.openrouterBaseUrl:invalid");
+    expect(result.checks).toContain("provider.privateOaiCompat:invalid");
+    expect(result.checks).toContain("internalApi.healthUrl:invalid");
+    expect(result.checks).toContain("provider.anthropicSmoke:missing");
+    expect(result.checks).toContain("provider.openrouterSmoke:missing");
+    expect(result.checks).toContain("provider.privateOaiCompatSmoke:missing");
+    expect(result.checks).toContain("credentials.smoke:missing");
+    expect(smokeCommands).toEqual([]);
+  });
+
   test("reports configured world refs missing from the subscriptions file", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-world-subscriptions-"));
     const subscriptionsPath = join(root, "world-subscriptions.json");

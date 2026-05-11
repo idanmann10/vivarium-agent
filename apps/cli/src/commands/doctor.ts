@@ -886,6 +886,7 @@ function providerSmokeCheck(
   label: string,
   profileEnv: string,
   requiredEnvNames: readonly string[],
+  requiredSetupChecks: readonly string[] = [],
 ): string {
   const profilesPath = textValue(env[providerProfilesPathEnv]);
   const profile = textValue(env[profileEnv]);
@@ -893,7 +894,8 @@ function providerSmokeCheck(
     profilesPath === undefined ||
     !existsSync(profilesPath) ||
     profile === undefined ||
-    requiredEnvNames.some((envName) => textValue(env[envName]) === undefined)
+    requiredEnvNames.some((envName) => textValue(env[envName]) === undefined) ||
+    requiredSetupChecks.some((check) => !isPassingCheck(check))
   ) {
     return `provider.${label}Smoke:missing`;
   }
@@ -958,12 +960,20 @@ function credentialSmokeCheck(
   runner: DoctorCommandRunner,
   env: Readonly<Record<string, string | undefined>>,
   agentRoot: string,
+  requiredSetupChecks: readonly string[] = [],
 ): string {
   const credentialsPath = textValue(env[credentialsPathEnv]);
   const masterKey = textValue(env[credentialsMasterKeyEnv]);
   const name = textValue(env[internalApiCredentialNameEnv]);
   const url = textValue(env[internalApiHealthUrlEnv]);
-  if (credentialsPath === undefined || !existsSync(credentialsPath) || masterKey === undefined || name === undefined || url === undefined) {
+  if (
+    credentialsPath === undefined ||
+    !existsSync(credentialsPath) ||
+    masterKey === undefined ||
+    name === undefined ||
+    url === undefined ||
+    requiredSetupChecks.some((check) => !isPassingCheck(check))
+  ) {
     return "credentials.smoke:missing";
   }
 
@@ -1609,6 +1619,32 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     worldRoot,
     ...(options.envFilePath === undefined ? {} : { envFilePath: options.envFilePath }),
   };
+  const providerAnthropicCheck = requiredEnvCheck(env, anthropicApiKeyEnv, "provider.anthropic");
+  const providerAnthropicModelCheck = requiredEnvCheck(env, anthropicModelEnv, "provider.anthropicModel");
+  const providerAnthropicContextWindowCheck = positiveIntegerEnvCheck(
+    env,
+    anthropicContextWindowEnv,
+    "provider.anthropicContextWindow",
+  );
+  const providerOpenrouterCheck = requiredEnvCheck(env, openRouterApiKeyEnv, "provider.openrouter");
+  const providerOpenrouterModelCheck = requiredEnvCheck(env, openRouterModelEnv, "provider.openrouterModel");
+  const providerOpenrouterBaseUrlCheck = httpUrlEnvCheck(env, openRouterBaseUrlEnv, "provider.openrouterBaseUrl");
+  const providerOpenrouterContextWindowCheck = positiveIntegerEnvCheck(
+    env,
+    openRouterContextWindowEnv,
+    "provider.openrouterContextWindow",
+  );
+  const providerPrivateOaiCompatCheck = privateOaiCompatCheck(env);
+  const providerPrivateOaiCompatContextWindowCheck = positiveIntegerEnvCheck(
+    env,
+    privateOaiCompatContextWindowEnv,
+    "provider.privateOaiCompatContextWindow",
+  );
+  const credentialsPathCheck = requiredFileCheck(env, credentialsPathEnv, "credentials.path");
+  const credentialsMasterKeyCheck = requiredEnvCheck(env, credentialsMasterKeyEnv, "credentials.masterKey");
+  const internalApiCredentialNameCheck = requiredEnvCheck(env, internalApiCredentialNameEnv, "internalApi.credentialName");
+  const internalApiCredentialValue = internalApiCredentialValueCheck(env);
+  const internalApiHealthUrlCheck = httpUrlEnvCheck(env, internalApiHealthUrlEnv, "internalApi.healthUrl");
   const checks = [
     ...liveEnvFilePermissionChecks(options.envFilePath),
     repoNameCheck(env, agentRepoNameEnv, "the-agent", "agent"),
@@ -1619,42 +1655,57 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     worldRefCheck(env, worldRefs, canonicalWorldRefEnv, "world.canonicalRef"),
     worldRefCheck(env, worldRefs, privateWorldRefEnv, "world.privateForkRef"),
     providerEnvCheck(env),
-    requiredEnvCheck(env, anthropicApiKeyEnv, "provider.anthropic"),
-    requiredEnvCheck(env, anthropicModelEnv, "provider.anthropicModel"),
-    positiveIntegerEnvCheck(env, anthropicContextWindowEnv, "provider.anthropicContextWindow"),
-    requiredEnvCheck(env, openRouterApiKeyEnv, "provider.openrouter"),
-    requiredEnvCheck(env, openRouterModelEnv, "provider.openrouterModel"),
-    httpUrlEnvCheck(env, openRouterBaseUrlEnv, "provider.openrouterBaseUrl"),
-    positiveIntegerEnvCheck(env, openRouterContextWindowEnv, "provider.openrouterContextWindow"),
-    privateOaiCompatCheck(env),
-    positiveIntegerEnvCheck(env, privateOaiCompatContextWindowEnv, "provider.privateOaiCompatContextWindow"),
+    providerAnthropicCheck,
+    providerAnthropicModelCheck,
+    providerAnthropicContextWindowCheck,
+    providerOpenrouterCheck,
+    providerOpenrouterModelCheck,
+    providerOpenrouterBaseUrlCheck,
+    providerOpenrouterContextWindowCheck,
+    providerPrivateOaiCompatCheck,
+    providerPrivateOaiCompatContextWindowCheck,
     requiredFileCheck(env, providerProfilesPathEnv, "provider.profilesPath"),
     providerProfileCheck(env, profiles, anthropicProviderProfileEnv, "provider.anthropicProfile"),
     providerProfileCheck(env, profiles, openRouterProviderProfileEnv, "provider.openrouterProfile"),
     providerProfileCheck(env, profiles, privateOaiCompatProviderProfileEnv, "provider.privateOaiCompatProfile"),
-    providerSmokeCheck(runner, env, agentRoot, "anthropic", anthropicProviderProfileEnv, [
-      anthropicApiKeyEnv,
-      anthropicModelEnv,
-      anthropicContextWindowEnv,
+    providerSmokeCheck(
+      runner,
+      env,
+      agentRoot,
+      "anthropic",
+      anthropicProviderProfileEnv,
+      [anthropicApiKeyEnv, anthropicModelEnv, anthropicContextWindowEnv],
+      [providerAnthropicCheck, providerAnthropicModelCheck, providerAnthropicContextWindowCheck],
+    ),
+    providerSmokeCheck(
+      runner,
+      env,
+      agentRoot,
+      "openrouter",
+      openRouterProviderProfileEnv,
+      [openRouterApiKeyEnv, openRouterModelEnv, openRouterBaseUrlEnv, openRouterContextWindowEnv],
+      [providerOpenrouterCheck, providerOpenrouterModelCheck, providerOpenrouterBaseUrlCheck, providerOpenrouterContextWindowCheck],
+    ),
+    providerSmokeCheck(
+      runner,
+      env,
+      agentRoot,
+      "privateOaiCompat",
+      privateOaiCompatProviderProfileEnv,
+      [privateOaiCompatApiKeyEnv, privateOaiCompatBaseUrlEnv, privateOaiCompatModelEnv, privateOaiCompatContextWindowEnv],
+      [providerPrivateOaiCompatCheck, providerPrivateOaiCompatContextWindowCheck],
+    ),
+    credentialsPathCheck,
+    credentialsMasterKeyCheck,
+    internalApiCredentialNameCheck,
+    internalApiCredentialValue,
+    internalApiHealthUrlCheck,
+    credentialSmokeCheck(runner, env, agentRoot, [
+      credentialsPathCheck,
+      credentialsMasterKeyCheck,
+      internalApiCredentialNameCheck,
+      internalApiHealthUrlCheck,
     ]),
-    providerSmokeCheck(runner, env, agentRoot, "openrouter", openRouterProviderProfileEnv, [
-      openRouterApiKeyEnv,
-      openRouterModelEnv,
-      openRouterBaseUrlEnv,
-      openRouterContextWindowEnv,
-    ]),
-    providerSmokeCheck(runner, env, agentRoot, "privateOaiCompat", privateOaiCompatProviderProfileEnv, [
-      privateOaiCompatApiKeyEnv,
-      privateOaiCompatBaseUrlEnv,
-      privateOaiCompatModelEnv,
-      privateOaiCompatContextWindowEnv,
-    ]),
-    requiredFileCheck(env, credentialsPathEnv, "credentials.path"),
-    requiredEnvCheck(env, credentialsMasterKeyEnv, "credentials.masterKey"),
-    requiredEnvCheck(env, internalApiCredentialNameEnv, "internalApi.credentialName"),
-    internalApiCredentialValueCheck(env),
-    httpUrlEnvCheck(env, internalApiHealthUrlEnv, "internalApi.healthUrl"),
-    credentialSmokeCheck(runner, env, agentRoot),
     githubEnvCheck(env),
     requiredEnvCheck(env, githubOwnerEnv, "github.owner"),
     requiredEnvCheck(env, githubRepositoryIdEnv, "github.repositoryId"),
