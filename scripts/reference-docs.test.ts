@@ -322,6 +322,10 @@ describe("reference docs", () => {
     const body = readFileSync(join("docs", "reference", "claude-agent-formats.md"), "utf8");
     for (const term of [
       "Claude Managed Agents",
+      "packages/core/src/types/claude-agent-format.ts",
+      "CLAUDE_MANAGED_AGENTS_BETA_HEADER",
+      "ClaudeManagedAgentCreateRequest",
+      "ClaudeCodeSubagentFrontmatter",
       "Agent",
       "Environment",
       "Session",

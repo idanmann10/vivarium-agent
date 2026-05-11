@@ -20,6 +20,13 @@ Claude Code docs on 2026-05-11:
 - Claude Code subagents: https://code.claude.com/docs/en/sub-agents
 - Claude Code agent teams: https://code.claude.com/docs/en/agent-teams
 
+Local compatibility constants and request/frontmatter shapes live in
+`packages/core/src/types/claude-agent-format.ts` and are exported from
+`@vivarium/core`. Use `CLAUDE_MANAGED_AGENTS_BETA_HEADER`,
+`CLAUDE_AGENT_TOOLSET_TYPE`, `ClaudeManagedAgentCreateRequest`, and
+`ClaudeCodeSubagentFrontmatter` when adding code that emits or accepts these
+external formats.
+
 ## Claude Managed Agents
 
 Claude Managed Agents separates four concepts:
