@@ -64,6 +64,22 @@ describe("agent workflows", () => {
     expect(dependabot).toContain("open-pull-requests-limit: 5");
   });
 
+  test("CODEOWNERS routes runtime and release surfaces to the maintainer", () => {
+    const codeowners = githubConfig("CODEOWNERS");
+
+    for (const rule of [
+      "* @idanmann10",
+      "apps/ @idanmann10",
+      "packages/ @idanmann10",
+      "docs/ @idanmann10",
+      ".github/ @idanmann10",
+      "SECURITY.md @idanmann10",
+      "RELEASING.md @idanmann10",
+    ]) {
+      expect(codeowners).toContain(rule);
+    }
+  });
+
   test("issue templates route bug reports and feature requests", () => {
     const bug = issueTemplate("bug_report.yml");
     const feature = issueTemplate("feature_request.yml");

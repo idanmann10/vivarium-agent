@@ -1,0 +1,12 @@
+# Default ownership for the Vivarium Agent runtime.
+* @idanmann10
+
+# Runtime and operator surfaces.
+apps/ @idanmann10
+packages/ @idanmann10
+
+# Public docs, workflows, and release/security materials.
+docs/ @idanmann10
+.github/ @idanmann10
+SECURITY.md @idanmann10
+RELEASING.md @idanmann10
