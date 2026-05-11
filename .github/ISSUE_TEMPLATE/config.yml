@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security reports
+    url: https://github.com/idanmann10/vivarium-agent/security/policy
+    about: Report vulnerabilities or secret-handling issues privately.
+  - name: Live-readiness guide
+    url: https://github.com/idanmann10/vivarium-agent/blob/main/docs/guides/live-readiness.md
+    about: Read the operator checklist for provider, credential, and v1 evidence blockers.

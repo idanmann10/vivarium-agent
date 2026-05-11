@@ -10,6 +10,10 @@ function githubConfig(name: string): string {
   return readFileSync(join(".github", name), "utf8");
 }
 
+function issueTemplate(name: string): string {
+  return readFileSync(join(".github", "ISSUE_TEMPLATE", name), "utf8");
+}
+
 describe("agent workflows", () => {
   test("CI runs the full phase checkpoint", () => {
     const ci = workflow("ci.yml");
@@ -58,5 +62,27 @@ describe("agent workflows", () => {
     expect(dependabot).toContain('directory: "/"');
     expect(dependabot).toContain("interval: weekly");
     expect(dependabot).toContain("open-pull-requests-limit: 5");
+  });
+
+  test("issue templates route bug reports and feature requests", () => {
+    const bug = issueTemplate("bug_report.yml");
+    const feature = issueTemplate("feature_request.yml");
+    const config = issueTemplate("config.yml");
+
+    expect(bug).toContain("name: Bug report");
+    expect(bug).toContain("Affected surface");
+    expect(bug).toContain("Reproduction steps");
+    expect(bug).toContain("doctor --live");
+    expect(bug).toContain("labels:");
+
+    expect(feature).toContain("name: Feature request");
+    expect(feature).toContain("Problem");
+    expect(feature).toContain("Proposed behavior");
+    expect(feature).toContain("Live-readiness boundary");
+    expect(feature).toContain("labels:");
+
+    expect(config).toContain("blank_issues_enabled: false");
+    expect(config).toContain("Security reports");
+    expect(config).toContain("Live-readiness guide");
   });
 });

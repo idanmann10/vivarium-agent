@@ -1,0 +1,52 @@
+name: Bug report
+description: Report reproducible Vivarium Agent behavior that is broken or unsafe
+title: "[bug]: "
+labels:
+  - bug
+body:
+  - type: dropdown
+    id: affected-surface
+    attributes:
+      label: Affected surface
+      options:
+        - CLI
+        - daemon
+        - runtime primitives
+        - providers
+        - credentials
+        - world integration
+        - doctor --live
+        - docs
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: List exact commands, inputs, and relevant non-secret config.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification already run
+      description: Include relevant output from local gates or doctor --live, with secrets redacted.
+      placeholder: |
+        bun run test
+        bun apps/cli/src/main.ts doctor --live --env-file live-readiness.local.env
+    validations:
+      required: false
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Bun version, Node version if relevant, and repository commit SHA.
+    validations:
+      required: false
