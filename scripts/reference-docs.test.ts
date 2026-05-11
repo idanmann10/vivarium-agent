@@ -316,6 +316,10 @@ const topLevelDocs = {
 const agentRootDocs = {
   "README.md": [
     "Vivarium Agent",
+    "[![CI](https://github.com/idanmann10/vivarium-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/idanmann10/vivarium-agent/actions/workflows/ci.yml)",
+    "[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)",
+    "![Runtime: Bun](https://img.shields.io/badge/runtime-Bun-black)",
+    "![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)",
     "local-first",
     "Production Status",
     "Architecture At A Glance",
