@@ -342,4 +342,15 @@ World PR checks after PR creation:
 - Private world `validate`: success, `https://github.com/idanmann10/vivarium-world-private/actions/runs/25693196206/job/75434678082`.
 - Private world `auto-merge`: failure, `https://github.com/idanmann10/vivarium-world-private/actions/runs/25693196218/job/75434678278`, because `check-veto-window.ts` returned `maintainer-veto-window-open` at age `0` of a `48` hour window with no validator signals.
 
-The world auto-merge failures are expected gate denials for newly opened proposal PRs, not validation failures. They still mean the world PRs are not auto-merge-ready and cannot count as the `goal.md` public-contribution auto-merge evidence.
+Follow-up workflow commits `44da026 ci(world): skip auto-merge gates for drafts` and `d7bdd8a ci(world): skip auto-merge gates for drafts` now make draft PR auto-merge jobs skip until the PR is marked ready for review, while preserving `workflow_dispatch` and adding the `ready_for_review` trigger.
+
+Current world PR checks after that push:
+
+- Canonical world `verify`: success, `https://github.com/idanmann10/vivarium-world/actions/runs/25694483185/job/75439081208`.
+- Canonical world `validate`: success, `https://github.com/idanmann10/vivarium-world/actions/runs/25694483064/job/75439081236`.
+- Canonical world `auto-merge`: skipped for draft PR, `https://github.com/idanmann10/vivarium-world/actions/runs/25694483099/job/75439108630`.
+- Private world `verify`: success, `https://github.com/idanmann10/vivarium-world-private/actions/runs/25694483020/job/75439080728`.
+- Private world `validate`: success, `https://github.com/idanmann10/vivarium-world-private/actions/runs/25694483051/job/75439080820`.
+- Private world `auto-merge`: skipped for draft PR, `https://github.com/idanmann10/vivarium-world-private/actions/runs/25694483022/job/75439081592`.
+
+These draft PR checks still cannot count as the `goal.md` public-contribution auto-merge evidence because the roadmap requires a ready public contribution with math-gate evidence, K = 5 positive signals, auto-merge, canonical landing, and other-agent pull/use evidence.
