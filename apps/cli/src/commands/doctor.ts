@@ -1640,6 +1640,15 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     privateOaiCompatContextWindowEnv,
     "provider.privateOaiCompatContextWindow",
   );
+  const providerProfilesPathCheck = requiredFileCheck(env, providerProfilesPathEnv, "provider.profilesPath");
+  const providerAnthropicProfileCheck = providerProfileCheck(env, profiles, anthropicProviderProfileEnv, "provider.anthropicProfile");
+  const providerOpenrouterProfileCheck = providerProfileCheck(env, profiles, openRouterProviderProfileEnv, "provider.openrouterProfile");
+  const providerPrivateOaiCompatProfileCheck = providerProfileCheck(
+    env,
+    profiles,
+    privateOaiCompatProviderProfileEnv,
+    "provider.privateOaiCompatProfile",
+  );
   const credentialsPathCheck = requiredFileCheck(env, credentialsPathEnv, "credentials.path");
   const credentialsMasterKeyCheck = requiredEnvCheck(env, credentialsMasterKeyEnv, "credentials.masterKey");
   const internalApiCredentialNameCheck = requiredEnvCheck(env, internalApiCredentialNameEnv, "internalApi.credentialName");
@@ -1664,10 +1673,10 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     providerOpenrouterContextWindowCheck,
     providerPrivateOaiCompatCheck,
     providerPrivateOaiCompatContextWindowCheck,
-    requiredFileCheck(env, providerProfilesPathEnv, "provider.profilesPath"),
-    providerProfileCheck(env, profiles, anthropicProviderProfileEnv, "provider.anthropicProfile"),
-    providerProfileCheck(env, profiles, openRouterProviderProfileEnv, "provider.openrouterProfile"),
-    providerProfileCheck(env, profiles, privateOaiCompatProviderProfileEnv, "provider.privateOaiCompatProfile"),
+    providerProfilesPathCheck,
+    providerAnthropicProfileCheck,
+    providerOpenrouterProfileCheck,
+    providerPrivateOaiCompatProfileCheck,
     providerSmokeCheck(
       runner,
       env,
@@ -1675,7 +1684,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
       "anthropic",
       anthropicProviderProfileEnv,
       [anthropicApiKeyEnv, anthropicModelEnv, anthropicContextWindowEnv],
-      [providerAnthropicCheck, providerAnthropicModelCheck, providerAnthropicContextWindowCheck],
+      [providerProfilesPathCheck, providerAnthropicProfileCheck, providerAnthropicCheck, providerAnthropicModelCheck, providerAnthropicContextWindowCheck],
     ),
     providerSmokeCheck(
       runner,
@@ -1684,7 +1693,14 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
       "openrouter",
       openRouterProviderProfileEnv,
       [openRouterApiKeyEnv, openRouterModelEnv, openRouterBaseUrlEnv, openRouterContextWindowEnv],
-      [providerOpenrouterCheck, providerOpenrouterModelCheck, providerOpenrouterBaseUrlCheck, providerOpenrouterContextWindowCheck],
+      [
+        providerProfilesPathCheck,
+        providerOpenrouterProfileCheck,
+        providerOpenrouterCheck,
+        providerOpenrouterModelCheck,
+        providerOpenrouterBaseUrlCheck,
+        providerOpenrouterContextWindowCheck,
+      ],
     ),
     providerSmokeCheck(
       runner,
@@ -1693,7 +1709,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
       "privateOaiCompat",
       privateOaiCompatProviderProfileEnv,
       [privateOaiCompatApiKeyEnv, privateOaiCompatBaseUrlEnv, privateOaiCompatModelEnv, privateOaiCompatContextWindowEnv],
-      [providerPrivateOaiCompatCheck, providerPrivateOaiCompatContextWindowCheck],
+      [providerProfilesPathCheck, providerPrivateOaiCompatProfileCheck, providerPrivateOaiCompatCheck, providerPrivateOaiCompatContextWindowCheck],
     ),
     credentialsPathCheck,
     credentialsMasterKeyCheck,
