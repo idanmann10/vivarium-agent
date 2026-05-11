@@ -588,3 +588,30 @@ Completion decision: open-source repository readiness is complete locally, but
 the broader v1 production proof remains incomplete. Do not mark the full
 thread goal complete until live external evidence exists and `doctor --live`
 returns `ok:true`.
+
+## 2026-05-11 GitHub Readiness Metadata Pass
+
+Remote GitHub metadata was updated after the open-source readiness commits:
+
+- `idanmann10/vivarium-agent` description now matches the local-first runtime
+  positioning and has topics `agent-runtime`, `ai-agents`, `bun`,
+  `local-first`, `mcp`, and `typescript`.
+- `idanmann10/vivarium-world` description now matches the Git-hosted cultural
+  commons positioning and has topics `agent-skills`, `ai-agents`,
+  `knowledge-commons`, `local-first`, `typescript`, and `validation`.
+- Agent PR #1 is open at head
+  `549707c188b3ab12bc5723ccb55825e7619d3714`; `changeset` and `verify` are
+  successful.
+- World PR #2 is open at head
+  `1b6bab19eb24179b4b6f3087151a5c960c05867a`; `verify` and `validate` are
+  successful, and draft `auto-merge` is skipped.
+
+Current non-completion blockers remain:
+
+- `idanmann10/vivarium-agent` is still a private GitHub repository. Do not
+  represent it as an open-source release until repository visibility is changed
+  with explicit operator approval.
+- Both PRs remain draft.
+- Fresh `doctor --live --env-file live-readiness.local.env` still returns
+  `ok:false` with provider, credential-smoke, public-contribution,
+  published-artifact, curation, and two-week evidence blockers.
