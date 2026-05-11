@@ -479,6 +479,24 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents the operator v1 completion boundary in the live-readiness guide", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    for (const term of [
+      "## Completion Boundary",
+      "`doctor --live` returns `ok:true`",
+      "provider.anthropicSmoke:ok",
+      "provider.openrouterSmoke:ok",
+      "provider.privateOaiCompatSmoke:ok",
+      "credentials.smoke:ok",
+      "v1.realGoals:configured",
+      "v1.publicContribution:configured",
+      "v1.twoWeekImprovement:configured",
+      "at least fourteen days after the last real goal",
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
+
   test("ignores filled live-readiness environment files", () => {
     const gitignore = readFileSync(".gitignore", "utf8");
     for (const pattern of ["live-readiness.local.env", "docs/live-readiness.local.env"]) {

@@ -590,6 +590,30 @@ The manifest is a compact index of evidence, not a substitute for the underlying
 
 The live doctor checks the manifest for: coding starter pack depth with distinct installed skill and trace references matching the counts, distinct first-run references, five distinct named real coding goals with distinct run evidence spanning at least seven days and no future dates, three distinct provider smoke records, internal credential smoke evidence, distinct remote-style canonical and private subscriptions that match the configured live refs when provided, anti-pattern use before unfamiliar territory, two distinct traces with similar-workflow evidence, Monitor tool-failure/recover behavior evidence, one ordered destructive-endpoint run sequence that holds, escalates, receives confirmation, and continues, refusal evidence, two distinct Dream skill candidates plus distinct internal and public Dream skills including proof the internal skill was pushed to the private fork only and a trace auto-extracted from an instructive run with annotations, contributor agent identity, a GitHub public skill PR URL in the configured canonical world repo, math-gate evidence, a GitHub Actions auto-merge run URL in that same repo, canonical world skill landing evidence in that same repo, contributor trust of at least 0.5 at the public skill gate, five distinct other-agent positive-signal agent/evidence records, three distinct other-agent external pull/use records with inspectable evidence, published anti-pattern/trace/run GitHub blob evidence in the configured canonical world repo, published-artifact contributor agent identity matching the public contribution contributor, distinct other-agent evidence that another agent read the published trace and run during Plan, featured-pick evidence including a different contributor's anti-pattern while the curation agent contributor still matches the public contribution contributor, `STATS.md` evidence with at least 30% of skills from the top five contributors, a non-future follow-up measurement at least fourteen days after the last recorded goal with a lower metric than baseline and positive improvement percent on similar goals, a two-week contributor agent identity matching the public contribution contributor, a competing GitHub Discussion URL in the configured canonical world repo plus two distinct live canonical-world skill variant GitHub URLs including the landed public skill, inspectable evidence that the measured goals were similar, two distinct other-agent refinement agent/evidence records excluding the contributor and showing that other agents used or refined the skill, and contributor-profile summary evidence covering at least one public skill, one anti-pattern, one trace, one published run, two internal-only skills, and public trust of at least 0.61.
 
+## Completion Boundary
+
+Do not claim v1 live verification until a fresh `doctor --live` returns `ok:true`
+against the filled local readiness environment and the output includes these
+completion statuses:
+
+- `provider.anthropicSmoke:ok`
+- `provider.openrouterSmoke:ok`
+- `provider.privateOaiCompatSmoke:ok`
+- `credentials.smoke:ok`
+- `v1.realGoals:configured`
+- `v1.providerSmokes:configured`
+- `v1.internalCredentialSmoke:configured`
+- `v1.publicContribution:configured`
+- `v1.publishedArtifacts:configured`
+- `v1.curationStats:configured`
+- `v1.twoWeekImprovement:configured`
+
+The two-week follow-up must be real elapsed evidence. It must be recorded at least fourteen days after the last real goal
+and include similar-goal comparison evidence, a configured-world competing
+Discussion, two live canonical-world skill variant references,
+contributor-profile evidence, and other-agent refinement evidence that excludes
+the contributor.
+
 ## Verification Sequence
 
 After the external prerequisites are configured:
