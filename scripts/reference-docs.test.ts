@@ -416,6 +416,20 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents durable live-readiness artifact paths", () => {
+    const guide = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    const example = readFileSync(join("docs", "live-readiness.env.example"), "utf8");
+    for (const path of [
+      "/Users/idanmann/.codex/memories/vivarium-world-subscriptions.json",
+      "/Users/idanmann/.codex/memories/vivarium-provider-profiles.json",
+      "/Users/idanmann/.codex/memories/vivarium-credentials.enc",
+      "/Users/idanmann/.codex/memories/vivarium-v1-evidence.json",
+    ]) {
+      expect(guide).toContain(path);
+      expect(example).toContain(path);
+    }
+  });
+
   test("uses inspectable references in the live-readiness evidence manifest example", () => {
     const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
     for (const opaqueReference of [
