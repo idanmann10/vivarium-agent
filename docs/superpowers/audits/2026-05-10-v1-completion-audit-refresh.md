@@ -164,7 +164,7 @@ The remaining non-passing checks are:
 
 - Provider setup: `provider.env:placeholder`, `provider.anthropic:placeholder`, `provider.anthropicModel:missing`, `provider.anthropicContextWindow:missing`, `provider.openrouter:placeholder`, `provider.openrouterModel:missing`, `provider.openrouterBaseUrl:missing`, `provider.openrouterContextWindow:missing`, `provider.privateOaiCompat:placeholder`, `provider.privateOaiCompatContextWindow:missing`, `provider.profilesPath:unavailable`.
 - Provider smokes: `provider.anthropicSmoke:missing`, `provider.openrouterSmoke:missing`, `provider.privateOaiCompatSmoke:missing`.
-- Internal credential setup: `credentials.path:unavailable`, `credentials.masterKey:placeholder`, `internalApi.credentialValue:placeholder`, `internalApi.healthUrl:placeholder`, `credentials.smoke:missing`.
+- Internal credential setup: `credentials.path:unavailable`, `internalApi.credentialValue:placeholder`, `internalApi.healthUrl:placeholder`, `credentials.smoke:missing`. The ignored local env file now contains a generated local credential-store master key, so `doctor --live` reports `credentials.masterKey:configured`; the key value is intentionally not recorded.
 - V1 evidence: `v1.starterPack:missing`, `v1.realGoals:missing`, `v1.providerSmokes:missing`, `v1.internalCredentialSmoke:missing`, `v1.worldSubscriptions:missing`, `v1.behaviorLoop:missing`, `v1.dreamArtifacts:missing`, `v1.publicContribution:missing`, `v1.publishedArtifacts:missing`, `v1.curationStats:missing`, `v1.twoWeekImprovement:missing`.
 
 The current `doctor --live` next actions now route setup-created local files through the safer aggregate command:
