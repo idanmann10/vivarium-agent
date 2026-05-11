@@ -319,7 +319,7 @@ Do not treat the pushed branches as CI-verified until PRs are opened or the bran
 
 Draft PRs were opened after explicit external-write approval:
 
-- Agent PR: `https://github.com/idanmann10/vivarium-agent/pull/1`, head `cc86c82becc5c2a5be330d93edd90bf4820b95c5`, draft.
+- Agent PR: `https://github.com/idanmann10/vivarium-agent/pull/1`, head `b93c83341205946696ae87da6f854c8fd514e3f3`, draft.
 - Canonical world PR: `https://github.com/idanmann10/vivarium-world/pull/2`, draft.
 - Private world PR: `https://github.com/idanmann10/vivarium-world-private/pull/1`, draft.
 
@@ -328,10 +328,10 @@ Agent PR CI initially failed for two concrete reasons:
 - `verify` failed because `packages/tools/src/builtin/self-tools.test.ts` asserted the sibling world had `Skills: 41`, while GitHub CI clones `vivarium-world` `main`, which currently reports `Skills: 40`.
 - `changeset` failed because package changes had no tracked changeset marker.
 
-Fix commit `cc86c82 fix(agent): stabilize world metadata CI check` made the metadata assertion count-independent and added `.changeset/quiet-dreams-reflect.md`. Fresh agent PR checks after that push:
+Fix commit `cc86c82 fix(agent): stabilize world metadata CI check` made the metadata assertion count-independent and added `.changeset/quiet-dreams-reflect.md`. Follow-up commit `b93c833 docs(agent): record draft PR handoff` recorded the PR evidence. Fresh agent PR checks after that final push:
 
-- `verify`: success, `https://github.com/idanmann10/vivarium-agent/actions/runs/25693967619/job/75437315689`.
-- `changeset`: success, `https://github.com/idanmann10/vivarium-agent/actions/runs/25693967639/job/75437315674`.
+- `verify`: success, `https://github.com/idanmann10/vivarium-agent/actions/runs/25694039730/job/75437562144`.
+- `changeset`: success, `https://github.com/idanmann10/vivarium-agent/actions/runs/25694039727/job/75437562157`.
 
 World PR checks after PR creation:
 
