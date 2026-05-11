@@ -435,3 +435,77 @@ Current world PR checks after that push:
 - Private world `auto-merge`: skipped for draft PR, `https://github.com/idanmann10/vivarium-world-private/actions/runs/25694483022/job/75439081592`.
 
 These draft PR checks still cannot count as the `goal.md` public-contribution auto-merge evidence because the roadmap requires a ready public contribution with math-gate evidence, K = 5 positive signals, auto-merge, canonical landing, and other-agent pull/use evidence.
+
+## 2026-05-11 Managed-Agent Boundary And Live Doctor Refresh
+
+Two follow-up slices were completed after the draft PR handoff:
+
+- `3c4ba29 feat(core): model managed agent resource boundaries` extends the Claude compatibility surface beyond agent creation. `packages/core/src/types/claude-agent-format.ts` now exports `ClaudeManagedEnvironmentCreateRequest`, `ClaudeManagedSessionCreateRequest`, `ClaudeManagedEvent`, `ClaudeManagedEventType`, and `ClaudeManagedEventsSendRequest` in addition to the previously recorded Managed Agents and Claude Code subagent shapes. `packages/core/src/types/claude-agent-format.test.ts` guards environment `config`, session `agent` / `environment_id` / `vault_ids`, and `{domain}.{action}` event types.
+- `bc0aac2 fix(cli): infer sibling world for live doctor` fixes the live-readiness default for the standard two-repo layout. `doctor --live` now infers a sibling `../the-world` when `--world-root` is omitted, while preserving explicit `--world-root` for nonstandard layouts and private-fork checks.
+
+Additional official Claude Managed Agents docs checked during this refresh:
+
+- Cloud environment setup: `https://platform.claude.com/docs/en/managed-agents/environments`.
+- Start a session: `https://platform.claude.com/docs/en/managed-agents/sessions`.
+- Session event stream: `https://platform.claude.com/docs/en/managed-agents/events-and-streaming`.
+- Authenticate with vaults: `https://platform.claude.com/docs/en/managed-agents/vaults`.
+
+Fresh local verification after the sibling-world fix:
+
+- `bun test apps/cli/src/commands/doctor.test.ts -t "infers a sibling world root"` first failed with `world.remote:missing`, then passed after adding the default sibling-world resolver.
+- `bun test apps/cli/src/commands/doctor.test.ts`: 75 tests passed, 0 failed.
+- `bun test scripts/reference-docs.test.ts apps/cli/src/commands/doctor.test.ts`: 94 tests passed, 0 failed.
+- `bun run lint`: scanned 200 TypeScript files; Oxlint reported 0 warnings and 0 errors.
+- `bun run knip`: exited 0.
+- `bun run typecheck`: exited 0.
+- `bun run test`: 309 tests passed, 0 failed.
+- `bun run build`: reported 9 entrypoints present.
+- `git diff --check`: exited 0.
+
+Fresh live-readiness command from `the-agent` without an explicit world-root:
+
+```bash
+bun apps/cli/src/main.ts doctor --live --env-file live-readiness.local.env
+```
+
+Fresh result: `ok:false`. The earlier false `world.remote:mismatch` / missing
+starter-pack artifacts were removed by sibling-world inference. Passing setup
+and local-evidence checks now include `liveEnvFile.permissions:configured`,
+`agent.name:configured`, `world.name:configured`, `agent.remote:configured`,
+`world.remote:configured`, `world.subscriptionsPath:configured`,
+`world.canonicalRef:configured`, `world.privateForkRef:configured`,
+Anthropic/OpenRouter non-secret model metadata, `provider.profilesPath:configured`,
+`provider.anthropicProfile:configured`, `provider.openrouterProfile:configured`,
+`credentials.masterKey:configured`, `internalApi.credentialName:configured`,
+GitHub auth/Discussion/CI checks, Docker checks, `v1.evidencePath:configured`,
+`v1.starterPack:configured`, `v1.worldSubscriptions:configured`,
+`v1.behaviorLoop:configured`, and `v1.dreamArtifacts:configured`.
+
+Remaining blockers from that same fresh run:
+
+- Provider secrets and live provider smokes: `provider.env:placeholder`,
+  `provider.anthropic:placeholder`, `provider.openrouter:placeholder`,
+  `provider.privateOaiCompat:placeholder`,
+  `provider.privateOaiCompatContextWindow:placeholder`,
+  `provider.privateOaiCompatProfile:unavailable`,
+  `provider.anthropicSmoke:missing`, `provider.openrouterSmoke:missing`, and
+  `provider.privateOaiCompatSmoke:missing`.
+- Internal credential setup and smoke: `credentials.path:unavailable`,
+  `internalApi.credentialValue:placeholder`, `internalApi.healthUrl:placeholder`,
+  and `credentials.smoke:missing`.
+- V1 live evidence: `v1.realGoals:missing`, `v1.providerSmokes:missing`,
+  `v1.internalCredentialSmoke:missing`, `v1.publicContribution:missing`,
+  `v1.publishedArtifacts:missing`, `v1.curationStats:missing`, and
+  `v1.twoWeekImprovement:missing`.
+
+Agent PR checks at head `bc0aac2`:
+
+- `changeset`: success, `https://github.com/idanmann10/vivarium-agent/actions/runs/25695893147/job/75443896763`.
+- `verify`: success, `https://github.com/idanmann10/vivarium-agent/actions/runs/25695893119/job/75443896783`.
+
+Completion decision: still not complete. The current remaining blockers require
+real provider keys, a real private OpenAI-compatible target, an internal API
+credential and health URL, successful live smoke calls, public contribution and
+other-agent evidence, canonical-world published artifact reads, curation stats,
+and a follow-up measurement recorded no earlier than fourteen days after the
+last real goal evidence.
