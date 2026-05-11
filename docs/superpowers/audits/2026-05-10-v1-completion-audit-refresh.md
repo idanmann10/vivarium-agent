@@ -564,3 +564,27 @@ Snapshot facts:
 
 Completion decision: still not complete. The snapshot is a handoff artifact, not
 completion evidence.
+
+## 2026-05-11 Open-Source Production Readiness Pass
+
+Objective restated for this pass: make the agent and world repositories
+presentable, navigable, and locally verifiable as open-source production
+artifacts, while keeping the live v1 cultural-transmission boundary explicit.
+
+Prompt-to-artifact checklist:
+
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| Final public repo names and package metadata | `package.json` now names `vivarium-agent` with MIT license, repository, bugs, homepage, package manager, and local-first description. `../the-world/package.json` now names `vivarium-world` with MIT license, repository, bugs, homepage, package manager, and Git-hosted commons description. `scripts/tooling.test.ts` and `../the-world/scripts/validate.test.ts` guard the metadata. | Complete for open-source readiness |
+| Public entry-point documentation | `README.md` and `../the-world/README.md` describe production status, quick-start or validation commands, repository layout/navigation, live boundary, and project policies. Both READMEs link `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `RELEASING.md`, and `LICENSE`. | Complete for open-source readiness |
+| Governance and release docs | `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, and `RELEASING.md` exist in both repos. Release checklists now include the local gates and license review. World release docs also call out MIT tooling license plus CC0 public-content dedication. | Complete for open-source readiness |
+| License artifact | `LICENSE` exists in both repos. Agent license is MIT. World license states MIT for tooling and CC0 dedication for public world content. Root readiness tests now guard license visibility and file content. | Complete for open-source readiness |
+| CI and release gate alignment | `.github/workflows/ci.yml` now includes `bun run format:check` after build. `.github/workflows/release.yml` now clones `vivarium-world` before running the full test suite and includes `bun run format:check`. `scripts/workflows.test.ts` guards both requirements. | Complete for open-source readiness |
+| Guard tests for the readiness surface | `scripts/reference-docs.test.ts`, `scripts/tooling.test.ts`, `scripts/workflows.test.ts`, `../the-world/scripts/validate.test.ts`, and `../the-world/scripts/world-ops.test.ts` guard docs, package metadata, workflows, README stats, and world readiness policies. | Complete for open-source readiness |
+| Fresh local verification | Agent: `bun run typecheck`, `bun run test` (311 pass, 0 fail, 1697 expects), `bun run lint` (0 warnings/errors), `bun run build`, `bun run format:check`, `bun run knip`, `bun install --frozen-lockfile`, and `git diff --check` exit 0. World: `bun run typecheck`, `bun run test` (28 pass, 0 fail, 262 expects), `bun run lint`, `bun run build`, `bun install --frozen-lockfile`, and `git diff --check` exit 0. | Complete locally |
+| Live production proof | Fresh `bun apps/cli/src/main.ts doctor --live --env-file live-readiness.local.env` returns `ok:false`. Remaining blockers include provider keys/profile smokes, encrypted credential store and smoke, v1 provider/internal credential evidence, public contribution, published artifacts, curation stats, and two-week improvement evidence. | Not complete |
+
+Completion decision: open-source repository readiness is complete locally, but
+the broader v1 production proof remains incomplete. Do not mark the full
+thread goal complete until live external evidence exists and `doctor --live`
+returns `ok:true`.

@@ -15,6 +15,7 @@ describe("agent workflows", () => {
     expect(ci).toContain("bun run typecheck");
     expect(ci).toContain("bun run test");
     expect(ci).toContain("bun run build");
+    expect(ci).toContain("bun run format:check");
   });
 
   test("CI provisions the sibling world repository required by local tests", () => {
@@ -35,7 +36,12 @@ describe("agent workflows", () => {
     }
 
     expect(release).toContain("changesets/action@v1");
+    expect(release).toContain(
+      "https://github.com/${{ github.repository_owner }}/vivarium-world.git",
+    );
+    expect(release).toContain("../the-world");
     expect(release).toContain("bun run knip");
+    expect(release).toContain("bun run format:check");
     expect(changesetBot).toContain("bunx changeset status");
   });
 });

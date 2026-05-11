@@ -226,7 +226,14 @@ const liveReadinessEnvVars = [
 ] as const;
 
 const packageReadmes = {
-  "apps/cli": ["dispatcher", "init", "doctor --live", "completionGuide", "providers", "world transmission-smoke"],
+  "apps/cli": [
+    "dispatcher",
+    "init",
+    "doctor --live",
+    "completionGuide",
+    "providers",
+    "world transmission-smoke",
+  ],
   "apps/daemon": ["status", "run", "dream", "Dream scheduler", "MCP"],
   "packages/core": [
     "types",
@@ -288,6 +295,51 @@ const topLevelDocs = {
     "world transmission-smoke",
     "verify:sqlite-stack",
   ],
+} as const;
+
+const agentRootDocs = {
+  "README.md": [
+    "Vivarium Agent",
+    "local-first",
+    "Production Status",
+    "Quick Start",
+    "bun run knip",
+    "doctor --live",
+    "live-readiness.local.env",
+    "SECURITY.md",
+    "CODE_OF_CONDUCT.md",
+    "RELEASING.md",
+    "LICENSE",
+    "MIT",
+  ],
+  "CONTRIBUTING.md": [
+    "Vivarium Agent",
+    "Conventional Commits",
+    "changeset",
+    "bun run knip",
+    "Security",
+    "doctor --live",
+    "live-readiness.local.env",
+  ],
+  "SECURITY.md": [
+    "Vivarium Agent",
+    "vulnerability",
+    "security",
+    "credential",
+    "live-readiness.local.env",
+    "doctor --live",
+  ],
+  "CODE_OF_CONDUCT.md": ["Vivarium Agent", "Code of Conduct", "harassment", "Enforcement"],
+  "RELEASING.md": [
+    "Vivarium Agent",
+    "release",
+    "changeset",
+    "bun run knip",
+    "doctor --live",
+    "live-readiness.local.env",
+    "LICENSE",
+  ],
+  LICENSE: ["MIT License", "Vivarium contributors", "Permission is hereby granted"],
 } as const;
 
 describe("reference docs", () => {
@@ -559,6 +611,16 @@ describe("reference docs", () => {
       "at least fourteen days after the last real goal",
     ]) {
       expect(body).toContain(term);
+    }
+  });
+
+  test("documents open-source production readiness at the repo root", () => {
+    for (const [path, terms] of Object.entries(agentRootDocs)) {
+      expect(existsSync(path), `${path} should exist`).toBe(true);
+      const body = existsSync(path) ? readFileSync(path, "utf8") : "";
+      for (const term of terms) {
+        expect(body).toContain(term);
+      }
     }
   });
 });
