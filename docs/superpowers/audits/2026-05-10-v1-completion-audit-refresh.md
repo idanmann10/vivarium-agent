@@ -509,3 +509,26 @@ credential and health URL, successful live smoke calls, public contribution and
 other-agent evidence, canonical-world published artifact reads, curation stats,
 and a follow-up measurement recorded no earlier than fourteen days after the
 last real goal evidence.
+
+## 2026-05-11 Real Goal Evidence Append
+
+The durable v1 evidence manifest at
+`/Users/idanmann/.codex/memories/vivarium-v1-evidence.json` now includes a sixth
+real coding goal:
+
+- `goal-2026-05-11-live-doctor-sibling-world`, evidence artifact
+  `/Users/idanmann/.codex/memories/vivarium-v1-real-goal-6-live-doctor-sibling-world.md`.
+
+The evidence artifact records the sibling-world live doctor fix, the active
+audit refresh, local verification, and remote PR check evidence for agent head
+`45f642d230cb9c3c6efa4502c91f78ecf455bee6`.
+
+Fresh command:
+
+```bash
+bun apps/cli/src/main.ts doctor --live --env-file live-readiness.local.env
+```
+
+Fresh result: `ok:false`. The new real-goal evidence reference resolves, and
+`v1.realGoals:missing` remains correct because the current real-goal evidence
+still spans 2026-05-09 through 2026-05-11 rather than at least seven days.
