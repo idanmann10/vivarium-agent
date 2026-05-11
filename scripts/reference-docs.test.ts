@@ -226,7 +226,7 @@ const liveReadinessEnvVars = [
 ] as const;
 
 const packageReadmes = {
-  "apps/cli": ["dispatcher", "init", "doctor --live", "providers", "world transmission-smoke"],
+  "apps/cli": ["dispatcher", "init", "doctor --live", "completionGuide", "providers", "world transmission-smoke"],
   "apps/daemon": ["status", "run", "dream", "Dream scheduler", "MCP"],
   "packages/core": ["types", "kernel", "pure math", "no I/O", "decision thresholds"],
   "packages/eval": ["compounding", "benchmark", "before", "after", "Dream"],
