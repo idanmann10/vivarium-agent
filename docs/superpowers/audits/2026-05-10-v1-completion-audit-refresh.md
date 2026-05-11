@@ -259,8 +259,8 @@ Completion decision: still not complete. The remaining requirements require real
 The local Claude-format and live-readiness hardening slice has been pushed to the existing feature branch:
 
 - Branch: `phase-1-runtime-slice`.
-- Remote head: `0844192909b716222b55bb5e6ef759d0a1fb7fe9`.
-- Latest commits on the branch: `0844192 docs(agent): record starter pack evidence`, `02af625 docs(agent): record remote handoff status`, and `afe6fe2 docs(agent): note durable v1 evidence manifest`.
+- Remote: `origin/phase-1-runtime-slice`. Verify the exact current remote head with `git ls-remote origin refs/heads/phase-1-runtime-slice` because the audit commit itself changes the branch hash.
+- Recent pushed work on the branch includes the Claude agent-format reference, durable v1 evidence manifest handoff, starter-pack evidence status, and remote-handoff bookkeeping.
 - Open PR check for `idanmann10:phase-1-runtime-slice`: no open PRs.
 - Actions check for `phase-1-runtime-slice`: zero workflow runs. This is expected from `.github/workflows/ci.yml`, which runs on `pull_request` and pushes to `main`, not on arbitrary feature-branch pushes.
 
