@@ -245,3 +245,15 @@ Fresh result: `ok:false`. Passing setup checks include env-file permissions, fin
 - V1 evidence manifest sections: `v1.worldSubscriptions:configured`; remaining blockers are `v1.starterPack:missing`, `v1.realGoals:missing`, `v1.providerSmokes:missing`, `v1.internalCredentialSmoke:missing`, `v1.behaviorLoop:missing`, `v1.dreamArtifacts:missing`, `v1.publicContribution:missing`, `v1.publishedArtifacts:missing`, `v1.curationStats:missing`, and `v1.twoWeekImprovement:missing`.
 
 Completion decision: still not complete. The remaining requirements require real provider/internal credentials, successful live smoke calls, populated inspectable v1 evidence, cross-install/other-agent contribution evidence, and a fourteen-day-or-later follow-up measurement.
+
+## 2026-05-11 Remote Handoff
+
+The local Claude-format and live-readiness hardening slice has been pushed to the existing feature branch:
+
+- Branch: `phase-1-runtime-slice`.
+- Remote head: `afe6fe29edb3199bababee8b026bc07eaf2eb126`.
+- Latest commits on the branch: `afe6fe2 docs(agent): note durable v1 evidence manifest`, `a6537fe docs(agent): refresh live evidence audit`, and `2e178a8 docs(agent): record claude agent format guidance`.
+- Open PR check for `idanmann10:phase-1-runtime-slice`: no open PRs.
+- Actions check for `phase-1-runtime-slice`: zero workflow runs. This is expected from `.github/workflows/ci.yml`, which runs on `pull_request` and pushes to `main`, not on arbitrary feature-branch pushes.
+
+Do not treat the pushed branch as CI-verified until a PR is opened or the branch is otherwise run through the full local/remote gates. Opening a draft PR is externally visible and requires explicit user approval.
