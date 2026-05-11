@@ -314,3 +314,32 @@ The Claude-format, live-readiness, behavior-loop, Dream-artifact, runtime Dream 
 - Fresh correct read-only Actions checks returned no feature-branch runs: `gh api 'repos/idanmann10/vivarium-agent/actions/runs?branch=phase-1-runtime-slice&per_page=5'`, `gh api 'repos/idanmann10/vivarium-world/actions/runs?branch=phase-3-world-integration-slice&per_page=5'`, and `gh api 'repos/idanmann10/vivarium-world-private/actions/runs?branch=phase-3-world-integration-slice&per_page=5'` each returned `{"total_count":0,"workflow_runs":[]}`.
 
 Do not treat the pushed branches as CI-verified until PRs are opened or the branches are otherwise run through the full local/remote gates. Opening draft PRs is externally visible and requires explicit user approval.
+
+## 2026-05-11 Draft PR Handoff
+
+Draft PRs were opened after explicit external-write approval:
+
+- Agent PR: `https://github.com/idanmann10/vivarium-agent/pull/1`, head `cc86c82becc5c2a5be330d93edd90bf4820b95c5`, draft.
+- Canonical world PR: `https://github.com/idanmann10/vivarium-world/pull/2`, draft.
+- Private world PR: `https://github.com/idanmann10/vivarium-world-private/pull/1`, draft.
+
+Agent PR CI initially failed for two concrete reasons:
+
+- `verify` failed because `packages/tools/src/builtin/self-tools.test.ts` asserted the sibling world had `Skills: 41`, while GitHub CI clones `vivarium-world` `main`, which currently reports `Skills: 40`.
+- `changeset` failed because package changes had no tracked changeset marker.
+
+Fix commit `cc86c82 fix(agent): stabilize world metadata CI check` made the metadata assertion count-independent and added `.changeset/quiet-dreams-reflect.md`. Fresh agent PR checks after that push:
+
+- `verify`: success, `https://github.com/idanmann10/vivarium-agent/actions/runs/25693967619/job/75437315689`.
+- `changeset`: success, `https://github.com/idanmann10/vivarium-agent/actions/runs/25693967639/job/75437315674`.
+
+World PR checks after PR creation:
+
+- Canonical world `verify`: success, `https://github.com/idanmann10/vivarium-world/actions/runs/25693191216/job/75434660655`.
+- Canonical world `validate`: success, `https://github.com/idanmann10/vivarium-world/actions/runs/25693191248/job/75434660871`.
+- Canonical world `auto-merge`: failure, `https://github.com/idanmann10/vivarium-world/actions/runs/25693191258/job/75434660971`, because `check-veto-window.ts` returned `maintainer-veto-window-open` at age `0` of a `48` hour window with no validator signals.
+- Private world `verify`: success, `https://github.com/idanmann10/vivarium-world-private/actions/runs/25693196221/job/75434678250`.
+- Private world `validate`: success, `https://github.com/idanmann10/vivarium-world-private/actions/runs/25693196206/job/75434678082`.
+- Private world `auto-merge`: failure, `https://github.com/idanmann10/vivarium-world-private/actions/runs/25693196218/job/75434678278`, because `check-veto-window.ts` returned `maintainer-veto-window-open` at age `0` of a `48` hour window with no validator signals.
+
+The world auto-merge failures are expected gate denials for newly opened proposal PRs, not validation failures. They still mean the world PRs are not auto-merge-ready and cannot count as the `goal.md` public-contribution auto-merge evidence.
