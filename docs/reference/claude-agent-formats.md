@@ -26,21 +26,40 @@ Claude Managed Agents separates four concepts:
 
 | Concept | Meaning for our type design |
 | --- | --- |
-| Agent | Reusable, versioned bundle of `name`, `model`, `system`, `tools`, `mcp_servers`, and `skills`. |
+| Agent | Reusable, versioned bundle of `name`, `model`, `system`, `tools`, `mcp_servers`, `skills`, `multiagent`, `description`, and `metadata`. |
 | Environment | Container template: installed packages, network policy, and mounted files. |
 | Session | One running agent instance against an Environment for a concrete task. |
 | Events | Persisted messages, tool results, status updates, and streamed responses. |
 
 Do not collapse these into one local type. Vivarium can have its own `AgentConfig`
 and run records, but any future Managed Agents bridge should keep model/system/tool
-selection on the Agent-like resource, execution filesystem/network concerns on the
-Environment-like resource, and per-goal state on the Session-like resource.
+selection and delegation roster on the Agent-like resource, execution
+filesystem/network concerns on the Environment-like resource, and per-goal state
+on the Session-like resource.
 
 Managed Agents API calls require the `managed-agents-2026-04-01` beta header. The
 agent toolset type is currently `agent_toolset_20260401`, which enables built-in
 tools such as `bash`, `read`, `write`, `edit`, `glob`, `grep`, web search/fetch,
 and code execution when included in the agent configuration. Custom tools are
 also supported, but the application executes them and sends results back.
+
+Managed Agent fields worth preserving in any compatibility type:
+
+- `name`: required human-readable agent name.
+- `model`: required Claude model. Current examples use an object such as
+  `{ "id": "claude-opus-4-7", "speed": "standard" }`; fast mode can be
+  represented as a model object rather than prose.
+- `system`: optional system prompt distinct from per-session user messages.
+- `tools`: pre-built agent toolsets, MCP tools, and custom tools.
+- `mcp_servers`: reusable MCP server declarations. Keep auth separate.
+- `skills`: domain context attached with progressive disclosure.
+- `multiagent`: coordinator declaration for agents this agent may delegate to.
+- `description`: optional agent description.
+- `metadata`: arbitrary tracking key/value data.
+
+Responses add runtime/versioning fields such as `id`, `type`, `version`,
+`created_at`, `updated_at`, and `archived_at`. Do not confuse those response
+fields with the create/update request shape.
 
 Skills attached to a Managed Agent are typed by source:
 
@@ -94,8 +113,11 @@ Important scopes and priority:
 | Plugin `agents/` | Enabled plugin | Lowest |
 
 Supported frontmatter includes `tools`, `disallowedTools`, `model`,
-`permissionMode`, `mcpServers`, `skills`, `hooks`, and `isolation`. Plugin
-agents ignore `hooks`, `mcpServers`, and `permissionMode` for security.
+`permissionMode`, `maxTurns`, `skills`, `mcpServers`, `hooks`, `memory`,
+`background`, `effort`, `isolation`, `color`, and `initialPrompt`. The
+`--agents` JSON form accepts those same fields and uses `prompt` for the system
+prompt equivalent of the Markdown body. Plugin agents ignore `hooks`,
+`mcpServers`, and `permissionMode` for security.
 
 When an agent runs as the main thread, subagent spawning can be restricted in the
 `tools` field:
