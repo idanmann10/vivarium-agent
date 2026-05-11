@@ -2864,6 +2864,58 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("provider.privateOaiCompatContextWindow:invalid");
   });
 
+  test("reports invalid live setup URLs as live readiness blockers", () => {
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        ANTHROPIC_API_KEY: "configured",
+        VIVARIUM_ANTHROPIC_MODEL: "claude-live",
+        VIVARIUM_ANTHROPIC_CONTEXT_WINDOW: "200000",
+        OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OPENROUTER_MODEL: "openrouter/live",
+        VIVARIUM_OPENROUTER_BASE_URL: "openrouter.ai/api/v1",
+        VIVARIUM_OPENROUTER_CONTEXT_WINDOW: "128000",
+        VIVARIUM_OAI_COMPAT_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "ftp://models.internal.example/v1",
+        VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW: "128000",
+        VIVARIUM_INTERNAL_API_HEALTH_URL: "internal.example/health",
+        GITHUB_TOKEN: "configured",
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("provider.openrouterBaseUrl:invalid");
+    expect(result.checks).toContain("provider.privateOaiCompat:invalid");
+    expect(result.checks).toContain("internalApi.healthUrl:invalid");
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "provider.openrouterBaseUrl:invalid",
+        env: expect.arrayContaining(["VIVARIUM_OPENROUTER_BASE_URL"]),
+      }),
+    );
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "provider.privateOaiCompat:invalid",
+        env: expect.arrayContaining(["VIVARIUM_OAI_COMPAT_BASE_URL"]),
+      }),
+    );
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "internalApi.healthUrl:invalid",
+        env: expect.arrayContaining(["VIVARIUM_INTERNAL_API_HEALTH_URL"]),
+      }),
+    );
+  });
+
   test("counts private OAI-compatible credentials as configured provider environment", () => {
     const result = doctorCommand({
       mode: "live-readiness",

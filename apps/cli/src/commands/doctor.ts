@@ -235,6 +235,25 @@ function positiveIntegerEnvCheck(env: Readonly<Record<string, string | undefined
   return Number.isInteger(parsed) && parsed > 0 ? `${label}:configured` : `${label}:invalid`;
 }
 
+function isHttpUrlValue(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function httpUrlEnvCheck(env: Readonly<Record<string, string | undefined>>, envName: string, label: string): string {
+  const status = envValueStatus(env, envName);
+  if (status !== "configured") {
+    return `${label}:${status}`;
+  }
+
+  const value = env[envName]?.trim() ?? "";
+  return isHttpUrlValue(value) ? `${label}:configured` : `${label}:invalid`;
+}
+
 function requiredFileCheck(env: Readonly<Record<string, string | undefined>>, envName: string, label: string): string {
   const value = env[envName]?.trim();
   if (value === undefined || value.length === 0) {
@@ -905,11 +924,15 @@ function providerSmokeCheck(
 }
 
 function privateOaiCompatCheck(env: Readonly<Record<string, string | undefined>>): string {
+  const baseUrlStatus = envValueStatus(env, privateOaiCompatBaseUrlEnv);
   const statuses = [
     envValueStatus(env, privateOaiCompatApiKeyEnv),
-    envValueStatus(env, privateOaiCompatBaseUrlEnv),
+    baseUrlStatus,
     envValueStatus(env, privateOaiCompatModelEnv),
   ];
+  if (baseUrlStatus === "configured" && !isHttpUrlValue(env[privateOaiCompatBaseUrlEnv]?.trim() ?? "")) {
+    return "provider.privateOaiCompat:invalid";
+  }
   if (statuses.every((status) => status === "configured")) {
     return "provider.privateOaiCompat:configured";
   }
@@ -1252,7 +1275,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "provider.openrouterBaseUrl":
       return {
         check,
-        action: "Export the OpenRouter-compatible base URL used by live setup.",
+        action: "Export the complete http:// or https:// OpenRouter-compatible base URL used by live setup.",
         env: [openRouterBaseUrlEnv],
         guide: `${guide}#provider-environment`,
       };
@@ -1266,7 +1289,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "provider.privateOaiCompat":
       return {
         check,
-        action: "Export the private OpenAI-compatible provider key, base URL, and model.",
+        action: "Export the private OpenAI-compatible provider key, complete http:// or https:// base URL, and model.",
         env: [
           privateOaiCompatApiKeyEnv,
           privateOaiCompatBaseUrlEnv,
@@ -1390,7 +1413,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "internalApi.healthUrl":
       return {
         check,
-        action: "Export the internal API health URL used by credential smoke tests.",
+        action: "Export the complete http:// or https:// internal API health URL used by credential smoke tests.",
         env: [internalApiHealthUrlEnv],
         guide: `${guide}#internal-api-credential`,
       };
@@ -1601,7 +1624,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     positiveIntegerEnvCheck(env, anthropicContextWindowEnv, "provider.anthropicContextWindow"),
     requiredEnvCheck(env, openRouterApiKeyEnv, "provider.openrouter"),
     requiredEnvCheck(env, openRouterModelEnv, "provider.openrouterModel"),
-    requiredEnvCheck(env, openRouterBaseUrlEnv, "provider.openrouterBaseUrl"),
+    httpUrlEnvCheck(env, openRouterBaseUrlEnv, "provider.openrouterBaseUrl"),
     positiveIntegerEnvCheck(env, openRouterContextWindowEnv, "provider.openrouterContextWindow"),
     privateOaiCompatCheck(env),
     positiveIntegerEnvCheck(env, privateOaiCompatContextWindowEnv, "provider.privateOaiCompatContextWindow"),
@@ -1630,7 +1653,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     requiredEnvCheck(env, credentialsMasterKeyEnv, "credentials.masterKey"),
     requiredEnvCheck(env, internalApiCredentialNameEnv, "internalApi.credentialName"),
     internalApiCredentialValueCheck(env),
-    requiredEnvCheck(env, internalApiHealthUrlEnv, "internalApi.healthUrl"),
+    httpUrlEnvCheck(env, internalApiHealthUrlEnv, "internalApi.healthUrl"),
     credentialSmokeCheck(runner, env, agentRoot),
     githubEnvCheck(env),
     requiredEnvCheck(env, githubOwnerEnv, "github.owner"),
