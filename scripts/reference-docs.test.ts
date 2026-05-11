@@ -504,4 +504,25 @@ describe("reference docs", () => {
       }
     }
   });
+
+  test("documents the v1 completion boundary in the active audit", () => {
+    const body = readFileSync(
+      join("docs", "superpowers", "audits", "2026-05-10-v1-completion-audit-refresh.md"),
+      "utf8",
+    );
+    for (const term of [
+      "### Do Not Mark Complete Until",
+      "`doctor --live` returns `ok:true`",
+      "provider.anthropicSmoke:ok",
+      "provider.openrouterSmoke:ok",
+      "provider.privateOaiCompatSmoke:ok",
+      "credentials.smoke:ok",
+      "v1.realGoals:configured",
+      "v1.publicContribution:configured",
+      "v1.twoWeekImprovement:configured",
+      "at least fourteen days after the last real goal",
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
 });

@@ -315,6 +315,30 @@ requires real credentials, real smoke calls, other-agent/cross-install evidence,
 canonical-world publication and curation evidence, and a fourteen-day-or-later
 follow-up measurement.
 
+### Do Not Mark Complete Until
+
+Do not call the thread goal complete until a fresh run of `doctor --live` returns `ok:true`
+against the filled local readiness environment and the command output
+includes these live completion statuses:
+
+- `provider.anthropicSmoke:ok`
+- `provider.openrouterSmoke:ok`
+- `provider.privateOaiCompatSmoke:ok`
+- `credentials.smoke:ok`
+- `v1.realGoals:configured`
+- `v1.providerSmokes:configured`
+- `v1.internalCredentialSmoke:configured`
+- `v1.publicContribution:configured`
+- `v1.publishedArtifacts:configured`
+- `v1.curationStats:configured`
+- `v1.twoWeekImprovement:configured`
+
+The two-week measurement cannot be satisfied by local setup work on the same day
+as the current evidence. It must be recorded at least fourteen days after the last real goal,
+with non-future dated evidence, similar-goal comparison
+evidence, competing canonical-world skill references, a configured-world
+Discussion, and other-agent refinement evidence that excludes the contributor.
+
 Starter-pack evidence update:
 
 - Ran a durable local init at `/Users/idanmann/.codex/memories/vivarium-v1-starter-pack-2026-05-11.db` using the current local coding world.
