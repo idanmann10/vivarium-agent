@@ -318,6 +318,33 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents Claude Managed Agents and subagent format constraints", () => {
+    const body = readFileSync(join("docs", "reference", "claude-agent-formats.md"), "utf8");
+    for (const term of [
+      "Claude Managed Agents",
+      "Agent",
+      "Environment",
+      "Session",
+      "Events",
+      "name",
+      "model",
+      "system",
+      "tools",
+      "mcp_servers",
+      "skills",
+      "managed-agents-2026-04-01",
+      ".claude/agents/",
+      "~/.claude/agents/",
+      "--agents",
+      "Managed settings",
+      "Plugin",
+      "Agent(worker, researcher)",
+      "isolation: worktree",
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
+
   test("documents core artifact reference format fields", () => {
     for (const [doc, fields] of Object.entries(referenceFormatFields)) {
       const body = readFileSync(join("docs", "reference", `${doc}.md`), "utf8");

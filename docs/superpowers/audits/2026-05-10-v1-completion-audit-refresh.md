@@ -183,3 +183,64 @@ That command still requires real provider keys, model/base/context values, the i
 6. Live run window for five real coding goals and the required fourteen-day-or-later follow-up measurement.
 
 Until those are available and verified, do not mark the thread goal complete.
+
+## 2026-05-11 Resume Update
+
+The resume request added a new explicit constraint: check current Claude Managed Agents and Claude Code agent docs so future Vivarium agent-building work keeps Claude's type and file-format boundaries in mind.
+
+Sources checked:
+
+- Claude Managed Agents overview: `https://platform.claude.com/docs/en/managed-agents/overview`.
+- Define your agent: `https://platform.claude.com/docs/en/managed-agents/agent-setup`.
+- Managed Agent tools: `https://platform.claude.com/docs/en/managed-agents/tools`.
+- Managed Agent skills: `https://platform.claude.com/docs/en/managed-agents/skills`.
+- Managed Agent MCP connector: `https://platform.claude.com/docs/en/managed-agents/mcp-connector`.
+- Claude Code subagents: `https://code.claude.com/docs/en/sub-agents`.
+- Claude Code agent teams: `https://code.claude.com/docs/en/agent-teams`.
+
+Persisted local artifacts:
+
+- `docs/reference/claude-agent-formats.md` records the Claude Managed Agents `Agent` / `Environment` / `Session` / `Events` split, agent config fields (`name`, `model`, `system`, `tools`, `mcp_servers`, `skills`), the `managed-agents-2026-04-01` beta header, skill source shapes, MCP secret split, Claude Code subagent YAML frontmatter, subagent scope priority, `isolation: worktree`, agent-team reuse of subagent types, and `Agent(worker, researcher)` spawn allowlists.
+- `docs/README.md` links the new reference page.
+- `scripts/reference-docs.test.ts` now guards the Claude format reference so it stays discoverable.
+
+Local doctor hardening completed while resuming:
+
+- `doctor --live` now reads saved provider profiles into a map and compares each configured profile against the same metadata shape written by `live setup`.
+- The Anthropic live profile must match `kind: "anthropic"`, `apiKeyEnv: "ANTHROPIC_API_KEY"`, configured model/context window, capabilities `["chat", "tools"]`, and `costClass: "expensive"`.
+- The OpenRouter and private OpenAI-compatible profiles must match `kind: "openai-compat"`, their configured API-key env, configured model/base URL/context window, capabilities `["chat", "json_mode"]`, and `costClass: "medium"`.
+- Smoke probes are skipped when saved profile names are unavailable or when saved profile metadata mismatches live setup env, preventing false live-readiness progress.
+
+Fresh local verification:
+
+- `bun test apps/cli/src/commands/doctor.test.ts`: 74 tests passed.
+- `bun test scripts/reference-docs.test.ts`: 16 tests passed.
+- `bun run typecheck`: passed.
+- `bun run test`: 298 tests passed.
+- `bun run lint`: scanned 198 TypeScript files; Oxlint reported 0 warnings and 0 errors.
+- `bun run build`: 9 entrypoints present.
+- `bun run format:check`: all matched files formatted.
+- `bun run knip`: passed.
+- `git diff --check`: passed.
+- `the-world bun run lint`: world validator reported 3 domains, 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, and 1 contributor.
+- `the-world bun run typecheck`: passed.
+- `the-world bun run test`: 26 tests passed.
+- `the-world bun run build`: 8 required files present.
+
+Fresh live-readiness command:
+
+```bash
+bun apps/cli/src/main.ts doctor --live \
+  --env-file live-readiness.local.env \
+  --agent-root /Users/idanmann/Vivarium/the-agent \
+  --world-root /Users/idanmann/Vivarium/the-world
+```
+
+Fresh result: `ok:false`. Passing setup checks include env-file permissions, final agent/world names, remotes, canonical/private world subscription refs, provider profile names, GitHub auth/Discussion/CI, Docker, Docker Compose, and evidence manifest path. Remaining blockers:
+
+- Provider setup: `provider.env:placeholder`, `provider.anthropic:placeholder`, `provider.anthropicModel:missing`, `provider.anthropicContextWindow:missing`, `provider.openrouter:placeholder`, `provider.openrouterModel:missing`, `provider.openrouterBaseUrl:missing`, `provider.openrouterContextWindow:missing`, `provider.privateOaiCompat:placeholder`, `provider.privateOaiCompatContextWindow:missing`, `provider.profilesPath:unavailable`.
+- Provider smoke probes: `provider.anthropicSmoke:missing`, `provider.openrouterSmoke:missing`, `provider.privateOaiCompatSmoke:missing`.
+- Internal credential setup: `credentials.path:unavailable`, `credentials.masterKey:placeholder`, `internalApi.credentialValue:placeholder`, `internalApi.healthUrl:placeholder`, `credentials.smoke:missing`.
+- V1 evidence manifest sections: `v1.starterPack:missing`, `v1.realGoals:missing`, `v1.providerSmokes:missing`, `v1.internalCredentialSmoke:missing`, `v1.worldSubscriptions:missing`, `v1.behaviorLoop:missing`, `v1.dreamArtifacts:missing`, `v1.publicContribution:missing`, `v1.publishedArtifacts:missing`, `v1.curationStats:missing`, `v1.twoWeekImprovement:missing`.
+
+Completion decision: still not complete. The remaining requirements require real provider/internal credentials, successful live smoke calls, populated inspectable v1 evidence, cross-install/other-agent contribution evidence, and a fourteen-day-or-later follow-up measurement.

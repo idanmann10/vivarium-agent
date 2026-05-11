@@ -235,6 +235,11 @@ function positiveIntegerEnvCheck(env: Readonly<Record<string, string | undefined
   return Number.isInteger(parsed) && parsed > 0 ? `${label}:configured` : `${label}:invalid`;
 }
 
+function positiveIntegerEnvValue(env: Readonly<Record<string, string | undefined>>, envName: string): number | undefined {
+  const parsed = Number.parseInt(env[envName] ?? "", 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
+
 function isHttpUrlValue(value: string): boolean {
   try {
     const url = new URL(value);
@@ -835,25 +840,41 @@ function worldRefCheck(
   return refs === undefined || refs.has(value) ? `${label}:configured` : `${label}:unavailable`;
 }
 
-function providerProfileNames(env: Readonly<Record<string, string | undefined>>): ReadonlySet<string> | undefined {
+interface ExpectedProviderProfile {
+  readonly kind: string;
+  readonly apiKeyEnv: string;
+  readonly model: string;
+  readonly baseUrl?: string;
+  readonly capabilities: readonly string[];
+  readonly contextWindow: number;
+  readonly costClass: string;
+}
+
+function providerProfilesByName(env: Readonly<Record<string, string | undefined>>): ReadonlyMap<string, Readonly<Record<string, unknown>>> | undefined {
   const profilesPath = env[providerProfilesPathEnv]?.trim();
   if (profilesPath === undefined || profilesPath.length === 0 || !existsSync(profilesPath)) {
     return undefined;
   }
 
   try {
-    const parsed = JSON.parse(readFileSync(profilesPath, "utf8")) as { readonly profiles?: readonly { readonly name?: unknown }[] };
-    return new Set((parsed.profiles ?? []).flatMap((profile) => (typeof profile.name === "string" ? [profile.name] : [])));
+    const parsed = asRecord(JSON.parse(readFileSync(profilesPath, "utf8")));
+    return new Map(
+      recordArray(parsed?.profiles).flatMap((profile) => {
+        const name = textValue(profile.name);
+        return name === undefined ? [] : [[name, profile]];
+      }),
+    );
   } catch {
-    return new Set();
+    return new Map();
   }
 }
 
 function providerProfileCheck(
   env: Readonly<Record<string, string | undefined>>,
-  names: ReadonlySet<string> | undefined,
+  profiles: ReadonlyMap<string, Readonly<Record<string, unknown>>> | undefined,
   envName: string,
   label: string,
+  expected?: ExpectedProviderProfile,
 ): string {
   const value = env[envName]?.trim();
   if (value === undefined || value.length === 0) {
@@ -863,7 +884,77 @@ function providerProfileCheck(
     return `${label}:placeholder`;
   }
 
-  return names === undefined || names.has(value) ? `${label}:configured` : `${label}:unavailable`;
+  if (profiles === undefined) {
+    return `${label}:configured`;
+  }
+
+  const profile = profiles.get(value);
+  if (profile === undefined) {
+    return `${label}:unavailable`;
+  }
+
+  return expected === undefined || providerProfileMatches(profile, expected) ? `${label}:configured` : `${label}:mismatch`;
+}
+
+function providerProfileMatches(profile: Readonly<Record<string, unknown>>, expected: ExpectedProviderProfile): boolean {
+  return (
+    textValue(profile.kind) === expected.kind &&
+    textValue(profile.apiKeyEnv) === expected.apiKeyEnv &&
+    textValue(profile.model) === expected.model &&
+    numberValue(profile.contextWindow) === expected.contextWindow &&
+    textValue(profile.baseUrl) === expected.baseUrl &&
+    textValue(profile.costClass) === expected.costClass &&
+    textArray(profile.capabilities).join("\n") === expected.capabilities.join("\n")
+  );
+}
+
+function expectedAnthropicProviderProfile(env: Readonly<Record<string, string | undefined>>): ExpectedProviderProfile | undefined {
+  const model = textValue(env[anthropicModelEnv]);
+  const contextWindow = positiveIntegerEnvValue(env, anthropicContextWindowEnv);
+  return model === undefined || contextWindow === undefined
+    ? undefined
+    : {
+        kind: "anthropic",
+        apiKeyEnv: anthropicApiKeyEnv,
+        model,
+        capabilities: ["chat", "tools"],
+        contextWindow,
+        costClass: "expensive",
+      };
+}
+
+function expectedOpenRouterProviderProfile(env: Readonly<Record<string, string | undefined>>): ExpectedProviderProfile | undefined {
+  const model = textValue(env[openRouterModelEnv]);
+  const baseUrl = textValue(env[openRouterBaseUrlEnv]);
+  const contextWindow = positiveIntegerEnvValue(env, openRouterContextWindowEnv);
+  return model === undefined || baseUrl === undefined || !isHttpUrlValue(baseUrl) || contextWindow === undefined
+    ? undefined
+    : {
+        kind: "openai-compat",
+        apiKeyEnv: openRouterApiKeyEnv,
+        model,
+        baseUrl,
+        capabilities: ["chat", "json_mode"],
+        contextWindow,
+        costClass: "medium",
+      };
+}
+
+function expectedPrivateOaiCompatProviderProfile(env: Readonly<Record<string, string | undefined>>): ExpectedProviderProfile | undefined {
+  const model = textValue(env[privateOaiCompatModelEnv]);
+  const baseUrl = textValue(env[privateOaiCompatBaseUrlEnv]);
+  const contextWindow = positiveIntegerEnvValue(env, privateOaiCompatContextWindowEnv);
+  return model === undefined || baseUrl === undefined || !isHttpUrlValue(baseUrl) || contextWindow === undefined
+    ? undefined
+    : {
+        kind: "openai-compat",
+        apiKeyEnv: privateOaiCompatApiKeyEnv,
+        model,
+        baseUrl,
+        capabilities: ["chat", "json_mode"],
+        contextWindow,
+        costClass: "medium",
+      };
 }
 
 function cliResultRecord(result: DoctorCommandRunResult): Readonly<Record<string, unknown>> | undefined {
@@ -1613,7 +1704,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
   const worldRoot = options.worldRoot ?? process.cwd();
   const nowMillis = options.nowMillis ?? Date.now();
   const worldRefs = worldSubscriptionRefs(env);
-  const profiles = providerProfileNames(env);
+  const profiles = providerProfilesByName(env);
   const nextActionContext: DoctorNextActionContext = {
     agentRoot,
     worldRoot,
@@ -1641,13 +1732,26 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     "provider.privateOaiCompatContextWindow",
   );
   const providerProfilesPathCheck = requiredFileCheck(env, providerProfilesPathEnv, "provider.profilesPath");
-  const providerAnthropicProfileCheck = providerProfileCheck(env, profiles, anthropicProviderProfileEnv, "provider.anthropicProfile");
-  const providerOpenrouterProfileCheck = providerProfileCheck(env, profiles, openRouterProviderProfileEnv, "provider.openrouterProfile");
+  const providerAnthropicProfileCheck = providerProfileCheck(
+    env,
+    profiles,
+    anthropicProviderProfileEnv,
+    "provider.anthropicProfile",
+    expectedAnthropicProviderProfile(env),
+  );
+  const providerOpenrouterProfileCheck = providerProfileCheck(
+    env,
+    profiles,
+    openRouterProviderProfileEnv,
+    "provider.openrouterProfile",
+    expectedOpenRouterProviderProfile(env),
+  );
   const providerPrivateOaiCompatProfileCheck = providerProfileCheck(
     env,
     profiles,
     privateOaiCompatProviderProfileEnv,
     "provider.privateOaiCompatProfile",
+    expectedPrivateOaiCompatProviderProfile(env),
   );
   const credentialsPathCheck = requiredFileCheck(env, credentialsPathEnv, "credentials.path");
   const credentialsMasterKeyCheck = requiredEnvCheck(env, credentialsMasterKeyEnv, "credentials.masterKey");

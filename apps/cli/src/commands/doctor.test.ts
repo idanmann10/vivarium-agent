@@ -311,14 +311,34 @@ function writeLiveReadyFiles(root: string): Readonly<{
     profilesPath,
     `${JSON.stringify({
       profiles: [
-        { name: "anthropic-main", kind: "anthropic", apiKeyEnv: "ANTHROPIC_API_KEY", model: "claude-live", capabilities: ["chat"] },
-        { name: "openrouter", kind: "openai-compat", apiKeyEnv: "OPENROUTER_API_KEY", model: "openrouter/live", capabilities: ["chat"] },
+        {
+          name: "anthropic-main",
+          kind: "anthropic",
+          apiKeyEnv: "ANTHROPIC_API_KEY",
+          model: "claude-live",
+          capabilities: ["chat", "tools"],
+          contextWindow: 200000,
+          costClass: "expensive",
+        },
+        {
+          name: "openrouter",
+          kind: "openai-compat",
+          apiKeyEnv: "OPENROUTER_API_KEY",
+          model: "openrouter/live",
+          baseUrl: "https://openrouter.ai/api/v1",
+          capabilities: ["chat", "json_mode"],
+          contextWindow: 128000,
+          costClass: "medium",
+        },
         {
           name: "private-finetune",
           kind: "openai-compat",
           apiKeyEnv: "VIVARIUM_OAI_COMPAT_API_KEY",
           model: "fine-tune",
-          capabilities: ["chat"],
+          baseUrl: "https://models.internal.example/v1",
+          capabilities: ["chat", "json_mode"],
+          contextWindow: 128000,
+          costClass: "medium",
         },
       ],
     })}\n`,
@@ -3200,6 +3220,101 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("provider.anthropicProfile:unavailable");
     expect(result.checks).toContain("provider.openrouterProfile:unavailable");
     expect(result.checks).toContain("provider.privateOaiCompatProfile:unavailable");
+    expect(result.checks).toContain("provider.anthropicSmoke:missing");
+    expect(result.checks).toContain("provider.openrouterSmoke:missing");
+    expect(result.checks).toContain("provider.privateOaiCompatSmoke:missing");
+    expect(smokeCommands).toEqual([]);
+  });
+
+  test("reports saved provider profiles that do not match live setup env", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-provider-profile-mismatch-"));
+    const files = writeLiveReadyFiles(root);
+    writeFileSync(
+      files.profilesPath,
+      `${JSON.stringify({
+        profiles: [
+          {
+            name: "anthropic-main",
+            kind: "openai-compat",
+            apiKeyEnv: "ANTHROPIC_API_KEY",
+            model: "wrong-claude",
+            baseUrl: "https://models.example/v1",
+            capabilities: ["chat"],
+            contextWindow: 1,
+            costClass: "medium",
+          },
+          {
+            name: "openrouter",
+            kind: "openai-compat",
+            apiKeyEnv: "OPENROUTER_API_KEY",
+            model: "wrong-openrouter",
+            baseUrl: "https://wrong.example/v1",
+            capabilities: ["chat"],
+            contextWindow: 1,
+            costClass: "medium",
+          },
+          {
+            name: "private-finetune",
+            kind: "openai-compat",
+            apiKeyEnv: "VIVARIUM_OAI_COMPAT_API_KEY",
+            model: "wrong-private",
+            baseUrl: "https://wrong-private.example/v1",
+            capabilities: ["chat"],
+            contextWindow: 1,
+            costClass: "medium",
+          },
+        ],
+      })}\n`,
+      "utf8",
+    );
+    const smokeCommands: string[] = [];
+    const runner: DoctorCommandRunner = (run) => {
+      const text = [run.command, ...run.args].join(" ");
+      if (text.includes(" providers smoke ")) {
+        smokeCommands.push(text);
+      }
+
+      return readyRunner(run);
+    };
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        VIVARIUM_WORLD_SUBSCRIPTIONS_PATH: files.subscriptionsPath,
+        VIVARIUM_CANONICAL_WORLD_REF: "git@github.com:owner/world-final.git",
+        VIVARIUM_PRIVATE_WORLD_REF: "git@github.com:team/world-private.git",
+        ANTHROPIC_API_KEY: "configured",
+        VIVARIUM_ANTHROPIC_MODEL: "claude-live",
+        VIVARIUM_ANTHROPIC_CONTEXT_WINDOW: "200000",
+        OPENROUTER_API_KEY: "configured",
+        VIVARIUM_OPENROUTER_MODEL: "openrouter/live",
+        VIVARIUM_OPENROUTER_BASE_URL: "https://openrouter.ai/api/v1",
+        VIVARIUM_OPENROUTER_CONTEXT_WINDOW: "128000",
+        VIVARIUM_OAI_COMPAT_API_KEY: "configured",
+        VIVARIUM_OAI_COMPAT_BASE_URL: "https://models.internal.example/v1",
+        VIVARIUM_OAI_COMPAT_MODEL: "fine-tune",
+        VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW: "128000",
+        VIVARIUM_PROVIDER_PROFILES_PATH: files.profilesPath,
+        VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
+        VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
+        VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE: "private-finetune",
+        VIVARIUM_V1_EVIDENCE_PATH: files.evidencePath,
+        GITHUB_TOKEN: "configured",
+      },
+      runner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("provider.anthropicProfile:mismatch");
+    expect(result.checks).toContain("provider.openrouterProfile:mismatch");
+    expect(result.checks).toContain("provider.privateOaiCompatProfile:mismatch");
     expect(result.checks).toContain("provider.anthropicSmoke:missing");
     expect(result.checks).toContain("provider.openrouterSmoke:missing");
     expect(result.checks).toContain("provider.privateOaiCompatSmoke:missing");
