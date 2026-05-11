@@ -258,6 +258,63 @@ Fresh `live setup --env-file live-readiness.local.env` dry run after local priva
 - Placeholder env: `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, `VIVARIUM_OAI_COMPAT_API_KEY`, `VIVARIUM_OAI_COMPAT_MODEL`, `VIVARIUM_OAI_COMPAT_BASE_URL`, `VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW`, `VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE`, and `VIVARIUM_INTERNAL_API_HEALTH_URL`.
 - `written:false`; provider profile and encrypted credential files were not created.
 
+### Source Goal Completion Matrix
+
+This section maps the actual `/Users/idanmann/Vivarium/goal.md` Phase and v1
+done language to concrete artifacts. It is intentionally stricter than "tests
+passed" or "PRs exist"; proxy signals only count when they cover the named
+requirement.
+
+| `goal.md` requirement | Evidence inspected | Status |
+| --- | --- | --- |
+| Phase 0: both repos compile, lint, test, and CI green | Local agent gates listed above; local world gates listed above; draft PR checks later in this audit show agent `verify`/`changeset` passing and world/private `verify`/`validate` passing | Locally complete; draft PR CI green for current branches |
+| Phase 0: world has seed content of every primitive type | World validator reports 3 domains, 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, and 1 contributor | Complete locally |
+| Phase 0: one Discussion open demonstrating RFC format | `https://github.com/idanmann10/vivarium-world/discussions/1`; `doctor --live` reports `github.discussion:configured` | Complete externally |
+| Phase 1: install the agent, configure providers, add a credential, and run a real goal end-to-end | CLI/provider/credential/runtime paths exist and are tested; provider profile metadata for Anthropic/OpenRouter exists; current `doctor --live` still reports provider key placeholders, private OAI-compatible placeholder metadata, no provider smokes, no encrypted credential store, placeholder internal credential value, placeholder health URL, and no credential smoke | Incomplete externally |
+| Phase 1: anti-pattern lookup happens automatically | Manifest behavior-loop evidence records unfamiliar-territory anti-pattern lookup and avoided anti-pattern; `doctor --live` reports `v1.behaviorLoop:configured` | Complete locally |
+| Phase 1: curriculum advances | Runtime/init/self-tool tests and starter-pack evidence cover local curriculum install and progression paths | Complete locally |
+| Phase 1: confidence calibration buckets populate | Existing runtime/state tests cover confidence records and local behavior-loop evidence; no live provider-backed run evidence yet | Complete locally; live run evidence incomplete |
+| Phase 2: Dream compounding eval passes | `packages/eval` and Dream tests listed above pass locally | Complete locally |
+| Phase 2: first anti-pattern auto-generated from a wrong-path run | Dream-artifact evidence records failed run `run-1778527181622-326` and anti-pattern proposal `proposals/anti-patterns/coding/dream-unfamiliar-deployment-failure/ANTI-PATTERN.md`; `doctor --live` reports `v1.dreamArtifacts:configured` | Complete locally |
+| Phase 2: first trace auto-extracted with annotations | Dream-artifact evidence records trace proposal `proposals/traces/coding/trace-run-1778524269819-949/TRACE.md`, source-run evidence, and annotation evidence; `doctor --live` reports `v1.dreamArtifacts:configured` | Complete locally |
+| Phase 2: first publishable run produced and queued locally | Local Dream and publishability paths are covered by tests and evidence; no canonical-world published run exists | Complete locally; live publication incomplete |
+| Phase 3: public and private world subscriptions | Durable subscription registry matches canonical and private refs; `doctor --live` reports `v1.worldSubscriptions:configured` | Complete locally |
+| Phase 3: skill from one user's Dream lands in canonical world, is pulled by a different user's agent, and improves their next run | Local public skill proposal exists; draft PRs are infrastructure PRs, not the live public skill contribution. `doctor --live` still reports `v1.publicContribution:missing` and `v1.twoWeekImprovement:missing` | Incomplete externally |
+| Phase 3: anti-pattern published from same loop | Local anti-pattern proposal exists; `doctor --live` still reports `v1.publishedArtifacts:missing` because no canonical GitHub blob evidence exists | Incomplete externally |
+| Phase 3: trace published and read by another agent during Plan | Local trace proposal exists; `doctor --live` still reports `v1.publishedArtifacts:missing` because no canonical GitHub blob or other-agent Plan-read evidence exists | Incomplete externally |
+| Phase 3: run published and read by another agent during Plan | Local publishability evidence exists; `doctor --live` still reports `v1.publishedArtifacts:missing` because no canonical GitHub blob or other-agent Plan-read evidence exists | Incomplete externally |
+| Phase 3: one featured pick promoted by maintainers | World featured/stat tooling exists; `doctor --live` still reports `v1.curationStats:missing` because no live featured-pick evidence names a different contributor's anti-pattern | Incomplete externally |
+| Phase 3: `STATS.md` shows recognizable concentration | World stats tooling and checked-in stats exist; `doctor --live` still reports `v1.curationStats:missing` until inspectable evidence shows at least 30% top-five contributor concentration in the live loop | Incomplete externally |
+| v1 done: starter pack pulls 20-30 skills, curriculum, and 3-5 traces for `coding` | Durable starter-pack state and two first-run evidence files exist; `doctor --live` reports `v1.starterPack:configured` | Complete locally |
+| v1 done: Anthropic, OpenRouter, and private OAI-compatible endpoint configured and smoked | Anthropic/OpenRouter non-secret metadata profiles exist; current `doctor --live` reports key placeholders, private profile unavailable, and all provider smokes missing | Incomplete externally |
+| v1 done: internal API credential added and smoked | Master key is configured in ignored local env; current `doctor --live` reports credential store unavailable, placeholder credential value, placeholder health URL, and `credentials.smoke:missing` | Incomplete externally |
+| v1 done: canonical world and team private fork subscribed | Durable subscription registry exists; `doctor --live` reports `v1.worldSubscriptions:configured` | Complete locally |
+| v1 done: five real goals over a week | Five distinct local coding goal evidence records exist, but dates span 2026-05-09 through 2026-05-11 only; current `doctor --live` reports `v1.realGoals:missing` | Incomplete; requires real seven-day span |
+| v1 done: anti-patterns are read before unfamiliar territory and one is avoided | Behavior-loop evidence exists; `doctor --live` reports `v1.behaviorLoop:configured` | Complete locally |
+| v1 done: two traces demonstrate similar workflows | Behavior-loop evidence includes two distinct trace reads plus similar-workflow evidence; `doctor --live` reports `v1.behaviorLoop:configured` | Complete locally |
+| v1 done: Monitor catches a tool-failure pattern and Recover re-plans | Behavior-loop evidence records monitor-failure and recover-replan artifacts; `doctor --live` reports `v1.behaviorLoop:configured` | Complete locally |
+| v1 done: destructive endpoint is held, escalated, confirmed, and continued | Behavior-loop evidence records the ordered hold/escalation/confirmation/continuation sequence; `doctor --live` reports `v1.behaviorLoop:configured` | Complete locally |
+| v1 done: one harmful request is refused | Behavior-loop evidence records refusal; `doctor --live` reports `v1.behaviorLoop:configured` | Complete locally |
+| v1 done: Dream produces two skill candidates, one anti-pattern, and one annotated trace | Dream-artifact evidence exists; `doctor --live` reports `v1.dreamArtifacts:configured` | Complete locally |
+| v1 done: one Dream skill is internal/private-fork only and one is public | Local private-fork-only and canonical-absence proof exists for the internal candidate; local public proposal exists; `doctor --live` reports `v1.dreamArtifacts:configured` | Complete locally; external push/landing incomplete |
+| v1 done: public skill passes math gate at neutral trust and opens PR | Current draft PRs are infrastructure/dream proposal branches, not live public-contribution evidence; `doctor --live` reports `v1.publicContribution:missing` | Incomplete externally |
+| v1 done: three other users' agents pull and use the skill | No distinct other-agent pull/use artifacts exist; `doctor --live` reports `v1.publicContribution:missing` | Incomplete externally |
+| v1 done: auto-merge fires after K = 5 positive signals | Draft world auto-merge jobs skip by design; no ready contribution with five positive signals and GitHub Actions auto-merge run exists; `doctor --live` reports `v1.publicContribution:missing` | Incomplete externally |
+| v1 done: landed skill is part of canonical world | No canonical GitHub blob for the live public skill exists; `doctor --live` reports `v1.publicContribution:missing` | Incomplete externally |
+| v1 done: featured picks include a different contributor's provider-quirk anti-pattern | No live featured-pick artifact exists; `doctor --live` reports `v1.curationStats:missing` | Incomplete externally |
+| v1 done: top-five contributors produce at least 30% of skills | No live curation/stats evidence satisfying the v1 loop exists; `doctor --live` reports `v1.curationStats:missing` | Incomplete externally |
+| v1 done: two weeks later, similar goals are faster because other agents refined the skill | Impossible to satisfy on 2026-05-11 from current real-goal dates; `doctor --live` reports `v1.twoWeekImprovement:missing` | Incomplete; time-bound |
+| v1 done: contributor profile shows 1 public skill, 1 anti-pattern, 1 trace, 1 published run, 2 internal-only skills, public trust >= 0.61 | No live contributor profile summary evidence exists; `doctor --live` reports `v1.twoWeekImprovement:missing` | Incomplete externally |
+| v1 done: competing variant Discussion exists and both variants stay alive | No configured-world competing Discussion or two live canonical-world skill variant refs exist; `doctor --live` reports `v1.twoWeekImprovement:missing` | Incomplete externally |
+
+Completion audit result: the Claude Managed Agents documentation requirement is
+covered by official-source references and typed local artifacts, and all
+currently unblocked local implementation/documentation work is represented in
+the branch PRs. The `goal.md` roadmap is not complete because the live v1 loop
+requires real credentials, real smoke calls, other-agent/cross-install evidence,
+canonical-world publication and curation evidence, and a fourteen-day-or-later
+follow-up measurement.
+
 Starter-pack evidence update:
 
 - Ran a durable local init at `/Users/idanmann/.codex/memories/vivarium-v1-starter-pack-2026-05-11.db` using the current local coding world.
