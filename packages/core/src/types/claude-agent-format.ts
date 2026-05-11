@@ -70,6 +70,65 @@ export interface ClaudeManagedAgentCreateRequest {
   readonly metadata?: Readonly<Record<string, unknown>>;
 }
 
+export type ClaudeManagedEnvironmentPackages = Readonly<Record<string, readonly string[]>>;
+
+export interface ClaudeManagedEnvironmentNetworking {
+  readonly type: "unrestricted" | "limited" | string;
+  readonly allowed_hosts?: readonly string[] | null;
+  readonly allow_mcp_servers?: boolean | null;
+  readonly allow_package_managers?: boolean | null;
+  readonly [key: string]: unknown;
+}
+
+export interface ClaudeManagedEnvironmentConfig {
+  readonly type: "cloud" | string;
+  readonly packages?: ClaudeManagedEnvironmentPackages | null;
+  readonly networking?: ClaudeManagedEnvironmentNetworking | null;
+  readonly [key: string]: unknown;
+}
+
+export interface ClaudeManagedEnvironmentCreateRequest {
+  readonly name: string;
+  readonly config: ClaudeManagedEnvironmentConfig;
+  readonly [key: string]: unknown;
+}
+
+export interface ClaudeManagedSessionAgentVersionReference {
+  readonly type: "agent";
+  readonly id: string;
+  readonly version?: number;
+  readonly [key: string]: unknown;
+}
+
+export type ClaudeManagedSessionAgentReference = string | ClaudeManagedSessionAgentVersionReference;
+
+export interface ClaudeManagedSessionCreateRequest {
+  readonly agent: ClaudeManagedSessionAgentReference;
+  readonly environment_id: string;
+  readonly vault_ids?: readonly string[] | null;
+  readonly title?: string | null;
+  readonly metadata?: Readonly<Record<string, unknown>>;
+  readonly [key: string]: unknown;
+}
+
+export type ClaudeManagedEventType = `${string}.${string}`;
+
+export interface ClaudeManagedEventContentBlock {
+  readonly type: string;
+  readonly [key: string]: unknown;
+}
+
+export interface ClaudeManagedEvent {
+  readonly type: ClaudeManagedEventType;
+  readonly processed_at?: string | null;
+  readonly content?: readonly ClaudeManagedEventContentBlock[] | null;
+  readonly [key: string]: unknown;
+}
+
+export interface ClaudeManagedEventsSendRequest {
+  readonly events: readonly ClaudeManagedEvent[];
+}
+
 export type ClaudeCodePermissionMode =
   | "default"
   | "acceptEdits"

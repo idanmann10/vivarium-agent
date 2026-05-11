@@ -7,6 +7,10 @@ import {
   CLAUDE_MANAGED_AGENTS_BETA_HEADER,
   type ClaudeCodeSubagentFrontmatter,
   type ClaudeManagedAgentCreateRequest,
+  type ClaudeManagedEnvironmentCreateRequest,
+  type ClaudeManagedEvent,
+  type ClaudeManagedEventType,
+  type ClaudeManagedSessionCreateRequest,
 } from "../index.js";
 
 const managedAgent = {
@@ -20,6 +24,37 @@ const managedAgent = {
   description: "Coding agent compatibility fixture",
   metadata: { source: "vivarium" },
 } as const satisfies ClaudeManagedAgentCreateRequest;
+
+const managedEnvironment = {
+  name: "python-dev",
+  config: {
+    type: "cloud",
+    packages: {
+      pip: ["pandas==2.2.0"],
+      npm: ["express"],
+    },
+    networking: {
+      type: "limited",
+      allowed_hosts: ["https://api.example.test"],
+      allow_mcp_servers: true,
+      allow_package_managers: false,
+    },
+  },
+} as const satisfies ClaudeManagedEnvironmentCreateRequest;
+
+const managedSession = {
+  agent: { type: "agent", id: "agnt_abc123", version: 1 },
+  environment_id: "env_abc123",
+  vault_ids: ["vault_abc123"],
+} as const satisfies ClaudeManagedSessionCreateRequest;
+
+const userMessageEventType: ClaudeManagedEventType = "user.message";
+
+const managedEvent = {
+  type: userMessageEventType,
+  content: [{ type: "text", text: "List the files in the working directory." }],
+  processed_at: null,
+} as const satisfies ClaudeManagedEvent;
 
 const subagentFrontmatter = {
   name: "code-reviewer",
@@ -48,6 +83,32 @@ describe("Claude agent format compatibility", () => {
       model: { id: "claude-opus-4-7", speed: "standard" },
       multiagent: { agents: ["worker", "researcher"] },
       metadata: { source: "vivarium" },
+    });
+  });
+
+  test("exports Managed Agents environment, session, and event request shapes", () => {
+    expect(managedEnvironment).toMatchObject({
+      name: "python-dev",
+      config: {
+        type: "cloud",
+        packages: { pip: ["pandas==2.2.0"], npm: ["express"] },
+        networking: {
+          type: "limited",
+          allowed_hosts: ["https://api.example.test"],
+          allow_mcp_servers: true,
+          allow_package_managers: false,
+        },
+      },
+    });
+    expect(managedSession).toMatchObject({
+      agent: { type: "agent", id: "agnt_abc123", version: 1 },
+      environment_id: "env_abc123",
+      vault_ids: ["vault_abc123"],
+    });
+    expect(managedEvent).toMatchObject({
+      type: "user.message",
+      processed_at: null,
+      content: [{ type: "text", text: "List the files in the working directory." }],
     });
   });
 

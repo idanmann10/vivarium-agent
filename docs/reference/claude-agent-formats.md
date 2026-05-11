@@ -11,7 +11,12 @@ format references when adding agent-facing types. Checked against Anthropic and
 Claude Code docs on 2026-05-11:
 
 - Claude Managed Agents overview: https://platform.claude.com/docs/en/managed-agents/overview
+- Claude Managed Agents quickstart: https://platform.claude.com/docs/en/managed-agents/quickstart
 - Define your agent: https://platform.claude.com/docs/en/managed-agents/agent-setup
+- Cloud environment setup: https://platform.claude.com/docs/en/managed-agents/environments
+- Start a session: https://platform.claude.com/docs/en/managed-agents/sessions
+- Session event stream: https://platform.claude.com/docs/en/managed-agents/events-and-streaming
+- Authenticate with vaults: https://platform.claude.com/docs/en/managed-agents/vaults
 - Managed Agent tools: https://platform.claude.com/docs/en/managed-agents/tools
 - Managed Agent skills: https://platform.claude.com/docs/en/managed-agents/skills
 - Managed Agent MCP connector: https://platform.claude.com/docs/en/managed-agents/mcp-connector
@@ -23,9 +28,10 @@ Claude Code docs on 2026-05-11:
 Local compatibility constants and request/frontmatter shapes live in
 `packages/core/src/types/claude-agent-format.ts` and are exported from
 `@vivarium/core`. Use `CLAUDE_MANAGED_AGENTS_BETA_HEADER`,
-`CLAUDE_AGENT_TOOLSET_TYPE`, `ClaudeManagedAgentCreateRequest`, and
-`ClaudeCodeSubagentFrontmatter` when adding code that emits or accepts these
-external formats.
+`CLAUDE_AGENT_TOOLSET_TYPE`, `ClaudeManagedAgentCreateRequest`,
+`ClaudeManagedEnvironmentCreateRequest`, `ClaudeManagedSessionCreateRequest`,
+`ClaudeManagedEvent`, and `ClaudeCodeSubagentFrontmatter` when adding code that
+emits or accepts these external formats.
 
 ## Claude Managed Agents
 
@@ -34,7 +40,7 @@ Claude Managed Agents separates four concepts:
 | Concept | Meaning for our type design |
 | --- | --- |
 | Agent | Reusable, versioned bundle of `name`, `model`, `system`, `tools`, `mcp_servers`, `skills`, `multiagent`, `description`, and `metadata`. |
-| Environment | Container template: installed packages, network policy, and mounted files. |
+| Environment | Container template: installed packages and network policy. |
 | Session | One running agent instance against an Environment for a concrete task. |
 | Events | Persisted messages, tool results, status updates, and streamed responses. |
 
@@ -78,6 +84,30 @@ Skills attached to a Managed Agent are typed by source:
 MCP is intentionally split: agent creation declares `mcp_servers` by name and URL;
 session creation supplies auth through a vault. Keep secrets out of reusable
 agent definitions.
+
+Environment creation is represented locally by
+`ClaudeManagedEnvironmentCreateRequest`: a unique `name` plus `config`. Current
+cloud config examples use `config.type: "cloud"`, package-manager arrays under
+`packages` (`apt`, `cargo`, `gem`, `go`, `npm`, `pip`), and `networking`. For
+production-style bridges, prefer `networking.type: "limited"` with explicit
+`allowed_hosts`; `allow_mcp_servers` and `allow_package_managers` grant narrowly
+scoped access beyond that host list.
+
+Session creation is represented locally by `ClaudeManagedSessionCreateRequest`.
+It keeps `agent` as either an agent ID string or a pinned version object
+`{ "type": "agent", "id": "...", "version": 1 }`, and binds it to an
+`environment_id`. Optional per-session fields include `vault_ids` for MCP auth
+and `title` for operator-visible runs. Creating a session provisions the
+environment container but does not start work; send events to drive execution.
+Vault references are per-session, so a product can manage reusable agent config
+separately from end-user credentials.
+
+Events are represented locally by `ClaudeManagedEvent`. Event type strings use a
+`{domain}.{action}` convention such as `user.message`, `user.interrupt`,
+`agent.tool_use`, or `session.status_idle`; received events may include
+`processed_at` to indicate when the event was recorded. User message events carry
+`content` blocks, and custom tool or confirmation events add their own
+event-specific fields.
 
 ## Provider Profile Defaults
 
