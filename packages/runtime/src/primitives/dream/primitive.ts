@@ -2,9 +2,10 @@ import {
   shouldHabituate,
   shouldPromoteCandidate,
   shouldPruneLocalSkill,
+  skillId,
   stageForScore,
 } from "../../../../core/src/index.js";
-import type { DevStage, Episode, Run, TraceStep } from "../../../../core/src/index.js";
+import type { DevStage, Episode, Run, SkillCandidateProposal, SkillId, TraceStep } from "../../../../core/src/index.js";
 import type { LocalSkillRecord, StateRepository } from "../../../../state/src/index.js";
 import { wilsonLowerBound } from "../../../../core/src/index.js";
 
@@ -26,6 +27,7 @@ export interface DreamResult {
   readonly identitySummary: string;
   readonly devStages: Readonly<Record<string, DevStage>>;
   readonly confidenceNotes: readonly string[];
+  readonly skillCandidates: readonly string[];
   readonly antiPatternCandidates: readonly string[];
   readonly traceCandidates: readonly string[];
 }
@@ -45,6 +47,68 @@ function confidenceNotes(state: StateRepository): readonly string[] {
 
 function stringify(value: unknown): string {
   return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+function slugFromName(name: string): string {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug.length === 0 ? "skill" : slug;
+}
+
+function skillCandidateId(domain: string, candidate: SkillCandidateProposal): SkillId {
+  return skillId(`${domain}.${slugFromName(candidate.name)}`);
+}
+
+function skillCandidateBody(candidate: SkillCandidateProposal): string {
+  return candidate.evidenceRunIds.length === 0
+    ? candidate.body
+    : `${candidate.body}\n\nEvidence runs:\n${candidate.evidenceRunIds.map((id) => `- ${id}`).join("\n")}`;
+}
+
+function generateSkillCandidate(state: StateRepository, run: Run, candidate: SkillCandidateProposal): string {
+  const id = skillCandidateId(run.domain, candidate);
+  const existing = state.listLocalSkills().find((skill) => skill.id === id);
+  if (existing === undefined || existing.status === "candidate" || existing.status === "archived") {
+    state.upsertLocalSkill({
+      id,
+      name: candidate.name,
+      domain: run.domain,
+      status: "candidate",
+      uses: 0,
+      helped: 0,
+      lastUsedRunOffset: 0,
+      habitual: false,
+      body: skillCandidateBody(candidate),
+    });
+  }
+
+  return String(id);
+}
+
+function generateSkillCandidates(state: StateRepository): readonly string[] {
+  const candidates: string[] = [];
+  const seen = new Set<string>();
+  for (const run of state.listRuns()) {
+    for (const episode of state.listEpisodes(run.id)) {
+      if (episode.kind !== "reflection") {
+        continue;
+      }
+
+      for (const candidate of episode.reflection.skillCandidates) {
+        const id = generateSkillCandidate(state, run, candidate);
+        if (!seen.has(id)) {
+          candidates.push(id);
+          seen.add(id);
+        }
+      }
+    }
+  }
+
+  return candidates;
 }
 
 function monitorReasons(episodes: readonly Episode[]): readonly string[] {
@@ -157,6 +221,8 @@ export function runDream({ state, domainStats }: DreamRequest): DreamResult {
     }
   }
 
+  const skillCandidates = generateSkillCandidates(state);
+
   for (const run of state.listRuns()) {
     const episodes = state.listEpisodes(run.id);
     if (run.success === false || (run.score !== null && run.score < 0.5)) {
@@ -195,6 +261,7 @@ export function runDream({ state, domainStats }: DreamRequest): DreamResult {
     identitySummary,
     devStages,
     confidenceNotes: confidenceNotes(state),
+    skillCandidates,
     antiPatternCandidates,
     traceCandidates,
   };

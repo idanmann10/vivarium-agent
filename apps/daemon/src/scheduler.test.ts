@@ -30,6 +30,7 @@ describe("createDreamScheduler", () => {
           identitySummary: "Dream consolidated local state.",
           devStages: { coding: "newborn" },
           confidenceNotes: [],
+          skillCandidates: [],
           antiPatternCandidates: [],
           traceCandidates: [],
         };
@@ -65,6 +66,7 @@ describe("createDreamScheduler", () => {
           identitySummary: "Dream consolidated local state.",
           devStages: {},
           confidenceNotes: [],
+          skillCandidates: [],
           antiPatternCandidates: [],
           traceCandidates: [],
         };

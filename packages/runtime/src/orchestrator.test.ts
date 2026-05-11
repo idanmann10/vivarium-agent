@@ -310,4 +310,30 @@ describe("runGoal", () => {
     expect(artifacts[0]?.body).not.toContain("idan@example.com");
     expect(artifacts[0]?.body).not.toContain("sk-secret-token");
   });
+
+  test("records source run evidence on reflection skill candidates", async () => {
+    const harness = createHarness();
+    const result = await runGoal({
+      goal: "ship a runtime change",
+      domain: "coding",
+      agentName: "local-agent",
+      provider: harness.provider,
+      tools: harness.tools,
+      surprises: ["unexpectedly reusable workflow"],
+    });
+
+    const reflection = harness.state.listEpisodes(result.runId).find((episode) => episode.kind === "reflection");
+
+    expect(reflection).toMatchObject({
+      kind: "reflection",
+      reflection: {
+        skillCandidates: [
+          {
+            name: "Reuse Unexpectedly Reusable Workflow",
+            evidenceRunIds: [String(result.runId)],
+          },
+        ],
+      },
+    });
+  });
 });

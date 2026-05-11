@@ -206,8 +206,8 @@ export async function runGoal(request: RunGoalRequest): Promise<RunGoalResult> {
 
   const reflectionRequest =
     request.surprises === undefined
-      ? { validationScore: validation.score }
-      : { validationScore: validation.score, surprises: request.surprises };
+      ? { validationScore: validation.score, goal: request.goal, evidenceRunId: String(id) }
+      : { validationScore: validation.score, surprises: request.surprises, goal: request.goal, evidenceRunId: String(id) };
   const reflection = runReflectPrimitive(reflectionRequest);
   append({ kind: "reflection", ...reflection });
   append({ kind: "run_end", success: true, score: 0.8 });

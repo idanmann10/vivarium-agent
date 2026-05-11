@@ -200,6 +200,151 @@ describe("runDream", () => {
     );
   });
 
+  test("records reflection skill candidates as local candidate skills", () => {
+    const state = new InMemoryStateRepository();
+    const sourceRun = runId("run-dream-skill-candidate");
+
+    state.createRun({
+      id: sourceRun,
+      agentId: agentId("agent-dream"),
+      domain: "coding",
+      goal: "extract reusable testing habit",
+      startedAt: "2026-05-09T00:02:00.000Z",
+      endedAt: "2026-05-09T00:04:00.000Z",
+      success: true,
+      score: 0.86,
+      notes: "Completed local runtime slice",
+      publishable: false,
+      published: false,
+      publishedAt: null,
+      visibility: "private",
+    });
+    state.appendEpisode({
+      id: episodeId("skill-reflection"),
+      runId: sourceRun,
+      agentId: agentId("agent-dream"),
+      timestamp: "2026-05-09T00:03:30.000Z",
+      tags: [],
+      kind: "reflection",
+      reflection: {
+        worked: ["test first"],
+        didntWork: [],
+        surprises: [],
+        skillCandidates: [
+          {
+            name: "Evidence First Test",
+            description: "Write the failing evidence test before changing runtime behavior.",
+            body: "Create the smallest failing test that proves the desired runtime behavior, then implement only enough code to satisfy it.",
+            evidenceRunIds: [String(sourceRun)],
+          },
+        ],
+        skillRefinements: [],
+        skillPrunings: [],
+        antiPatternCandidates: [],
+        scaffoldingGaps: [],
+        publishable: false,
+      },
+    });
+
+    const result = runDream({
+      state,
+      domainStats: {
+        coding: {
+          runsCompleted: 1,
+          successRate: 1,
+          skillDiversity: 1,
+        },
+      },
+    });
+
+    expect(result.skillCandidates).toEqual(["coding.evidence-first-test"]);
+    expect(state.listLocalSkills()).toContainEqual({
+      id: skillId("coding.evidence-first-test"),
+      name: "Evidence First Test",
+      domain: "coding",
+      status: "candidate",
+      uses: 0,
+      helped: 0,
+      lastUsedRunOffset: 0,
+      habitual: false,
+      body: "Create the smallest failing test that proves the desired runtime behavior, then implement only enough code to satisfy it.\n\nEvidence runs:\n- run-dream-skill-candidate",
+    });
+  });
+
+  test("refreshes reflected skill candidates after the pruning pass", () => {
+    const state = new InMemoryStateRepository();
+    const sourceRun = runId("run-dream-refresh-skill-candidate");
+
+    state.upsertLocalSkill({
+      id: skillId("coding.evidence-first-test"),
+      name: "Evidence First Test",
+      domain: "coding",
+      status: "candidate",
+      uses: 0,
+      helped: 0,
+      lastUsedRunOffset: 0,
+      habitual: false,
+      body: "Old candidate body.",
+    });
+    state.createRun({
+      id: sourceRun,
+      agentId: agentId("agent-dream"),
+      domain: "coding",
+      goal: "refresh reusable testing habit",
+      startedAt: "2026-05-09T00:02:00.000Z",
+      endedAt: "2026-05-09T00:04:00.000Z",
+      success: true,
+      score: 0.86,
+      notes: "Completed local runtime slice",
+      publishable: false,
+      published: false,
+      publishedAt: null,
+      visibility: "private",
+    });
+    state.appendEpisode({
+      id: episodeId("skill-refresh-reflection"),
+      runId: sourceRun,
+      agentId: agentId("agent-dream"),
+      timestamp: "2026-05-09T00:03:30.000Z",
+      tags: [],
+      kind: "reflection",
+      reflection: {
+        worked: ["test first"],
+        didntWork: [],
+        surprises: [],
+        skillCandidates: [
+          {
+            name: "Evidence First Test",
+            description: "Write the failing evidence test before changing runtime behavior.",
+            body: "Updated candidate body.",
+            evidenceRunIds: [String(sourceRun)],
+          },
+        ],
+        skillRefinements: [],
+        skillPrunings: [],
+        antiPatternCandidates: [],
+        scaffoldingGaps: [],
+        publishable: false,
+      },
+    });
+
+    runDream({
+      state,
+      domainStats: {
+        coding: {
+          runsCompleted: 1,
+          successRate: 1,
+          skillDiversity: 1,
+        },
+      },
+    });
+
+    expect(state.listLocalSkills().find((skill) => String(skill.id) === "coding.evidence-first-test")).toMatchObject({
+      status: "candidate",
+      body: "Updated candidate body.\n\nEvidence runs:\n- run-dream-refresh-skill-candidate",
+    });
+  });
+
   test("runs against SQLite-backed state repository", () => {
     const statePath = join(mkdtempSync(join(tmpdir(), "dream-sqlite-")), "state.db");
     const state = new SQLiteStateRepository(statePath);

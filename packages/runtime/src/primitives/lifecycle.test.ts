@@ -62,6 +62,24 @@ describe("lifecycle primitives", () => {
     expect(reflection.reflection.publishable).toBe(true);
   });
 
+  test("Reflect proposes skill candidates from reusable surprises", () => {
+    const reflection = runReflectPrimitive({
+      validationScore: 0.82,
+      surprises: ["unexpectedly reusable workflow"],
+      goal: "ship a runtime change",
+      evidenceRunId: "run-reflect-skill",
+    });
+
+    expect(reflection.reflection.skillCandidates).toEqual([
+      {
+        name: "Reuse Unexpectedly Reusable Workflow",
+        description: "Capture reusable learning from a surprising successful run.",
+        body: "When a run succeeds and surfaces \"unexpectedly reusable workflow\", extract the reusable step before starting a similar goal. Original goal: ship a runtime change.",
+        evidenceRunIds: ["run-reflect-skill"],
+      },
+    ]);
+  });
+
   test("Predict includes working-memory warning notes in provider input", async () => {
     let capturedInput = "";
     const captureProvider: typeof provider = {
