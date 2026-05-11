@@ -280,9 +280,9 @@ Completion decision: still not complete. The remaining requirements require real
 The local Claude-format and live-readiness hardening slice has been pushed to the existing feature branch:
 
 - Branch: `phase-1-runtime-slice`.
-- Remote: `origin/phase-1-runtime-slice`. Verify the exact current remote head with `git ls-remote origin refs/heads/phase-1-runtime-slice` because the audit commit itself changes the branch hash.
+- Remote: `origin/phase-1-runtime-slice`; fresh `git ls-remote origin refs/heads/phase-1-runtime-slice` returned `c12e1bd3a819015df080cd6d24d7d6876dbba4bf`.
 - Recent pushed work on the branch includes the Claude agent-format reference, durable v1 evidence manifest handoff, starter-pack evidence status, current Claude/OpenRouter provider defaults, completion-checklist tightening, and remote-handoff bookkeeping.
-- Correct read-only open PR check: `gh api 'repos/idanmann10/vivarium-agent/pulls?state=open&head=idanmann10:phase-1-runtime-slice'` returned `[]`.
-- Correct read-only Actions check: `gh api 'repos/idanmann10/vivarium-agent/actions/runs?branch=phase-1-runtime-slice&per_page=5'` returned `{"total_count":0,"workflow_runs":[]}`. This is expected from `.github/workflows/ci.yml`, which runs on `pull_request` and pushes to `main`, not on arbitrary feature-branch pushes.
+- Fresh correct read-only open PR check: `gh api 'repos/idanmann10/vivarium-agent/pulls?state=open&head=idanmann10:phase-1-runtime-slice'` returned `[]`.
+- Fresh correct read-only Actions check: `gh api 'repos/idanmann10/vivarium-agent/actions/runs?branch=phase-1-runtime-slice&per_page=5'` returned `{"total_count":0,"workflow_runs":[]}`. This is expected from `.github/workflows/ci.yml`, which runs on `pull_request` and pushes to `main`, not on arbitrary feature-branch pushes.
 
 Do not treat the pushed branch as CI-verified until a PR is opened or the branch is otherwise run through the full local/remote gates. Opening a draft PR is externally visible and requires explicit user approval.
