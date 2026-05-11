@@ -532,3 +532,32 @@ bun apps/cli/src/main.ts doctor --live --env-file live-readiness.local.env
 Fresh result: `ok:false`. The new real-goal evidence reference resolves, and
 `v1.realGoals:missing` remains correct because the current real-goal evidence
 still spans 2026-05-09 through 2026-05-11 rather than at least seven days.
+
+## 2026-05-11 Redacted Blocker Snapshot
+
+A redacted local blocker snapshot now exists at
+`/Users/idanmann/.codex/memories/vivarium-live-blockers-2026-05-11.md`.
+It records the fresh `doctor --live` and `live setup` dry-run state, placeholder
+environment variable names without secret values, current real-goal timing, and
+draft PR heads/checks.
+
+Snapshot facts:
+
+- Agent PR head: `fe7c7fb5590ed262917593e420211b449411b561`; `changeset` and
+  `verify` are successful.
+- Canonical world draft PR head:
+  `44da0269430f7a76b4d40308752ba2d0ae8f5fa2`; `verify` and `validate` are
+  successful and draft `auto-merge` is skipped.
+- Private world draft PR head:
+  `d7bdd8a373dad9c4d546954ce710da4286719e38`; `verify` and `validate` are
+  successful and draft `auto-merge` is skipped.
+- Live setup dry run still reports `written:false` because provider keys, the
+  private OpenAI-compatible provider metadata, and internal API credential
+  values are placeholders.
+- Durable real-goal evidence currently has six records spanning 2026-05-09
+  through 2026-05-11. The earliest possible two-week follow-up from the current
+  last goal date is 2026-05-25, and that date moves later if new real-goal
+  evidence is added after 2026-05-11 to satisfy the seven-day span.
+
+Completion decision: still not complete. The snapshot is a handoff artifact, not
+completion evidence.
