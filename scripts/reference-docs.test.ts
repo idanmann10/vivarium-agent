@@ -338,6 +338,8 @@ const agentRootDocs = {
     "doctor --live",
     "live-readiness.local.env",
     "LICENSE",
+    "public GitHub repository",
+    "private preview",
   ],
   LICENSE: ["MIT License", "Vivarium contributors", "Permission is hereby granted"],
 } as const;
