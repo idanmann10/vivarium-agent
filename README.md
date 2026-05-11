@@ -1,5 +1,10 @@
 # Vivarium Agent
 
+[![CI](https://github.com/idanmann10/vivarium-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/idanmann10/vivarium-agent/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Runtime: Bun](https://img.shields.io/badge/runtime-Bun-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)
+
 local-first agent runtime with memory, Dream consolidation, world retrieval, a CLI, and a daemon.
 
 Vivarium Agent is the per-user runtime for the Vivarium system. It runs goals through typed primitives,
