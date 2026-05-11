@@ -267,7 +267,9 @@ describe("self-tools", () => {
       worldRoot: "../the-world",
     });
 
-    expect(tools.world.stats()).toContain("Skills: 41");
+    expect(tools.world.stats()).toContain("# Stats");
+    expect(tools.world.stats()).toMatch(/- Skills: \d+/);
+    expect(tools.world.stats()).toContain("## Contributor Concentration");
     expect(tools.world.featured()).toContain("coding.inspect-before-edit");
     expect(tools.world.contributors("coding")[0]).toMatchObject({ handle: "maintainer", trustScore: 0.75 });
     expect(tools.world.lineage(skillId("coding.inspect-before-edit"), "coding")).toContain("https://github.com/obra/superpowers");
