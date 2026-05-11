@@ -262,8 +262,8 @@ The local Claude-format and live-readiness hardening slice has been pushed to th
 
 - Branch: `phase-1-runtime-slice`.
 - Remote: `origin/phase-1-runtime-slice`. Verify the exact current remote head with `git ls-remote origin refs/heads/phase-1-runtime-slice` because the audit commit itself changes the branch hash.
-- Recent pushed work on the branch includes the Claude agent-format reference, durable v1 evidence manifest handoff, starter-pack evidence status, and remote-handoff bookkeeping.
-- Open PR check for `idanmann10:phase-1-runtime-slice`: no open PRs.
-- Actions check for `phase-1-runtime-slice`: zero workflow runs. This is expected from `.github/workflows/ci.yml`, which runs on `pull_request` and pushes to `main`, not on arbitrary feature-branch pushes.
+- Recent pushed work on the branch includes the Claude agent-format reference, durable v1 evidence manifest handoff, starter-pack evidence status, current Claude/OpenRouter provider defaults, completion-checklist tightening, and remote-handoff bookkeeping.
+- Correct read-only open PR check: `gh api 'repos/idanmann10/vivarium-agent/pulls?state=open&head=idanmann10:phase-1-runtime-slice'` returned `[]`.
+- Correct read-only Actions check: `gh api 'repos/idanmann10/vivarium-agent/actions/runs?branch=phase-1-runtime-slice&per_page=5'` returned `{"total_count":0,"workflow_runs":[]}`. This is expected from `.github/workflows/ci.yml`, which runs on `pull_request` and pushes to `main`, not on arbitrary feature-branch pushes.
 
 Do not treat the pushed branch as CI-verified until a PR is opened or the branch is otherwise run through the full local/remote gates. Opening a draft PR is externally visible and requires explicit user approval.
