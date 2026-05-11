@@ -6,6 +6,14 @@ function workflow(name: string): string {
   return readFileSync(join(".github", "workflows", name), "utf8");
 }
 
+function githubConfig(name: string): string {
+  return readFileSync(join(".github", name), "utf8");
+}
+
+function issueTemplate(name: string): string {
+  return readFileSync(join(".github", "ISSUE_TEMPLATE", name), "utf8");
+}
+
 describe("agent workflows", () => {
   test("CI runs the full phase checkpoint", () => {
     const ci = workflow("ci.yml");
@@ -15,6 +23,7 @@ describe("agent workflows", () => {
     expect(ci).toContain("bun run typecheck");
     expect(ci).toContain("bun run test");
     expect(ci).toContain("bun run build");
+    expect(ci).toContain("bun run format:check");
   });
 
   test("CI provisions the sibling world repository required by local tests", () => {
@@ -35,7 +44,45 @@ describe("agent workflows", () => {
     }
 
     expect(release).toContain("changesets/action@v1");
+    expect(release).toContain(
+      "https://github.com/${{ github.repository_owner }}/vivarium-world.git",
+    );
+    expect(release).toContain("../the-world");
     expect(release).toContain("bun run knip");
+    expect(release).toContain("bun run format:check");
     expect(changesetBot).toContain("bunx changeset status");
+  });
+
+  test("Dependabot keeps Bun dependencies and GitHub Actions current", () => {
+    const dependabot = githubConfig("dependabot.yml");
+
+    expect(dependabot).toContain("version: 2");
+    expect(dependabot).toContain('package-ecosystem: "bun"');
+    expect(dependabot).toContain('package-ecosystem: "github-actions"');
+    expect(dependabot).toContain('directory: "/"');
+    expect(dependabot).toContain("interval: weekly");
+    expect(dependabot).toContain("open-pull-requests-limit: 5");
+  });
+
+  test("issue templates route bug reports and feature requests", () => {
+    const bug = issueTemplate("bug_report.yml");
+    const feature = issueTemplate("feature_request.yml");
+    const config = issueTemplate("config.yml");
+
+    expect(bug).toContain("name: Bug report");
+    expect(bug).toContain("Affected surface");
+    expect(bug).toContain("Reproduction steps");
+    expect(bug).toContain("doctor --live");
+    expect(bug).toContain("labels:");
+
+    expect(feature).toContain("name: Feature request");
+    expect(feature).toContain("Problem");
+    expect(feature).toContain("Proposed behavior");
+    expect(feature).toContain("Live-readiness boundary");
+    expect(feature).toContain("labels:");
+
+    expect(config).toContain("blank_issues_enabled: false");
+    expect(config).toContain("Security reports");
+    expect(config).toContain("Live-readiness guide");
   });
 });

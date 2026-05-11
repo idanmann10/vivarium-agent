@@ -13,6 +13,7 @@ export interface DoctorNextAction {
   readonly env?: readonly string[];
   readonly command?: string;
   readonly guide: string;
+  readonly completionGuide?: string;
 }
 
 interface DoctorNextActionContext {
@@ -156,6 +157,16 @@ function envValueStatus(env: Readonly<Record<string, string | undefined>>, envNa
   return isPlaceholderValue(value) ? "placeholder" : "configured";
 }
 
+function defaultWorldRoot(agentRoot: string): string {
+  const siblingWorldRoot = resolve(dirname(agentRoot), "the-world");
+  if (existsSync(siblingWorldRoot)) {
+    return siblingWorldRoot;
+  }
+
+  const childWorldRoot = resolve(agentRoot, "the-world");
+  return existsSync(childWorldRoot) ? childWorldRoot : agentRoot;
+}
+
 function remoteCheck(
   runner: DoctorCommandRunner,
   cwd: string,
@@ -233,6 +244,11 @@ function positiveIntegerEnvCheck(env: Readonly<Record<string, string | undefined
 
   const parsed = Number.parseInt(env[envName] ?? "", 10);
   return Number.isInteger(parsed) && parsed > 0 ? `${label}:configured` : `${label}:invalid`;
+}
+
+function positiveIntegerEnvValue(env: Readonly<Record<string, string | undefined>>, envName: string): number | undefined {
+  const parsed = Number.parseInt(env[envName] ?? "", 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 function isHttpUrlValue(value: string): boolean {
@@ -835,25 +851,41 @@ function worldRefCheck(
   return refs === undefined || refs.has(value) ? `${label}:configured` : `${label}:unavailable`;
 }
 
-function providerProfileNames(env: Readonly<Record<string, string | undefined>>): ReadonlySet<string> | undefined {
+interface ExpectedProviderProfile {
+  readonly kind: string;
+  readonly apiKeyEnv: string;
+  readonly model: string;
+  readonly baseUrl?: string;
+  readonly capabilities: readonly string[];
+  readonly contextWindow: number;
+  readonly costClass: string;
+}
+
+function providerProfilesByName(env: Readonly<Record<string, string | undefined>>): ReadonlyMap<string, Readonly<Record<string, unknown>>> | undefined {
   const profilesPath = env[providerProfilesPathEnv]?.trim();
   if (profilesPath === undefined || profilesPath.length === 0 || !existsSync(profilesPath)) {
     return undefined;
   }
 
   try {
-    const parsed = JSON.parse(readFileSync(profilesPath, "utf8")) as { readonly profiles?: readonly { readonly name?: unknown }[] };
-    return new Set((parsed.profiles ?? []).flatMap((profile) => (typeof profile.name === "string" ? [profile.name] : [])));
+    const parsed = asRecord(JSON.parse(readFileSync(profilesPath, "utf8")));
+    return new Map(
+      recordArray(parsed?.profiles).flatMap((profile) => {
+        const name = textValue(profile.name);
+        return name === undefined ? [] : [[name, profile]];
+      }),
+    );
   } catch {
-    return new Set();
+    return new Map();
   }
 }
 
 function providerProfileCheck(
   env: Readonly<Record<string, string | undefined>>,
-  names: ReadonlySet<string> | undefined,
+  profiles: ReadonlyMap<string, Readonly<Record<string, unknown>>> | undefined,
   envName: string,
   label: string,
+  expected?: ExpectedProviderProfile,
 ): string {
   const value = env[envName]?.trim();
   if (value === undefined || value.length === 0) {
@@ -863,7 +895,77 @@ function providerProfileCheck(
     return `${label}:placeholder`;
   }
 
-  return names === undefined || names.has(value) ? `${label}:configured` : `${label}:unavailable`;
+  if (profiles === undefined) {
+    return `${label}:configured`;
+  }
+
+  const profile = profiles.get(value);
+  if (profile === undefined) {
+    return `${label}:unavailable`;
+  }
+
+  return expected === undefined || providerProfileMatches(profile, expected) ? `${label}:configured` : `${label}:mismatch`;
+}
+
+function providerProfileMatches(profile: Readonly<Record<string, unknown>>, expected: ExpectedProviderProfile): boolean {
+  return (
+    textValue(profile.kind) === expected.kind &&
+    textValue(profile.apiKeyEnv) === expected.apiKeyEnv &&
+    textValue(profile.model) === expected.model &&
+    numberValue(profile.contextWindow) === expected.contextWindow &&
+    textValue(profile.baseUrl) === expected.baseUrl &&
+    textValue(profile.costClass) === expected.costClass &&
+    textArray(profile.capabilities).join("\n") === expected.capabilities.join("\n")
+  );
+}
+
+function expectedAnthropicProviderProfile(env: Readonly<Record<string, string | undefined>>): ExpectedProviderProfile | undefined {
+  const model = textValue(env[anthropicModelEnv]);
+  const contextWindow = positiveIntegerEnvValue(env, anthropicContextWindowEnv);
+  return model === undefined || contextWindow === undefined
+    ? undefined
+    : {
+        kind: "anthropic",
+        apiKeyEnv: anthropicApiKeyEnv,
+        model,
+        capabilities: ["chat", "tools"],
+        contextWindow,
+        costClass: "expensive",
+      };
+}
+
+function expectedOpenRouterProviderProfile(env: Readonly<Record<string, string | undefined>>): ExpectedProviderProfile | undefined {
+  const model = textValue(env[openRouterModelEnv]);
+  const baseUrl = textValue(env[openRouterBaseUrlEnv]);
+  const contextWindow = positiveIntegerEnvValue(env, openRouterContextWindowEnv);
+  return model === undefined || baseUrl === undefined || !isHttpUrlValue(baseUrl) || contextWindow === undefined
+    ? undefined
+    : {
+        kind: "openai-compat",
+        apiKeyEnv: openRouterApiKeyEnv,
+        model,
+        baseUrl,
+        capabilities: ["chat", "json_mode"],
+        contextWindow,
+        costClass: "medium",
+      };
+}
+
+function expectedPrivateOaiCompatProviderProfile(env: Readonly<Record<string, string | undefined>>): ExpectedProviderProfile | undefined {
+  const model = textValue(env[privateOaiCompatModelEnv]);
+  const baseUrl = textValue(env[privateOaiCompatBaseUrlEnv]);
+  const contextWindow = positiveIntegerEnvValue(env, privateOaiCompatContextWindowEnv);
+  return model === undefined || baseUrl === undefined || !isHttpUrlValue(baseUrl) || contextWindow === undefined
+    ? undefined
+    : {
+        kind: "openai-compat",
+        apiKeyEnv: privateOaiCompatApiKeyEnv,
+        model,
+        baseUrl,
+        capabilities: ["chat", "json_mode"],
+        contextWindow,
+        costClass: "medium",
+      };
 }
 
 function cliResultRecord(result: DoctorCommandRunResult): Readonly<Record<string, unknown>> | undefined {
@@ -1165,6 +1267,7 @@ function liveSetupCommand(context: DoctorNextActionContext): string {
 
 function nextActionForCheck(check: string, context: DoctorNextActionContext): DoctorNextAction {
   const guide = "docs/guides/live-readiness.md";
+  const completionGuide = `${guide}#completion-boundary`;
   const [name = check] = check.split(":");
 
   switch (name) {
@@ -1522,6 +1625,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         env: [v1EvidencePathEnv],
         command: cliCommand(context, 'live evidence-init --path "$VIVARIUM_V1_EVIDENCE_PATH"'),
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.starterPack":
       return {
@@ -1529,6 +1633,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record live init evidence showing distinct installed coding starter-pack skills, distinct installed starter traces, curriculum, and distinct first-run references.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.realGoals":
       return {
@@ -1536,24 +1641,28 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record at least five distinct named real coding goals spanning a week, with domain, distinct evidence for each run, and dates that are not in the future.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.providerSmokes":
       return {
         check,
         action: "Record distinct successful Anthropic, OpenRouter, and private OpenAI-compatible provider smoke evidence.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.internalCredentialSmoke":
       return {
         check,
         action: "Record internal API credential smoke evidence from the encrypted credential store.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.worldSubscriptions":
       return {
         check,
         action: "Record canonical and private world subscription evidence from the live registry.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.behaviorLoop":
       return {
@@ -1561,6 +1670,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record live behavior-loop evidence for anti-pattern use before unfamiliar territory, two distinct traces read that demonstrate similar workflows, Monitor tool-failure detection, Recover re-plan, one ordered destructive-endpoint run sequence that holds, escalates, receives confirmation, and continues, and refusal.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.dreamArtifacts":
       return {
@@ -1568,6 +1678,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record nightly Dream evidence for two distinct skill candidates, distinct internal and public skills, proof the internal skill was pushed to the private fork only, one anti-pattern, and one trace auto-extracted from an instructive run with annotations.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.publicContribution":
       return {
@@ -1575,6 +1686,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record the contributor agent identity, a GitHub public skill PR URL, math gate, contributor trust, K=5 distinct other-agent positive-signal agent/evidence records, a GitHub Actions auto-merge run URL, canonical world skill landing, and three distinct other-agent pull/use evidence records.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.publishedArtifacts":
       return {
@@ -1582,6 +1694,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record published anti-pattern, trace, and run canonical-world GitHub blob refs, the contributor agent identity as the same public contribution contributor, and separate other-agent trace and run Plan-read agent/evidence records.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.curationStats":
       return {
@@ -1589,6 +1702,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record featured pick evidence including a different contributor's anti-pattern, the same public contribution contributor as the curation agent contributor, plus STATS.md evidence showing at least 30% top-five contributor concentration.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.twoWeekImprovement":
       return {
@@ -1596,6 +1710,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record the two-week follow-up at least fourteen days after the last goal with a date that is not in the future, faster follow-up metrics on similar goals, contributor profile counts/trust, contributor agent identity as the same public contribution contributor, a competing GitHub Discussion URL, two distinct live competing skill variant references, similar-goal comparison evidence, and two distinct other-agent refinement agent/evidence records excluding the contributor.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     default:
       return {
@@ -1610,10 +1725,10 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
   const runner = options.runner ?? defaultRunner;
   const env = options.env ?? process.env;
   const agentRoot = options.agentRoot ?? process.cwd();
-  const worldRoot = options.worldRoot ?? process.cwd();
+  const worldRoot = options.worldRoot ?? defaultWorldRoot(agentRoot);
   const nowMillis = options.nowMillis ?? Date.now();
   const worldRefs = worldSubscriptionRefs(env);
-  const profiles = providerProfileNames(env);
+  const profiles = providerProfilesByName(env);
   const nextActionContext: DoctorNextActionContext = {
     agentRoot,
     worldRoot,
@@ -1641,13 +1756,26 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     "provider.privateOaiCompatContextWindow",
   );
   const providerProfilesPathCheck = requiredFileCheck(env, providerProfilesPathEnv, "provider.profilesPath");
-  const providerAnthropicProfileCheck = providerProfileCheck(env, profiles, anthropicProviderProfileEnv, "provider.anthropicProfile");
-  const providerOpenrouterProfileCheck = providerProfileCheck(env, profiles, openRouterProviderProfileEnv, "provider.openrouterProfile");
+  const providerAnthropicProfileCheck = providerProfileCheck(
+    env,
+    profiles,
+    anthropicProviderProfileEnv,
+    "provider.anthropicProfile",
+    expectedAnthropicProviderProfile(env),
+  );
+  const providerOpenrouterProfileCheck = providerProfileCheck(
+    env,
+    profiles,
+    openRouterProviderProfileEnv,
+    "provider.openrouterProfile",
+    expectedOpenRouterProviderProfile(env),
+  );
   const providerPrivateOaiCompatProfileCheck = providerProfileCheck(
     env,
     profiles,
     privateOaiCompatProviderProfileEnv,
     "provider.privateOaiCompatProfile",
+    expectedPrivateOaiCompatProviderProfile(env),
   );
   const credentialsPathCheck = requiredFileCheck(env, credentialsPathEnv, "credentials.path");
   const credentialsMasterKeyCheck = requiredEnvCheck(env, credentialsMasterKeyEnv, "credentials.masterKey");

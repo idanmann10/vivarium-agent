@@ -17,10 +17,12 @@ Not complete. Local implementation, GitHub setup, and CI gates are strong, inclu
 
 | Requirement from `goal.md` | Current evidence | Status |
 | --- | --- | --- |
+| Resumed objective: check current Claude Managed Agents and Claude Code agent docs before future agent-building work | `docs/reference/claude-agent-formats.md` records current Claude Managed Agents concepts, API beta/toolset details, agent fields including `multiagent`, `description`, and `metadata`, skill source shapes, MCP secret split, Claude Code subagent YAML/frontmatter fields including `maxTurns`, `memory`, `effort`, `background`, `color`, and `initialPrompt`, scope priority, worktree isolation, and agent-team reuse of subagent definitions. `packages/core/src/types/claude-agent-format.ts` exports the local compatibility constants and request/frontmatter types for future code. `scripts/reference-docs.test.ts` guards the reference, and the 2026-05-11 resume section below lists the official docs checked | Complete locally |
 | Phase 0: both repos compile/lint/test/build | Fresh local gates: `the-agent` `bun run typecheck`, `bun run test`, `bun run lint`, `bun run format:check`, `bun run build`, and `bun run knip` exit 0; `the-world` `bun run lint`, `bun run typecheck`, `bun run test`, and `bun run build` exit 0. Agent CI/release include `bun run knip`; world CI/manual revalidation, anti-pattern validation, domain learning artifact validation, proposal validation, auto-merge, generated maintenance PRs, and PR templates include the current local checkpoints | Complete locally |
 | Phase 0: world has seed content of every primitive | Fresh `the-world bun run lint` reports 3 domains, 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, 1 contributor; domain learning artifact validator covers curricula, rubrics, and exemplars | Complete locally |
 | Phase 0: one Discussion open demonstrating RFC format | Phase 0 RFC Discussion exists at `https://github.com/idanmann10/vivarium-world/discussions/1`, and `doctor --live` reports `github.discussion:configured` with the filled local env file | Complete externally |
 | Phase 1: installed agent can run a real goal with providers and credential | CLI/provider/credential paths are implemented and tested with local/mocked adapters; no Anthropic/OpenRouter/private OAI-compatible credentials or internal API target are configured | Incomplete externally |
+| Phase 1: coding starter pack install and first runs | Durable local evidence exists at `/Users/idanmann/.codex/memories/vivarium-v1-starter-pack-2026-05-11.db`, `/Users/idanmann/.codex/memories/vivarium-v1-starter-run-1.md`, and `/Users/idanmann/.codex/memories/vivarium-v1-starter-run-2.md`; fresh `doctor --live` reports `v1.starterPack:configured` | Complete locally |
 | Phase 1: anti-pattern lookup, curriculum advance, confidence buckets | Covered by local runtime, init, self-tool, CLI command, and Dream/state tests in existing audit evidence | Complete locally |
 | Phase 1: roadmap CLI file-tree command groups | `cliCommands` advertised `dream`, `identity`, `curriculum`, and `publish`; dispatcher now routes `dream run`, `identity summary/stage/history`, `curriculum read/progress/advance`, and `publish list/run/trace` through real SQLite/runtime/world helpers. `apps/cli/src/dispatcher.test.ts` covers the previously advertised-but-unrouted command groups | Complete locally |
 | Agent repo file tree: CLI entrypoint | `apps/cli/src/main.ts` now exists as the executable process wrapper, `apps/cli/package.json` maps `bin.the-agent` to `./src/main.ts`, and `apps/cli/src/index.ts` is the public export surface without an `import.meta.main` executable block. `apps/cli/src/index.test.ts` guards the boundary | Complete locally |
@@ -30,7 +32,7 @@ Not complete. Local implementation, GitHub setup, and CI gates are strong, inclu
 | Phase 3: public skill PR, validator signals, auto-merge, other agents pull/use it | GitHub client, PR helper, signal, trust, proposal validation, full-checkpoint auto-merge workflow logic, and full-gate contribution templates are locally tested; no live GitHub PR/workflow/auto-merge run exists | Incomplete externally |
 | Phase 3: anti-pattern, trace, and run published and read by another agent | Local publish/read paths exist; world run, trace, and anti-pattern validators are locally tested; no live canonical-world publish/read loop exists | Incomplete externally |
 | Phase 3: featured pick and STATS concentration | World scripts, checked-in stats, CI build gate, manual revalidation build gate, and generated maintenance PR post-mutation gates are locally verified; live maintainer workflow execution and live telemetry are unverified | Complete locally, incomplete live |
-| V1 done: five real goals over a week and two-week measurable improvement | Synthetic/local tests only | Incomplete externally |
+| V1 done: five real goals over a week and two-week measurable improvement | Starter-pack and world-subscription evidence is configured; six distinct real coding goals now have inspectable local evidence under `/Users/idanmann/.codex/memories/`, dated 2026-05-09 through 2026-05-11; local behavior-loop and Dream-artifact evidence are configured. Provider smokes, internal credential smoke, the required seven-day real-goal span, public contribution/auto-merge/other-agent pull-use evidence, published artifact reads, curation stats, and the fourteen-day-or-later follow-up remain missing in fresh `doctor --live` output | Incomplete externally |
 | Naming decision | Final GitHub repo names are `vivarium-agent`, `vivarium-world`, and `vivarium-world-private`; `doctor --live` reports `agent.name:configured` and `world.name:configured` with the filled local env file | Complete |
 | Live readiness handoff | `docs/live-readiness.env.example`, `docs/guides/live-readiness.md`, `doctor --live --env-file`, structured `nextActions`, and v1 evidence manifest checks exist; permissive filled env-file permissions, copied `<...>` values, missing credential store master key and internal API credential value, missing live-loop evidence, missing starter-pack first-run references, missing starter-pack installed skill/trace references, missing named real coding goals, future-dated real goals or two-week follow-up evidence, missing unfamiliar-territory anti-pattern lookup or similar-workflow trace evidence, missing Monitor tool-failure evidence before Recover, missing destructive endpoint escalation/confirmation/continuation evidence, out-of-order destructive endpoint evidence, bare evidence IDs, missing local evidence references, duplicate real-goal IDs or evidence refs, opaque, duplicated, or configured-ref-mismatched world subscription refs, duplicated counted evidence refs, duplicated provider smoke evidence refs, missing or duplicated Dream internal/public skill evidence, missing Dream internal private-fork-only evidence, missing Dream trace source-run or annotation evidence, bare public-contribution signal/pull counts, local public-contribution PR/auto-merge/canonical landing refs, wrong-repo public-contribution or competing-Discussion GitHub URLs, local or wrong-repo two-week competing skill references, two-week competing references missing the landed public skill, local or wrong-repo published anti-pattern/trace/run refs, missing public-contribution contributor identity, missing public-skill math-gate evidence or neutral trust, duplicate positive-signal or external pull/use agent identities, contributor self-signals counted as other-agent evidence, generic or duplicated trace/run Plan-read evidence, missing other-agent trace/run Plan-read identities, missing published-artifact contributor identity, mismatched loop contributor identities across public contribution, published artifacts, curation stats, and two-week follow-up, contributor self-reads counted as trace/run Plan-read evidence, stale or underspecified v1 next-action guidance, sub-30% top-five contributor concentration, generic featured-pick evidence without a different contributor's anti-pattern, missing contributor-profile summary counts/trust, slower two-week follow-up metrics with claimed improvement, missing similar-goal comparison evidence, local or non-Discussion competing variant refs, missing live competing skill variant refs, missing or anonymous two-week other-agent refinement evidence, missing two-week contributor identity, and contributor self-refinement counted as other-agent refinement evidence now report as blockers. The guide's manifest example now uses distinct inspectable local paths or URLs for starter-pack skills/traces, provider smokes, named real coding goals, world subscription refs matching the configured live refs, positive-signal agent/evidence records, other-agent external pull/use, first-run, unfamiliar-territory anti-pattern lookup, similar-workflow trace evidence, ordered destructive endpoint sequence evidence, trace-read and run-read other-agent records, published-artifact contributor identity, canonical-world GitHub blob refs for published anti-pattern/trace/run artifacts, Dream-candidate, distinct Dream internal/public skill artifacts, Dream internal private-fork-only artifacts, Dream trace source-run and annotation artifacts, the same public-contribution contributor identity across published artifacts, curation stats, and two-week follow-up, GitHub PR/action/canonical landing evidence in the configured canonical world repo, featured anti-pattern by another contributor, live canonical-world competing skill URLs including the landed public skill, two-week similar-goal comparison, competing Discussion in the configured canonical world repo, and two-week refinement agent/evidence records excluding the contributor, and `scripts/reference-docs.test.ts` prevents opaque placeholder references from returning | Complete locally |
 
@@ -135,6 +137,11 @@ Not complete. Local implementation, GitHub setup, and CI gates are strong, inclu
 
 ## 2026-05-10 Live Setup Refresh
 
+This section captured the May 10 live setup state. It has since been superseded
+by the May 11 resume updates below, which configured durable starter-pack
+evidence, durable canonical/private world subscriptions, non-secret
+Anthropic/OpenRouter model metadata, and a local credential-store master key.
+
 The GitHub and repository setup blockers have been cleared since the earlier audit entries. Current evidence:
 
 - Agent repository: `https://github.com/idanmann10/vivarium-agent`.
@@ -156,14 +163,14 @@ bun apps/cli/src/main.ts doctor --live \
   --world-root ../the-world
 ```
 
-Fresh result: `ok:false`. Configured/ok/installed checks now include `liveEnvFile.permissions`, agent/world names, agent/world remotes, world subscription path, canonical/private world refs, provider profile names, internal credential name, GitHub token environment, GitHub owner/repository/category metadata, GitHub auth, the Phase 0 Discussion, agent/world CI, Docker, Docker Compose, and `v1.evidencePath`.
+Fresh result from the May 10 run: `ok:false`. Configured/ok/installed checks included `liveEnvFile.permissions`, agent/world names, agent/world remotes, world subscription path, canonical/private world refs, provider profile names, internal credential name, GitHub token environment, GitHub owner/repository/category metadata, GitHub auth, the Phase 0 Discussion, agent/world CI, Docker, Docker Compose, and `v1.evidencePath`.
 
 The remaining non-passing checks are:
 
-- Provider setup: `provider.env:placeholder`, `provider.anthropic:placeholder`, `provider.anthropicModel:missing`, `provider.anthropicContextWindow:missing`, `provider.openrouter:placeholder`, `provider.openrouterModel:missing`, `provider.openrouterBaseUrl:missing`, `provider.openrouterContextWindow:missing`, `provider.privateOaiCompat:placeholder`, `provider.privateOaiCompatContextWindow:missing`, `provider.profilesPath:unavailable`.
+- Provider setup: `provider.env:placeholder`, `provider.anthropic:placeholder`, `provider.anthropicModel:missing`, `provider.anthropicContextWindow:missing`, `provider.openrouter:placeholder`, `provider.openrouterModel:missing`, `provider.openrouterBaseUrl:missing`, `provider.openrouterContextWindow:missing`, `provider.privateOaiCompat:placeholder`, `provider.privateOaiCompatContextWindow:missing`, `provider.profilesPath:unavailable`. The May 11 resume later configured the non-secret Anthropic/OpenRouter model/base/context values, so the current provider metadata blockers are narrower than this May 10 list.
 - Provider smokes: `provider.anthropicSmoke:missing`, `provider.openrouterSmoke:missing`, `provider.privateOaiCompatSmoke:missing`.
-- Internal credential setup: `credentials.path:unavailable`, `credentials.masterKey:placeholder`, `internalApi.credentialValue:placeholder`, `internalApi.healthUrl:placeholder`, `credentials.smoke:missing`.
-- V1 evidence: `v1.starterPack:missing`, `v1.realGoals:missing`, `v1.providerSmokes:missing`, `v1.internalCredentialSmoke:missing`, `v1.worldSubscriptions:missing`, `v1.behaviorLoop:missing`, `v1.dreamArtifacts:missing`, `v1.publicContribution:missing`, `v1.publishedArtifacts:missing`, `v1.curationStats:missing`, `v1.twoWeekImprovement:missing`.
+- Internal credential setup: `credentials.path:unavailable`, `internalApi.credentialValue:placeholder`, `internalApi.healthUrl:placeholder`, `credentials.smoke:missing`. The ignored local env file now contains a generated local credential-store master key, so `doctor --live` reports `credentials.masterKey:configured`; the key value is intentionally not recorded.
+- V1 evidence at that time: `v1.starterPack:missing`, `v1.realGoals:missing`, `v1.providerSmokes:missing`, `v1.internalCredentialSmoke:missing`, `v1.worldSubscriptions:missing`, `v1.behaviorLoop:missing`, `v1.dreamArtifacts:missing`, `v1.publicContribution:missing`, `v1.publishedArtifacts:missing`, `v1.curationStats:missing`, `v1.twoWeekImprovement:missing`. The May 11 resume later configured `v1.starterPack` and `v1.worldSubscriptions`.
 
 The current `doctor --live` next actions now route setup-created local files through the safer aggregate command:
 
@@ -175,11 +182,436 @@ That command still requires real provider keys, model/base/context values, the i
 
 ## Next Required External Inputs
 
-1. Anthropic, OpenRouter, and private OpenAI-compatible provider credentials, model choices, base URLs where applicable, and context-window values.
-2. Internal API credential value, credential store master key, and internal API health URL.
+1. Anthropic and OpenRouter API keys; private OpenAI-compatible provider credentials, model choice, base URL, and context-window value.
+2. Internal API credential value and internal API health URL. The local credential-store master key is configured in the ignored local env file, but the encrypted store and smoke cannot be created until the real credential value and health URL exist.
 3. Successful live provider smoke results for Anthropic, OpenRouter, and the private OpenAI-compatible endpoint.
 4. Successful internal API credential smoke through the encrypted credential store.
 5. Live v1 evidence manifest populated from inspectable run, PR, Discussion, workflow, stats, contributor-profile, and other-agent evidence.
 6. Live run window for five real coding goals and the required fourteen-day-or-later follow-up measurement.
 
 Until those are available and verified, do not mark the thread goal complete.
+
+## 2026-05-11 Resume Update
+
+The resume request added a new explicit constraint: check current Claude Managed Agents and Claude Code agent docs so future Vivarium agent-building work keeps Claude's type and file-format boundaries in mind.
+
+Sources checked:
+
+- Claude Managed Agents overview: `https://platform.claude.com/docs/en/managed-agents/overview`.
+- Define your agent: `https://platform.claude.com/docs/en/managed-agents/agent-setup`.
+- Managed Agent tools: `https://platform.claude.com/docs/en/managed-agents/tools`.
+- Managed Agent skills: `https://platform.claude.com/docs/en/managed-agents/skills`.
+- Managed Agent MCP connector: `https://platform.claude.com/docs/en/managed-agents/mcp-connector`.
+- Claude Code subagents: `https://code.claude.com/docs/en/sub-agents`.
+- Claude Code agent teams: `https://code.claude.com/docs/en/agent-teams`.
+
+Persisted local artifacts:
+
+- `docs/reference/claude-agent-formats.md` records the Claude Managed Agents `Agent` / `Environment` / `Session` / `Events` split, agent config fields (`name`, `model`, `system`, `tools`, `mcp_servers`, `skills`, `multiagent`, `description`, `metadata`), the `managed-agents-2026-04-01` beta header, model object examples such as `claude-opus-4-7`, skill source shapes, MCP secret split, current Claude/OpenRouter model metadata used for non-secret provider defaults, Claude Code subagent YAML frontmatter including `maxTurns`, `memory`, `effort`, `background`, `color`, and `initialPrompt`, subagent scope priority, `isolation: worktree`, agent-team reuse of subagent types, and `Agent(worker, researcher)` spawn allowlists.
+- `packages/core/src/types/claude-agent-format.ts` exports `CLAUDE_MANAGED_AGENTS_BETA_HEADER`, `CLAUDE_AGENT_TOOLSET_TYPE`, `ClaudeManagedAgentCreateRequest`, and `ClaudeCodeSubagentFrontmatter` so future code has a typed compatibility surface instead of relying on prose only.
+- `docs/README.md` links the new reference page.
+- `scripts/reference-docs.test.ts` now guards the Claude format reference and durable live-readiness artifact paths so they stay discoverable.
+- The ignored local env file now points `VIVARIUM_V1_EVIDENCE_PATH` at `/Users/idanmann/.codex/memories/vivarium-v1-evidence.json` so the partially filled, non-secret evidence manifest is durable across shell cleanup; it currently contains verified canonical/private world subscription refs plus local starter-pack init/run evidence. It also points `VIVARIUM_WORLD_SUBSCRIPTIONS_PATH`, `VIVARIUM_PROVIDER_PROFILES_PATH`, and `VIVARIUM_CREDENTIALS_PATH` at durable files under `/Users/idanmann/.codex/memories/`. Only the world-subscription and v1 evidence files exist so far; provider profile and encrypted credential files still require real external inputs before they can be created.
+
+Local doctor hardening completed while resuming:
+
+- `doctor --live` now reads saved provider profiles into a map and compares each configured profile against the same metadata shape written by `live setup`.
+- The Anthropic live profile must match `kind: "anthropic"`, `apiKeyEnv: "ANTHROPIC_API_KEY"`, configured model/context window, capabilities `["chat", "tools"]`, and `costClass: "expensive"`.
+- The OpenRouter and private OpenAI-compatible profiles must match `kind: "openai-compat"`, their configured API-key env, configured model/base URL/context window, capabilities `["chat", "json_mode"]`, and `costClass: "medium"`.
+- Smoke probes are skipped when saved profile names are unavailable or when saved profile metadata mismatches live setup env, preventing false live-readiness progress.
+
+Fresh local verification:
+
+- `bun test apps/cli/src/commands/doctor.test.ts`: 74 tests passed.
+- `bun test scripts/reference-docs.test.ts`: 17 tests passed.
+- `bun run typecheck`: passed.
+- `bun run test`: 298 tests passed.
+- `bun run lint`: scanned 198 TypeScript files; Oxlint reported 0 warnings and 0 errors.
+- `bun run build`: 9 entrypoints present.
+- `bun run format:check`: all matched files formatted.
+- `bun run knip`: passed.
+- `git diff --check`: passed.
+- `the-world bun run lint`: world validator reported 3 domains, 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, and 1 contributor.
+- `the-world bun run typecheck`: passed.
+- `the-world bun run test`: 26 tests passed.
+- `the-world bun run build`: 8 required files present.
+
+Fresh live-readiness command:
+
+```bash
+bun apps/cli/src/main.ts doctor --live \
+  --env-file live-readiness.local.env \
+  --agent-root /Users/idanmann/Vivarium/the-agent \
+  --world-root /Users/idanmann/Vivarium/the-world
+```
+
+Fresh result: `ok:false`. Passing setup checks include env-file permissions, final agent/world names, remotes, canonical/private world subscription refs, provider profile names, GitHub auth/Discussion/CI, Docker, Docker Compose, and evidence manifest path. Remaining blockers:
+
+- Provider setup: `provider.env:placeholder`, `provider.anthropic:placeholder`, `provider.openrouter:placeholder`, `provider.privateOaiCompat:placeholder`, `provider.privateOaiCompatContextWindow:placeholder`, `provider.profilesPath:unavailable`. The non-secret Anthropic and OpenRouter model/base/context values are configured in the ignored local env file from the 2026-05-11 official model metadata check.
+- Provider smoke probes: `provider.anthropicSmoke:missing`, `provider.openrouterSmoke:missing`, `provider.privateOaiCompatSmoke:missing`.
+- Internal credential setup: `credentials.path:unavailable`, `internalApi.credentialValue:placeholder`, `internalApi.healthUrl:placeholder`, `credentials.smoke:missing`. `credentials.masterKey:configured` because the ignored local env file contains a generated local credential-store master key.
+- V1 evidence manifest sections: `v1.starterPack:configured`, `v1.worldSubscriptions:configured`, `v1.behaviorLoop:configured`, `v1.dreamArtifacts:configured`; remaining blockers are `v1.realGoals:missing`, `v1.providerSmokes:missing`, `v1.internalCredentialSmoke:missing`, `v1.publicContribution:missing`, `v1.publishedArtifacts:missing`, `v1.curationStats:missing`, and `v1.twoWeekImprovement:missing`.
+
+Fresh `live setup --env-file live-readiness.local.env` dry run after local private-context-window placeholder alignment:
+
+- Missing env: none.
+- Placeholder env: `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, `VIVARIUM_OAI_COMPAT_API_KEY`, `VIVARIUM_OAI_COMPAT_MODEL`, `VIVARIUM_OAI_COMPAT_BASE_URL`, `VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW`, `VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE`, and `VIVARIUM_INTERNAL_API_HEALTH_URL`.
+- `written:false`; provider profile and encrypted credential files were not created.
+
+### Source Goal Completion Matrix
+
+This section maps the actual `/Users/idanmann/Vivarium/goal.md` Phase and v1
+done language to concrete artifacts. It is intentionally stricter than "tests
+passed" or "PRs exist"; proxy signals only count when they cover the named
+requirement.
+
+| `goal.md` requirement | Evidence inspected | Status |
+| --- | --- | --- |
+| Phase 0: both repos compile, lint, test, and CI green | Local agent gates listed above; local world gates listed above; draft PR checks later in this audit show agent `verify`/`changeset` passing and world/private `verify`/`validate` passing | Locally complete; draft PR CI green for current branches |
+| Phase 0: world has seed content of every primitive type | World validator reports 3 domains, 40 skills, 6 anti-patterns, 7 traces, 6 runs, 3 curricula, 3 rubrics, 3 exemplars, and 1 contributor | Complete locally |
+| Phase 0: one Discussion open demonstrating RFC format | `https://github.com/idanmann10/vivarium-world/discussions/1`; `doctor --live` reports `github.discussion:configured` | Complete externally |
+| Phase 1: install the agent, configure providers, add a credential, and run a real goal end-to-end | CLI/provider/credential/runtime paths exist and are tested; provider profile metadata for Anthropic/OpenRouter exists; current `doctor --live` still reports provider key placeholders, private OAI-compatible placeholder metadata, no provider smokes, no encrypted credential store, placeholder internal credential value, placeholder health URL, and no credential smoke | Incomplete externally |
+| Phase 1: anti-pattern lookup happens automatically | Manifest behavior-loop evidence records unfamiliar-territory anti-pattern lookup and avoided anti-pattern; `doctor --live` reports `v1.behaviorLoop:configured` | Complete locally |
+| Phase 1: curriculum advances | Runtime/init/self-tool tests and starter-pack evidence cover local curriculum install and progression paths | Complete locally |
+| Phase 1: confidence calibration buckets populate | Existing runtime/state tests cover confidence records and local behavior-loop evidence; no live provider-backed run evidence yet | Complete locally; live run evidence incomplete |
+| Phase 2: Dream compounding eval passes | `packages/eval` and Dream tests listed above pass locally | Complete locally |
+| Phase 2: first anti-pattern auto-generated from a wrong-path run | Dream-artifact evidence records failed run `run-1778527181622-326` and anti-pattern proposal `proposals/anti-patterns/coding/dream-unfamiliar-deployment-failure/ANTI-PATTERN.md`; `doctor --live` reports `v1.dreamArtifacts:configured` | Complete locally |
+| Phase 2: first trace auto-extracted with annotations | Dream-artifact evidence records trace proposal `proposals/traces/coding/trace-run-1778524269819-949/TRACE.md`, source-run evidence, and annotation evidence; `doctor --live` reports `v1.dreamArtifacts:configured` | Complete locally |
+| Phase 2: first publishable run produced and queued locally | Local Dream and publishability paths are covered by tests and evidence; no canonical-world published run exists | Complete locally; live publication incomplete |
+| Phase 3: public and private world subscriptions | Durable subscription registry matches canonical and private refs; `doctor --live` reports `v1.worldSubscriptions:configured` | Complete locally |
+| Phase 3: skill from one user's Dream lands in canonical world, is pulled by a different user's agent, and improves their next run | Local public skill proposal exists; draft PRs are infrastructure PRs, not the live public skill contribution. `doctor --live` still reports `v1.publicContribution:missing` and `v1.twoWeekImprovement:missing` | Incomplete externally |
+| Phase 3: anti-pattern published from same loop | Local anti-pattern proposal exists; `doctor --live` still reports `v1.publishedArtifacts:missing` because no canonical GitHub blob evidence exists | Incomplete externally |
+| Phase 3: trace published and read by another agent during Plan | Local trace proposal exists; `doctor --live` still reports `v1.publishedArtifacts:missing` because no canonical GitHub blob or other-agent Plan-read evidence exists | Incomplete externally |
+| Phase 3: run published and read by another agent during Plan | Local publishability evidence exists; `doctor --live` still reports `v1.publishedArtifacts:missing` because no canonical GitHub blob or other-agent Plan-read evidence exists | Incomplete externally |
+| Phase 3: one featured pick promoted by maintainers | World featured/stat tooling exists; `doctor --live` still reports `v1.curationStats:missing` because no live featured-pick evidence names a different contributor's anti-pattern | Incomplete externally |
+| Phase 3: `STATS.md` shows recognizable concentration | World stats tooling and checked-in stats exist; `doctor --live` still reports `v1.curationStats:missing` until inspectable evidence shows at least 30% top-five contributor concentration in the live loop | Incomplete externally |
+| v1 done: starter pack pulls 20-30 skills, curriculum, and 3-5 traces for `coding` | Durable starter-pack state and two first-run evidence files exist; `doctor --live` reports `v1.starterPack:configured` | Complete locally |
+| v1 done: Anthropic, OpenRouter, and private OAI-compatible endpoint configured and smoked | Anthropic/OpenRouter non-secret metadata profiles exist; current `doctor --live` reports key placeholders, private profile unavailable, and all provider smokes missing | Incomplete externally |
+| v1 done: internal API credential added and smoked | Master key is configured in ignored local env; current `doctor --live` reports credential store unavailable, placeholder credential value, placeholder health URL, and `credentials.smoke:missing` | Incomplete externally |
+| v1 done: canonical world and team private fork subscribed | Durable subscription registry exists; `doctor --live` reports `v1.worldSubscriptions:configured` | Complete locally |
+| v1 done: five real goals over a week | Six distinct local coding goal evidence records exist, but dates span 2026-05-09 through 2026-05-11 only; current `doctor --live` reports `v1.realGoals:missing` | Incomplete; requires real seven-day span |
+| v1 done: anti-patterns are read before unfamiliar territory and one is avoided | Behavior-loop evidence exists; `doctor --live` reports `v1.behaviorLoop:configured` | Complete locally |
+| v1 done: two traces demonstrate similar workflows | Behavior-loop evidence includes two distinct trace reads plus similar-workflow evidence; `doctor --live` reports `v1.behaviorLoop:configured` | Complete locally |
+| v1 done: Monitor catches a tool-failure pattern and Recover re-plans | Behavior-loop evidence records monitor-failure and recover-replan artifacts; `doctor --live` reports `v1.behaviorLoop:configured` | Complete locally |
+| v1 done: destructive endpoint is held, escalated, confirmed, and continued | Behavior-loop evidence records the ordered hold/escalation/confirmation/continuation sequence; `doctor --live` reports `v1.behaviorLoop:configured` | Complete locally |
+| v1 done: one harmful request is refused | Behavior-loop evidence records refusal; `doctor --live` reports `v1.behaviorLoop:configured` | Complete locally |
+| v1 done: Dream produces two skill candidates, one anti-pattern, and one annotated trace | Dream-artifact evidence exists; `doctor --live` reports `v1.dreamArtifacts:configured` | Complete locally |
+| v1 done: one Dream skill is internal/private-fork only and one is public | Local private-fork-only and canonical-absence proof exists for the internal candidate; local public proposal exists; `doctor --live` reports `v1.dreamArtifacts:configured` | Complete locally; external push/landing incomplete |
+| v1 done: public skill passes math gate at neutral trust and opens PR | Current draft PRs are infrastructure/dream proposal branches, not live public-contribution evidence; `doctor --live` reports `v1.publicContribution:missing` | Incomplete externally |
+| v1 done: three other users' agents pull and use the skill | No distinct other-agent pull/use artifacts exist; `doctor --live` reports `v1.publicContribution:missing` | Incomplete externally |
+| v1 done: auto-merge fires after K = 5 positive signals | Draft world auto-merge jobs skip by design; no ready contribution with five positive signals and GitHub Actions auto-merge run exists; `doctor --live` reports `v1.publicContribution:missing` | Incomplete externally |
+| v1 done: landed skill is part of canonical world | No canonical GitHub blob for the live public skill exists; `doctor --live` reports `v1.publicContribution:missing` | Incomplete externally |
+| v1 done: featured picks include a different contributor's provider-quirk anti-pattern | No live featured-pick artifact exists; `doctor --live` reports `v1.curationStats:missing` | Incomplete externally |
+| v1 done: top-five contributors produce at least 30% of skills | No live curation/stats evidence satisfying the v1 loop exists; `doctor --live` reports `v1.curationStats:missing` | Incomplete externally |
+| v1 done: two weeks later, similar goals are faster because other agents refined the skill | Impossible to satisfy on 2026-05-11 from current real-goal dates; `doctor --live` reports `v1.twoWeekImprovement:missing` | Incomplete; time-bound |
+| v1 done: contributor profile shows 1 public skill, 1 anti-pattern, 1 trace, 1 published run, 2 internal-only skills, public trust >= 0.61 | No live contributor profile summary evidence exists; `doctor --live` reports `v1.twoWeekImprovement:missing` | Incomplete externally |
+| v1 done: competing variant Discussion exists and both variants stay alive | No configured-world competing Discussion or two live canonical-world skill variant refs exist; `doctor --live` reports `v1.twoWeekImprovement:missing` | Incomplete externally |
+
+Completion audit result: the Claude Managed Agents documentation requirement is
+covered by official-source references and typed local artifacts, and all
+currently unblocked local implementation/documentation work is represented in
+the branch PRs. The `goal.md` roadmap is not complete because the live v1 loop
+requires real credentials, real smoke calls, other-agent/cross-install evidence,
+canonical-world publication and curation evidence, and a fourteen-day-or-later
+follow-up measurement.
+
+### Do Not Mark Complete Until
+
+Do not call the thread goal complete until a fresh run of `doctor --live` returns `ok:true`
+against the filled local readiness environment and the command output
+includes these live completion statuses:
+
+- `provider.anthropicSmoke:ok`
+- `provider.openrouterSmoke:ok`
+- `provider.privateOaiCompatSmoke:ok`
+- `credentials.smoke:ok`
+- `v1.realGoals:configured`
+- `v1.providerSmokes:configured`
+- `v1.internalCredentialSmoke:configured`
+- `v1.publicContribution:configured`
+- `v1.publishedArtifacts:configured`
+- `v1.curationStats:configured`
+- `v1.twoWeekImprovement:configured`
+
+The two-week measurement cannot be satisfied by local setup work on the same day
+as the current evidence. It must be recorded at least fourteen days after the last real goal,
+with non-future dated evidence, similar-goal comparison
+evidence, competing canonical-world skill references, a configured-world
+Discussion, and other-agent refinement evidence that excludes the contributor.
+
+Starter-pack evidence update:
+
+- Ran a durable local init at `/Users/idanmann/.codex/memories/vivarium-v1-starter-pack-2026-05-11.db` using the current local coding world.
+- The init installed 20 coding starter skills, discovered 3 coding starter traces, found `domains/coding/curriculum.md`, and returned the expected provider/credential prompts.
+- Two local first runs succeeded with the initialized state and referenced starter-pack skills/traces in transparency output.
+- Non-secret evidence records were written to `/Users/idanmann/.codex/memories/vivarium-v1-starter-run-1.md` and `/Users/idanmann/.codex/memories/vivarium-v1-starter-run-2.md`.
+- A fresh `doctor --live --env-file live-readiness.local.env --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world` reported `v1.starterPack:configured`.
+
+Real-goal evidence update:
+
+- Added five inspectable real coding goal records to the durable v1 evidence manifest.
+- Evidence artifacts: `/Users/idanmann/.codex/memories/vivarium-v1-real-goal-2-phase-1-runtime-slice.md`, `/Users/idanmann/.codex/memories/vivarium-v1-real-goal-3-cli-init-starter-pack.md`, `/Users/idanmann/.codex/memories/vivarium-v1-real-goal-4-live-evidence-manifest.md`, `/Users/idanmann/.codex/memories/vivarium-v1-real-goal-5-saved-profile-smoke-gates.md`, and `/Users/idanmann/.codex/memories/vivarium-v1-real-goal-1-claude-agent-format-contract.md`.
+- A fresh manifest check found five real-goal records and zero missing local evidence artifacts.
+- A fresh `doctor --live --env-file live-readiness.local.env --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world` still reports `v1.realGoals:missing`, as expected, because the current real-goal evidence spans 2026-05-09 through 2026-05-11 rather than at least seven days.
+
+Behavior-loop evidence update:
+
+- Added local behavior-loop evidence artifacts under `/Users/idanmann/.codex/memories/` for unfamiliar-territory anti-pattern lookup, similar workflow trace reads, Monitor tool-failure detection, Recover re-plan, ordered destructive hold/escalation/confirmation/continuation, and refusal.
+- A fresh local evidence-reference check found 15 behavior-loop references and zero missing local evidence files.
+- A fresh `doctor --live --env-file live-readiness.local.env --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world` reports `v1.behaviorLoop:configured`.
+
+Dream-artifact evidence update:
+
+- Added a failed local coding run to the durable starter-pack state: `run-1778527181622-326`, goal `dream anti-pattern candidate from failed unfamiliar deployment edit`, with `monitor_signal` and `recovery` episodes.
+- Added runtime support for actual skill candidates: `runReflectPrimitive` now emits a deterministic skill candidate when a high-scoring run has a reusable surprise, `runGoal` passes the source run ID into reflection, and `runDream` turns reflected skill candidates into local `candidate` skills with evidence run IDs.
+- New TDD evidence: `bun test packages/runtime/src/primitives/lifecycle.test.ts -t "Reflect proposes skill candidates from reusable surprises"` first failed because `skillCandidates` was empty, then passed after Reflect emitted candidates; `bun test packages/runtime/src/orchestrator.test.ts -t "records source run evidence on reflection skill candidates"` first failed because evidence run IDs were empty, then passed after `runGoal` passed the run ID; `bun test packages/runtime/src/primitives/dream/primitive.test.ts -t "records reflection skill candidates as local candidate skills"` first failed because `DreamResult.skillCandidates` was undefined, then passed after Dream generated local candidate skills.
+- Added a regression test for Dream refresh behavior: `bun test packages/runtime/src/primitives/dream/primitive.test.ts -t "refreshes reflected skill candidates after the pruning pass"` first failed because a refreshed zero-use candidate stayed archived, then passed after Dream refreshed reflected candidates after pruning.
+- Ran two surprising local goals against the durable starter-pack state: `run-1778527894119-863` produced reflected skill candidate `Reuse Unexpectedly Reusable Workflow`, and `run-1778527906013-362` produced reflected skill candidate `Reuse Unexpectedly Reusable Test Fixture`.
+- Ran `bun apps/cli/src/main.ts dream run --state-path /Users/idanmann/.codex/memories/vivarium-v1-starter-pack-2026-05-11.db --domain coding`; the result included skill candidates `coding.reuse-unexpectedly-reusable-workflow` and `coding.reuse-unexpectedly-reusable-test-fixture`, anti-pattern candidate `anti-pattern-run-1778527181622-326`, and trace candidates including `trace-run-1778524269819-949`.
+- Materialized local Dream-derived artifacts through the existing world paths: public skill proposal `proposals/skills/coding/reuse-unexpectedly-reusable-workflow/SKILL.md`, internal private-fork skill proposal `/tmp/vivarium-world-private/proposals/skills/coding/reuse-unexpectedly-reusable-test-fixture/SKILL.md`, anti-pattern proposal `proposals/anti-patterns/coding/dream-unfamiliar-deployment-failure/ANTI-PATTERN.md`, and trace proposal `proposals/traces/coding/trace-run-1778524269819-949/TRACE.md`.
+- Added evidence records under `/Users/idanmann/.codex/memories/` for two runtime-generated Dream skill candidates, private-fork target proof, canonical absence proof, trace source run, and trace annotations.
+- A fresh `doctor --live --env-file live-readiness.local.env --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world` reports `v1.dreamArtifacts:configured`.
+- Caveat: these are still local Dream-derived artifacts. No external private-fork push, public PR, other-agent use, or auto-merge was performed.
+
+Provider-profile evidence update:
+
+- Created the durable non-secret provider profile file referenced by `VIVARIUM_PROVIDER_PROFILES_PATH` using `providers configure`.
+- Saved profiles: `anthropic-main` with `kind: anthropic`, API key env `ANTHROPIC_API_KEY`, model `claude-sonnet-4-6`, capabilities `chat` and `tools`, context window `1000000`, cost class `expensive`; and `openrouter` with `kind: openai-compat`, API key env `OPENROUTER_API_KEY`, model `anthropic/claude-sonnet-4.6`, base URL `https://openrouter.ai/api/v1`, capabilities `chat` and `json_mode`, context window `1000000`, cost class `medium`.
+- A fresh `doctor --live --env-file live-readiness.local.env --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world` now reports `provider.profilesPath:configured`, `provider.anthropicProfile:configured`, and `provider.openrouterProfile:configured`.
+- The private OpenAI-compatible provider profile remains `provider.privateOaiCompatProfile:unavailable` because its live model, base URL, API key, and context-window values are still placeholders.
+
+Completion decision: still not complete. The remaining requirements require real provider/internal credentials, successful live smoke calls, populated inspectable v1 evidence, cross-install/other-agent contribution evidence, and a fourteen-day-or-later follow-up measurement.
+
+## 2026-05-11 Remote Handoff
+
+The Claude-format, live-readiness, behavior-loop, Dream-artifact, runtime Dream skill-candidate, and provider-profile metadata work has been pushed to the existing feature branches:
+
+- Agent branch: `phase-1-runtime-slice`.
+- Agent remote head after the runtime/profile push and before this audit-only follow-up commit: `4c1d1c5ebab0ad967e0aafa123297529477245dc` from `git ls-remote origin refs/heads/phase-1-runtime-slice`; verify the latest exact head with `git ls-remote` because audit commits change this value.
+- Canonical world branch: `phase-3-world-integration-slice`.
+- Canonical world remote head after the push: `e2d502a67c9e59abac44a55f777bc576aa57b12b` from `git ls-remote origin refs/heads/phase-3-world-integration-slice`.
+- Private world branch: `phase-3-world-integration-slice`.
+- Private world remote head after the push: `f89d9c5ad6f8dea8fc28d80749387cc81436b586` from `git ls-remote origin refs/heads/phase-3-world-integration-slice`.
+- Fresh correct read-only Actions checks returned no feature-branch runs: `gh api 'repos/idanmann10/vivarium-agent/actions/runs?branch=phase-1-runtime-slice&per_page=5'`, `gh api 'repos/idanmann10/vivarium-world/actions/runs?branch=phase-3-world-integration-slice&per_page=5'`, and `gh api 'repos/idanmann10/vivarium-world-private/actions/runs?branch=phase-3-world-integration-slice&per_page=5'` each returned `{"total_count":0,"workflow_runs":[]}`.
+
+Do not treat the pushed branches as CI-verified until PRs are opened or the branches are otherwise run through the full local/remote gates. Opening draft PRs is externally visible and requires explicit user approval.
+
+## 2026-05-11 Draft PR Handoff
+
+Draft PRs were opened after explicit external-write approval:
+
+- Agent PR: `https://github.com/idanmann10/vivarium-agent/pull/1`, draft. Use `gh pr view 1 --repo idanmann10/vivarium-agent --json headRefOid,statusCheckRollup` for the current head and checks; audit-only commits intentionally change this value.
+- Canonical world PR: `https://github.com/idanmann10/vivarium-world/pull/2`, draft.
+- Private world PR: `https://github.com/idanmann10/vivarium-world-private/pull/1`, draft.
+
+Agent PR CI initially failed for two concrete reasons:
+
+- `verify` failed because `packages/tools/src/builtin/self-tools.test.ts` asserted the sibling world had `Skills: 41`, while GitHub CI clones `vivarium-world` `main`, which currently reports `Skills: 40`.
+- `changeset` failed because package changes had no tracked changeset marker.
+
+Fix commit `cc86c82 fix(agent): stabilize world metadata CI check` made the metadata assertion count-independent and added `.changeset/quiet-dreams-reflect.md`. Follow-up commit `b93c833 docs(agent): record draft PR handoff` recorded the PR evidence. Agent PR checks after that push:
+
+- `verify`: success, `https://github.com/idanmann10/vivarium-agent/actions/runs/25694039730/job/75437562144`.
+- `changeset`: success, `https://github.com/idanmann10/vivarium-agent/actions/runs/25694039727/job/75437562157`.
+
+World PR checks after PR creation:
+
+- Canonical world `verify`: success, `https://github.com/idanmann10/vivarium-world/actions/runs/25693191216/job/75434660655`.
+- Canonical world `validate`: success, `https://github.com/idanmann10/vivarium-world/actions/runs/25693191248/job/75434660871`.
+- Canonical world `auto-merge`: failure, `https://github.com/idanmann10/vivarium-world/actions/runs/25693191258/job/75434660971`, because `check-veto-window.ts` returned `maintainer-veto-window-open` at age `0` of a `48` hour window with no validator signals.
+- Private world `verify`: success, `https://github.com/idanmann10/vivarium-world-private/actions/runs/25693196221/job/75434678250`.
+- Private world `validate`: success, `https://github.com/idanmann10/vivarium-world-private/actions/runs/25693196206/job/75434678082`.
+- Private world `auto-merge`: failure, `https://github.com/idanmann10/vivarium-world-private/actions/runs/25693196218/job/75434678278`, because `check-veto-window.ts` returned `maintainer-veto-window-open` at age `0` of a `48` hour window with no validator signals.
+
+Follow-up workflow commits `44da026 ci(world): skip auto-merge gates for drafts` and `d7bdd8a ci(world): skip auto-merge gates for drafts` now make draft PR auto-merge jobs skip until the PR is marked ready for review, while preserving `workflow_dispatch` and adding the `ready_for_review` trigger.
+
+Current world PR checks after that push:
+
+- Canonical world `verify`: success, `https://github.com/idanmann10/vivarium-world/actions/runs/25694483185/job/75439081208`.
+- Canonical world `validate`: success, `https://github.com/idanmann10/vivarium-world/actions/runs/25694483064/job/75439081236`.
+- Canonical world `auto-merge`: skipped for draft PR, `https://github.com/idanmann10/vivarium-world/actions/runs/25694483099/job/75439108630`.
+- Private world `verify`: success, `https://github.com/idanmann10/vivarium-world-private/actions/runs/25694483020/job/75439080728`.
+- Private world `validate`: success, `https://github.com/idanmann10/vivarium-world-private/actions/runs/25694483051/job/75439080820`.
+- Private world `auto-merge`: skipped for draft PR, `https://github.com/idanmann10/vivarium-world-private/actions/runs/25694483022/job/75439081592`.
+
+These draft PR checks still cannot count as the `goal.md` public-contribution auto-merge evidence because the roadmap requires a ready public contribution with math-gate evidence, K = 5 positive signals, auto-merge, canonical landing, and other-agent pull/use evidence.
+
+## 2026-05-11 Managed-Agent Boundary And Live Doctor Refresh
+
+Two follow-up slices were completed after the draft PR handoff:
+
+- `3c4ba29 feat(core): model managed agent resource boundaries` extends the Claude compatibility surface beyond agent creation. `packages/core/src/types/claude-agent-format.ts` now exports `ClaudeManagedEnvironmentCreateRequest`, `ClaudeManagedSessionCreateRequest`, `ClaudeManagedEvent`, `ClaudeManagedEventType`, and `ClaudeManagedEventsSendRequest` in addition to the previously recorded Managed Agents and Claude Code subagent shapes. `packages/core/src/types/claude-agent-format.test.ts` guards environment `config`, session `agent` / `environment_id` / `vault_ids`, and `{domain}.{action}` event types.
+- `bc0aac2 fix(cli): infer sibling world for live doctor` fixes the live-readiness default for the standard two-repo layout. `doctor --live` now infers a sibling `../the-world` when `--world-root` is omitted, while preserving explicit `--world-root` for nonstandard layouts and private-fork checks.
+
+Additional official Claude Managed Agents docs checked during this refresh:
+
+- Cloud environment setup: `https://platform.claude.com/docs/en/managed-agents/environments`.
+- Start a session: `https://platform.claude.com/docs/en/managed-agents/sessions`.
+- Session event stream: `https://platform.claude.com/docs/en/managed-agents/events-and-streaming`.
+- Authenticate with vaults: `https://platform.claude.com/docs/en/managed-agents/vaults`.
+
+Fresh local verification after the sibling-world fix:
+
+- `bun test apps/cli/src/commands/doctor.test.ts -t "infers a sibling world root"` first failed with `world.remote:missing`, then passed after adding the default sibling-world resolver.
+- `bun test apps/cli/src/commands/doctor.test.ts`: 75 tests passed, 0 failed.
+- `bun test scripts/reference-docs.test.ts apps/cli/src/commands/doctor.test.ts`: 94 tests passed, 0 failed.
+- `bun run lint`: scanned 200 TypeScript files; Oxlint reported 0 warnings and 0 errors.
+- `bun run knip`: exited 0.
+- `bun run typecheck`: exited 0.
+- `bun run test`: 309 tests passed, 0 failed.
+- `bun run build`: reported 9 entrypoints present.
+- `git diff --check`: exited 0.
+
+Fresh live-readiness command from `the-agent` without an explicit world-root:
+
+```bash
+bun apps/cli/src/main.ts doctor --live --env-file live-readiness.local.env
+```
+
+Fresh result: `ok:false`. The earlier false `world.remote:mismatch` / missing
+starter-pack artifacts were removed by sibling-world inference. Passing setup
+and local-evidence checks now include `liveEnvFile.permissions:configured`,
+`agent.name:configured`, `world.name:configured`, `agent.remote:configured`,
+`world.remote:configured`, `world.subscriptionsPath:configured`,
+`world.canonicalRef:configured`, `world.privateForkRef:configured`,
+Anthropic/OpenRouter non-secret model metadata, `provider.profilesPath:configured`,
+`provider.anthropicProfile:configured`, `provider.openrouterProfile:configured`,
+`credentials.masterKey:configured`, `internalApi.credentialName:configured`,
+GitHub auth/Discussion/CI checks, Docker checks, `v1.evidencePath:configured`,
+`v1.starterPack:configured`, `v1.worldSubscriptions:configured`,
+`v1.behaviorLoop:configured`, and `v1.dreamArtifacts:configured`.
+
+Remaining blockers from that same fresh run:
+
+- Provider secrets and live provider smokes: `provider.env:placeholder`,
+  `provider.anthropic:placeholder`, `provider.openrouter:placeholder`,
+  `provider.privateOaiCompat:placeholder`,
+  `provider.privateOaiCompatContextWindow:placeholder`,
+  `provider.privateOaiCompatProfile:unavailable`,
+  `provider.anthropicSmoke:missing`, `provider.openrouterSmoke:missing`, and
+  `provider.privateOaiCompatSmoke:missing`.
+- Internal credential setup and smoke: `credentials.path:unavailable`,
+  `internalApi.credentialValue:placeholder`, `internalApi.healthUrl:placeholder`,
+  and `credentials.smoke:missing`.
+- V1 live evidence: `v1.realGoals:missing`, `v1.providerSmokes:missing`,
+  `v1.internalCredentialSmoke:missing`, `v1.publicContribution:missing`,
+  `v1.publishedArtifacts:missing`, `v1.curationStats:missing`, and
+  `v1.twoWeekImprovement:missing`.
+
+Agent PR checks at head `bc0aac2`:
+
+- `changeset`: success, `https://github.com/idanmann10/vivarium-agent/actions/runs/25695893147/job/75443896763`.
+- `verify`: success, `https://github.com/idanmann10/vivarium-agent/actions/runs/25695893119/job/75443896783`.
+
+Completion decision: still not complete. The current remaining blockers require
+real provider keys, a real private OpenAI-compatible target, an internal API
+credential and health URL, successful live smoke calls, public contribution and
+other-agent evidence, canonical-world published artifact reads, curation stats,
+and a follow-up measurement recorded no earlier than fourteen days after the
+last real goal evidence.
+
+## 2026-05-11 Real Goal Evidence Append
+
+The durable v1 evidence manifest at
+`/Users/idanmann/.codex/memories/vivarium-v1-evidence.json` now includes a sixth
+real coding goal:
+
+- `goal-2026-05-11-live-doctor-sibling-world`, evidence artifact
+  `/Users/idanmann/.codex/memories/vivarium-v1-real-goal-6-live-doctor-sibling-world.md`.
+
+The evidence artifact records the sibling-world live doctor fix, the active
+audit refresh, local verification, and remote PR check evidence for agent head
+`45f642d230cb9c3c6efa4502c91f78ecf455bee6`.
+
+Fresh command:
+
+```bash
+bun apps/cli/src/main.ts doctor --live --env-file live-readiness.local.env
+```
+
+Fresh result: `ok:false`. The new real-goal evidence reference resolves, and
+`v1.realGoals:missing` remains correct because the current real-goal evidence
+still spans 2026-05-09 through 2026-05-11 rather than at least seven days.
+
+## 2026-05-11 Redacted Blocker Snapshot
+
+A redacted local blocker snapshot now exists at
+`/Users/idanmann/.codex/memories/vivarium-live-blockers-2026-05-11.md`.
+It records the fresh `doctor --live` and `live setup` dry-run state at capture
+time, placeholder environment variable names without secret values, real-goal
+timing, and draft PR heads/checks. Treat the PR hashes below as point-in-time
+snapshot evidence; use `gh pr view` for the live current head after audit-only
+commits.
+
+Snapshot facts:
+
+- Agent PR head at snapshot capture:
+  `fe7c7fb5590ed262917593e420211b449411b561`; `changeset` and `verify` are
+  successful.
+- Canonical world draft PR head:
+  `44da0269430f7a76b4d40308752ba2d0ae8f5fa2`; `verify` and `validate` are
+  successful and draft `auto-merge` is skipped.
+- Private world draft PR head:
+  `d7bdd8a373dad9c4d546954ce710da4286719e38`; `verify` and `validate` are
+  successful and draft `auto-merge` is skipped.
+- Live setup dry run still reports `written:false` because provider keys, the
+  private OpenAI-compatible provider metadata, and internal API credential
+  values are placeholders.
+- Durable real-goal evidence currently has six records spanning 2026-05-09
+  through 2026-05-11. The earliest possible two-week follow-up from the current
+  last goal date is 2026-05-25, and that date moves later if new real-goal
+  evidence is added after 2026-05-11 to satisfy the seven-day span.
+
+Completion decision: still not complete. The snapshot is a handoff artifact, not
+completion evidence.
+
+## 2026-05-11 Open-Source Production Readiness Pass
+
+Objective restated for this pass: make the agent and world repositories
+presentable, navigable, and locally verifiable as open-source production
+artifacts, while keeping the live v1 cultural-transmission boundary explicit.
+
+Prompt-to-artifact checklist:
+
+| Requirement | Evidence | Status |
+| --- | --- | --- |
+| Final public repo names and package metadata | `package.json` now names `vivarium-agent` with MIT license, repository, bugs, homepage, package manager, and local-first description. `../the-world/package.json` now names `vivarium-world` with MIT license, repository, bugs, homepage, package manager, and Git-hosted commons description. `scripts/tooling.test.ts` and `../the-world/scripts/validate.test.ts` guard the metadata. | Complete for open-source readiness |
+| Public entry-point documentation | `README.md` and `../the-world/README.md` describe production status, quick-start or validation commands, repository layout/navigation, live boundary, and project policies. Both READMEs link `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `RELEASING.md`, and `LICENSE`. | Complete for open-source readiness |
+| Governance and release docs | `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, and `RELEASING.md` exist in both repos. Release checklists now include the local gates and license review. World release docs also call out MIT tooling license plus CC0 public-content dedication. | Complete for open-source readiness |
+| License artifact | `LICENSE` exists in both repos. Agent license is MIT. World license states MIT for tooling and CC0 dedication for public world content. Root readiness tests now guard license visibility and file content. | Complete for open-source readiness |
+| CI and release gate alignment | `.github/workflows/ci.yml` now includes `bun run format:check` after build. `.github/workflows/release.yml` now clones `vivarium-world` before running the full test suite and includes `bun run format:check`. `scripts/workflows.test.ts` guards both requirements. | Complete for open-source readiness |
+| Guard tests for the readiness surface | `scripts/reference-docs.test.ts`, `scripts/tooling.test.ts`, `scripts/workflows.test.ts`, `../the-world/scripts/validate.test.ts`, and `../the-world/scripts/world-ops.test.ts` guard docs, package metadata, workflows, README stats, and world readiness policies. | Complete for open-source readiness |
+| Fresh local verification | Agent: `bun run typecheck`, `bun run test` (311 pass, 0 fail, 1697 expects), `bun run lint` (0 warnings/errors), `bun run build`, `bun run format:check`, `bun run knip`, `bun install --frozen-lockfile`, and `git diff --check` exit 0. World: `bun run typecheck`, `bun run test` (28 pass, 0 fail, 262 expects), `bun run lint`, `bun run build`, `bun install --frozen-lockfile`, and `git diff --check` exit 0. | Complete locally |
+| Live production proof | Fresh `bun apps/cli/src/main.ts doctor --live --env-file live-readiness.local.env` returns `ok:false`. Remaining blockers include provider keys/profile smokes, encrypted credential store and smoke, v1 provider/internal credential evidence, public contribution, published artifacts, curation stats, and two-week improvement evidence. | Not complete |
+
+Completion decision: open-source repository readiness is complete locally, but
+the broader v1 production proof remains incomplete. Do not mark the full
+thread goal complete until live external evidence exists and `doctor --live`
+returns `ok:true`.
+
+## 2026-05-11 GitHub Readiness Metadata Pass
+
+Remote GitHub metadata was updated after the open-source readiness commits:
+
+- `idanmann10/vivarium-agent` description now matches the local-first runtime
+  positioning and has topics `agent-runtime`, `ai-agents`, `bun`,
+  `local-first`, `mcp`, and `typescript`.
+- `idanmann10/vivarium-world` description now matches the Git-hosted cultural
+  commons positioning and has topics `agent-skills`, `ai-agents`,
+  `knowledge-commons`, `local-first`, `typescript`, and `validation`.
+- Agent PR #1 is open at head
+  `549707c188b3ab12bc5723ccb55825e7619d3714`; `changeset` and `verify` are
+  successful.
+- World PR #2 is open at head
+  `1b6bab19eb24179b4b6f3087151a5c960c05867a`; `verify` and `validate` are
+  successful, and draft `auto-merge` is skipped.
+
+Current non-completion blockers remain:
+
+- `idanmann10/vivarium-agent` is still a private GitHub repository. Do not
+  represent it as an open-source release until repository visibility is changed
+  with explicit operator approval.
+- Both PRs remain draft.
+- Fresh `doctor --live --env-file live-readiness.local.env` still returns
+  `ok:false` with provider, credential-smoke, public-contribution,
+  published-artifact, curation, and two-week evidence blockers.

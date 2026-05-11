@@ -23,6 +23,12 @@ export { err, ok } from "./result.js";
 export type { Result } from "./result.js";
 export { KERNEL, kernelLines } from "./kernel.js";
 export { episodeShapeManifest } from "./types/episode.js";
+export {
+  CLAUDE_AGENT_TOOLSET_TYPE,
+  CLAUDE_CODE_PLUGIN_IGNORED_FRONTMATTER_FIELDS,
+  CLAUDE_CODE_SUBAGENT_FRONTMATTER_FIELDS,
+  CLAUDE_MANAGED_AGENTS_BETA_HEADER,
+} from "./types/claude-agent-format.js";
 export { shouldTagSurprise, surpriseMagnitude } from "./math/surprise.js";
 export { wilsonLowerBound } from "./math/wilson.js";
 export { contributorTrust, effectiveLowerBound } from "./math/trust.js";
@@ -43,6 +49,7 @@ export {
 export type { PushEvidenceRun } from "./math/decision-thresholds.js";
 export type * from "./types/agent.js";
 export type * from "./types/anti-pattern.js";
+export type * from "./types/claude-agent-format.js";
 export type * from "./types/contributor.js";
 export type * from "./types/credential.js";
 export type * from "./types/curriculum.js";

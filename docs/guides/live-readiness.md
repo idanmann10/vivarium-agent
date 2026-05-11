@@ -17,6 +17,10 @@ bun apps/cli/src/main.ts doctor --live \
   --world-root /Users/idanmann/Vivarium/the-world
 ```
 
+When the repos use the standard sibling layout, `doctor --live` can infer
+`../the-world` from the agent repo. Keep passing `--world-root` for nonstandard
+layouts, temporary clones, or private fork checks.
+
 A live-ready workspace should report configured agent/world names, configured agent/world remotes, canonical/private world subscription metadata, configured provider environment and profile metadata, successful live provider smokes, configured internal API credential metadata, a successful credential smoke, configured GitHub token environment, valid GitHub auth, a visible Phase 0 RFC Discussion, green latest agent/world GitHub Actions CI runs on `main`, installed Docker, installed Docker Compose, and a complete v1 evidence manifest.
 Path-based checks report `:unavailable` when the env var is set but the expected local file has not been created yet.
 When the world subscription registry exists, canonical/private world refs also report `:unavailable` if the configured refs are not present in that registry.
@@ -91,7 +95,7 @@ export VIVARIUM_OAI_COMPAT_API_KEY=<redacted>
 export VIVARIUM_OAI_COMPAT_BASE_URL=<private-oai-compatible-base-url>
 export VIVARIUM_OAI_COMPAT_MODEL=<private-fine-tune-model>
 export VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW=<private-context-window>
-export VIVARIUM_PROVIDER_PROFILES_PATH=/tmp/vivarium-provider-profiles.json
+export VIVARIUM_PROVIDER_PROFILES_PATH=/Users/idanmann/.codex/memories/vivarium-provider-profiles.json
 export VIVARIUM_ANTHROPIC_PROVIDER_PROFILE=anthropic-main
 export VIVARIUM_ANTHROPIC_MODEL=<anthropic-model>
 export VIVARIUM_ANTHROPIC_CONTEXT_WINDOW=<anthropic-context-window>
@@ -212,7 +216,7 @@ The smoke result reports status and a response preview without returning the sec
 Export the stable credential metadata for `doctor --live`:
 
 ```bash
-export VIVARIUM_CREDENTIALS_PATH=/tmp/vivarium-credentials.enc
+export VIVARIUM_CREDENTIALS_PATH=/Users/idanmann/.codex/memories/vivarium-credentials.enc
 export VIVARIUM_CREDENTIALS_MASTER_KEY=<local-master-key>
 export VIVARIUM_INTERNAL_API_CREDENTIAL_NAME=INTERNAL_API_TOKEN
 export VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE=<redacted-internal-api-token>
@@ -327,7 +331,7 @@ Verify live validator metadata is populated before expecting `gh pr merge --auto
 After the canonical world and a private fork are available locally, save both subscriptions and verify that retrieval searches both while preserving source labels:
 
 ```bash
-export VIVARIUM_WORLD_SUBSCRIPTIONS_PATH=/tmp/vivarium-world-subscriptions.json
+export VIVARIUM_WORLD_SUBSCRIPTIONS_PATH=/Users/idanmann/.codex/memories/vivarium-world-subscriptions.json
 export VIVARIUM_CANONICAL_WORLD_REF=<canonical-world-remote-url>
 export VIVARIUM_PRIVATE_WORLD_REF=<private-world-remote-url>
 ```
@@ -431,7 +435,7 @@ bun apps/cli/src/main.ts daemon smoke --status-url http://127.0.0.1:8787/status
 `doctor --live` checks setup prerequisites and the live evidence required by `goal.md` before it can report v1 readiness. Keep the evidence manifest outside git if it contains private links, internal run summaries, or customer data:
 
 ```bash
-export VIVARIUM_V1_EVIDENCE_PATH=/tmp/vivarium-v1-evidence.json
+export VIVARIUM_V1_EVIDENCE_PATH=/Users/idanmann/.codex/memories/vivarium-v1-evidence.json
 bun apps/cli/src/main.ts live evidence-init --path "$VIVARIUM_V1_EVIDENCE_PATH"
 ```
 
@@ -589,6 +593,30 @@ The manifest is a compact index of evidence, not a substitute for the underlying
 ```
 
 The live doctor checks the manifest for: coding starter pack depth with distinct installed skill and trace references matching the counts, distinct first-run references, five distinct named real coding goals with distinct run evidence spanning at least seven days and no future dates, three distinct provider smoke records, internal credential smoke evidence, distinct remote-style canonical and private subscriptions that match the configured live refs when provided, anti-pattern use before unfamiliar territory, two distinct traces with similar-workflow evidence, Monitor tool-failure/recover behavior evidence, one ordered destructive-endpoint run sequence that holds, escalates, receives confirmation, and continues, refusal evidence, two distinct Dream skill candidates plus distinct internal and public Dream skills including proof the internal skill was pushed to the private fork only and a trace auto-extracted from an instructive run with annotations, contributor agent identity, a GitHub public skill PR URL in the configured canonical world repo, math-gate evidence, a GitHub Actions auto-merge run URL in that same repo, canonical world skill landing evidence in that same repo, contributor trust of at least 0.5 at the public skill gate, five distinct other-agent positive-signal agent/evidence records, three distinct other-agent external pull/use records with inspectable evidence, published anti-pattern/trace/run GitHub blob evidence in the configured canonical world repo, published-artifact contributor agent identity matching the public contribution contributor, distinct other-agent evidence that another agent read the published trace and run during Plan, featured-pick evidence including a different contributor's anti-pattern while the curation agent contributor still matches the public contribution contributor, `STATS.md` evidence with at least 30% of skills from the top five contributors, a non-future follow-up measurement at least fourteen days after the last recorded goal with a lower metric than baseline and positive improvement percent on similar goals, a two-week contributor agent identity matching the public contribution contributor, a competing GitHub Discussion URL in the configured canonical world repo plus two distinct live canonical-world skill variant GitHub URLs including the landed public skill, inspectable evidence that the measured goals were similar, two distinct other-agent refinement agent/evidence records excluding the contributor and showing that other agents used or refined the skill, and contributor-profile summary evidence covering at least one public skill, one anti-pattern, one trace, one published run, two internal-only skills, and public trust of at least 0.61.
+
+## Completion Boundary
+
+Do not claim v1 live verification until a fresh `doctor --live` returns `ok:true`
+against the filled local readiness environment and the output includes these
+completion statuses:
+
+- `provider.anthropicSmoke:ok`
+- `provider.openrouterSmoke:ok`
+- `provider.privateOaiCompatSmoke:ok`
+- `credentials.smoke:ok`
+- `v1.realGoals:configured`
+- `v1.providerSmokes:configured`
+- `v1.internalCredentialSmoke:configured`
+- `v1.publicContribution:configured`
+- `v1.publishedArtifacts:configured`
+- `v1.curationStats:configured`
+- `v1.twoWeekImprovement:configured`
+
+The two-week follow-up must be real elapsed evidence. It must be recorded at least fourteen days after the last real goal
+and include similar-goal comparison evidence, a configured-world competing
+Discussion, two live canonical-world skill variant references,
+contributor-profile evidence, and other-agent refinement evidence that excludes
+the contributor.
 
 ## Verification Sequence
 

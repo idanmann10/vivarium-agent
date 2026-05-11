@@ -226,9 +226,27 @@ const liveReadinessEnvVars = [
 ] as const;
 
 const packageReadmes = {
-  "apps/cli": ["dispatcher", "init", "doctor --live", "providers", "world transmission-smoke"],
+  "apps/cli": [
+    "dispatcher",
+    "init",
+    "doctor --live",
+    "completionGuide",
+    "providers",
+    "world transmission-smoke",
+  ],
   "apps/daemon": ["status", "run", "dream", "Dream scheduler", "MCP"],
-  "packages/core": ["types", "kernel", "pure math", "no I/O", "decision thresholds"],
+  "packages/core": [
+    "types",
+    "kernel",
+    "pure math",
+    "no I/O",
+    "decision thresholds",
+    "ClaudeManagedAgentCreateRequest",
+    "ClaudeManagedEnvironmentCreateRequest",
+    "ClaudeManagedSessionCreateRequest",
+    "ClaudeManagedEvent",
+    "ClaudeManagedEventsSendRequest",
+  ],
   "packages/eval": ["compounding", "benchmark", "before", "after", "Dream"],
   "packages/providers": ["OpenAI", "Anthropic", "OpenAI-compatible", "capabilities", "costClass"],
   "packages/runtime": [
@@ -279,6 +297,53 @@ const topLevelDocs = {
   ],
 } as const;
 
+const agentRootDocs = {
+  "README.md": [
+    "Vivarium Agent",
+    "local-first",
+    "Production Status",
+    "Quick Start",
+    "bun run knip",
+    "doctor --live",
+    "live-readiness.local.env",
+    "SECURITY.md",
+    "CODE_OF_CONDUCT.md",
+    "RELEASING.md",
+    "LICENSE",
+    "MIT",
+  ],
+  "CONTRIBUTING.md": [
+    "Vivarium Agent",
+    "Conventional Commits",
+    "changeset",
+    "bun run knip",
+    "Security",
+    "doctor --live",
+    "live-readiness.local.env",
+  ],
+  "SECURITY.md": [
+    "Vivarium Agent",
+    "vulnerability",
+    "security",
+    "credential",
+    "live-readiness.local.env",
+    "doctor --live",
+  ],
+  "CODE_OF_CONDUCT.md": ["Vivarium Agent", "Code of Conduct", "harassment", "Enforcement"],
+  "RELEASING.md": [
+    "Vivarium Agent",
+    "release",
+    "changeset",
+    "bun run knip",
+    "doctor --live",
+    "live-readiness.local.env",
+    "LICENSE",
+    "public GitHub repository",
+    "private preview",
+  ],
+  LICENSE: ["MIT License", "Vivarium contributors", "Permission is hereby granted"],
+} as const;
+
 describe("reference docs", () => {
   test("documents every top-level self-tool group", () => {
     for (const tool of selfToolDocs) {
@@ -315,6 +380,58 @@ describe("reference docs", () => {
       "computerUseConfirmationLevel",
     ]) {
       expect(body).toContain(field);
+    }
+  });
+
+  test("documents Claude Managed Agents and subagent format constraints", () => {
+    const body = readFileSync(join("docs", "reference", "claude-agent-formats.md"), "utf8");
+    for (const term of [
+      "Claude Managed Agents",
+      "packages/core/src/types/claude-agent-format.ts",
+      "CLAUDE_MANAGED_AGENTS_BETA_HEADER",
+      "ClaudeManagedAgentCreateRequest",
+      "ClaudeManagedEnvironmentCreateRequest",
+      "ClaudeManagedSessionCreateRequest",
+      "ClaudeManagedEvent",
+      "ClaudeManagedEventsSendRequest",
+      "ClaudeCodeSubagentFrontmatter",
+      "Agent",
+      "Environment",
+      "Session",
+      "Events",
+      "name",
+      "model",
+      "system",
+      "tools",
+      "mcp_servers",
+      "skills",
+      "multiagent",
+      "description",
+      "metadata",
+      "environment_id",
+      "vault_ids",
+      "{domain}.{action}",
+      "managed-agents-2026-04-01",
+      "claude-opus-4-7",
+      "Claude model overview",
+      "claude-sonnet-4-6",
+      "OpenRouter",
+      "anthropic/claude-sonnet-4.6",
+      ".claude/agents/",
+      "~/.claude/agents/",
+      "--agents",
+      "initialPrompt",
+      "maxTurns",
+      "memory",
+      "effort",
+      "background",
+      "color",
+      "Managed settings",
+      "Plugin",
+      "Agent(worker, researcher)",
+      "isolation: worktree",
+    ]) {
+      expect(body).toContain(term);
     }
   });
 
@@ -385,6 +502,20 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents durable live-readiness artifact paths", () => {
+    const guide = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    const example = readFileSync(join("docs", "live-readiness.env.example"), "utf8");
+    for (const path of [
+      "/Users/idanmann/.codex/memories/vivarium-world-subscriptions.json",
+      "/Users/idanmann/.codex/memories/vivarium-provider-profiles.json",
+      "/Users/idanmann/.codex/memories/vivarium-credentials.enc",
+      "/Users/idanmann/.codex/memories/vivarium-v1-evidence.json",
+    ]) {
+      expect(guide).toContain(path);
+      expect(example).toContain(path);
+    }
+  });
+
   test("uses inspectable references in the live-readiness evidence manifest example", () => {
     const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
     for (const opaqueReference of [
@@ -420,6 +551,24 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents the operator v1 completion boundary in the live-readiness guide", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    for (const term of [
+      "## Completion Boundary",
+      "`doctor --live` returns `ok:true`",
+      "provider.anthropicSmoke:ok",
+      "provider.openrouterSmoke:ok",
+      "provider.privateOaiCompatSmoke:ok",
+      "credentials.smoke:ok",
+      "v1.realGoals:configured",
+      "v1.publicContribution:configured",
+      "v1.twoWeekImprovement:configured",
+      "at least fourteen days after the last real goal",
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
+
   test("ignores filled live-readiness environment files", () => {
     const gitignore = readFileSync(".gitignore", "utf8");
     for (const pattern of ["live-readiness.local.env", "docs/live-readiness.local.env"]) {
@@ -440,6 +589,37 @@ describe("reference docs", () => {
   test("documents top-level thesis and doc navigation", () => {
     for (const [path, terms] of Object.entries(topLevelDocs)) {
       const body = readFileSync(path, "utf8");
+      for (const term of terms) {
+        expect(body).toContain(term);
+      }
+    }
+  });
+
+  test("documents the v1 completion boundary in the active audit", () => {
+    const body = readFileSync(
+      join("docs", "superpowers", "audits", "2026-05-10-v1-completion-audit-refresh.md"),
+      "utf8",
+    );
+    for (const term of [
+      "### Do Not Mark Complete Until",
+      "`doctor --live` returns `ok:true`",
+      "provider.anthropicSmoke:ok",
+      "provider.openrouterSmoke:ok",
+      "provider.privateOaiCompatSmoke:ok",
+      "credentials.smoke:ok",
+      "v1.realGoals:configured",
+      "v1.publicContribution:configured",
+      "v1.twoWeekImprovement:configured",
+      "at least fourteen days after the last real goal",
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
+
+  test("documents open-source production readiness at the repo root", () => {
+    for (const [path, terms] of Object.entries(agentRootDocs)) {
+      expect(existsSync(path), `${path} should exist`).toBe(true);
+      const body = existsSync(path) ? readFileSync(path, "utf8") : "";
       for (const term of terms) {
         expect(body).toContain(term);
       }

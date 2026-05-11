@@ -1,0 +1,49 @@
+name: Feature request
+description: Propose a scoped Vivarium Agent capability or operator workflow
+title: "[feature]: "
+labels:
+  - enhancement
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CLI
+        - daemon
+        - runtime primitives
+        - provider routing
+        - credentials
+        - world integration
+        - live-readiness boundary
+        - documentation
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What operator or agent workflow is blocked today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-behavior
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest useful behavior change.
+    validations:
+      required: true
+  - type: textarea
+    id: live-boundary
+    attributes:
+      label: Live-readiness boundary
+      description: Note whether this affects provider smokes, credentials, public-world evidence, or doctor --live.
+    validations:
+      required: false
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation plan
+      description: Commands, tests, or evidence that would prove the change works.
+    validations:
+      required: false

@@ -2,6 +2,18 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
 interface PackageJson {
+  readonly name?: string;
+  readonly private?: boolean;
+  readonly description?: string;
+  readonly license?: string;
+  readonly repository?: {
+    readonly type?: string;
+    readonly url?: string;
+  };
+  readonly bugs?: {
+    readonly url?: string;
+  };
+  readonly homepage?: string;
   readonly scripts?: Record<string, string>;
   readonly devDependencies?: Record<string, string>;
 }
@@ -71,5 +83,18 @@ describe("root toolchain wiring", () => {
       expect(config.workspaces?.[workspace]?.entry?.length).toBeGreaterThan(0);
       expect(config.workspaces?.[workspace]?.project?.length).toBeGreaterThan(0);
     }
+  });
+
+  test("includes public-facing package metadata", () => {
+    const packageJson = rootPackage();
+
+    expect(packageJson.name).toBe("vivarium-agent");
+    expect(packageJson.private).toBe(true);
+    expect(packageJson.description).toContain("local-first");
+    expect(packageJson.license).toBe("MIT");
+    expect(packageJson.repository?.type).toBe("git");
+    expect(packageJson.repository?.url).toContain("vivarium-agent");
+    expect(packageJson.bugs?.url).toContain("vivarium-agent/issues");
+    expect(packageJson.homepage).toContain("vivarium-agent");
   });
 });
