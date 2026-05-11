@@ -222,7 +222,7 @@ Local doctor hardening completed while resuming:
 Fresh local verification:
 
 - `bun test apps/cli/src/commands/doctor.test.ts`: 74 tests passed.
-- `bun test scripts/reference-docs.test.ts`: 16 tests passed.
+- `bun test scripts/reference-docs.test.ts`: 17 tests passed.
 - `bun run typecheck`: passed.
 - `bun run test`: 298 tests passed.
 - `bun run lint`: scanned 198 TypeScript files; Oxlint reported 0 warnings and 0 errors.
@@ -248,8 +248,14 @@ Fresh result: `ok:false`. Passing setup checks include env-file permissions, fin
 
 - Provider setup: `provider.env:placeholder`, `provider.anthropic:placeholder`, `provider.openrouter:placeholder`, `provider.privateOaiCompat:placeholder`, `provider.privateOaiCompatContextWindow:missing`, `provider.profilesPath:unavailable`. The non-secret Anthropic and OpenRouter model/base/context values are configured in the ignored local env file from the 2026-05-11 official model metadata check.
 - Provider smoke probes: `provider.anthropicSmoke:missing`, `provider.openrouterSmoke:missing`, `provider.privateOaiCompatSmoke:missing`.
-- Internal credential setup: `credentials.path:unavailable`, `credentials.masterKey:placeholder`, `internalApi.credentialValue:placeholder`, `internalApi.healthUrl:placeholder`, `credentials.smoke:missing`.
+- Internal credential setup: `credentials.path:unavailable`, `internalApi.credentialValue:placeholder`, `internalApi.healthUrl:placeholder`, `credentials.smoke:missing`. `credentials.masterKey:configured` because the ignored local env file contains a generated local credential-store master key.
 - V1 evidence manifest sections: `v1.starterPack:configured`, `v1.worldSubscriptions:configured`; remaining blockers are `v1.realGoals:missing`, `v1.providerSmokes:missing`, `v1.internalCredentialSmoke:missing`, `v1.behaviorLoop:missing`, `v1.dreamArtifacts:missing`, `v1.publicContribution:missing`, `v1.publishedArtifacts:missing`, `v1.curationStats:missing`, and `v1.twoWeekImprovement:missing`.
+
+Fresh `live setup --env-file live-readiness.local.env` dry run after durable-path updates:
+
+- Missing env: `VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW`.
+- Placeholder env: `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, `VIVARIUM_OAI_COMPAT_API_KEY`, `VIVARIUM_OAI_COMPAT_MODEL`, `VIVARIUM_OAI_COMPAT_BASE_URL`, `VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE`, and `VIVARIUM_INTERNAL_API_HEALTH_URL`.
+- `written:false`; provider profile and encrypted credential files were not created.
 
 Starter-pack evidence update:
 
