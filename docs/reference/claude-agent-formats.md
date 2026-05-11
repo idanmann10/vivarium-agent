@@ -15,6 +15,8 @@ Claude Code docs on 2026-05-11:
 - Managed Agent tools: https://platform.claude.com/docs/en/managed-agents/tools
 - Managed Agent skills: https://platform.claude.com/docs/en/managed-agents/skills
 - Managed Agent MCP connector: https://platform.claude.com/docs/en/managed-agents/mcp-connector
+- Claude model overview: https://docs.claude.com/en/docs/about-claude/models/overview
+- OpenRouter Claude Sonnet 4.6 API page: https://openrouter.ai/anthropic/claude-sonnet-4.6/api
 - Claude Code subagents: https://code.claude.com/docs/en/sub-agents
 - Claude Code agent teams: https://code.claude.com/docs/en/agent-teams
 
@@ -50,6 +52,19 @@ Skills attached to a Managed Agent are typed by source:
 MCP is intentionally split: agent creation declares `mcp_servers` by name and URL;
 session creation supplies auth through a vault. Keep secrets out of reusable
 agent definitions.
+
+## Provider Profile Defaults
+
+Provider profile defaults are intentionally separate from reusable agent type
+definitions. Re-check model metadata before changing committed examples or a
+filled local readiness env file; model IDs and context windows are not durable
+schema facts.
+
+As of the 2026-05-11 check, Anthropic's Claude model overview lists
+`claude-sonnet-4-6` with a 1,000,000 token context window. OpenRouter's Claude
+Sonnet 4.6 API page lists `anthropic/claude-sonnet-4.6` with a 1,000,000 token
+context window and the standard OpenAI-compatible base URL
+`https://openrouter.ai/api/v1`.
 
 ## Claude Code Subagents
 

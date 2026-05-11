@@ -202,7 +202,7 @@ Sources checked:
 
 Persisted local artifacts:
 
-- `docs/reference/claude-agent-formats.md` records the Claude Managed Agents `Agent` / `Environment` / `Session` / `Events` split, agent config fields (`name`, `model`, `system`, `tools`, `mcp_servers`, `skills`), the `managed-agents-2026-04-01` beta header, skill source shapes, MCP secret split, Claude Code subagent YAML frontmatter, subagent scope priority, `isolation: worktree`, agent-team reuse of subagent types, and `Agent(worker, researcher)` spawn allowlists.
+- `docs/reference/claude-agent-formats.md` records the Claude Managed Agents `Agent` / `Environment` / `Session` / `Events` split, agent config fields (`name`, `model`, `system`, `tools`, `mcp_servers`, `skills`), the `managed-agents-2026-04-01` beta header, skill source shapes, MCP secret split, current Claude/OpenRouter model metadata used for non-secret provider defaults, Claude Code subagent YAML frontmatter, subagent scope priority, `isolation: worktree`, agent-team reuse of subagent types, and `Agent(worker, researcher)` spawn allowlists.
 - `docs/README.md` links the new reference page.
 - `scripts/reference-docs.test.ts` now guards the Claude format reference so it stays discoverable.
 - The ignored local env file now points `VIVARIUM_V1_EVIDENCE_PATH` at `/Users/idanmann/.codex/memories/vivarium-v1-evidence.json` so the partially filled, non-secret evidence manifest is durable across shell cleanup; it currently contains verified canonical/private world subscription refs plus local starter-pack init/run evidence.
@@ -241,7 +241,7 @@ bun apps/cli/src/main.ts doctor --live \
 
 Fresh result: `ok:false`. Passing setup checks include env-file permissions, final agent/world names, remotes, canonical/private world subscription refs, provider profile names, GitHub auth/Discussion/CI, Docker, Docker Compose, and evidence manifest path. Remaining blockers:
 
-- Provider setup: `provider.env:placeholder`, `provider.anthropic:placeholder`, `provider.anthropicModel:missing`, `provider.anthropicContextWindow:missing`, `provider.openrouter:placeholder`, `provider.openrouterModel:missing`, `provider.openrouterBaseUrl:missing`, `provider.openrouterContextWindow:missing`, `provider.privateOaiCompat:placeholder`, `provider.privateOaiCompatContextWindow:missing`, `provider.profilesPath:unavailable`.
+- Provider setup: `provider.env:placeholder`, `provider.anthropic:placeholder`, `provider.openrouter:placeholder`, `provider.privateOaiCompat:placeholder`, `provider.privateOaiCompatContextWindow:missing`, `provider.profilesPath:unavailable`. The non-secret Anthropic and OpenRouter model/base/context values are configured in the ignored local env file from the 2026-05-11 official model metadata check.
 - Provider smoke probes: `provider.anthropicSmoke:missing`, `provider.openrouterSmoke:missing`, `provider.privateOaiCompatSmoke:missing`.
 - Internal credential setup: `credentials.path:unavailable`, `credentials.masterKey:placeholder`, `internalApi.credentialValue:placeholder`, `internalApi.healthUrl:placeholder`, `credentials.smoke:missing`.
 - V1 evidence manifest sections: `v1.starterPack:configured`, `v1.worldSubscriptions:configured`; remaining blockers are `v1.realGoals:missing`, `v1.providerSmokes:missing`, `v1.internalCredentialSmoke:missing`, `v1.behaviorLoop:missing`, `v1.dreamArtifacts:missing`, `v1.publicContribution:missing`, `v1.publishedArtifacts:missing`, `v1.curationStats:missing`, and `v1.twoWeekImprovement:missing`.
