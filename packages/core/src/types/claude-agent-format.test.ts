@@ -10,6 +10,7 @@ import {
   type ClaudeManagedEnvironmentCreateRequest,
   type ClaudeManagedEvent,
   type ClaudeManagedEventType,
+  type ClaudeManagedEventsSendRequest,
   type ClaudeManagedSessionCreateRequest,
 } from "../index.js";
 
@@ -55,6 +56,10 @@ const managedEvent = {
   content: [{ type: "text", text: "List the files in the working directory." }],
   processed_at: null,
 } as const satisfies ClaudeManagedEvent;
+
+const managedEventsSendRequest = {
+  events: [managedEvent],
+} as const satisfies ClaudeManagedEventsSendRequest;
 
 const subagentFrontmatter = {
   name: "code-reviewer",
@@ -110,6 +115,7 @@ describe("Claude agent format compatibility", () => {
       processed_at: null,
       content: [{ type: "text", text: "List the files in the working directory." }],
     });
+    expect(managedEventsSendRequest.events).toHaveLength(1);
   });
 
   test("exports Claude Code frontmatter field sets", () => {

@@ -30,8 +30,9 @@ Local compatibility constants and request/frontmatter shapes live in
 `@vivarium/core`. Use `CLAUDE_MANAGED_AGENTS_BETA_HEADER`,
 `CLAUDE_AGENT_TOOLSET_TYPE`, `ClaudeManagedAgentCreateRequest`,
 `ClaudeManagedEnvironmentCreateRequest`, `ClaudeManagedSessionCreateRequest`,
-`ClaudeManagedEvent`, and `ClaudeCodeSubagentFrontmatter` when adding code that
-emits or accepts these external formats.
+`ClaudeManagedEvent`, `ClaudeManagedEventsSendRequest`, and
+`ClaudeCodeSubagentFrontmatter` when adding code that emits or accepts these
+external formats.
 
 ## Claude Managed Agents
 
@@ -107,7 +108,8 @@ Events are represented locally by `ClaudeManagedEvent`. Event type strings use a
 `agent.tool_use`, or `session.status_idle`; received events may include
 `processed_at` to indicate when the event was recorded. User message events carry
 `content` blocks, and custom tool or confirmation events add their own
-event-specific fields.
+event-specific fields. Use `ClaudeManagedEventsSendRequest` when modeling the
+request body that sends one or more events into a session.
 
 ## Provider Profile Defaults
 
