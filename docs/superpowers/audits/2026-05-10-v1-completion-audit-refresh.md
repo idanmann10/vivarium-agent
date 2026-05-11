@@ -259,8 +259,8 @@ Completion decision: still not complete. The remaining requirements require real
 The local Claude-format and live-readiness hardening slice has been pushed to the existing feature branch:
 
 - Branch: `phase-1-runtime-slice`.
-- Remote head: `afe6fe29edb3199bababee8b026bc07eaf2eb126`.
-- Latest commits on the branch: `afe6fe2 docs(agent): note durable v1 evidence manifest`, `a6537fe docs(agent): refresh live evidence audit`, and `2e178a8 docs(agent): record claude agent format guidance`.
+- Remote head: `0844192909b716222b55bb5e6ef759d0a1fb7fe9`.
+- Latest commits on the branch: `0844192 docs(agent): record starter pack evidence`, `02af625 docs(agent): record remote handoff status`, and `afe6fe2 docs(agent): note durable v1 evidence manifest`.
 - Open PR check for `idanmann10:phase-1-runtime-slice`: no open PRs.
 - Actions check for `phase-1-runtime-slice`: zero workflow runs. This is expected from `.github/workflows/ci.yml`, which runs on `pull_request` and pushes to `main`, not on arbitrary feature-branch pushes.
 
