@@ -292,6 +292,13 @@ Dream-artifact evidence update:
 - A fresh `doctor --live --env-file live-readiness.local.env --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world` reports `v1.dreamArtifacts:configured`.
 - Caveat: these are still local Dream-derived artifacts. No external private-fork push, public PR, other-agent use, or auto-merge was performed.
 
+Provider-profile evidence update:
+
+- Created the durable non-secret provider profile file referenced by `VIVARIUM_PROVIDER_PROFILES_PATH` using `providers configure`.
+- Saved profiles: `anthropic-main` with `kind: anthropic`, API key env `ANTHROPIC_API_KEY`, model `claude-sonnet-4-6`, capabilities `chat` and `tools`, context window `1000000`, cost class `expensive`; and `openrouter` with `kind: openai-compat`, API key env `OPENROUTER_API_KEY`, model `anthropic/claude-sonnet-4.6`, base URL `https://openrouter.ai/api/v1`, capabilities `chat` and `json_mode`, context window `1000000`, cost class `medium`.
+- A fresh `doctor --live --env-file live-readiness.local.env --agent-root /Users/idanmann/Vivarium/the-agent --world-root /Users/idanmann/Vivarium/the-world` now reports `provider.profilesPath:configured`, `provider.anthropicProfile:configured`, and `provider.openrouterProfile:configured`.
+- The private OpenAI-compatible provider profile remains `provider.privateOaiCompatProfile:unavailable` because its live model, base URL, API key, and context-window values are still placeholders.
+
 Completion decision: still not complete. The remaining requirements require real provider/internal credentials, successful live smoke calls, populated inspectable v1 evidence, cross-install/other-agent contribution evidence, and a fourteen-day-or-later follow-up measurement.
 
 ## 2026-05-11 Remote Handoff
