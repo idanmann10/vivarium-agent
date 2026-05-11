@@ -157,6 +157,16 @@ function envValueStatus(env: Readonly<Record<string, string | undefined>>, envNa
   return isPlaceholderValue(value) ? "placeholder" : "configured";
 }
 
+function defaultWorldRoot(agentRoot: string): string {
+  const siblingWorldRoot = resolve(dirname(agentRoot), "the-world");
+  if (existsSync(siblingWorldRoot)) {
+    return siblingWorldRoot;
+  }
+
+  const childWorldRoot = resolve(agentRoot, "the-world");
+  return existsSync(childWorldRoot) ? childWorldRoot : agentRoot;
+}
+
 function remoteCheck(
   runner: DoctorCommandRunner,
   cwd: string,
@@ -1715,7 +1725,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
   const runner = options.runner ?? defaultRunner;
   const env = options.env ?? process.env;
   const agentRoot = options.agentRoot ?? process.cwd();
-  const worldRoot = options.worldRoot ?? process.cwd();
+  const worldRoot = options.worldRoot ?? defaultWorldRoot(agentRoot);
   const nowMillis = options.nowMillis ?? Date.now();
   const worldRefs = worldSubscriptionRefs(env);
   const profiles = providerProfilesByName(env);

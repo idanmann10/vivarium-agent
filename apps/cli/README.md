@@ -24,7 +24,8 @@ Implemented command groups include:
 Commands are routed through `src/dispatcher.ts` so parser behavior is covered independently from command
 implementations. Live provider and GitHub commands require the caller to provide real environment-backed
 credentials. `doctor --live` can load a filled readiness handoff file with
-`--env-file live-readiness.local.env`. Failed live-readiness checks return
+`--env-file live-readiness.local.env` and infers a sibling `../the-world` repo
+unless `--world-root` is supplied. Failed live-readiness checks return
 structured `nextActions`; v1 evidence blockers also include `completionGuide`
 so operators can jump directly to the completion-boundary rules before claiming
 the roadmap is done.

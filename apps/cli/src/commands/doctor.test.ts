@@ -3517,6 +3517,53 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("world.remote:mismatch");
   });
 
+  test("infers a sibling world root when live doctor runs from the agent repo", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-sibling-world-"));
+    const agentRoot = join(root, "the-agent");
+    const worldRoot = join(root, "the-world");
+    mkdirSync(agentRoot);
+    mkdirSync(worldRoot);
+    const runner: DoctorCommandRunner = (run) => {
+      const text = [run.command, ...run.args].join(" ");
+      if (text === "git remote -v" && run.cwd === agentRoot) {
+        return {
+          exitCode: 0,
+          stdout: "origin\thttps://github.com/owner/agent-final.git (fetch)\norigin\thttps://github.com/owner/agent-final.git (push)\n",
+          stderr: "",
+        };
+      }
+
+      if (text === "git remote -v" && run.cwd === worldRoot) {
+        return {
+          exitCode: 0,
+          stdout: "origin\thttps://github.com/owner/world-final.git (fetch)\norigin\thttps://github.com/owner/world-final.git (push)\n",
+          stderr: "",
+        };
+      }
+
+      return blockedRunner(run);
+    };
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot,
+      env: {
+        VIVARIUM_AGENT_REPO_NAME: "agent-final",
+        VIVARIUM_WORLD_REPO_NAME: "world-final",
+        VIVARIUM_GITHUB_OWNER: "owner",
+        VIVARIUM_GITHUB_REPOSITORY_ID: "R_1",
+        VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID: "DIC_1",
+        OPENROUTER_API_KEY: "configured",
+        GITHUB_TOKEN: "configured",
+      },
+      runner,
+    });
+
+    expect(result.checks).toContain("agent.remote:configured");
+    expect(result.checks).toContain("world.remote:configured");
+    expect(result.nextActions?.map((action) => action.check)).not.toContain("world.remote:missing");
+  });
+
   test("reports missing GitHub RFC discussion and CI status as live readiness blockers", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-github-live-"));
     const files = writeLiveReadyFiles(root);

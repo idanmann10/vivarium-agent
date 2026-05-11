@@ -17,6 +17,10 @@ bun apps/cli/src/main.ts doctor --live \
   --world-root /Users/idanmann/Vivarium/the-world
 ```
 
+When the repos use the standard sibling layout, `doctor --live` can infer
+`../the-world` from the agent repo. Keep passing `--world-root` for nonstandard
+layouts, temporary clones, or private fork checks.
+
 A live-ready workspace should report configured agent/world names, configured agent/world remotes, canonical/private world subscription metadata, configured provider environment and profile metadata, successful live provider smokes, configured internal API credential metadata, a successful credential smoke, configured GitHub token environment, valid GitHub auth, a visible Phase 0 RFC Discussion, green latest agent/world GitHub Actions CI runs on `main`, installed Docker, installed Docker Compose, and a complete v1 evidence manifest.
 Path-based checks report `:unavailable` when the env var is set but the expected local file has not been created yet.
 When the world subscription registry exists, canonical/private world refs also report `:unavailable` if the configured refs are not present in that registry.
