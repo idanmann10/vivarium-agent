@@ -84,6 +84,21 @@ const referenceFormatFields = {
 } as const;
 
 const architectureDocs = {
+  "managed-agent-model": [
+    "session log",
+    "harness",
+    "brain",
+    "hands",
+    "sandbox",
+    "credential boundary",
+    "provider profiles",
+    "encrypted credential store",
+    "world subscriptions",
+    "CLI",
+    "daemon",
+    "MCP manifest",
+    "doctor --live",
+  ],
   packages: [
     "apps/cli",
     "apps/daemon",
@@ -268,6 +283,7 @@ const topLevelDocs = {
   "docs/README.md": [
     "thesis.md",
     "architecture/",
+    "managed-agent-model.md",
     "concepts/",
     "guides/",
     "reference/",
@@ -302,6 +318,11 @@ const agentRootDocs = {
     "Vivarium Agent",
     "local-first",
     "Production Status",
+    "Architecture At A Glance",
+    "brain",
+    "hands",
+    "session log",
+    "managed-agent-model.md",
     "Quick Start",
     "bun run knip",
     "doctor --live",

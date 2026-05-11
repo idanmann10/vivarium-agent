@@ -16,6 +16,28 @@ canonical-world publication evidence, and a two-week follow-up measurement.
 Open-source production readiness means this repository has public setup, contribution, security, release, and
 verification paths. It does not mean the live v1 evidence loop is complete.
 
+## Architecture At A Glance
+
+Vivarium keeps the agent brain, hands, session log, and credentials behind explicit interfaces:
+
+```mermaid
+flowchart LR
+  CLI[CLI and daemon] --> Brain[runtime brain]
+  Brain --> Session[(session log and memory)]
+  Brain --> Hands[tools and sandbox hands]
+  Hands --> Credentials[credential boundary]
+  Brain --> World[world subscriptions]
+  World --> Commons[canonical and private worlds]
+```
+
+- The brain is `packages/runtime`: Plan, Predict, Execute, Monitor, Recover, Validate, Reflect, Dream, and orchestration.
+- The session log is `packages/state`: runs, episodes, memory, identity, confidence, and publishable artifacts.
+- The hands are `packages/tools` and `packages/providers`: tool dispatch, provider calls, safety checks, and credential injection.
+- The world boundary is `packages/world`: retrieval, subscriptions, proposals, publication, and GitHub paths.
+
+Read [docs/architecture/managed-agent-model.md](docs/architecture/managed-agent-model.md) for the full
+brain/hands/session/credential model.
+
 ## Quick Start
 
 ```bash
