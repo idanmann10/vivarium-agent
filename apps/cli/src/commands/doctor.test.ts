@@ -625,6 +625,9 @@ describe("doctorCommand", () => {
       runner: blockedRunner,
     });
     const actions = new Map((result.nextActions ?? []).map((action) => [action.check, action.action]));
+    const completionGuides = new Map(
+      (result.nextActions ?? []).map((action) => [action.check, action.completionGuide]),
+    );
 
     expect(actions.get("v1.dreamArtifacts:missing")).toContain("internal and public skills");
     expect(actions.get("v1.dreamArtifacts:missing")).toContain("private fork only");
@@ -666,6 +669,17 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("same public contribution contributor");
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("other-agent");
     expect(actions.get("v1.curationStats:missing")).toContain("same public contribution contributor");
+    for (const check of [
+      "v1.realGoals:missing",
+      "v1.providerSmokes:missing",
+      "v1.internalCredentialSmoke:missing",
+      "v1.publicContribution:missing",
+      "v1.publishedArtifacts:missing",
+      "v1.curationStats:missing",
+      "v1.twoWeekImprovement:missing",
+    ]) {
+      expect(completionGuides.get(check)).toBe("docs/guides/live-readiness.md#completion-boundary");
+    }
   });
 
   test("reports placeholder repo names as live readiness blockers", () => {

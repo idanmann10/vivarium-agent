@@ -13,6 +13,7 @@ export interface DoctorNextAction {
   readonly env?: readonly string[];
   readonly command?: string;
   readonly guide: string;
+  readonly completionGuide?: string;
 }
 
 interface DoctorNextActionContext {
@@ -1256,6 +1257,7 @@ function liveSetupCommand(context: DoctorNextActionContext): string {
 
 function nextActionForCheck(check: string, context: DoctorNextActionContext): DoctorNextAction {
   const guide = "docs/guides/live-readiness.md";
+  const completionGuide = `${guide}#completion-boundary`;
   const [name = check] = check.split(":");
 
   switch (name) {
@@ -1613,6 +1615,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         env: [v1EvidencePathEnv],
         command: cliCommand(context, 'live evidence-init --path "$VIVARIUM_V1_EVIDENCE_PATH"'),
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.starterPack":
       return {
@@ -1620,6 +1623,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record live init evidence showing distinct installed coding starter-pack skills, distinct installed starter traces, curriculum, and distinct first-run references.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.realGoals":
       return {
@@ -1627,24 +1631,28 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record at least five distinct named real coding goals spanning a week, with domain, distinct evidence for each run, and dates that are not in the future.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.providerSmokes":
       return {
         check,
         action: "Record distinct successful Anthropic, OpenRouter, and private OpenAI-compatible provider smoke evidence.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.internalCredentialSmoke":
       return {
         check,
         action: "Record internal API credential smoke evidence from the encrypted credential store.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.worldSubscriptions":
       return {
         check,
         action: "Record canonical and private world subscription evidence from the live registry.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.behaviorLoop":
       return {
@@ -1652,6 +1660,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record live behavior-loop evidence for anti-pattern use before unfamiliar territory, two distinct traces read that demonstrate similar workflows, Monitor tool-failure detection, Recover re-plan, one ordered destructive-endpoint run sequence that holds, escalates, receives confirmation, and continues, and refusal.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.dreamArtifacts":
       return {
@@ -1659,6 +1668,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record nightly Dream evidence for two distinct skill candidates, distinct internal and public skills, proof the internal skill was pushed to the private fork only, one anti-pattern, and one trace auto-extracted from an instructive run with annotations.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.publicContribution":
       return {
@@ -1666,6 +1676,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record the contributor agent identity, a GitHub public skill PR URL, math gate, contributor trust, K=5 distinct other-agent positive-signal agent/evidence records, a GitHub Actions auto-merge run URL, canonical world skill landing, and three distinct other-agent pull/use evidence records.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.publishedArtifacts":
       return {
@@ -1673,6 +1684,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record published anti-pattern, trace, and run canonical-world GitHub blob refs, the contributor agent identity as the same public contribution contributor, and separate other-agent trace and run Plan-read agent/evidence records.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.curationStats":
       return {
@@ -1680,6 +1692,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record featured pick evidence including a different contributor's anti-pattern, the same public contribution contributor as the curation agent contributor, plus STATS.md evidence showing at least 30% top-five contributor concentration.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     case "v1.twoWeekImprovement":
       return {
@@ -1687,6 +1700,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         action:
           "Record the two-week follow-up at least fourteen days after the last goal with a date that is not in the future, faster follow-up metrics on similar goals, contributor profile counts/trust, contributor agent identity as the same public contribution contributor, a competing GitHub Discussion URL, two distinct live competing skill variant references, similar-goal comparison evidence, and two distinct other-agent refinement agent/evidence records excluding the contributor.",
         guide: `${guide}#v1-evidence-manifest`,
+        completionGuide,
       };
     default:
       return {
