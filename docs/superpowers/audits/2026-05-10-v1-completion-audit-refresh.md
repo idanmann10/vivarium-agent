@@ -137,6 +137,11 @@ Not complete. Local implementation, GitHub setup, and CI gates are strong, inclu
 
 ## 2026-05-10 Live Setup Refresh
 
+This section captured the May 10 live setup state. It has since been superseded
+by the May 11 resume updates below, which configured durable starter-pack
+evidence, durable canonical/private world subscriptions, non-secret
+Anthropic/OpenRouter model metadata, and a local credential-store master key.
+
 The GitHub and repository setup blockers have been cleared since the earlier audit entries. Current evidence:
 
 - Agent repository: `https://github.com/idanmann10/vivarium-agent`.
@@ -158,14 +163,14 @@ bun apps/cli/src/main.ts doctor --live \
   --world-root ../the-world
 ```
 
-Fresh result: `ok:false`. Configured/ok/installed checks now include `liveEnvFile.permissions`, agent/world names, agent/world remotes, world subscription path, canonical/private world refs, provider profile names, internal credential name, GitHub token environment, GitHub owner/repository/category metadata, GitHub auth, the Phase 0 Discussion, agent/world CI, Docker, Docker Compose, and `v1.evidencePath`.
+Fresh result from the May 10 run: `ok:false`. Configured/ok/installed checks included `liveEnvFile.permissions`, agent/world names, agent/world remotes, world subscription path, canonical/private world refs, provider profile names, internal credential name, GitHub token environment, GitHub owner/repository/category metadata, GitHub auth, the Phase 0 Discussion, agent/world CI, Docker, Docker Compose, and `v1.evidencePath`.
 
 The remaining non-passing checks are:
 
-- Provider setup: `provider.env:placeholder`, `provider.anthropic:placeholder`, `provider.anthropicModel:missing`, `provider.anthropicContextWindow:missing`, `provider.openrouter:placeholder`, `provider.openrouterModel:missing`, `provider.openrouterBaseUrl:missing`, `provider.openrouterContextWindow:missing`, `provider.privateOaiCompat:placeholder`, `provider.privateOaiCompatContextWindow:missing`, `provider.profilesPath:unavailable`.
+- Provider setup: `provider.env:placeholder`, `provider.anthropic:placeholder`, `provider.anthropicModel:missing`, `provider.anthropicContextWindow:missing`, `provider.openrouter:placeholder`, `provider.openrouterModel:missing`, `provider.openrouterBaseUrl:missing`, `provider.openrouterContextWindow:missing`, `provider.privateOaiCompat:placeholder`, `provider.privateOaiCompatContextWindow:missing`, `provider.profilesPath:unavailable`. The May 11 resume later configured the non-secret Anthropic/OpenRouter model/base/context values, so the current provider metadata blockers are narrower than this May 10 list.
 - Provider smokes: `provider.anthropicSmoke:missing`, `provider.openrouterSmoke:missing`, `provider.privateOaiCompatSmoke:missing`.
 - Internal credential setup: `credentials.path:unavailable`, `internalApi.credentialValue:placeholder`, `internalApi.healthUrl:placeholder`, `credentials.smoke:missing`. The ignored local env file now contains a generated local credential-store master key, so `doctor --live` reports `credentials.masterKey:configured`; the key value is intentionally not recorded.
-- V1 evidence: `v1.starterPack:missing`, `v1.realGoals:missing`, `v1.providerSmokes:missing`, `v1.internalCredentialSmoke:missing`, `v1.worldSubscriptions:missing`, `v1.behaviorLoop:missing`, `v1.dreamArtifacts:missing`, `v1.publicContribution:missing`, `v1.publishedArtifacts:missing`, `v1.curationStats:missing`, `v1.twoWeekImprovement:missing`.
+- V1 evidence at that time: `v1.starterPack:missing`, `v1.realGoals:missing`, `v1.providerSmokes:missing`, `v1.internalCredentialSmoke:missing`, `v1.worldSubscriptions:missing`, `v1.behaviorLoop:missing`, `v1.dreamArtifacts:missing`, `v1.publicContribution:missing`, `v1.publishedArtifacts:missing`, `v1.curationStats:missing`, `v1.twoWeekImprovement:missing`. The May 11 resume later configured `v1.starterPack` and `v1.worldSubscriptions`.
 
 The current `doctor --live` next actions now route setup-created local files through the safer aggregate command:
 
@@ -177,8 +182,8 @@ That command still requires real provider keys, model/base/context values, the i
 
 ## Next Required External Inputs
 
-1. Anthropic, OpenRouter, and private OpenAI-compatible provider credentials, model choices, base URLs where applicable, and context-window values.
-2. Internal API credential value, credential store master key, and internal API health URL.
+1. Anthropic and OpenRouter API keys; private OpenAI-compatible provider credentials, model choice, base URL, and context-window value.
+2. Internal API credential value and internal API health URL. The local credential-store master key is configured in the ignored local env file, but the encrypted store and smoke cannot be created until the real credential value and health URL exist.
 3. Successful live provider smoke results for Anthropic, OpenRouter, and the private OpenAI-compatible endpoint.
 4. Successful internal API credential smoke through the encrypted credential store.
 5. Live v1 evidence manifest populated from inspectable run, PR, Discussion, workflow, stats, contributor-profile, and other-agent evidence.
