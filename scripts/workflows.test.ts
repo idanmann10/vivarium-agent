@@ -6,6 +6,10 @@ function workflow(name: string): string {
   return readFileSync(join(".github", "workflows", name), "utf8");
 }
 
+function githubConfig(name: string): string {
+  return readFileSync(join(".github", name), "utf8");
+}
+
 describe("agent workflows", () => {
   test("CI runs the full phase checkpoint", () => {
     const ci = workflow("ci.yml");
@@ -43,5 +47,16 @@ describe("agent workflows", () => {
     expect(release).toContain("bun run knip");
     expect(release).toContain("bun run format:check");
     expect(changesetBot).toContain("bunx changeset status");
+  });
+
+  test("Dependabot keeps Bun dependencies and GitHub Actions current", () => {
+    const dependabot = githubConfig("dependabot.yml");
+
+    expect(dependabot).toContain("version: 2");
+    expect(dependabot).toContain('package-ecosystem: "bun"');
+    expect(dependabot).toContain('package-ecosystem: "github-actions"');
+    expect(dependabot).toContain('directory: "/"');
+    expect(dependabot).toContain("interval: weekly");
+    expect(dependabot).toContain("open-pull-requests-limit: 5");
   });
 });
