@@ -62,6 +62,14 @@ describe("root toolchain wiring", () => {
     expect(scripts?.["format:check"]).toContain("scripts/public-release-scan.test.ts");
   });
 
+  test("exposes a launch security audit", () => {
+    const scripts = rootPackage().scripts;
+
+    expect(scripts?.["launch:security-audit"]).toBe("bun run scripts/launch-security-audit.ts");
+    expect(scripts?.["format:check"]).toContain("scripts/launch-security-audit.ts");
+    expect(scripts?.["format:check"]).toContain("scripts/launch-security-audit.test.ts");
+  });
+
   test("exposes a workspace-aware Knip dependency gate", () => {
     const packageJson = rootPackage();
     const config = knipConfig();

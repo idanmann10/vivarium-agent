@@ -373,6 +373,7 @@ const agentRootDocs = {
     "changeset",
     "bun run knip",
     "bun run public-release:scan",
+    "bun run launch:security-audit",
     "doctor --live",
     "live-readiness.local.env",
     "LICENSE",
