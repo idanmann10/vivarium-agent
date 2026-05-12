@@ -104,6 +104,7 @@ credential, GitHub, other-agent, or two-week improvement evidence.
 ## Project Policies
 
 - Security reporting and secret-handling rules: [SECURITY.md](SECURITY.md)
+- Support paths: [SUPPORT.md](SUPPORT.md)
 - Contributor expectations: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - Contribution workflow: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Release checklist: [RELEASING.md](RELEASING.md)

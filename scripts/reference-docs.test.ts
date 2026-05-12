@@ -333,6 +333,7 @@ const agentRootDocs = {
     "doctor --live",
     "live-readiness.local.env",
     "SECURITY.md",
+    "SUPPORT.md",
     "CODE_OF_CONDUCT.md",
     "RELEASING.md",
     "LICENSE",
@@ -355,6 +356,15 @@ const agentRootDocs = {
     "credential",
     "live-readiness.local.env",
     "doctor --live",
+  ],
+  "SUPPORT.md": [
+    "Vivarium Agent",
+    "support",
+    "bug report",
+    "feature request",
+    "security",
+    "live-readiness",
+    "GitHub Discussions",
   ],
   "CODE_OF_CONDUCT.md": ["Vivarium Agent", "Code of Conduct", "harassment", "Enforcement"],
   "RELEASING.md": [
