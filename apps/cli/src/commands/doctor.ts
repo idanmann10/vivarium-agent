@@ -366,10 +366,6 @@ function evidenceReference(value: unknown, context: V1EvidenceReferenceContext):
   return evidenceReferenceIdentity(value, context) !== undefined;
 }
 
-function evidenceReferenceArray(value: unknown, context: V1EvidenceReferenceContext): readonly string[] {
-  return textArray(value).filter((item) => evidenceReference(item, context));
-}
-
 function distinctEvidenceReferenceCount(value: unknown, context: V1EvidenceReferenceContext): number {
   return new Set(textArray(value).flatMap((item) => evidenceReferenceIdentity(item, context) ?? [])).size;
 }

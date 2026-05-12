@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { basename, dirname, isAbsolute, relative, resolve } from "node:path";
 
 export const externalToolsets = [
   "web",
@@ -263,48 +263,160 @@ function headerRecord(headers: Headers): Readonly<Record<string, string>> {
   return Object.fromEntries(headers.entries());
 }
 
-function readableText(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+function collapseWhitespace(text: string): string {
+  let output = "";
+  let pendingSpace = false;
+  for (const char of text) {
+    if (/\s/.test(char)) {
+      pendingSpace = output.length > 0;
+      continue;
+    }
+    if (pendingSpace) {
+      output += " ";
+      pendingSpace = false;
+    }
+    output += char;
+  }
+  return output;
 }
 
-function isInsideAllowlist(path: string, allowlist: readonly string[]): boolean {
-  const resolvedPath = resolve(path);
+function isHtmlTagStart(html: string, index: number): boolean {
+  const next = html[index + 1];
+  if (next === undefined) {
+    return false;
+  }
+  if (next === "/" || next === "!" || next === "?") {
+    return true;
+  }
+  const code = next.charCodeAt(0);
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+}
+
+function skipElementContent(html: string, index: number, tagName: "script" | "style"): number {
+  const lower = html.toLowerCase();
+  const closing = lower.indexOf(`</${tagName}`, index);
+  if (closing === -1) {
+    return html.length;
+  }
+  const closeEnd = html.indexOf(">", closing);
+  return closeEnd === -1 ? html.length : closeEnd + 1;
+}
+
+function readableText(html: string): string {
+  let output = "";
+  for (let index = 0; index < html.length; index += 1) {
+    const char = html[index];
+    if (char !== "<" || !isHtmlTagStart(html, index)) {
+      output += char;
+      continue;
+    }
+
+    const tagEnd = html.indexOf(">", index + 1);
+    if (tagEnd === -1) {
+      output += char;
+      continue;
+    }
+
+    const tagName = html
+      .slice(index + 1, tagEnd)
+      .trimStart()
+      .replace(/^\//, "")
+      .split(/\s+/, 1)[0]
+      ?.toLowerCase();
+    output += " ";
+    if (tagName === "script" || tagName === "style") {
+      index = skipElementContent(html, tagEnd + 1, tagName) - 1;
+      continue;
+    }
+    index = tagEnd;
+  }
+
+  return collapseWhitespace(output).trim();
+}
+
+function isFileNotFound(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { readonly code?: unknown }).code === "ENOENT"
+  );
+}
+
+function realpathIfPresent(path: string): string | undefined {
+  try {
+    return realpathSync(path);
+  } catch (error) {
+    if (isFileNotFound(error)) {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
+function realAllowlist(allowlist: readonly string[]): readonly string[] {
+  return allowlist.map((entry) => realpathIfPresent(entry) ?? resolve(entry));
+}
+
+function isInsideResolvedAllowlist(resolvedPath: string, allowlist: readonly string[]): boolean {
   return allowlist.some((entry) => {
-    const resolvedEntry = resolve(entry);
-    return resolvedPath === resolvedEntry || resolvedPath.startsWith(`${resolvedEntry}/`);
+    const distance = relative(entry, resolvedPath);
+    return distance === "" || (distance.length > 0 && !distance.startsWith("..") && !isAbsolute(distance));
   });
 }
 
 export function createAllowlistedFileAdapter(options: AllowlistedFileAdapterOptions): FileToolAdapter {
-  function assertAllowed(path: string): void {
-    if (!isInsideAllowlist(path, options.allowlist)) {
+  const requestedAllowlist = options.allowlist.map((entry) => resolve(entry));
+  const allowlist = realAllowlist(options.allowlist);
+
+  function assertResolvedAllowed(path: string): void {
+    if (!isInsideResolvedAllowlist(path, allowlist)) {
       throw new Error("File path is outside the configured allowlist");
     }
   }
 
+  function assertRequestedAllowed(path: string): void {
+    if (!isInsideResolvedAllowlist(resolve(path), requestedAllowlist)) {
+      throw new Error("File path is outside the configured allowlist");
+    }
+  }
+
+  function allowedExistingPath(path: string): string {
+    const resolvedPath = realpathIfPresent(path);
+    if (resolvedPath === undefined) {
+      assertRequestedAllowed(path);
+      throw new Error("File does not exist");
+    }
+    assertResolvedAllowed(resolvedPath);
+    return resolvedPath;
+  }
+
+  function allowedWritePath(path: string): string {
+    const existingPath = realpathIfPresent(path);
+    if (existingPath !== undefined) {
+      assertResolvedAllowed(existingPath);
+      return existingPath;
+    }
+
+    mkdirSync(dirname(path), { recursive: true });
+    const parentPath = realpathSync(dirname(path));
+    const resolvedPath = resolve(parentPath, basename(path));
+    assertResolvedAllowed(resolvedPath);
+    return resolvedPath;
+  }
+
   return {
     async read(path) {
-      assertAllowed(path);
-      return readFileSync(path, "utf8");
+      return readFileSync(allowedExistingPath(path), "utf8");
     },
     async write(path, content) {
-      assertAllowed(path);
-      mkdirSync(dirname(path), { recursive: true });
-      writeFileSync(path, content, "utf8");
+      writeFileSync(allowedWritePath(path), content, "utf8");
     },
     async edit(path, search, replace) {
-      assertAllowed(path);
-      if (!existsSync(path)) {
-        throw new Error("File does not exist");
-      }
-      const current = readFileSync(path, "utf8");
+      const resolvedPath = allowedExistingPath(path);
+      const current = readFileSync(resolvedPath, "utf8");
       const replacements = current.split(search).length - 1;
-      writeFileSync(path, current.split(search).join(replace), "utf8");
+      writeFileSync(resolvedPath, current.split(search).join(replace), "utf8");
       return { replacements };
     },
   };

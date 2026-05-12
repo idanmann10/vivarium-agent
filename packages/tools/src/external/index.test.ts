@@ -1,4 +1,4 @@
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
@@ -90,6 +90,39 @@ describe("dispatchExternalTool", () => {
     expect(await dispatchExternalTool({ name: "file.read", args: { path: "/tmp/outside.txt" } }, { files })).toEqual({
       ok: false,
       error: "File path is outside the configured allowlist",
+    });
+  });
+
+  test("rejects allowlisted file paths that resolve outside the allowlist", async () => {
+    const root = mkdtempSync(join(tmpdir(), "external-files-"));
+    const outsideRoot = mkdtempSync(join(tmpdir(), "external-files-outside-"));
+    const outsidePath = join(outsideRoot, "secret.txt");
+    const linkPath = join(root, "linked-secret.txt");
+    writeFileSync(outsidePath, "secret", "utf8");
+    symlinkSync(outsidePath, linkPath);
+
+    const files = createAllowlistedFileAdapter({ allowlist: [root] });
+
+    await expect(dispatchExternalTool({ name: "file.read", args: { path: linkPath } }, { files })).resolves.toEqual({
+      ok: false,
+      error: "File path is outside the configured allowlist",
+    });
+  });
+
+  test("web read preserves non-tag angle bracket text", async () => {
+    const result = await dispatchExternalTool(
+      { name: "web.read", args: { url: "https://example.test/page" } },
+      {
+        fetch: async () =>
+          new Response("<main>2 < 3 and 4 > 1 <strong>ok</strong><script>alert(1)</script></main>", {
+            headers: { "content-type": "text/html" },
+          }),
+      },
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      value: { status: 200, text: "2 < 3 and 4 > 1 ok" },
     });
   });
 

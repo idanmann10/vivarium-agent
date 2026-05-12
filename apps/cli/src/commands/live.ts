@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { addCredentialCommand } from "./credentials.js";
 import { configureProviderProfileCommand } from "./providers.js";
@@ -360,17 +360,29 @@ export function liveSetupCommand(options: LiveSetupCommandOptions): LiveSetupCom
 }
 
 export function liveEvidenceInitCommand(options: LiveEvidenceInitCommandOptions): LiveEvidenceInitCommandResult {
-  if (existsSync(options.path) && options.overwrite !== true) {
-    return {
-      ok: false,
-      written: false,
-      path: options.path,
-      error: "Evidence manifest already exists. Pass --overwrite to replace it.",
-    };
-  }
-
   mkdirSync(dirname(options.path), { recursive: true });
-  writeFileSync(options.path, `${JSON.stringify(v1EvidenceSkeleton(), null, 2)}\n`, "utf8");
+  try {
+    writeFileSync(options.path, `${JSON.stringify(v1EvidenceSkeleton(), null, 2)}\n`, {
+      encoding: "utf8",
+      flag: options.overwrite === true ? "w" : "wx",
+    });
+  } catch (error) {
+    if (
+      options.overwrite !== true &&
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { readonly code?: unknown }).code === "EEXIST"
+    ) {
+      return {
+        ok: false,
+        written: false,
+        path: options.path,
+        error: "Evidence manifest already exists. Pass --overwrite to replace it.",
+      };
+    }
+    throw error;
+  }
   return {
     ok: true,
     written: true,

@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
@@ -99,5 +99,38 @@ describe("providerSmokeCommand", () => {
     });
     expect(requests).toHaveLength(1);
     expect(requests[0]?.headers).toMatchObject({ authorization: "Bearer provider-secret" });
+  });
+
+  test("rejects unsafe provider profile values before network use", async () => {
+    const profilesPath = join(mkdtempSync(join(tmpdir(), "provider-profiles-")), "profiles.json");
+    writeFileSync(
+      profilesPath,
+      `${JSON.stringify({
+        profiles: [
+          {
+            name: "openrouter",
+            kind: "openai-compat",
+            apiKeyEnv: "OPENROUTER_API_KEY",
+            model: "openrouter/test-model\nextra-header",
+            baseUrl: "https://openrouter.example",
+            capabilities: ["chat"],
+            contextWindow: 128000,
+            costClass: "medium",
+          },
+        ],
+      })}\n`,
+      "utf8",
+    );
+
+    await expect(
+      providerSmokeCommand({
+        profilesPath,
+        profile: "openrouter",
+        env: { OPENROUTER_API_KEY: "provider-secret" },
+        fetch: async () => {
+          throw new Error("fetch should not run for unsafe profiles");
+        },
+      }),
+    ).rejects.toThrow("Provider profile openrouter has unsafe model");
   });
 });

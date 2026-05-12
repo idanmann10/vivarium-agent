@@ -94,6 +94,39 @@ function normalizeProfiles(profiles: readonly ProviderProfile[]): readonly Provi
   return [...profiles].toSorted((left, right) => left.name.localeCompare(right.name));
 }
 
+function hasOnlySafeProviderFieldChars(value: string): boolean {
+  for (const char of value) {
+    const code = char.charCodeAt(0);
+    const isAlpha = (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+    const isDigit = code >= 48 && code <= 57;
+    const isSymbol = char === "." || char === "/" || char === "_" || char === "-" || char === ":" || char === "@";
+    if (!isAlpha && !isDigit && !isSymbol) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function assertSafeProviderField(profileName: string, field: "apiKeyEnv" | "model", value: string): void {
+  if (value.trim() !== value || !hasOnlySafeProviderFieldChars(value)) {
+    throw new Error(`Provider profile ${profileName} has unsafe ${field}`);
+  }
+}
+
+function assertSafeProviderBaseUrl(profileName: string, baseUrl: string | undefined): void {
+  if (baseUrl === undefined) {
+    return;
+  }
+  try {
+    const parsed = new URL(baseUrl);
+    if ((parsed.protocol !== "https:" && parsed.protocol !== "http:") || parsed.username.length > 0 || parsed.password.length > 0) {
+      throw new Error("unsupported provider base URL");
+    }
+  } catch {
+    throw new Error(`Provider profile ${profileName} has unsafe baseUrl`);
+  }
+}
+
 function parseProviderProfile(raw: Partial<ProviderProfile>, index: number): ProviderProfile {
   if (typeof raw.name !== "string" || raw.name.trim().length === 0) {
     throw new Error(`Provider profile ${index + 1} is missing name`);
@@ -107,6 +140,9 @@ function parseProviderProfile(raw: Partial<ProviderProfile>, index: number): Pro
   if (typeof raw.model !== "string" || raw.model.trim().length === 0) {
     throw new Error(`Provider profile ${raw.name} is missing model`);
   }
+  assertSafeProviderField(raw.name, "apiKeyEnv", raw.apiKeyEnv);
+  assertSafeProviderField(raw.name, "model", raw.model);
+  assertSafeProviderBaseUrl(raw.name, raw.baseUrl);
   if (!Array.isArray(raw.capabilities) || raw.capabilities.length === 0) {
     throw new Error(`Provider profile ${raw.name} is missing capabilities`);
   }
@@ -150,18 +186,19 @@ export function listProviderProfilesCommand(options: ProviderProfilesCommandOpti
 
 export function configureProviderProfileCommand(options: ConfigureProviderProfileCommandOptions): ProviderProfilesCommandResult {
   const existing = readProviderProfiles(options.profilesPath);
-  const profile = {
+  const profile = parseProviderProfile({
     name: options.name,
     kind: options.kind,
     apiKeyEnv: options.apiKeyEnv,
     model: options.model,
+    ...(options.baseUrl === undefined ? {} : { baseUrl: options.baseUrl }),
     capabilities: options.capabilities,
     contextWindow: options.contextWindow,
     costClass: options.costClass,
-  };
+  }, 0);
   const next = normalizeProfiles([
     ...existing.filter((candidate) => candidate.name !== options.name),
-    options.baseUrl === undefined ? profile : { ...profile, baseUrl: options.baseUrl },
+    profile,
   ]);
 
   writeProviderProfiles(options.profilesPath, next);

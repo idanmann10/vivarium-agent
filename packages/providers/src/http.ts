@@ -21,7 +21,11 @@ function taskPrompt(request: ProviderCompletionRequest): string {
 }
 
 function normalizeBaseUrl(baseUrl: string): string {
-  return baseUrl.replace(/\/+$/, "");
+  let end = baseUrl.length;
+  while (end > 0 && baseUrl.charCodeAt(end - 1) === 47) {
+    end -= 1;
+  }
+  return baseUrl.slice(0, end);
 }
 
 async function parseJson(response: Response): Promise<unknown> {
