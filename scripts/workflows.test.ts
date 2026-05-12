@@ -24,6 +24,7 @@ describe("agent workflows", () => {
     expect(ci).toContain("bun run test");
     expect(ci).toContain("bun run build");
     expect(ci).toContain("bun run format:check");
+    expect(ci).toContain("bun run public-release:scan");
   });
 
   test("CI provisions the sibling world repository required by local tests", () => {

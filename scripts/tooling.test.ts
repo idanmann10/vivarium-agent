@@ -54,6 +54,14 @@ describe("root toolchain wiring", () => {
     expect(scripts?.["format:check"]).toContain("oxfmt --check");
   });
 
+  test("exposes a public release safety scan", () => {
+    const scripts = rootPackage().scripts;
+
+    expect(scripts?.["public-release:scan"]).toBe("bun run scripts/public-release-scan.ts");
+    expect(scripts?.["format:check"]).toContain("scripts/public-release-scan.ts");
+    expect(scripts?.["format:check"]).toContain("scripts/public-release-scan.test.ts");
+  });
+
   test("exposes a workspace-aware Knip dependency gate", () => {
     const packageJson = rootPackage();
     const config = knipConfig();
