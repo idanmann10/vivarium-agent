@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 
 import {
   analyzeLaunchSecurity,
@@ -108,5 +109,13 @@ describe("launch security audit", () => {
       blockers: [],
       manualDecisions: [],
     });
+  });
+
+  test("queries only open alert states from GitHub security APIs", () => {
+    const source = readFileSync(new URL("./launch-security-audit.ts", import.meta.url), "utf8");
+
+    expect(source).toContain("/dependabot/alerts?state=open");
+    expect(source).toContain("/secret-scanning/alerts?state=open");
+    expect(source).toContain("/code-scanning/alerts?state=open");
   });
 });

@@ -179,9 +179,9 @@ function repoEvidence(owner: string, repo: string): RepositorySecurityEvidence {
   const privateVulnerabilityReporting = ghApi(
     `repos/${owner}/${repo}/private-vulnerability-reporting`,
   );
-  const dependabotAlerts = ghApi(`repos/${owner}/${repo}/dependabot/alerts`);
-  const secretScanningAlerts = ghApi(`repos/${owner}/${repo}/secret-scanning/alerts`);
-  const codeScanningAlerts = ghApi(`repos/${owner}/${repo}/code-scanning/alerts`);
+  const dependabotAlerts = ghApi(`repos/${owner}/${repo}/dependabot/alerts?state=open`);
+  const secretScanningAlerts = ghApi(`repos/${owner}/${repo}/secret-scanning/alerts?state=open`);
+  const codeScanningAlerts = ghApi(`repos/${owner}/${repo}/code-scanning/alerts?state=open`);
   const rulesets = ghApi(`repos/${owner}/${repo}/rulesets`);
 
   return {
