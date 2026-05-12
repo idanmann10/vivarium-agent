@@ -59,6 +59,7 @@ describe("agent workflows", () => {
     );
     expect(release).toContain("../the-world");
     expect(release).toContain("bun run knip");
+    expect(release).toContain("bun run public-release:scan");
     expect(release).toContain("bun run format:check");
     expect(changesetBot).toContain("bunx changeset status");
   });
