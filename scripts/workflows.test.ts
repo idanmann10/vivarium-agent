@@ -54,6 +54,20 @@ describe("agent workflows", () => {
     expect(changesetBot).toContain("bunx changeset status");
   });
 
+  test("CodeQL analyzes JavaScript and TypeScript on main and pull requests", () => {
+    const codeql = workflow("codeql.yml");
+
+    expect(codeql).toContain("name: CodeQL");
+    expect(codeql).toContain("workflow_dispatch:");
+    expect(codeql).toContain("branches: [main]");
+    expect(codeql).toContain("if: ${{ !github.event.repository.private }}");
+    expect(codeql).toContain("security-events: write");
+    expect(codeql).toContain("github/codeql-action/init@v4");
+    expect(codeql).toContain("languages: javascript-typescript");
+    expect(codeql).toContain("queries: security-extended,security-and-quality");
+    expect(codeql).toContain("github/codeql-action/analyze@v4");
+  });
+
   test("Dependabot keeps Bun dependencies and GitHub Actions current", () => {
     const dependabot = githubConfig("dependabot.yml");
 
