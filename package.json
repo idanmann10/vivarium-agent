@@ -18,9 +18,10 @@
   "type": "module",
   "scripts": {
     "build": "bun run scripts/build.ts",
-    "format:check": "oxfmt --check package.json .oxlintrc.jsonc .oxfmtrc.json knip.json turbo.json tsconfig.base.json scripts/tooling.test.ts scripts/workflows.test.ts scripts/reference-docs.test.ts",
+    "format:check": "oxfmt --check package.json .oxlintrc.jsonc .oxfmtrc.json knip.json turbo.json tsconfig.base.json scripts/tooling.test.ts scripts/workflows.test.ts scripts/reference-docs.test.ts scripts/public-release-scan.ts scripts/public-release-scan.test.ts",
     "knip": "knip --include dependencies,unlisted,unresolved --no-config-hints",
     "lint": "bun run scripts/lint.ts && oxlint .",
+    "public-release:scan": "bun run scripts/public-release-scan.ts",
     "record:local-e2e-demo": "node scripts/record-local-e2e-demo.cjs",
     "test": "bun test",
     "typecheck": "tsc --noEmit -p tsconfig.base.json",
