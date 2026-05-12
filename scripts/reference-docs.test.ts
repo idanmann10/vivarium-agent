@@ -378,6 +378,10 @@ const agentRootDocs = {
     "LICENSE",
     "public GitHub repository",
     "private preview",
+    "CodeQL",
+    "secret scanning",
+    "push protection",
+    "private vulnerability reporting",
   ],
   LICENSE: ["MIT License", "Vivarium contributors", "Permission is hereby granted"],
 } as const;

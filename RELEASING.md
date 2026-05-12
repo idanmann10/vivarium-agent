@@ -42,6 +42,11 @@ for local use without claiming the full `goal.md` v1 cultural-transmission loop 
    and `LICENSE`.
 8. Before calling a release open-source, confirm the GitHub repo is a public GitHub repository and the release PR
    is no longer a draft. If the repository is still private, label the release as a private preview.
+9. After the repository is public, verify the GitHub security posture before announcing the launch:
+   - private vulnerability reporting is enabled
+   - secret scanning is enabled
+   - push protection is enabled
+   - CodeQL has run on the public repository and code scanning alerts have been reviewed
 
 ## Release Notes
 
