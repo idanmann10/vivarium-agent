@@ -47,6 +47,8 @@ for local use without claiming the full `goal.md` v1 cultural-transmission loop 
    - secret scanning is enabled
    - push protection is enabled
    - CodeQL has run on the public repository and code scanning alerts have been reviewed
+10. Record an explicit owner decision for `main` branch protection or repository rulesets. Do not enable or change
+    branch protection or repository rulesets without explicit approval for that repository.
 
 ## Release Notes
 
