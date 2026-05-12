@@ -38,6 +38,7 @@ Run focused tests while developing. Before opening or updating a PR, run:
 ```bash
 bun run lint
 bun run knip
+bun run public-release:scan
 bun run typecheck
 bun run test
 bun run build
@@ -45,7 +46,8 @@ bun run format:check
 ```
 
 `bun run knip` is part of the production-readiness gate because unresolved or unlisted dependencies create brittle
-operator installs.
+operator installs. `bun run public-release:scan` blocks tracked local env files, encrypted credential stores, and
+high-confidence provider or GitHub tokens before public release.
 
 ## Security
 
