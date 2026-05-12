@@ -385,6 +385,11 @@ const agentRootDocs = {
     "private vulnerability reporting",
     "branch protection",
     "repository rulesets",
+    "recommended baseline",
+    "Require pull request reviews",
+    "Require status checks to pass",
+    "Block force pushes",
+    "Block deletions",
   ],
   LICENSE: ["MIT License", "Vivarium contributors", "Permission is hereby granted"],
 } as const;
