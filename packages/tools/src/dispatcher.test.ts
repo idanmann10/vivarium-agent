@@ -188,6 +188,93 @@ describe("createToolDispatcher", () => {
     });
   });
 
+  test("blocks external tool calls when the tool policy blocks the tool", async () => {
+    const events: ToolDispatchEvent[] = [];
+    let called = false;
+    const dispatcher = createToolDispatcher({
+      toolPolicies: [
+        {
+          id: "block-http",
+          pattern: "http.request",
+          action: "block",
+          reason: "HTTP is disabled for this run",
+        },
+      ],
+      externalAdapters: {
+        fetch: async () => {
+          called = true;
+          return Response.json({ ok: true });
+        },
+      },
+      onDispatch: (event) => events.push(event),
+    });
+
+    await expect(
+      dispatcher.dispatch({
+        name: "http.request",
+        args: {
+          url: "https://api.example.test/pages",
+          method: "GET",
+        },
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      error: "Tool policy blocks http.request: HTTP is disabled for this run",
+      blocked: true,
+    });
+    expect(called).toBe(false);
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        name: "http.request",
+        status: "blocked",
+        reason: "Tool policy blocks http.request: HTTP is disabled for this run",
+      }),
+    );
+  });
+
+  test("requires confirmation when the tool policy requires confirmation", async () => {
+    let clicks = 0;
+    const dispatcher = createToolDispatcher({
+      computerUseSafety: { confirmationLevel: "never" },
+      toolPolicies: [
+        {
+          id: "confirm-computer",
+          pattern: "computer.*",
+          action: "require_confirmation",
+          reason: "Computer-use actions need explicit approval",
+        },
+      ],
+      externalAdapters: {
+        computer: {
+          click: async () => {
+            clicks += 1;
+            return { clicked: true };
+          },
+        },
+      },
+    });
+
+    await expect(
+      dispatcher.dispatch({ name: "computer.click", args: { target: "toolbar-button" } }),
+    ).resolves.toEqual({
+      ok: false,
+      error: "Tool policy requires confirmation for computer.click: Computer-use actions need explicit approval",
+      blocked: true,
+    });
+    expect(clicks).toBe(0);
+
+    await expect(
+      dispatcher.dispatch({
+        name: "computer.click",
+        args: { target: "toolbar-button", confirmed: true },
+      }),
+    ).resolves.toEqual({
+      ok: true,
+      value: { clicked: true },
+    });
+    expect(clicks).toBe(1);
+  });
+
   test("blocks external tool calls that exceed per-day rate limits across dispatcher instances", async () => {
     const dailyUsage = new TestDailyUsageStore();
     const makeDispatcher = () =>

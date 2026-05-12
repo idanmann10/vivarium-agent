@@ -46,3 +46,5 @@ export type {
   OutputSafetyFinding,
   SafetyDecision,
 } from "./safety/pipeline.js";
+export { resolveToolPolicy } from "./safety/policies.js";
+export type { ResolvedToolPolicy, ToolPolicy, ToolPolicyAction } from "./safety/policies.js";

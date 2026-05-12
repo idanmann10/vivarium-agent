@@ -20,7 +20,13 @@ avoid pretending that self-modification is just another HTTP request.
 
 ## External Dispatcher
 
-External tools go through the dispatcher. The dispatcher resolves credentials,
-applies safety checks, records warnings, enforces rate limits, and then calls the
-injected adapter. This keeps provider calls, HTTP, files, terminal, MCP, native
-tool use, and computer-use behind one auditable boundary.
+External tools go through the dispatcher. The dispatcher parses requests, applies
+tool policies, enforces rate limits, rejects credential-like arguments, resolves
+credentials, applies safety checks, records warnings, and then calls the injected
+adapter. This keeps provider calls, HTTP, files, terminal, MCP, native tool use,
+and computer-use behind one auditable boundary.
+
+Tool policies let integrations approve, require confirmation for, or block
+external capabilities by exact tool name, subtree pattern, or wildcard. See
+[Tool Policies](../reference/tool-policies.md) for the policy fields and
+resolution order.

@@ -141,7 +141,7 @@ const conceptDocs = {
   memory: ["working memory", "episodic", "semantic", "procedural", "identity"],
   primitives: ["Plan", "Predict", "Execute", "Monitor", "Recover", "Validate", "Reflect", "Dream"],
   safety: ["allowlist", "rate limits", "argument scrubbing", "computer-use", "refusal"],
-  tools: ["dispatcher", "SelfTools", "external", "credentials", "safety"],
+  tools: ["dispatcher", "SelfTools", "external", "tool policies", "credentials", "safety"],
   traces: ["TraceStep", "prerequisites", "teaches", "pitfalls", "alternatives"],
   trust: ["Wilson", "effective_LB", "auto-merge", "regression", "veto"],
   world: ["canonical", "private", "skills", "traces", "runs", "subscriptions"],
@@ -275,7 +275,14 @@ const packageReadmes = {
     "Dream",
   ],
   "packages/state": ["SQLite", "migrations", "memory", "StateRepository", "semantic facts"],
-  "packages/tools": ["SelfTools", "external tools", "credentials", "anonymization", "safety"],
+  "packages/tools": [
+    "SelfTools",
+    "external tools",
+    "tool policies",
+    "credentials",
+    "anonymization",
+    "safety",
+  ],
   "packages/world": ["retrieval", "subscriptions", "proposal", "GitHub", "visibility"],
 } as const;
 

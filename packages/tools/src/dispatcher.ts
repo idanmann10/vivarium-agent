@@ -17,6 +17,7 @@ import {
   scanToolOutputForPromptInjection,
   type ComputerUseConfirmationLevel,
 } from "./safety/pipeline.js";
+import { resolveToolPolicy, type ToolPolicy, type ToolPolicyAction } from "./safety/policies.js";
 
 export interface ToolDispatchRequest {
   readonly name: string;
@@ -78,6 +79,8 @@ export interface ToolDispatcherOptions {
   readonly credentials?: CredentialStore;
   readonly httpSafety?: HttpSafetyConfig;
   readonly computerUseSafety?: ComputerUseSafetyConfig;
+  readonly toolPolicies?: readonly ToolPolicy[];
+  readonly toolPolicyDefaultAction?: ToolPolicyAction;
   readonly rateLimits?: ToolRateLimitConfig;
   readonly onDispatch?: (event: ToolDispatchEvent) => void;
   readonly onSafetySurprise?: (event: ToolSafetySurpriseEvent) => void;
@@ -341,6 +344,44 @@ function fromExternalResult(result: ExternalToolResult): ToolDispatchResult {
   return { ok: false, error: result.error };
 }
 
+function hasPolicyConfirmation(request: ToolDispatchRequest): boolean {
+  return isRecord(request.args) && request.args.confirmed === true;
+}
+
+function toolPolicyError(action: "block" | "require_confirmation", toolName: string, reason: string | undefined): string {
+  const message =
+    action === "block"
+      ? `Tool policy blocks ${toolName}`
+      : `Tool policy requires confirmation for ${toolName}`;
+  return reason === undefined ? message : `${message}: ${reason}`;
+}
+
+function checkToolPolicy(
+  request: ToolDispatchRequest,
+  external: ExternalToolRequest,
+  options: ToolDispatcherOptions,
+): ToolDispatchResult | undefined {
+  const policy = resolveToolPolicy(
+    external.name,
+    options.toolPolicies ?? [],
+    options.toolPolicyDefaultAction ?? "approve",
+  );
+
+  if (policy.action === "approve") {
+    return undefined;
+  }
+
+  if (policy.action === "block") {
+    return { ok: false, error: toolPolicyError(policy.action, external.name, policy.reason), blocked: true };
+  }
+
+  if (!hasPolicyConfirmation(request)) {
+    return { ok: false, error: toolPolicyError(policy.action, external.name, policy.reason), blocked: true };
+  }
+
+  return undefined;
+}
+
 async function dispatchExternal(
   request: ExternalToolRequest,
   options: ToolDispatcherOptions,
@@ -462,6 +503,12 @@ export function createToolDispatcher(options: ToolDispatcherOptions): ToolDispat
         const reason = `Unknown or invalid tool request: ${request.name}`;
         emit(options, { name: request.name, status: "error", reason });
         return { ok: false, error: reason };
+      }
+
+      const policyResult = checkToolPolicy(request, external, options);
+      if (policyResult !== undefined) {
+        emit(options, dispatchEvent(request.name, policyResult));
+        return policyResult;
       }
 
       const rateLimitResult = checkRateLimit(request.name);
