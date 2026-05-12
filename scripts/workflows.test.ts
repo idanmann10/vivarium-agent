@@ -34,6 +34,15 @@ describe("agent workflows", () => {
     expect(ci).toContain("../the-world");
   });
 
+  test("read-only workflows declare minimal token permissions", () => {
+    for (const body of [workflow("ci.yml"), workflow("changeset-bot.yml")]) {
+      expect(body).toContain("permissions:");
+      expect(body).toContain("contents: read");
+      expect(body).not.toContain("contents: write");
+      expect(body).not.toContain("pull-requests: write");
+    }
+  });
+
   test("release and changeset workflows are concrete", () => {
     const release = workflow("release.yml");
     const changesetBot = workflow("changeset-bot.yml");
