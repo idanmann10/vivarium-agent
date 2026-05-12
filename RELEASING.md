@@ -11,6 +11,7 @@ for local use without claiming the full `goal.md` v1 cultural-transmission loop 
    ```bash
    bun run lint
    bun run knip
+   bun run public-release:scan
    bun run typecheck
    bun run test
    bun run build
