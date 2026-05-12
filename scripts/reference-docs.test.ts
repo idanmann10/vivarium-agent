@@ -196,9 +196,12 @@ const guideDocs = {
   ],
   "fork-the-world-privately": ["canonical", "private", "--auto-push", "priority", "world search"],
   install: [
+    "curl -fsSL",
+    "scripts/install.sh",
     "bun install",
     "bun run lint",
     "bun run knip",
+    "VIVARIUM_INSTALL_DIR",
     "setup",
     "init",
     "provider",

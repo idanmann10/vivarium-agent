@@ -6,7 +6,18 @@ when_to_read: When setting up a development or user install.
 
 # Install
 
-Install dependencies from the agent workspace:
+For the default user install, run the one-line bootstrap script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash
+```
+
+The installer checks for `git` and `bun`, clones or updates the agent checkout,
+clones or updates the canonical world beside it, installs dependencies, and then
+runs the guided `setup` command. Override the layout with `VIVARIUM_INSTALL_DIR`,
+`VIVARIUM_WORLD_ROOT`, `VIVARIUM_DOMAIN`, or `VIVARIUM_STATE_PATH`.
+
+For source checkouts and contributors, install dependencies from the agent workspace:
 
 ```bash
 bun install

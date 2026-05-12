@@ -62,6 +62,16 @@ describe("root toolchain wiring", () => {
     expect(scripts?.["format:check"]).toContain("scripts/public-release-scan.test.ts");
   });
 
+  test("exposes a tested one-line installer", () => {
+    const scripts = rootPackage().scripts;
+    const installer = readFileSync("scripts/install.sh", "utf8");
+
+    expect(scripts?.["format:check"]).toContain("scripts/install.test.ts");
+    expect(installer).toContain("Vivarium Agent Installer");
+    expect(installer).toContain("VIVARIUM_INSTALL_DIR");
+    expect(installer).toContain("bun apps/cli/src/main.ts setup");
+  });
+
   test("exposes a launch security audit", () => {
     const scripts = rootPackage().scripts;
 

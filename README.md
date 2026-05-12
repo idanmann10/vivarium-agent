@@ -45,6 +45,18 @@ brain/hands/session/credential model.
 
 ## Quick Start
 
+Install into `~/.vivarium`, clone the canonical world beside the agent, install
+dependencies, and run the guided setup:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash
+```
+
+Use `VIVARIUM_INSTALL_DIR`, `VIVARIUM_WORLD_ROOT`, `VIVARIUM_DOMAIN`, and
+`VIVARIUM_STATE_PATH` to override the default install layout.
+
+For source checkouts and contributors, run the local gates directly:
+
 ```bash
 bun install
 bun run lint
