@@ -8,7 +8,7 @@ thin and route through `src/dispatcher.ts`.
 
 Implemented command groups include:
 
-- `init`, `run`, `status`, `doctor`, and `doctor --live`
+- `setup`, `init`, `run`, `status`, `doctor`, and `doctor --live`
 - `credentials add/list/smoke`
 - `providers configure/list/smoke`
 - `live setup/evidence-init`
@@ -32,7 +32,9 @@ the roadmap is done.
 
 Use the CLI for local handoff checks such as provider profile smoke tests,
 encrypted credential smoke tests, GitHub read/write guards, daemon status, and
-world transmission-smoke. `live setup --env-file <file> --confirm-write` materializes
+world transmission-smoke. `setup` is the operator-friendly entrypoint: it runs local
+`init`, prints a branded terminal checklist, and can dry-run or confirm the existing
+`live setup` path when `--env-file` is provided. `live setup --env-file <file> --confirm-write` materializes
 the local provider profile file and encrypted internal API credential store from a
 filled readiness file without printing secret values. Without `--confirm-write`, the same
 command reports the target paths, provider profile names, and credential name without writing files.

@@ -18,6 +18,7 @@ import {
   type ProviderSmokeKind,
 } from "./commands/providers.js";
 import { runCommand, type RunProviderKind } from "./commands/run.js";
+import { renderSetupCommandResult, setupCommand } from "./commands/setup.js";
 import { listSkillsCommand } from "./commands/skills.js";
 import { statusCommand } from "./commands/status.js";
 import {
@@ -178,6 +179,24 @@ export async function dispatchCliCommand(argv: readonly string[], options: CliDi
           ...(statePath === undefined ? {} : { statePath }),
         }),
       );
+    }
+    case "setup": {
+      const worldRoot = value(flags, "world-root");
+      const statePath = value(flags, "state-path");
+      const envFile = value(flags, "env-file");
+      const result = setupCommand({
+        primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? "coding",
+        ...(worldRoot === undefined ? {} : { worldRoot }),
+        ...(statePath === undefined ? {} : { statePath }),
+        ...(envFile === undefined
+          ? {}
+          : {
+              envFilePath: envFile,
+              env: readEnvFile(envFile, options.env ?? process.env),
+            }),
+        ...(booleanFlag(flags, "confirm-write") ? { confirmWrite: true } : {}),
+      });
+      return { command, result, output: renderSetupCommandResult(result) };
     }
     case "run": {
       const domain = value(flags, "domain");

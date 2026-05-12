@@ -22,14 +22,18 @@ bun run test
 bun run build
 ```
 
-Initialize a local state database with the coding starter pack from a sibling world checkout:
+Run the setup entrypoint with the coding starter pack from a sibling world checkout:
 
 ```bash
-bun apps/cli/src/main.ts init \
+bun apps/cli/src/main.ts setup \
   --domain coding \
   --world-root ../the-world \
   --state-path .vivarium/state.db
 ```
+
+`setup` initializes the same local state as `init`, renders a terminal-friendly
+summary, and prints the next commands for a first run, live setup, and
+`doctor --live`. Use `init` directly only when you need the raw JSON result.
 
 Provider-backed runs require environment variables for the selected provider. Use
 `docs/guides/configure-providers.md` for provider profiles and `docs/guides/live-readiness.md` for the

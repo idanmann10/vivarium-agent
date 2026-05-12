@@ -1,4 +1,5 @@
 export const cliCommands = [
+  "setup",
   "init",
   "run",
   "dream",
@@ -20,6 +21,8 @@ export type CliCommand = (typeof cliCommands)[number];
 
 export { describeInitCommand, runInitCommand } from "./commands/init.js";
 export type { InitCommandOptions, InitCommandResult, StarterArtifact } from "./commands/init.js";
+export { renderSetupCommandResult, setupCommand } from "./commands/setup.js";
+export type { SetupCommandOptions, SetupCommandResult } from "./commands/setup.js";
 export { runCommand } from "./commands/run.js";
 export type { RunCommandOptions, RunCommandResult, RunProviderKind } from "./commands/run.js";
 export { dreamCommand } from "./commands/dream.js";

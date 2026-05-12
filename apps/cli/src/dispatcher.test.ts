@@ -46,6 +46,131 @@ const deterministicDoctorRunner: DoctorCommandRunner = ({ command, args }) => {
 };
 
 describe("dispatchCliCommand", () => {
+  test("routes setup through local init with branded terminal output", async () => {
+    const worldRoot = createWorldFixture();
+    const statePath = join(mkdtempSync(join(tmpdir(), "cli-dispatch-setup-state-")), "state.db");
+
+    const setup = await dispatchCliCommand([
+      "setup",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+    ]);
+    const state = new SQLiteStateRepository(statePath);
+    const localSkills = state.listLocalSkills().filter((skill) => skill.domain === "coding");
+    state.close();
+
+    expect(setup.command).toBe("setup");
+    expect(setup.result).toMatchObject({
+      ok: true,
+      local: {
+        primaryDomain: "coding",
+        statePath,
+        starterSkills: [{ title: "Red Green" }],
+      },
+      nextCommands: expect.arrayContaining([
+        expect.stringContaining("doctor --live"),
+        expect.stringContaining("run --goal"),
+      ]),
+    });
+    expect(localSkills).toEqual([expect.objectContaining({ name: "Red Green", domain: "coding" })]);
+    expect(setup.output).toContain("Vivarium Setup");
+    expect(setup.output).toContain(".-\"\"\"\"-.");
+    expect(setup.output).toContain("Local state initialized");
+    expect(setup.output).toContain("Next commands");
+  });
+
+  test("routes setup live env files through the live setup dry run", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-setup-live-"));
+    const worldRoot = createWorldFixture();
+    const statePath = join(root, "state.db");
+    const envPath = join(root, "live-readiness.local.env");
+    const profilesPath = join(root, "provider-profiles.json");
+    const credentialsPath = join(root, "credentials.enc");
+    write(
+      envPath,
+      [
+        `export VIVARIUM_PROVIDER_PROFILES_PATH="${profilesPath}"`,
+        'export ANTHROPIC_API_KEY="anthropic-secret"',
+        'export VIVARIUM_ANTHROPIC_PROVIDER_PROFILE="anthropic-live"',
+        'export VIVARIUM_ANTHROPIC_MODEL="claude-test"',
+        'export VIVARIUM_ANTHROPIC_CONTEXT_WINDOW="200000"',
+        'export OPENROUTER_API_KEY="openrouter-secret"',
+        'export VIVARIUM_OPENROUTER_PROVIDER_PROFILE="openrouter-live"',
+        'export VIVARIUM_OPENROUTER_MODEL="openrouter/test"',
+        'export VIVARIUM_OPENROUTER_BASE_URL="https://openrouter.example/v1"',
+        'export VIVARIUM_OPENROUTER_CONTEXT_WINDOW="128000"',
+        'export VIVARIUM_OAI_COMPAT_API_KEY="compat-secret"',
+        'export VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE="private-live"',
+        'export VIVARIUM_OAI_COMPAT_MODEL="private/test"',
+        'export VIVARIUM_OAI_COMPAT_BASE_URL="https://private.example/v1"',
+        'export VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW="64000"',
+        `export VIVARIUM_CREDENTIALS_PATH="${credentialsPath}"`,
+        'export VIVARIUM_CREDENTIALS_MASTER_KEY="master-secret"',
+        'export VIVARIUM_INTERNAL_API_CREDENTIAL_NAME="internal-api"',
+        'export VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE="internal-secret"',
+        'export VIVARIUM_INTERNAL_API_HEALTH_URL="https://internal.example/health"',
+      ].join("\n"),
+    );
+
+    const setup = await dispatchCliCommand([
+      "setup",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+      "--env-file",
+      envPath,
+    ]);
+
+    expect(setup.result).toMatchObject({
+      ok: false,
+      local: { statePath },
+      live: {
+        ok: false,
+        written: false,
+        requiresConfirmation: true,
+        providerProfiles: ["anthropic-live", "openrouter-live", "private-live"],
+        credentialName: "internal-api",
+      },
+      nextCommands: expect.arrayContaining([expect.stringContaining("setup --env-file")]),
+    });
+    expect(existsSync(profilesPath)).toBe(false);
+    expect(existsSync(credentialsPath)).toBe(false);
+    expect(setup.output).toContain("Live setup dry run");
+    expect(setup.output).toContain("anthropic-live");
+    expect(setup.output).toContain("--confirm-write");
+
+    const confirmed = await dispatchCliCommand([
+      "setup",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+      "--env-file",
+      envPath,
+      "--confirm-write",
+    ]);
+
+    expect(confirmed.result).toMatchObject({
+      ok: true,
+      live: { ok: true, written: true },
+      nextCommands: [
+        expect.stringContaining("run --goal"),
+        expect.stringContaining("doctor --live"),
+      ],
+    });
+    expect(confirmed.output).toContain("Live setup written");
+    expect(confirmed.output).not.toContain("cp docs/live-readiness.env.example");
+  });
+
   test("routes status and doctor commands", async () => {
     await expect(dispatchCliCommand(["status"])).resolves.toMatchObject({
       command: "status",
