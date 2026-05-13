@@ -13,6 +13,7 @@ Usage:
 Environment:
   VIVARIUM_REPO_URL           Agent repository URL.
   VIVARIUM_INSTALL_DIR        Agent checkout directory.
+  VIVARIUM_BIN_DIR            Directory for the vivarium command.
   VIVARIUM_WORLD_REPO_URL     World repository URL.
   VIVARIUM_WORLD_ROOT         World checkout directory.
   VIVARIUM_DOMAIN             Initial setup domain.
@@ -67,6 +68,8 @@ absolute_path() {
 home_dir="${HOME:?HOME must be set}"
 repo_url="${VIVARIUM_REPO_URL:-https://github.com/idanmann10/vivarium-agent.git}"
 install_dir="$(absolute_path "${VIVARIUM_INSTALL_DIR:-$home_dir/.vivarium/vivarium-agent}")"
+bin_dir="$(absolute_path "${VIVARIUM_BIN_DIR:-$home_dir/.local/bin}")"
+command_path="$bin_dir/vivarium"
 world_repo_url="${VIVARIUM_WORLD_REPO_URL:-https://github.com/idanmann10/vivarium-world.git}"
 default_world_root="$(dirname "$install_dir")/the-world"
 world_root="$(absolute_path "${VIVARIUM_WORLD_ROOT:-$default_world_root}")"
@@ -124,8 +127,24 @@ checkout_or_update() {
   run git clone "$repo" "$destination"
 }
 
+write_vivarium_command() {
+  if [ "$dry_run" -eq 1 ]; then
+    echo "Would write vivarium command: $command_path"
+    return 0
+  fi
+
+  {
+    printf '#!/usr/bin/env bash\n'
+    printf 'set -euo pipefail\n'
+    printf 'cd %q\n' "$install_dir"
+    printf 'exec bun apps/cli/src/main.ts "$@"\n'
+  } >"$command_path"
+  chmod +x "$command_path"
+}
+
 banner
 echo "Install directory: $install_dir"
+echo "Command path: $command_path"
 echo "Repository: $repo_url"
 echo "World directory: $world_root"
 echo "World repository: $world_repo_url"
@@ -149,5 +168,15 @@ if [ "$dry_run" -eq 0 ]; then
 fi
 
 run bun install --frozen-lockfile
+run mkdir -p "$bin_dir"
+write_vivarium_command
 run mkdir -p "$(dirname "$state_path")"
 run bun apps/cli/src/main.ts setup --domain "$domain" --world-root "$world_root" --state-path "$state_path"
+
+echo
+echo "After installation:"
+echo "  $command_path status"
+echo "  $command_path doctor"
+echo "  $command_path setup"
+echo
+echo "If 'vivarium' is not found, add $bin_dir to PATH or run the command path above."

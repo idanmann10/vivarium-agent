@@ -69,6 +69,8 @@ describe("root toolchain wiring", () => {
     expect(scripts?.["format:check"]).toContain("scripts/install.test.ts");
     expect(installer).toContain("Vivarium Agent Installer");
     expect(installer).toContain("VIVARIUM_INSTALL_DIR");
+    expect(installer).toContain("VIVARIUM_BIN_DIR");
+    expect(installer).toContain("Command path:");
     expect(installer).toContain("bun apps/cli/src/main.ts setup");
   });
 

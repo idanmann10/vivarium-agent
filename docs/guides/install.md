@@ -14,8 +14,18 @@ curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scri
 
 The installer checks for `git` and `bun`, clones or updates the agent checkout,
 clones or updates the canonical world beside it, installs dependencies, and then
-runs the guided `setup` command. Override the layout with `VIVARIUM_INSTALL_DIR`,
-`VIVARIUM_WORLD_ROOT`, `VIVARIUM_DOMAIN`, or `VIVARIUM_STATE_PATH`.
+runs the guided `setup` command. It also writes a `vivarium` command to
+`~/.local/bin` so future commands can run from any directory. Override the layout
+with `VIVARIUM_INSTALL_DIR`, `VIVARIUM_BIN_DIR`, `VIVARIUM_WORLD_ROOT`,
+`VIVARIUM_DOMAIN`, or `VIVARIUM_STATE_PATH`.
+
+After installation, reload your shell if needed and run:
+
+```bash
+vivarium status
+vivarium doctor
+vivarium setup
+```
 
 For source checkouts and contributors, install dependencies from the agent workspace:
 

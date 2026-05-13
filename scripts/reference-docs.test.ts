@@ -202,6 +202,8 @@ const guideDocs = {
     "bun run lint",
     "bun run knip",
     "VIVARIUM_INSTALL_DIR",
+    "VIVARIUM_BIN_DIR",
+    "vivarium status",
     "setup",
     "init",
     "provider",

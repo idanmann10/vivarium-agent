@@ -16,6 +16,7 @@ function runInstallerDryRun(env: Readonly<Record<string, string>> = {}) {
 describe("install.sh", () => {
   test("prints a one-line installer dry-run plan with setup command", () => {
     const result = runInstallerDryRun({
+      VIVARIUM_BIN_DIR: "/tmp/vivarium-bin",
       VIVARIUM_INSTALL_DIR: "/tmp/vivarium-agent-install",
       VIVARIUM_REPO_URL: "https://github.com/example/vivarium-agent.git",
       VIVARIUM_DOMAIN: "research",
@@ -29,14 +30,18 @@ describe("install.sh", () => {
     expect(stdout).toContain("Vivarium Agent Installer");
     expect(stdout).toContain('.-""""-.');
     expect(stdout).toContain("Install directory: /tmp/vivarium-agent-install");
+    expect(stdout).toContain("Command path: /tmp/vivarium-bin/vivarium");
     expect(stdout).toContain("Repository: https://github.com/example/vivarium-agent.git");
     expect(stdout).toContain(
       "Would run: git clone https://github.com/example/vivarium-agent.git /tmp/vivarium-agent-install",
     );
     expect(stdout).toContain("Would run: bun install --frozen-lockfile");
+    expect(stdout).toContain("Would write vivarium command: /tmp/vivarium-bin/vivarium");
     expect(stdout).toContain(
       `Would run: bun apps/cli/src/main.ts setup --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
     );
+    expect(stdout).toContain("After installation:");
+    expect(stdout).toContain("vivarium status");
   });
 
   test("documents strict shell behavior and dependency checks", () => {
@@ -47,5 +52,7 @@ describe("install.sh", () => {
     expect(source).toContain("need_command bun");
     expect(source).toContain("VIVARIUM_REPO_URL");
     expect(source).toContain("VIVARIUM_INSTALL_DIR");
+    expect(source).toContain("VIVARIUM_BIN_DIR");
+    expect(source).toContain('bun apps/cli/src/main.ts "$@"');
   });
 });
