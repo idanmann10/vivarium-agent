@@ -204,6 +204,7 @@ const guideDocs = {
     "VIVARIUM_INSTALL_DIR",
     "VIVARIUM_BIN_DIR",
     "vivarium run --goal",
+    "--state-path .vivarium/state.db",
     "vivarium live env-init --path live-readiness.local.env",
     "vivarium help",
     "vivarium status",
@@ -570,6 +571,15 @@ describe("reference docs", () => {
       const body = readFileSync(path, "utf8");
       expect(body).not.toContain("bun apps/cli/src/main.ts");
       expect(body).toContain("vivarium ");
+    }
+  });
+
+  test("keeps install docs on the initialized state database", () => {
+    for (const path of ["README.md", join("docs", "guides", "install.md")]) {
+      const body = readFileSync(path, "utf8");
+      expect(body).toContain(
+        'vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
+      );
     }
   });
 

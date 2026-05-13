@@ -42,6 +42,9 @@ describe("install.sh", () => {
     );
     expect(stdout).toContain("After installation:");
     expect(stdout).toContain("vivarium run --goal");
+    expect(stdout).toContain(
+      'vivarium run --goal "validate local setup" --state-path .vivarium/research.db',
+    );
     expect(stdout).toContain("vivarium live env-init --path live-readiness.local.env");
     expect(stdout).toContain("vivarium status");
     expect(stdout).toContain("vivarium help");

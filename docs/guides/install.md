@@ -25,7 +25,7 @@ disable it, or `FORCE_COLOR=1` when a wrapper strips TTY detection.
 After installation, reload your shell if needed and run:
 
 ```bash
-vivarium run --goal "validate local setup"
+vivarium run --goal "validate local setup" --state-path .vivarium/state.db
 vivarium live env-init --path live-readiness.local.env
 vivarium status
 vivarium help
