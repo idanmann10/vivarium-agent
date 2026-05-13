@@ -507,8 +507,8 @@ export function renderLiveSetupCommandResult(
     ...(result.ok
       ? [
           "Next commands:",
-          "  vivarium model --env-file live-readiness.local.env",
-          "  vivarium doctor --live --env-file live-readiness.local.env",
+          `  vivarium model --env-file ${envFilePath}`,
+          `  vivarium doctor --live --env-file ${envFilePath}`,
         ]
       : result.requiresConfirmation === true
         ? [
@@ -517,7 +517,7 @@ export function renderLiveSetupCommandResult(
           ]
         : [
             "Next command:",
-            "  Fill live-readiness.local.env, then re-run live setup.",
+            `  Fill ${envFilePath}, then re-run live setup.`,
           ]),
     "",
   ].join("\n");

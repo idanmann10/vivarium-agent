@@ -1272,7 +1272,7 @@ describe("dispatchCliCommand", () => {
 
   test("routes live setup through a filled env file with explicit write confirmation", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-setup-"));
-    const envPath = join(root, "live-readiness.local.env");
+    const envPath = join(root, "operator-live.env");
     const profilesPath = join(root, "provider-profiles.json");
     const credentialsPath = join(root, "credentials.enc");
     write(
@@ -1355,6 +1355,10 @@ describe("dispatchCliCommand", () => {
     });
     expect(readFileSync(credentialsPath, "utf8")).not.toContain("internal-secret");
     expect(result.output).not.toContain("internal-secret");
+    expect(result.output).toContain(`vivarium model --env-file ${envPath}`);
+    expect(result.output).toContain(`vivarium doctor --live --env-file ${envPath}`);
+    expect(result.output).not.toContain("vivarium model --env-file live-readiness.local.env");
+    expect(result.output).not.toContain("vivarium doctor --live --env-file live-readiness.local.env");
   });
 
   test("refuses live setup writes without explicit confirmation", async () => {
@@ -1415,7 +1419,7 @@ describe("dispatchCliCommand", () => {
 
   test("reports missing internal API health URL during live setup preflight", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-setup-health-"));
-    const envPath = join(root, "live-readiness.local.env");
+    const envPath = join(root, "operator-missing-health.env");
     const profilesPath = join(root, "provider-profiles.json");
     const credentialsPath = join(root, "credentials.enc");
     write(
@@ -1443,9 +1447,9 @@ describe("dispatchCliCommand", () => {
       ].join("\n"),
     );
 
-    await expect(
-      dispatchCliCommand(["live", "setup", "--env-file", envPath]),
-    ).resolves.toMatchObject({
+    const result = await dispatchCliCommand(["live", "setup", "--env-file", envPath]);
+
+    expect(result).toMatchObject({
       command: "live",
       result: {
         ok: false,
@@ -1453,6 +1457,8 @@ describe("dispatchCliCommand", () => {
         missing: ["VIVARIUM_INTERNAL_API_HEALTH_URL"],
       },
     });
+    expect(result.output).toContain(`Fill ${envPath}, then re-run live setup.`);
+    expect(result.output).not.toContain("Fill live-readiness.local.env");
     expect(existsSync(profilesPath)).toBe(false);
     expect(existsSync(credentialsPath)).toBe(false);
   });
