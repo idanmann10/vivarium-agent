@@ -329,6 +329,92 @@ The world auto-merge workflow fails closed unless live signal collection provide
 Generated skill PR proposals include neutral contributor trust, local effective lower bound, zero regression votes, and empty validator evidence by default.
 Verify live validator metadata is populated before expecting `gh pr merge --auto` to run.
 
+## Launch Security Audit
+
+After both repositories are public, run the launch security audit from the agent repo:
+
+```bash
+bun run launch:security-audit
+```
+
+The audit requires public visibility, Issues, Discussions, auto-merge, delete-branch-on-merge, private vulnerability reporting, Dependabot security updates, secret scanning, push protection, zero open Dependabot/secret/code scanning alerts, and an explicit `main` protection policy. It accepts either branch protection or repository rulesets when GitHub reports them through the API.
+
+Do not change branch protection or repository rulesets until the repository owner approves the exact policy. The recommended baseline is:
+
+- Require pull request reviews before merging.
+- Require status checks to pass before merging.
+- Block force pushes.
+- Block deletions.
+- Require linear history.
+- Require conversation resolution.
+
+For the agent repo, protect `main` with the always-on checks from the agent workflows:
+
+```bash
+gh api --method PUT \
+  "repos/$VIVARIUM_GITHUB_OWNER/$VIVARIUM_AGENT_REPO_NAME/branches/main/protection" \
+  --input - <<JSON
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": [
+      "verify",
+      "changeset",
+      "Analyze JavaScript and TypeScript",
+      "CodeQL"
+    ]
+  },
+  "enforce_admins": true,
+  "required_pull_request_reviews": {
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": false,
+    "required_approving_review_count": 1
+  },
+  "restrictions": null,
+  "required_linear_history": true,
+  "allow_force_pushes": false,
+  "allow_deletions": false,
+  "required_conversation_resolution": true
+}
+JSON
+```
+
+For the world repo, protect `main` with the always-on world checks:
+
+```bash
+gh api --method PUT \
+  "repos/$VIVARIUM_GITHUB_OWNER/$VIVARIUM_WORLD_REPO_NAME/branches/main/protection" \
+  --input - <<JSON
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": [
+      "verify",
+      "Analyze JavaScript and TypeScript",
+      "CodeQL"
+    ]
+  },
+  "enforce_admins": true,
+  "required_pull_request_reviews": {
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": false,
+    "required_approving_review_count": 1
+  },
+  "restrictions": null,
+  "required_linear_history": true,
+  "allow_force_pushes": false,
+  "allow_deletions": false,
+  "required_conversation_resolution": true
+}
+JSON
+```
+
+Then re-run the audit:
+
+```bash
+bun run launch:security-audit
+```
+
 ## Multi-World Subscriptions
 
 After the canonical world and a private fork are available locally, save both subscriptions and verify that retrieval searches both while preserving source labels:

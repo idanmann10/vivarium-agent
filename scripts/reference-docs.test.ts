@@ -640,6 +640,25 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents the launch security branch protection terminal workflow", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+
+    for (const term of [
+      "Launch Security Audit",
+      "bun run launch:security-audit",
+      "branches/main/protection",
+      "required_status_checks",
+      "VIVARIUM_AGENT_REPO_NAME",
+      "VIVARIUM_WORLD_REPO_NAME",
+      "Require pull request reviews",
+      "Require status checks to pass",
+      "Block force pushes",
+      "Block deletions",
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
+
   test("keeps guide pages free of placeholder wording", () => {
     for (const doc of Object.keys(guideDocs)) {
       const body = readFileSync(join("docs", "guides", `${doc}.md`), "utf8");
