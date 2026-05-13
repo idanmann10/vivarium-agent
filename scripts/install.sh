@@ -218,6 +218,12 @@ echo "  vivarium update"
 echo
 echo "Command path fallback:"
 printf '  %q run --goal "validate local setup" --state-path %q\n' "$command_path" "$state_path"
-echo "  $command_path status"
+printf '  %q live env-init --path live-readiness.local.env\n' "$command_path"
+printf '  %q setup --env-file live-readiness.local.env --domain %q --world-root %q --state-path %q\n' "$command_path" "$domain" "$world_root" "$state_path"
+printf '  %q model --env-file live-readiness.local.env\n' "$command_path"
+printf '  %q doctor --live --env-file live-readiness.local.env\n' "$command_path"
+printf '  %q status\n' "$command_path"
+printf '  %q help\n' "$command_path"
+printf '  %q update\n' "$command_path"
 echo
 echo "If 'vivarium' is not found, add $bin_dir to PATH or run a command path above."
