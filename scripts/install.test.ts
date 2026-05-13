@@ -46,10 +46,13 @@ describe("install.sh", () => {
       'vivarium run --goal "validate local setup" --state-path .vivarium/research.db',
     );
     expect(stdout).toContain("vivarium live env-init --path live-readiness.local.env");
+    expect(stdout).toContain(
+      `vivarium setup --env-file live-readiness.local.env --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
+    );
+    expect(stdout).toContain("vivarium model --env-file live-readiness.local.env");
+    expect(stdout).toContain("vivarium doctor --live --env-file live-readiness.local.env");
     expect(stdout).toContain("vivarium status");
     expect(stdout).toContain("vivarium help");
-    expect(stdout).toContain("vivarium model");
-    expect(stdout).toContain("vivarium doctor");
     expect(stdout).toContain("vivarium update");
     expect(stdout).toContain(
       '/tmp/vivarium-bin/vivarium run --goal "validate local setup" --state-path .vivarium/research.db',
