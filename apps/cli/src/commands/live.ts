@@ -111,6 +111,10 @@ const httpUrlEnvNames = [
   "VIVARIUM_INTERNAL_API_HEALTH_URL",
 ] as const;
 
+function shellQuote(value: string): string {
+  return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
+}
+
 type RequiredEnvName = (typeof requiredEnvNames)[number];
 type IntegerEnvName = (typeof integerEnvNames)[number];
 type HttpUrlEnvName = (typeof httpUrlEnvNames)[number];
@@ -423,6 +427,8 @@ export function liveEnvInitCommand(options: LiveEnvInitCommandOptions): LiveEnvI
 }
 
 export function renderLiveEnvInitCommandResult(result: LiveEnvInitCommandResult): string {
+  const envFilePath = shellQuote(result.path);
+
   return [
     renderVivariumGlobe(),
     "",
@@ -437,9 +443,9 @@ export function renderLiveEnvInitCommandResult(result: LiveEnvInitCommandResult)
           "",
           "Next commands:",
           "  Fill the env file locally.",
-          "  vivarium setup --env-file live-readiness.local.env",
-          "  vivarium model --env-file live-readiness.local.env",
-          "  vivarium doctor --live --env-file live-readiness.local.env",
+          `  vivarium setup --env-file ${envFilePath} --domain coding --world-root ../the-world --state-path .vivarium/state.db`,
+          `  vivarium model --env-file ${envFilePath}`,
+          `  vivarium doctor --live --env-file ${envFilePath}`,
         ]
       : [`Error: ${result.error}`]),
     "",

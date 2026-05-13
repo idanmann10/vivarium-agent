@@ -1608,6 +1608,11 @@ describe("dispatchCliCommand", () => {
     expect(createdOutput).toContain(envPath);
     expect(createdOutput).toContain("Permissions: 0600");
     expect(createdOutput).toContain("Next commands");
+    expect(createdOutput).toContain(
+      `vivarium setup --env-file ${envPath} --domain coding --world-root ../the-world --state-path .vivarium/state.db`,
+    );
+    expect(createdOutput).toContain(`vivarium model --env-file ${envPath}`);
+    expect(createdOutput).toContain(`vivarium doctor --live --env-file ${envPath}`);
     expect(createdOutput.trim().startsWith("{")).toBe(false);
     expect(body).toContain("VIVARIUM_PROVIDER_PROFILES_PATH");
     expect(body).toContain("source live-readiness.local.env");
