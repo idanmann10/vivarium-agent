@@ -25,6 +25,7 @@ After installation, reload your shell if needed and run:
 vivarium status
 vivarium doctor
 vivarium setup
+vivarium update
 ```
 
 For source checkouts and contributors, install dependencies from the agent workspace:

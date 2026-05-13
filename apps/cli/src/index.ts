@@ -14,6 +14,7 @@ export const cliCommands = [
   "publish",
   "curriculum",
   "status",
+  "update",
   "doctor",
 ] as const;
 
@@ -28,6 +29,8 @@ export type { RunCommandOptions, RunCommandResult, RunProviderKind } from "./com
 export { dreamCommand } from "./commands/dream.js";
 export type { DreamCommandOptions } from "./commands/dream.js";
 export { statusCommand } from "./commands/status.js";
+export { updateCommand } from "./commands/update.js";
+export type { UpdateCommandOptions, UpdateCommandResult, UpdateCommandRunner } from "./commands/update.js";
 export { doctorCommand } from "./commands/doctor.js";
 export { addCredentialCommand, credentialSmokeCommand, listCredentialsCommand } from "./commands/credentials.js";
 export type {

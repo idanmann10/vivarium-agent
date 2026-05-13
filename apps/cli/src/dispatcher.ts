@@ -21,6 +21,7 @@ import { runCommand, type RunProviderKind } from "./commands/run.js";
 import { renderSetupCommandResult, setupCommand } from "./commands/setup.js";
 import { listSkillsCommand } from "./commands/skills.js";
 import { statusCommand } from "./commands/status.js";
+import { updateCommand, type UpdateCommandRunner } from "./commands/update.js";
 import {
   listWorldSubscriptionsCommand,
   pullWorldCommand,
@@ -39,6 +40,7 @@ export interface CliDispatchResult {
 export interface CliDispatchOptions {
   readonly doctorRunner?: DoctorCommandRunner;
   readonly env?: Readonly<Record<string, string | undefined>>;
+  readonly updateRunner?: UpdateCommandRunner;
 }
 
 type FlagMap = ReadonlyMap<string, readonly string[]>;
@@ -636,6 +638,15 @@ export async function dispatchCliCommand(argv: readonly string[], options: CliDi
     }
     case "status":
       return output(command, statusCommand());
+    case "update": {
+      return output(
+        command,
+        updateCommand({
+          agentRoot: value(flags, "agent-root") ?? process.cwd(),
+          ...(options.updateRunner === undefined ? {} : { runner: options.updateRunner }),
+        }),
+      );
+    }
     case "doctor": {
       const agentRoot = value(flags, "agent-root");
       const worldRoot = value(flags, "world-root");

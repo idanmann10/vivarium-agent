@@ -204,6 +204,7 @@ const guideDocs = {
     "VIVARIUM_INSTALL_DIR",
     "VIVARIUM_BIN_DIR",
     "vivarium status",
+    "vivarium update",
     "setup",
     "init",
     "provider",

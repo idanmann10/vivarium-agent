@@ -46,6 +46,22 @@ const deterministicDoctorRunner: DoctorCommandRunner = ({ command, args }) => {
 };
 
 describe("dispatchCliCommand", () => {
+  test("routes update through the installed checkout updater", async () => {
+    const calls: string[] = [];
+    const result = await dispatchCliCommand(["update", "--agent-root", "/tmp/vivarium-agent"], {
+      updateRunner: (command, args) => {
+        calls.push([command, ...args].join(" "));
+        return { exitCode: 0, stdout: "ok", stderr: "" };
+      },
+    });
+
+    expect(result).toMatchObject({
+      command: "update",
+      result: { ok: true, agentRoot: "/tmp/vivarium-agent" },
+    });
+    expect(calls).toEqual(["git -C /tmp/vivarium-agent pull --ff-only", "bun install --frozen-lockfile"]);
+  });
+
   test("routes setup through local init with branded terminal output", async () => {
     const worldRoot = createWorldFixture();
     const statePath = join(mkdtempSync(join(tmpdir(), "cli-dispatch-setup-state-")), "state.db");
