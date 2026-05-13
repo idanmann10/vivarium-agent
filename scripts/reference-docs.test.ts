@@ -203,6 +203,7 @@ const guideDocs = {
     "bun run knip",
     "VIVARIUM_INSTALL_DIR",
     "VIVARIUM_BIN_DIR",
+    "vivarium help",
     "vivarium status",
     "vivarium update",
     "setup",

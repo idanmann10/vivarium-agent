@@ -23,6 +23,7 @@ After installation, reload your shell if needed and run:
 
 ```bash
 vivarium status
+vivarium help
 vivarium doctor
 vivarium setup
 vivarium update

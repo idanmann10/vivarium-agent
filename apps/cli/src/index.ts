@@ -13,6 +13,7 @@ export const cliCommands = [
   "identity",
   "publish",
   "curriculum",
+  "help",
   "status",
   "update",
   "doctor",
@@ -28,11 +29,21 @@ export { runCommand } from "./commands/run.js";
 export type { RunCommandOptions, RunCommandResult, RunProviderKind } from "./commands/run.js";
 export { dreamCommand } from "./commands/dream.js";
 export type { DreamCommandOptions } from "./commands/dream.js";
+export { helpCommand, renderHelpCommandResult } from "./commands/help.js";
+export type { HelpCommandItem, HelpCommandResult } from "./commands/help.js";
 export { statusCommand } from "./commands/status.js";
 export { updateCommand } from "./commands/update.js";
-export type { UpdateCommandOptions, UpdateCommandResult, UpdateCommandRunner } from "./commands/update.js";
+export type {
+  UpdateCommandOptions,
+  UpdateCommandResult,
+  UpdateCommandRunner,
+} from "./commands/update.js";
 export { doctorCommand } from "./commands/doctor.js";
-export { addCredentialCommand, credentialSmokeCommand, listCredentialsCommand } from "./commands/credentials.js";
+export {
+  addCredentialCommand,
+  credentialSmokeCommand,
+  listCredentialsCommand,
+} from "./commands/credentials.js";
 export type {
   AddCredentialCommandOptions,
   AddCredentialCommandResult,
@@ -42,7 +53,11 @@ export type {
   ListedCredential,
   ListCredentialsCommandResult,
 } from "./commands/credentials.js";
-export { configureProviderProfileCommand, listProviderProfilesCommand, providerSmokeCommand } from "./commands/providers.js";
+export {
+  configureProviderProfileCommand,
+  listProviderProfilesCommand,
+  providerSmokeCommand,
+} from "./commands/providers.js";
 export type {
   ConfigureProviderProfileCommandOptions,
   ProviderProfile,
@@ -52,7 +67,11 @@ export type {
   ProviderSmokeCommandResult,
   ProviderSmokeKind,
 } from "./commands/providers.js";
-export { curriculumAdvanceCommand, curriculumProgressCommand, curriculumReadCommand } from "./commands/curriculum.js";
+export {
+  curriculumAdvanceCommand,
+  curriculumProgressCommand,
+  curriculumReadCommand,
+} from "./commands/curriculum.js";
 export type {
   CurriculumAdvanceCommandOptions,
   CurriculumProgressCommandResult,
@@ -60,7 +79,11 @@ export type {
   CurriculumReadCommandResult,
   CurriculumStateCommandOptions,
 } from "./commands/curriculum.js";
-export { identityHistoryCommand, identityStageCommand, identitySummaryCommand } from "./commands/identity.js";
+export {
+  identityHistoryCommand,
+  identityStageCommand,
+  identitySummaryCommand,
+} from "./commands/identity.js";
 export type {
   IdentityCommandOptions,
   IdentityHistoryCommandOptions,
@@ -77,7 +100,12 @@ export type {
   PublishRunCommandOptions,
   PublishTraceCommandOptions,
 } from "./commands/publish.js";
-export { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand, githubWorkflowRunsCommand } from "./commands/github.js";
+export {
+  githubDiscussionCommand,
+  githubPullRequestCommand,
+  githubSmokeCommand,
+  githubWorkflowRunsCommand,
+} from "./commands/github.js";
 export type {
   GitHubDiscussionCommandOptions,
   GitHubDiscussionCommandResult,
@@ -91,7 +119,11 @@ export type {
   GitHubWorkflowRunsCommandResult,
 } from "./commands/github.js";
 export { daemonSmokeCommand } from "./commands/daemon.js";
-export type { DaemonSmokeCommandOptions, DaemonSmokeCommandResult, DaemonSmokeFetch } from "./commands/daemon.js";
+export type {
+  DaemonSmokeCommandOptions,
+  DaemonSmokeCommandResult,
+  DaemonSmokeFetch,
+} from "./commands/daemon.js";
 export { liveEvidenceInitCommand, liveSetupCommand } from "./commands/live.js";
 export type {
   LiveEvidenceInitCommandOptions,
@@ -100,7 +132,11 @@ export type {
   LiveSetupCommandResult,
 } from "./commands/live.js";
 export { listSkillsCommand } from "./commands/skills.js";
-export type { ListedSkill, ListSkillsCommandOptions, ListSkillsCommandResult } from "./commands/skills.js";
+export type {
+  ListedSkill,
+  ListSkillsCommandOptions,
+  ListSkillsCommandResult,
+} from "./commands/skills.js";
 export {
   listWorldSubscriptionsCommand,
   pullWorldCommand,

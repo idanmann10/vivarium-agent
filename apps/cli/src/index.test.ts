@@ -21,6 +21,8 @@ describe("CLI public API", () => {
     expect(typeof exports.subscribeWorldCommand).toBe("function");
     expect(typeof exports.pullWorldCommand).toBe("function");
     expect(typeof exports.verifyWorldTransmissionCommand).toBe("function");
+    expect(typeof exports.helpCommand).toBe("function");
+    expect(typeof exports.renderHelpCommandResult).toBe("function");
     expect(typeof exports.setupCommand).toBe("function");
     expect(typeof exports.renderSetupCommandResult).toBe("function");
     expect(typeof exports.updateCommand).toBe("function");

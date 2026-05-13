@@ -1,13 +1,36 @@
-import type { Capability, CostClass, CredentialKind, Visibility } from "../../../packages/core/src/index.js";
+import type {
+  Capability,
+  CostClass,
+  CredentialKind,
+  Visibility,
+} from "../../../packages/core/src/index.js";
 import type { HttpMethod } from "../../../packages/tools/src/external/index.js";
 import { readFileSync } from "node:fs";
-import { addCredentialCommand, credentialSmokeCommand, listCredentialsCommand } from "./commands/credentials.js";
-import { curriculumAdvanceCommand, curriculumProgressCommand, curriculumReadCommand } from "./commands/curriculum.js";
+import {
+  addCredentialCommand,
+  credentialSmokeCommand,
+  listCredentialsCommand,
+} from "./commands/credentials.js";
+import {
+  curriculumAdvanceCommand,
+  curriculumProgressCommand,
+  curriculumReadCommand,
+} from "./commands/curriculum.js";
 import { daemonSmokeCommand } from "./commands/daemon.js";
 import { doctorCommand, type DoctorCommandRunner } from "./commands/doctor.js";
 import { dreamCommand } from "./commands/dream.js";
-import { githubDiscussionCommand, githubPullRequestCommand, githubSmokeCommand, githubWorkflowRunsCommand } from "./commands/github.js";
-import { identityHistoryCommand, identityStageCommand, identitySummaryCommand } from "./commands/identity.js";
+import {
+  githubDiscussionCommand,
+  githubPullRequestCommand,
+  githubSmokeCommand,
+  githubWorkflowRunsCommand,
+} from "./commands/github.js";
+import { helpCommand, renderHelpCommandResult } from "./commands/help.js";
+import {
+  identityHistoryCommand,
+  identityStageCommand,
+  identitySummaryCommand,
+} from "./commands/identity.js";
 import { runInitCommand } from "./commands/init.js";
 import { liveEvidenceInitCommand, liveSetupCommand } from "./commands/live.js";
 import { publishListCommand, publishRunCommand, publishTraceCommand } from "./commands/publish.js";
@@ -49,7 +72,10 @@ function usage(message: string): never {
   throw new Error(message);
 }
 
-function parseFlags(argv: readonly string[]): { readonly positionals: readonly string[]; readonly flags: FlagMap } {
+function parseFlags(argv: readonly string[]): {
+  readonly positionals: readonly string[];
+  readonly flags: FlagMap;
+} {
   const positionals: string[] = [];
   const flags = new Map<string, string[]>();
 
@@ -118,14 +144,23 @@ function stripEnvQuotes(value: string): string {
   return value;
 }
 
-function interpolateEnvValue(value: string, env: Readonly<Record<string, string | undefined>>): string {
-  return value.replace(/\$(?:{([A-Za-z_][A-Za-z0-9_]*)}|([A-Za-z_][A-Za-z0-9_]*))/g, (_match, braced: string | undefined, bare: string | undefined) => {
-    const name = braced ?? bare;
-    return name === undefined ? "" : env[name] ?? "";
-  });
+function interpolateEnvValue(
+  value: string,
+  env: Readonly<Record<string, string | undefined>>,
+): string {
+  return value.replace(
+    /\$(?:{([A-Za-z_][A-Za-z0-9_]*)}|([A-Za-z_][A-Za-z0-9_]*))/g,
+    (_match, braced: string | undefined, bare: string | undefined) => {
+      const name = braced ?? bare;
+      return name === undefined ? "" : (env[name] ?? "");
+    },
+  );
 }
 
-function readEnvFile(path: string, baseEnv: Readonly<Record<string, string | undefined>>): Readonly<Record<string, string | undefined>> {
+function readEnvFile(
+  path: string,
+  baseEnv: Readonly<Record<string, string | undefined>>,
+): Readonly<Record<string, string | undefined>> {
   const env: Record<string, string | undefined> = { ...baseEnv };
   const body = readFileSync(path, "utf8");
 
@@ -135,7 +170,9 @@ function readEnvFile(path: string, baseEnv: Readonly<Record<string, string | und
       continue;
     }
 
-    const assignment = trimmed.startsWith("export ") ? trimmed.slice("export ".length).trim() : trimmed;
+    const assignment = trimmed.startsWith("export ")
+      ? trimmed.slice("export ".length).trim()
+      : trimmed;
     const separator = assignment.indexOf("=");
     if (separator < 1) {
       usage(`Invalid env file line in ${path}: ${line}`);
@@ -157,16 +194,24 @@ function output(command: CliCommand, result: unknown): CliDispatchResult {
   return { command, result, output: `${JSON.stringify(result, null, 2)}\n` };
 }
 
-export async function dispatchCliCommand(argv: readonly string[], options: CliDispatchOptions = {}): Promise<CliDispatchResult> {
+export async function dispatchCliCommand(
+  argv: readonly string[],
+  options: CliDispatchOptions = {},
+): Promise<CliDispatchResult> {
   const [command, subcommand, ...rest] = argv;
-  if (command === undefined) {
-    usage("Missing command");
+  if (command === undefined || command === "--help" || command === "-h") {
+    const result = helpCommand();
+    return { command: "help", result, output: renderHelpCommandResult(result) };
   }
 
-  const commandArgs = subcommand?.startsWith("--") ?? true ? argv.slice(1) : rest;
+  const commandArgs = (subcommand?.startsWith("--") ?? true) ? argv.slice(1) : rest;
   const { flags } = parseFlags(commandArgs);
 
   switch (command) {
+    case "help": {
+      const result = helpCommand();
+      return { command, result, output: renderHelpCommandResult(result) };
+    }
     case "init": {
       const worldRoot = value(flags, "world-root");
       const statePath = value(flags, "state-path");
@@ -380,7 +425,9 @@ export async function dispatchCliCommand(argv: readonly string[], options: CliDi
         );
       }
 
-      usage('Unknown world subcommand. Use "search", "subscribe", "subscriptions", "pull", or "transmission-smoke".');
+      usage(
+        'Unknown world subcommand. Use "search", "subscribe", "subscriptions", "pull", or "transmission-smoke".',
+      );
     case "dream": {
       if (subcommand !== "run") {
         usage('Unknown dream subcommand. Use "run".');
@@ -396,7 +443,10 @@ export async function dispatchCliCommand(argv: readonly string[], options: CliDi
     }
     case "identity": {
       if (subcommand === "summary") {
-        return output(command, identitySummaryCommand({ statePath: required(flags, "state-path") }));
+        return output(
+          command,
+          identitySummaryCommand({ statePath: required(flags, "state-path") }),
+        );
       }
 
       if (subcommand === "stage") {
@@ -609,18 +659,29 @@ export async function dispatchCliCommand(argv: readonly string[], options: CliDi
         );
       }
 
-      usage('Unknown github subcommand. Use "smoke", "discussion", "pull-request", or "workflow-runs".');
+      usage(
+        'Unknown github subcommand. Use "smoke", "discussion", "pull-request", or "workflow-runs".',
+      );
     }
     case "daemon": {
       if (subcommand !== "smoke") {
         usage('Unknown daemon subcommand. Use "smoke".');
       }
       const statusUrl = value(flags, "status-url");
-      return output(command, await daemonSmokeCommand(statusUrl === undefined ? {} : { statusUrl }));
+      return output(
+        command,
+        await daemonSmokeCommand(statusUrl === undefined ? {} : { statusUrl }),
+      );
     }
     case "live": {
       if (subcommand === "evidence-init") {
-        return output(command, liveEvidenceInitCommand({ path: required(flags, "path"), overwrite: booleanFlag(flags, "overwrite") }));
+        return output(
+          command,
+          liveEvidenceInitCommand({
+            path: required(flags, "path"),
+            overwrite: booleanFlag(flags, "overwrite"),
+          }),
+        );
       }
 
       if (subcommand === "setup") {
@@ -651,7 +712,8 @@ export async function dispatchCliCommand(argv: readonly string[], options: CliDi
       const agentRoot = value(flags, "agent-root");
       const worldRoot = value(flags, "world-root");
       const envFile = value(flags, "env-file");
-      const env = envFile === undefined ? options.env : readEnvFile(envFile, options.env ?? process.env);
+      const env =
+        envFile === undefined ? options.env : readEnvFile(envFile, options.env ?? process.env);
       return output(
         command,
         doctorCommand({

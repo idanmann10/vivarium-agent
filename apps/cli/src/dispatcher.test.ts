@@ -1,4 +1,11 @@
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, test } from "bun:test";
@@ -15,8 +22,14 @@ function write(path: string, content: string): void {
 function createWorldFixture(): string {
   const root = mkdtempSync(join(tmpdir(), "cli-dispatch-world-"));
   write(join(root, "domains", "coding", "curriculum.md"), "# Coding Curriculum\n");
-  write(join(root, "domains", "coding", "skills", "red-green", "SKILL.md"), "# Red Green\n\nCoding test skill.");
-  write(join(root, "domains", "coding", "traces", "debugging", "TRACE.md"), "# Debugging Trace\n\nA coding trace.");
+  write(
+    join(root, "domains", "coding", "skills", "red-green", "SKILL.md"),
+    "# Red Green\n\nCoding test skill.",
+  );
+  write(
+    join(root, "domains", "coding", "traces", "debugging", "TRACE.md"),
+    "# Debugging Trace\n\nA coding trace.",
+  );
   return root;
 }
 
@@ -46,6 +59,19 @@ const deterministicDoctorRunner: DoctorCommandRunner = ({ command, args }) => {
 };
 
 describe("dispatchCliCommand", () => {
+  test("renders branded help for empty args and help aliases", async () => {
+    for (const argv of [[], ["help"], ["--help"]] as const) {
+      const result = await dispatchCliCommand(argv);
+
+      expect(result.command).toBe("help");
+      expect(result.output).toContain("Vivarium Agent");
+      expect(result.output).toContain('.-""""-.');
+      expect(result.output).toContain("vivarium setup");
+      expect(result.output).toContain("vivarium update");
+      expect(result.output).toContain("vivarium help");
+    }
+  });
+
   test("routes update through the installed checkout updater", async () => {
     const calls: string[] = [];
     const result = await dispatchCliCommand(["update", "--agent-root", "/tmp/vivarium-agent"], {
@@ -59,7 +85,10 @@ describe("dispatchCliCommand", () => {
       command: "update",
       result: { ok: true, agentRoot: "/tmp/vivarium-agent" },
     });
-    expect(calls).toEqual(["git -C /tmp/vivarium-agent pull --ff-only", "bun install --frozen-lockfile"]);
+    expect(calls).toEqual([
+      "git -C /tmp/vivarium-agent pull --ff-only",
+      "bun install --frozen-lockfile",
+    ]);
   });
 
   test("routes setup through local init with branded terminal output", async () => {
@@ -94,7 +123,7 @@ describe("dispatchCliCommand", () => {
     });
     expect(localSkills).toEqual([expect.objectContaining({ name: "Red Green", domain: "coding" })]);
     expect(setup.output).toContain("Vivarium Setup");
-    expect(setup.output).toContain(".-\"\"\"\"-.");
+    expect(setup.output).toContain('.-""""-.');
     expect(setup.output).toContain("Local state initialized");
     expect(setup.output).toContain("Next commands");
   });
@@ -203,7 +232,9 @@ describe("dispatchCliCommand", () => {
     ).resolves.toMatchObject({
       command: "doctor",
       result: {
-        nextActions: expect.arrayContaining([expect.objectContaining({ check: expect.stringMatching(/^agent\.name:/) })]),
+        nextActions: expect.arrayContaining([
+          expect.objectContaining({ check: expect.stringMatching(/^agent\.name:/) }),
+        ]),
         checks: expect.arrayContaining([
           expect.stringMatching(/^agent\.remote:/),
           expect.stringMatching(/^world\.remote:/),
@@ -225,7 +256,11 @@ describe("dispatchCliCommand", () => {
     ).resolves.toMatchObject({
       command: "doctor",
       result: {
-        checks: expect.arrayContaining(["agent.remote:missing", "world.remote:missing", "github.auth:invalid"]),
+        checks: expect.arrayContaining([
+          "agent.remote:missing",
+          "world.remote:missing",
+          "github.auth:invalid",
+        ]),
       },
     });
   });
@@ -245,9 +280,21 @@ describe("dispatchCliCommand", () => {
       ].join("\n"),
     );
 
-    const result = await dispatchCliCommand(["doctor", "--live", "--env-file", envPath, "--agent-root", "/agent", "--world-root", "/world"], {
-      doctorRunner: deterministicDoctorRunner,
-    });
+    const result = await dispatchCliCommand(
+      [
+        "doctor",
+        "--live",
+        "--env-file",
+        envPath,
+        "--agent-root",
+        "/agent",
+        "--world-root",
+        "/world",
+      ],
+      {
+        doctorRunner: deterministicDoctorRunner,
+      },
+    );
     const checks = (result.result as { checks: readonly string[] }).checks;
 
     expect(checks).toEqual(
@@ -279,9 +326,21 @@ describe("dispatchCliCommand", () => {
     );
     chmodSync(envPath, 0o644);
 
-    const result = await dispatchCliCommand(["doctor", "--live", "--env-file", envPath, "--agent-root", "/agent", "--world-root", "/world"], {
-      doctorRunner: deterministicDoctorRunner,
-    });
+    const result = await dispatchCliCommand(
+      [
+        "doctor",
+        "--live",
+        "--env-file",
+        envPath,
+        "--agent-root",
+        "/agent",
+        "--world-root",
+        "/world",
+      ],
+      {
+        doctorRunner: deterministicDoctorRunner,
+      },
+    );
     const checks = (result.result as { checks: readonly string[] }).checks;
 
     expect(checks).toContain("liveEnvFile.permissions:insecure");
@@ -302,9 +361,21 @@ describe("dispatchCliCommand", () => {
     );
     chmodSync(envPath, 0o644);
 
-    const result = await dispatchCliCommand(["doctor", "--live", "--env-file", envPath, "--agent-root", "/agent", "--world-root", "/world"], {
-      doctorRunner: deterministicDoctorRunner,
-    });
+    const result = await dispatchCliCommand(
+      [
+        "doctor",
+        "--live",
+        "--env-file",
+        envPath,
+        "--agent-root",
+        "/agent",
+        "--world-root",
+        "/world",
+      ],
+      {
+        doctorRunner: deterministicDoctorRunner,
+      },
+    );
     const checks = (result.result as { checks: readonly string[] }).checks;
 
     expect(checks).not.toContain("liveEnvFile.permissions:insecure");
@@ -339,9 +410,21 @@ describe("dispatchCliCommand", () => {
       return { exitCode: 127, stdout: "", stderr: `unexpected command: ${text}` };
     };
 
-    const result = await dispatchCliCommand(["doctor", "--live", "--env-file", envPath, "--agent-root", "/agent", "--world-root", "/world"], {
-      doctorRunner: envAwareDoctorRunner,
-    });
+    const result = await dispatchCliCommand(
+      [
+        "doctor",
+        "--live",
+        "--env-file",
+        envPath,
+        "--agent-root",
+        "/agent",
+        "--world-root",
+        "/world",
+      ],
+      {
+        doctorRunner: envAwareDoctorRunner,
+      },
+    );
     const checks = (result.result as { checks: readonly string[] }).checks;
 
     expect(checks).toContain("github.env:configured");
@@ -366,7 +449,14 @@ describe("dispatchCliCommand", () => {
       "--credential",
       "GITHUB_TOKEN",
     ]);
-    const skills = await dispatchCliCommand(["skills", "list", "--state-path", statePath, "--domain", "coding"]);
+    const skills = await dispatchCliCommand([
+      "skills",
+      "list",
+      "--state-path",
+      statePath,
+      "--domain",
+      "coding",
+    ]);
     const world = await dispatchCliCommand([
       "world",
       "search",
@@ -382,7 +472,11 @@ describe("dispatchCliCommand", () => {
 
     expect(init.result).toMatchObject({
       primaryDomain: "coding",
-      prompts: ["Bind GitHub identity", "Configure provider: anthropic", "Add credential: GITHUB_TOKEN"],
+      prompts: [
+        "Bind GitHub identity",
+        "Configure provider: anthropic",
+        "Add credential: GITHUB_TOKEN",
+      ],
     });
     expect(skills.result).toMatchObject({ skills: [{ name: "Red Green", domain: "coding" }] });
     expect(world.result).toMatchObject({ results: [{ title: "Red Green" }] });
@@ -390,33 +484,63 @@ describe("dispatchCliCommand", () => {
 
   test("routes advertised dream, identity, curriculum, and publish commands", async () => {
     const worldRoot = createWorldFixture();
-    const statePath = join(mkdtempSync(join(tmpdir(), "cli-dispatch-roadmap-commands-")), "state.db");
+    const statePath = join(
+      mkdtempSync(join(tmpdir(), "cli-dispatch-roadmap-commands-")),
+      "state.db",
+    );
 
-    await dispatchCliCommand(["init", "--domain", "coding", "--world-root", worldRoot, "--state-path", statePath]);
+    await dispatchCliCommand([
+      "init",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+    ]);
 
-    await expect(dispatchCliCommand(["identity", "summary", "--state-path", statePath])).resolves.toMatchObject({
+    await expect(
+      dispatchCliCommand(["identity", "summary", "--state-path", statePath]),
+    ).resolves.toMatchObject({
       command: "identity",
       result: { summary: "Newborn local agent initialized for coding." },
     });
-    await expect(dispatchCliCommand(["identity", "stage", "--state-path", statePath, "--domain", "coding"])).resolves.toMatchObject({
+    await expect(
+      dispatchCliCommand(["identity", "stage", "--state-path", statePath, "--domain", "coding"]),
+    ).resolves.toMatchObject({
       command: "identity",
       result: { domain: "coding", stage: "newborn" },
     });
-    await expect(dispatchCliCommand(["curriculum", "read", "--world-root", worldRoot, "--domain", "coding"])).resolves.toMatchObject({
+    await expect(
+      dispatchCliCommand(["curriculum", "read", "--world-root", worldRoot, "--domain", "coding"]),
+    ).resolves.toMatchObject({
       command: "curriculum",
       result: { domain: "coding", body: "# Coding Curriculum\n" },
     });
     await expect(
-      dispatchCliCommand(["curriculum", "advance", "--state-path", statePath, "--domain", "coding", "--step", "2"]),
+      dispatchCliCommand([
+        "curriculum",
+        "advance",
+        "--state-path",
+        statePath,
+        "--domain",
+        "coding",
+        "--step",
+        "2",
+      ]),
     ).resolves.toMatchObject({
       command: "curriculum",
       result: { domain: "coding", progress: { currentStepIndex: 2, completedSteps: [0, 2] } },
     });
-    await expect(dispatchCliCommand(["dream", "run", "--state-path", statePath, "--domain", "coding"])).resolves.toMatchObject({
+    await expect(
+      dispatchCliCommand(["dream", "run", "--state-path", statePath, "--domain", "coding"]),
+    ).resolves.toMatchObject({
       command: "dream",
       result: { identitySummary: "Dream consolidated 1 local skills across coding." },
     });
-    await expect(dispatchCliCommand(["publish", "list", "--state-path", statePath])).resolves.toMatchObject({
+    await expect(
+      dispatchCliCommand(["publish", "list", "--state-path", statePath]),
+    ).resolves.toMatchObject({
       command: "publish",
       result: { publishables: [] },
     });
@@ -443,8 +567,14 @@ describe("dispatchCliCommand", () => {
   test("routes multi-world search with source labels", async () => {
     const publicWorld = mkdtempSync(join(tmpdir(), "cli-dispatch-public-world-"));
     const privateWorld = mkdtempSync(join(tmpdir(), "cli-dispatch-private-world-"));
-    write(join(publicWorld, "domains", "coding", "skills", "public-skill", "SKILL.md"), "# Public Skill\n\nShared coding pattern.");
-    write(join(privateWorld, "domains", "coding", "skills", "private-skill", "SKILL.md"), "# Private Skill\n\nTeam coding pattern.");
+    write(
+      join(publicWorld, "domains", "coding", "skills", "public-skill", "SKILL.md"),
+      "# Public Skill\n\nShared coding pattern.",
+    );
+    write(
+      join(privateWorld, "domains", "coding", "skills", "private-skill", "SKILL.md"),
+      "# Private Skill\n\nTeam coding pattern.",
+    );
 
     const result = await dispatchCliCommand([
       "world",
@@ -478,8 +608,14 @@ describe("dispatchCliCommand", () => {
     const publicWorld = join(root, "public");
     const privateWorld = join(root, "private");
     const subscriptionsPath = join(root, "subscriptions.json");
-    write(join(publicWorld, "domains", "coding", "skills", "public-skill", "SKILL.md"), "# Public Skill\n\nShared coding pattern.");
-    write(join(privateWorld, "domains", "coding", "skills", "private-skill", "SKILL.md"), "# Private Skill\n\nTeam coding pattern.");
+    write(
+      join(publicWorld, "domains", "coding", "skills", "public-skill", "SKILL.md"),
+      "# Public Skill\n\nShared coding pattern.",
+    );
+    write(
+      join(privateWorld, "domains", "coding", "skills", "private-skill", "SKILL.md"),
+      "# Private Skill\n\nTeam coding pattern.",
+    );
 
     const publicSubscription = await dispatchCliCommand([
       "world",
@@ -510,7 +646,12 @@ describe("dispatchCliCommand", () => {
       "0",
       "--auto-push",
     ]);
-    const listed = await dispatchCliCommand(["world", "subscriptions", "--subscriptions-path", subscriptionsPath]);
+    const listed = await dispatchCliCommand([
+      "world",
+      "subscriptions",
+      "--subscriptions-path",
+      subscriptionsPath,
+    ]);
     const searched = await dispatchCliCommand([
       "world",
       "search",
@@ -524,7 +665,9 @@ describe("dispatchCliCommand", () => {
       "1",
     ]);
 
-    expect(publicSubscription.result).toMatchObject({ subscriptions: [{ label: "public", priority: 1 }] });
+    expect(publicSubscription.result).toMatchObject({
+      subscriptions: [{ label: "public", priority: 1 }],
+    });
     expect(privateSubscription.result).toMatchObject({
       subscriptions: [
         { label: "private", priority: 0, autoPushEnabled: true },
@@ -551,8 +694,14 @@ describe("dispatchCliCommand", () => {
     const privateWorld = join(root, "private");
     const subscriptionsPath = join(root, "subscriptions.json");
     const statePath = join(root, "state.db");
-    write(join(publicWorld, "domains", "coding", "skills", "public-pattern", "SKILL.md"), "# Public Pattern\n\nShared coding pattern.");
-    write(join(privateWorld, "domains", "coding", "skills", "private-pattern", "SKILL.md"), "# Private Pattern\n\nTeam coding pattern.");
+    write(
+      join(publicWorld, "domains", "coding", "skills", "public-pattern", "SKILL.md"),
+      "# Public Pattern\n\nShared coding pattern.",
+    );
+    write(
+      join(privateWorld, "domains", "coding", "skills", "private-pattern", "SKILL.md"),
+      "# Private Pattern\n\nTeam coding pattern.",
+    );
     await dispatchCliCommand([
       "world",
       "subscribe",
@@ -590,7 +739,10 @@ describe("dispatchCliCommand", () => {
     ]);
     const state = new SQLiteStateRepository(statePath);
     const storedRun = state.listRuns()[0];
-    const plan = storedRun === undefined ? undefined : state.listEpisodes(storedRun.id).find((episode) => episode.kind === "plan");
+    const plan =
+      storedRun === undefined
+        ? undefined
+        : state.listEpisodes(storedRun.id).find((episode) => episode.kind === "plan");
 
     expect(run.result).toMatchObject({ success: true });
     expect(plan).toMatchObject({ kind: "plan" });
@@ -689,7 +841,10 @@ describe("dispatchCliCommand", () => {
 
   test("routes run and credentials commands", async () => {
     const worldRoot = createWorldFixture();
-    const credentialsPath = join(mkdtempSync(join(tmpdir(), "cli-dispatch-credentials-")), "credentials.json");
+    const credentialsPath = join(
+      mkdtempSync(join(tmpdir(), "cli-dispatch-credentials-")),
+      "credentials.json",
+    );
     const run = await dispatchCliCommand([
       "run",
       "--goal",
@@ -743,7 +898,9 @@ describe("dispatchCliCommand", () => {
     expect(run.result).toMatchObject({ success: true });
     expect(added.result).toEqual({ stored: true, name: "OPENAI_API_KEY", kind: "api_key" });
     expect(listed.result).toEqual({
-      credentials: [{ name: "OPENAI_API_KEY", kind: "api_key", purpose: "provider", scopes: ["model:chat"] }],
+      credentials: [
+        { name: "OPENAI_API_KEY", kind: "api_key", purpose: "provider", scopes: ["model:chat"] },
+      ],
     });
     expect(smoked.result).toMatchObject({
       ok: false,
@@ -806,7 +963,10 @@ describe("dispatchCliCommand", () => {
   });
 
   test("routes saved provider profiles into smoke and run", async () => {
-    const profilesPath = join(mkdtempSync(join(tmpdir(), "cli-dispatch-provider-profiles-")), "profiles.json");
+    const profilesPath = join(
+      mkdtempSync(join(tmpdir(), "cli-dispatch-provider-profiles-")),
+      "profiles.json",
+    );
     const worldRoot = createWorldFixture();
     const configured = await dispatchCliCommand([
       "providers",
@@ -920,9 +1080,27 @@ describe("dispatchCliCommand", () => {
       ].join("\n"),
     );
 
-    const result = await dispatchCliCommand(["live", "setup", "--env-file", envPath, "--confirm-write"]);
-    const listedProfiles = await dispatchCliCommand(["providers", "list", "--profiles-path", profilesPath]);
-    const listedCredentials = await dispatchCliCommand(["credentials", "list", "--path", credentialsPath, "--master-key", "master-key"]);
+    const result = await dispatchCliCommand([
+      "live",
+      "setup",
+      "--env-file",
+      envPath,
+      "--confirm-write",
+    ]);
+    const listedProfiles = await dispatchCliCommand([
+      "providers",
+      "list",
+      "--profiles-path",
+      profilesPath,
+    ]);
+    const listedCredentials = await dispatchCliCommand([
+      "credentials",
+      "list",
+      "--path",
+      credentialsPath,
+      "--master-key",
+      "master-key",
+    ]);
 
     expect(result.command).toBe("live");
     expect(result.result).toEqual({
@@ -935,12 +1113,24 @@ describe("dispatchCliCommand", () => {
     expect(listedProfiles.result).toMatchObject({
       profiles: [
         { name: "anthropic-main", kind: "anthropic", model: "claude-test" },
-        { name: "openrouter", kind: "openai-compat", model: "openrouter/test", baseUrl: "https://openrouter.example/api/v1" },
-        { name: "private-finetune", kind: "openai-compat", model: "private-model", baseUrl: "https://models.internal.example/v1" },
+        {
+          name: "openrouter",
+          kind: "openai-compat",
+          model: "openrouter/test",
+          baseUrl: "https://openrouter.example/api/v1",
+        },
+        {
+          name: "private-finetune",
+          kind: "openai-compat",
+          model: "private-model",
+          baseUrl: "https://models.internal.example/v1",
+        },
       ],
     });
     expect(listedCredentials.result).toEqual({
-      credentials: [{ name: "INTERNAL_API_TOKEN", kind: "bearer", purpose: "Call internal API", scopes: [] }],
+      credentials: [
+        { name: "INTERNAL_API_TOKEN", kind: "bearer", purpose: "Call internal API", scopes: [] },
+      ],
     });
     expect(readFileSync(credentialsPath, "utf8")).not.toContain("internal-secret");
     expect(result.output).not.toContain("internal-secret");
@@ -977,7 +1167,9 @@ describe("dispatchCliCommand", () => {
       ].join("\n"),
     );
 
-    await expect(dispatchCliCommand(["live", "setup", "--env-file", envPath])).resolves.toMatchObject({
+    await expect(
+      dispatchCliCommand(["live", "setup", "--env-file", envPath]),
+    ).resolves.toMatchObject({
       command: "live",
       result: {
         ok: false,
@@ -1023,7 +1215,9 @@ describe("dispatchCliCommand", () => {
       ].join("\n"),
     );
 
-    await expect(dispatchCliCommand(["live", "setup", "--env-file", envPath])).resolves.toMatchObject({
+    await expect(
+      dispatchCliCommand(["live", "setup", "--env-file", envPath]),
+    ).resolves.toMatchObject({
       command: "live",
       result: {
         ok: false,
@@ -1066,7 +1260,9 @@ describe("dispatchCliCommand", () => {
       ].join("\n"),
     );
 
-    await expect(dispatchCliCommand(["live", "setup", "--env-file", envPath, "--confirm-write"])).resolves.toMatchObject({
+    await expect(
+      dispatchCliCommand(["live", "setup", "--env-file", envPath, "--confirm-write"]),
+    ).resolves.toMatchObject({
       command: "live",
       result: {
         ok: false,
@@ -1111,7 +1307,9 @@ describe("dispatchCliCommand", () => {
       ].join("\n"),
     );
 
-    await expect(dispatchCliCommand(["live", "setup", "--env-file", envPath])).resolves.toMatchObject({
+    await expect(
+      dispatchCliCommand(["live", "setup", "--env-file", envPath]),
+    ).resolves.toMatchObject({
       command: "live",
       result: {
         ok: false,
@@ -1134,7 +1332,13 @@ describe("dispatchCliCommand", () => {
     const created = await dispatchCliCommand(["live", "evidence-init", "--path", evidencePath]);
     const body = JSON.parse(readFileSync(evidencePath, "utf8")) as Record<string, unknown>;
     const refused = await dispatchCliCommand(["live", "evidence-init", "--path", evidencePath]);
-    const overwritten = await dispatchCliCommand(["live", "evidence-init", "--path", evidencePath, "--overwrite"]);
+    const overwritten = await dispatchCliCommand([
+      "live",
+      "evidence-init",
+      "--path",
+      evidencePath,
+      "--overwrite",
+    ]);
 
     expect(created.command).toBe("live");
     expect(created.result).toEqual({
@@ -1155,7 +1359,11 @@ describe("dispatchCliCommand", () => {
         "twoWeekImprovement",
       ],
     });
-    expect(body.starterPack).toMatchObject({ primaryDomain: "coding", skillCount: 0, traceCount: 0 });
+    expect(body.starterPack).toMatchObject({
+      primaryDomain: "coding",
+      skillCount: 0,
+      traceCount: 0,
+    });
     expect(body.realGoals).toEqual([]);
     expect(body.providerSmokes).toEqual({ anthropic: "", openRouter: "", privateOaiCompat: "" });
     expect(refused.result).toEqual({
@@ -1272,7 +1480,9 @@ describe("dispatchCliCommand", () => {
   });
 
   test("routes daemon smoke checks", async () => {
-    await expect(dispatchCliCommand(["daemon", "smoke", "--status-url", "http://127.0.0.1:9/status"])).resolves.toMatchObject({
+    await expect(
+      dispatchCliCommand(["daemon", "smoke", "--status-url", "http://127.0.0.1:9/status"]),
+    ).resolves.toMatchObject({
       command: "daemon",
       result: {
         ok: false,
