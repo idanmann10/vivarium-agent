@@ -22,6 +22,10 @@ export function helpCommand(): HelpCommandResult {
         description: "Create a private live setup env file.",
       },
       {
+        command: "vivarium setup --env-file live-readiness.local.env",
+        description: "Preview live setup writes.",
+      },
+      {
         command: "vivarium live evidence-init --path v1-evidence.json",
         description: "Create a live evidence manifest skeleton.",
       },
@@ -53,6 +57,7 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
     "  vivarium setup                                      Initialize the agent.",
     '  vivarium run --goal "validate local setup"          Validate the local setup.',
     "  vivarium live env-init --path live-readiness.local.env",
+    "  vivarium setup --env-file live-readiness.local.env  Preview live setup writes.",
     "  vivarium doctor                                     Check readiness.",
     "  vivarium model                                      Show provider setup.",
     "",

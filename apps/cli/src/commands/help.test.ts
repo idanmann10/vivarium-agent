@@ -15,6 +15,7 @@ describe("helpCommand", () => {
         expect.objectContaining({ command: "vivarium doctor" }),
         expect.objectContaining({ command: "vivarium model" }),
         expect.objectContaining({ command: "vivarium live env-init --path live-readiness.local.env" }),
+        expect.objectContaining({ command: "vivarium setup --env-file live-readiness.local.env" }),
         expect.objectContaining({ command: "vivarium live evidence-init --path v1-evidence.json" }),
         expect.objectContaining({ command: "vivarium update" }),
       ]),
@@ -25,6 +26,7 @@ describe("helpCommand", () => {
     expect(output).toContain("vivarium setup");
     expect(output).toContain('vivarium run --goal "validate local setup"');
     expect(output).toContain("vivarium live env-init");
+    expect(output).toContain("vivarium setup --env-file live-readiness.local.env");
     expect(output).toContain("vivarium live evidence-init");
     expect(output).toContain("vivarium model");
     expect(output).toContain("vivarium help");
