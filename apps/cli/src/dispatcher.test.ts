@@ -246,6 +246,30 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).not.toContain("chmod 600 live-readiness.local.env");
   });
 
+  test("routes setup through missing local state parent directories", async () => {
+    const worldRoot = createWorldFixture();
+    const statePath = join(
+      mkdtempSync(join(tmpdir(), "cli-dispatch-missing-setup-state-")),
+      ".vivarium",
+      "state.db",
+    );
+
+    const setup = await dispatchCliCommand([
+      "setup",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+    ]);
+
+    expect(setup.command).toBe("setup");
+    expect(setup.result).toMatchObject({ ok: true, local: { statePath } });
+    expect(existsSync(statePath)).toBe(true);
+    expect(setup.output).toContain("Local state initialized");
+  });
+
   test("routes setup live env files through the live setup dry run", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-setup-live-"));
     const worldRoot = createWorldFixture();

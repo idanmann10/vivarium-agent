@@ -1,4 +1,6 @@
 import { Database } from "bun:sqlite";
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 
 import type { RunId } from "../../core/src/ids.js";
 import type { CurriculumProgress, Episode, Identity, Run } from "../../core/src/index.js";
@@ -36,6 +38,7 @@ export class SQLiteStateRepository implements StateRepository {
   readonly #db: Database;
 
   constructor(path: string) {
+    mkdirSync(dirname(path), { recursive: true });
     this.#db = new Database(path, { create: true });
     this.#db.run("PRAGMA journal_mode = WAL");
     runMigrations(this.#db);
