@@ -1,5 +1,6 @@
 import { SQLiteStateRepository } from "../../../../packages/state/src/index.js";
 import type { LocalSkillStatus } from "../../../../packages/state/src/repository.js";
+import { renderVivariumGlobe } from "./branding.js";
 
 export interface ListSkillsCommandOptions {
   readonly statePath: string;
@@ -32,4 +33,32 @@ export function listSkillsCommand(options: ListSkillsCommandOptions): ListSkills
     }));
   state.close();
   return { skills };
+}
+
+function renderSkill(skill: ListedSkill): readonly string[] {
+  return [
+    `  ${skill.name}`,
+    `    ID: ${skill.id}`,
+    `    Domain: ${skill.domain}`,
+    `    Status: ${skill.status}`,
+    `    Habitual: ${skill.habitual ? "yes" : "no"}`,
+  ];
+}
+
+export function renderListSkillsCommandResult(result: ListSkillsCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Skills",
+    "---------------",
+    `Skills: ${result.skills.length}`,
+    ...(result.skills.length === 0
+      ? [
+          "",
+          "Next command:",
+          "  vivarium init --domain coding",
+        ]
+      : ["", ...result.skills.flatMap(renderSkill)]),
+    "",
+  ].join("\n");
 }

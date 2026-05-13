@@ -18,6 +18,8 @@ import {
   curriculumAdvanceCommand,
   curriculumProgressCommand,
   curriculumReadCommand,
+  renderCurriculumProgressCommandResult,
+  renderCurriculumReadCommandResult,
 } from "./commands/curriculum.js";
 import { daemonSmokeCommand, renderDaemonSmokeCommandResult } from "./commands/daemon.js";
 import {
@@ -25,7 +27,7 @@ import {
   renderDoctorCommandResult,
   type DoctorCommandRunner,
 } from "./commands/doctor.js";
-import { dreamCommand } from "./commands/dream.js";
+import { dreamCommand, renderDreamCommandResult } from "./commands/dream.js";
 import {
   githubDiscussionCommand,
   githubPullRequestCommand,
@@ -41,6 +43,9 @@ import {
   identityHistoryCommand,
   identityStageCommand,
   identitySummaryCommand,
+  renderIdentityHistoryCommandResult,
+  renderIdentityStageCommandResult,
+  renderIdentitySummaryCommandResult,
 } from "./commands/identity.js";
 import { renderInitCommandResult, runInitCommand } from "./commands/init.js";
 import {
@@ -52,7 +57,14 @@ import {
   renderLiveSetupCommandResult,
 } from "./commands/live.js";
 import { modelCommand, renderModelCommandResult } from "./commands/model.js";
-import { publishListCommand, publishRunCommand, publishTraceCommand } from "./commands/publish.js";
+import {
+  publishListCommand,
+  publishRunCommand,
+  publishTraceCommand,
+  renderPublishListCommandResult,
+  renderPublishRunCommandResult,
+  renderPublishTraceCommandResult,
+} from "./commands/publish.js";
 import {
   configureProviderProfileCommand,
   listProviderProfilesCommand,
@@ -63,7 +75,7 @@ import {
 } from "./commands/providers.js";
 import { renderRunCommandResult, runCommand, type RunProviderKind } from "./commands/run.js";
 import { renderSetupCommandResult, setupCommand } from "./commands/setup.js";
-import { listSkillsCommand } from "./commands/skills.js";
+import { listSkillsCommand, renderListSkillsCommandResult } from "./commands/skills.js";
 import { renderStatusCommandResult, statusCommand } from "./commands/status.js";
 import {
   renderUpdateCommandResult,
@@ -219,10 +231,6 @@ function readEnvFile(
   return env;
 }
 
-function output(command: CliCommand, result: unknown): CliDispatchResult {
-  return { command, result, output: `${JSON.stringify(result, null, 2)}\n` };
-}
-
 export async function dispatchCliCommand(
   argv: readonly string[],
   options: CliDispatchOptions = {},
@@ -360,13 +368,11 @@ export async function dispatchCliCommand(
       }
       {
         const domain = value(flags, "domain");
-        return output(
-          command,
-          listSkillsCommand({
-            statePath: required(flags, "state-path"),
-            ...(domain === undefined ? {} : { domain }),
-          }),
-        );
+        const result = listSkillsCommand({
+          statePath: required(flags, "state-path"),
+          ...(domain === undefined ? {} : { domain }),
+        });
+        return { command, result, output: renderListSkillsCommandResult(result) };
       }
     case "world":
       if (subcommand === "subscribe") {
@@ -455,64 +461,52 @@ export async function dispatchCliCommand(
         usage('Unknown dream subcommand. Use "run".');
       }
       const domain = value(flags, "domain");
-      return output(
-        command,
-        dreamCommand({
-          statePath: required(flags, "state-path"),
-          ...(domain === undefined ? {} : { domain }),
-        }),
-      );
+      const result = dreamCommand({
+        statePath: required(flags, "state-path"),
+        ...(domain === undefined ? {} : { domain }),
+      });
+      return { command, result, output: renderDreamCommandResult(result) };
     }
     case "identity": {
       if (subcommand === "summary") {
-        return output(
-          command,
-          identitySummaryCommand({ statePath: required(flags, "state-path") }),
-        );
+        const result = identitySummaryCommand({ statePath: required(flags, "state-path") });
+        return { command, result, output: renderIdentitySummaryCommandResult(result) };
       }
 
       if (subcommand === "stage") {
-        return output(
-          command,
-          identityStageCommand({
-            statePath: required(flags, "state-path"),
-            domain: required(flags, "domain"),
-          }),
-        );
+        const result = identityStageCommand({
+          statePath: required(flags, "state-path"),
+          domain: required(flags, "domain"),
+        });
+        return { command, result, output: renderIdentityStageCommandResult(result) };
       }
 
       if (subcommand === "history") {
         const limit = integerFlag(flags, "limit");
-        return output(
-          command,
-          identityHistoryCommand({
-            statePath: required(flags, "state-path"),
-            ...(limit === undefined ? {} : { limit }),
-          }),
-        );
+        const result = identityHistoryCommand({
+          statePath: required(flags, "state-path"),
+          ...(limit === undefined ? {} : { limit }),
+        });
+        return { command, result, output: renderIdentityHistoryCommandResult(result) };
       }
 
       usage('Unknown identity subcommand. Use "summary", "stage", or "history".');
     }
     case "curriculum": {
       if (subcommand === "read") {
-        return output(
-          command,
-          curriculumReadCommand({
-            worldRoot: required(flags, "world-root"),
-            domain: required(flags, "domain"),
-          }),
-        );
+        const result = curriculumReadCommand({
+          worldRoot: required(flags, "world-root"),
+          domain: required(flags, "domain"),
+        });
+        return { command, result, output: renderCurriculumReadCommandResult(result) };
       }
 
       if (subcommand === "progress") {
-        return output(
-          command,
-          curriculumProgressCommand({
-            statePath: required(flags, "state-path"),
-            domain: required(flags, "domain"),
-          }),
-        );
+        const result = curriculumProgressCommand({
+          statePath: required(flags, "state-path"),
+          domain: required(flags, "domain"),
+        });
+        return { command, result, output: renderCurriculumProgressCommandResult(result) };
       }
 
       if (subcommand === "advance") {
@@ -520,49 +514,44 @@ export async function dispatchCliCommand(
         if (stepIndex === undefined) {
           usage("Missing required --step");
         }
-        return output(
-          command,
-          curriculumAdvanceCommand({
-            statePath: required(flags, "state-path"),
-            domain: required(flags, "domain"),
-            stepIndex,
-          }),
-        );
+        const result = curriculumAdvanceCommand({
+          statePath: required(flags, "state-path"),
+          domain: required(flags, "domain"),
+          stepIndex,
+        });
+        return { command, result, output: renderCurriculumProgressCommandResult(result) };
       }
 
       usage('Unknown curriculum subcommand. Use "read", "progress", or "advance".');
     }
     case "publish": {
       if (subcommand === "list") {
-        return output(command, publishListCommand({ statePath: required(flags, "state-path") }));
+        const result = publishListCommand({ statePath: required(flags, "state-path") });
+        return { command, result, output: renderPublishListCommandResult(result) };
       }
 
       if (subcommand === "run") {
-        return output(
-          command,
-          publishRunCommand({
-            statePath: required(flags, "state-path"),
-            worldRoot: required(flags, "world-root"),
-            worldSubscriptionsPath: required(flags, "world-subscriptions-path"),
-            runId: required(flags, "run-id"),
-            visibility: required(flags, "visibility") as Visibility,
-            contributor: required(flags, "contributor"),
-          }),
-        );
+        const result = publishRunCommand({
+          statePath: required(flags, "state-path"),
+          worldRoot: required(flags, "world-root"),
+          worldSubscriptionsPath: required(flags, "world-subscriptions-path"),
+          runId: required(flags, "run-id"),
+          visibility: required(flags, "visibility") as Visibility,
+          contributor: required(flags, "contributor"),
+        });
+        return { command, result, output: renderPublishRunCommandResult(result) };
       }
 
       if (subcommand === "trace") {
-        return output(
-          command,
-          publishTraceCommand({
-            statePath: required(flags, "state-path"),
-            worldRoot: required(flags, "world-root"),
-            worldSubscriptionsPath: required(flags, "world-subscriptions-path"),
-            traceId: required(flags, "trace-id"),
-            visibility: required(flags, "visibility") as Visibility,
-            contributor: required(flags, "contributor"),
-          }),
-        );
+        const result = publishTraceCommand({
+          statePath: required(flags, "state-path"),
+          worldRoot: required(flags, "world-root"),
+          worldSubscriptionsPath: required(flags, "world-subscriptions-path"),
+          traceId: required(flags, "trace-id"),
+          visibility: required(flags, "visibility") as Visibility,
+          contributor: required(flags, "contributor"),
+        });
+        return { command, result, output: renderPublishTraceCommandResult(result) };
       }
 
       usage('Unknown publish subcommand. Use "list", "run", or "trace".');

@@ -38,6 +38,16 @@ describe("CLI public API", () => {
     expect(typeof exports.renderSetupCommandResult).toBe("function");
     expect(typeof exports.renderInitCommandResult).toBe("function");
     expect(typeof exports.renderRunCommandResult).toBe("function");
+    expect(typeof exports.renderListSkillsCommandResult).toBe("function");
+    expect(typeof exports.renderDreamCommandResult).toBe("function");
+    expect(typeof exports.renderIdentitySummaryCommandResult).toBe("function");
+    expect(typeof exports.renderIdentityStageCommandResult).toBe("function");
+    expect(typeof exports.renderIdentityHistoryCommandResult).toBe("function");
+    expect(typeof exports.renderCurriculumReadCommandResult).toBe("function");
+    expect(typeof exports.renderCurriculumProgressCommandResult).toBe("function");
+    expect(typeof exports.renderPublishListCommandResult).toBe("function");
+    expect(typeof exports.renderPublishRunCommandResult).toBe("function");
+    expect(typeof exports.renderPublishTraceCommandResult).toBe("function");
     expect(typeof exports.renderDoctorCommandResult).toBe("function");
     expect(typeof exports.updateCommand).toBe("function");
     expect(typeof exports.renderUpdateCommandResult).toBe("function");

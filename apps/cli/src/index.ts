@@ -28,7 +28,7 @@ export { renderSetupCommandResult, setupCommand } from "./commands/setup.js";
 export type { SetupCommandOptions, SetupCommandResult } from "./commands/setup.js";
 export { renderRunCommandResult, runCommand } from "./commands/run.js";
 export type { RunCommandOptions, RunCommandResult, RunProviderKind } from "./commands/run.js";
-export { dreamCommand } from "./commands/dream.js";
+export { dreamCommand, renderDreamCommandResult } from "./commands/dream.js";
 export type { DreamCommandOptions } from "./commands/dream.js";
 export { helpCommand, renderHelpCommandResult } from "./commands/help.js";
 export type { HelpCommandItem, HelpCommandResult } from "./commands/help.js";
@@ -84,6 +84,8 @@ export {
   curriculumAdvanceCommand,
   curriculumProgressCommand,
   curriculumReadCommand,
+  renderCurriculumProgressCommandResult,
+  renderCurriculumReadCommandResult,
 } from "./commands/curriculum.js";
 export type {
   CurriculumAdvanceCommandOptions,
@@ -96,6 +98,9 @@ export {
   identityHistoryCommand,
   identityStageCommand,
   identitySummaryCommand,
+  renderIdentityHistoryCommandResult,
+  renderIdentityStageCommandResult,
+  renderIdentitySummaryCommandResult,
 } from "./commands/identity.js";
 export type {
   IdentityCommandOptions,
@@ -106,8 +111,16 @@ export type {
   IdentityStageCommandResult,
   IdentitySummaryCommandResult,
 } from "./commands/identity.js";
-export { publishListCommand, publishRunCommand, publishTraceCommand } from "./commands/publish.js";
+export {
+  publishListCommand,
+  publishRunCommand,
+  publishTraceCommand,
+  renderPublishListCommandResult,
+  renderPublishRunCommandResult,
+  renderPublishTraceCommandResult,
+} from "./commands/publish.js";
 export type {
+  PublishArtifactCommandResult,
   PublishListCommandOptions,
   PublishListCommandResult,
   PublishRunCommandOptions,
@@ -157,7 +170,7 @@ export type {
   LiveSetupCommandOptions,
   LiveSetupCommandResult,
 } from "./commands/live.js";
-export { listSkillsCommand } from "./commands/skills.js";
+export { listSkillsCommand, renderListSkillsCommandResult } from "./commands/skills.js";
 export type {
   ListedSkill,
   ListSkillsCommandOptions,

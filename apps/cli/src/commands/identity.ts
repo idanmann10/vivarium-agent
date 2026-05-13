@@ -1,4 +1,5 @@
 import { SQLiteStateRepository } from "../../../../packages/state/src/index.js";
+import { renderVivariumGlobe } from "./branding.js";
 
 export interface IdentityCommandOptions {
   readonly statePath: string;
@@ -70,4 +71,60 @@ export function identityHistoryCommand(options: IdentityHistoryCommandOptions): 
   } finally {
     state.close();
   }
+}
+
+function successLabel(success: boolean | null): string {
+  if (success === true) {
+    return "yes";
+  }
+  if (success === false) {
+    return "no";
+  }
+  return "unknown";
+}
+
+export function renderIdentitySummaryCommandResult(result: IdentitySummaryCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Identity",
+    "-----------------",
+    `Summary: ${result.summary}`,
+    "",
+  ].join("\n");
+}
+
+export function renderIdentityStageCommandResult(result: IdentityStageCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Identity",
+    "-----------------",
+    `Domain: ${result.domain}`,
+    `Stage: ${result.stage ?? "not recorded"}`,
+    "",
+  ].join("\n");
+}
+
+function renderHistoryItem(item: IdentityHistoryItem): readonly string[] {
+  return [
+    `  ${item.runId}`,
+    `    Domain: ${item.domain}`,
+    `    Goal: ${item.goal}`,
+    `    Success: ${successLabel(item.success)}`,
+    `    Score: ${item.score ?? "not scored"}`,
+    ...(item.notes.length === 0 ? [] : [`    Notes: ${item.notes}`]),
+  ];
+}
+
+export function renderIdentityHistoryCommandResult(result: IdentityHistoryCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Identity",
+    "-----------------",
+    `History: ${result.history.length}`,
+    ...(result.history.length === 0 ? [] : ["", ...result.history.flatMap(renderHistoryItem)]),
+    "",
+  ].join("\n");
 }

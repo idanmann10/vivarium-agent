@@ -570,6 +570,9 @@ describe("dispatchCliCommand", () => {
     expect(init.output).toContain("Next command:");
     expect(init.output.trim().startsWith("{")).toBe(false);
     expect(skills.result).toMatchObject({ skills: [{ name: "Red Green", domain: "coding" }] });
+    expect(skills.output).toContain("Vivarium Skills");
+    expect(skills.output).toContain("Skills: 1");
+    expect(skills.output.trim().startsWith("{")).toBe(false);
     expect(world.result).toMatchObject({ results: [{ title: "Red Green" }] });
   });
 
@@ -590,51 +593,69 @@ describe("dispatchCliCommand", () => {
       statePath,
     ]);
 
-    await expect(
-      dispatchCliCommand(["identity", "summary", "--state-path", statePath]),
-    ).resolves.toMatchObject({
+    const identitySummary = await dispatchCliCommand(["identity", "summary", "--state-path", statePath]);
+    const identityStage = await dispatchCliCommand([
+      "identity",
+      "stage",
+      "--state-path",
+      statePath,
+      "--domain",
+      "coding",
+    ]);
+    const curriculumRead = await dispatchCliCommand(["curriculum", "read", "--world-root", worldRoot, "--domain", "coding"]);
+    const curriculumAdvance = await dispatchCliCommand([
+      "curriculum",
+      "advance",
+      "--state-path",
+      statePath,
+      "--domain",
+      "coding",
+      "--step",
+      "2",
+    ]);
+    const dream = await dispatchCliCommand(["dream", "run", "--state-path", statePath, "--domain", "coding"]);
+    const publish = await dispatchCliCommand(["publish", "list", "--state-path", statePath]);
+
+    expect(identitySummary).toMatchObject({
       command: "identity",
       result: { summary: "Newborn local agent initialized for coding." },
     });
-    await expect(
-      dispatchCliCommand(["identity", "stage", "--state-path", statePath, "--domain", "coding"]),
-    ).resolves.toMatchObject({
+    expect(identitySummary.output).toContain("Vivarium Identity");
+    expect(identitySummary.output).toContain("Newborn local agent initialized for coding.");
+    expect(identitySummary.output.trim().startsWith("{")).toBe(false);
+    expect(identityStage).toMatchObject({
       command: "identity",
       result: { domain: "coding", stage: "newborn" },
     });
-    await expect(
-      dispatchCliCommand(["curriculum", "read", "--world-root", worldRoot, "--domain", "coding"]),
-    ).resolves.toMatchObject({
+    expect(identityStage.output).toContain("Stage: newborn");
+    expect(identityStage.output.trim().startsWith("{")).toBe(false);
+    expect(curriculumRead).toMatchObject({
       command: "curriculum",
       result: { domain: "coding", body: "# Coding Curriculum\n" },
     });
-    await expect(
-      dispatchCliCommand([
-        "curriculum",
-        "advance",
-        "--state-path",
-        statePath,
-        "--domain",
-        "coding",
-        "--step",
-        "2",
-      ]),
-    ).resolves.toMatchObject({
+    expect(curriculumRead.output).toContain("Vivarium Curriculum");
+    expect(curriculumRead.output).toContain("# Coding Curriculum");
+    expect(curriculumRead.output.trim().startsWith("{")).toBe(false);
+    expect(curriculumAdvance).toMatchObject({
       command: "curriculum",
       result: { domain: "coding", progress: { currentStepIndex: 2, completedSteps: [0, 2] } },
     });
-    await expect(
-      dispatchCliCommand(["dream", "run", "--state-path", statePath, "--domain", "coding"]),
-    ).resolves.toMatchObject({
+    expect(curriculumAdvance.output).toContain("Current step: 2");
+    expect(curriculumAdvance.output.trim().startsWith("{")).toBe(false);
+    expect(dream).toMatchObject({
       command: "dream",
       result: { identitySummary: "Dream consolidated 1 local skills across coding." },
     });
-    await expect(
-      dispatchCliCommand(["publish", "list", "--state-path", statePath]),
-    ).resolves.toMatchObject({
+    expect(dream.output).toContain("Vivarium Dream");
+    expect(dream.output).toContain("Dream consolidated 1 local skills across coding.");
+    expect(dream.output.trim().startsWith("{")).toBe(false);
+    expect(publish).toMatchObject({
       command: "publish",
       result: { publishables: [] },
     });
+    expect(publish.output).toContain("Vivarium Publish");
+    expect(publish.output).toContain("Publishables: 0");
+    expect(publish.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes world pull with a local git remote", async () => {
