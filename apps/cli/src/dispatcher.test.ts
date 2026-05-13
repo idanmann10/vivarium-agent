@@ -218,6 +218,7 @@ describe("dispatchCliCommand", () => {
         expect.stringContaining("run --goal"),
         expect.stringContaining("setup --env-file live-readiness.local.env"),
         expect.stringContaining("--confirm-write"),
+        expect.stringContaining("model --env-file live-readiness.local.env"),
       ]),
     });
     expect(localSkills).toEqual([expect.objectContaining({ name: "Red Green", domain: "coding" })]);
@@ -234,6 +235,7 @@ describe("dispatchCliCommand", () => {
       "vivarium setup --env-file live-readiness.local.env --domain coding --world-root",
     );
     expect(setup.output).toContain("--confirm-write");
+    expect(setup.output).toContain("vivarium model --env-file live-readiness.local.env");
     expect(setup.output).toContain("vivarium doctor --live --env-file live-readiness.local.env");
     expect(setup.output).not.toContain("bun apps/cli/src/main.ts");
     expect(setup.output).not.toContain("cp docs/live-readiness.env.example");
@@ -295,7 +297,10 @@ describe("dispatchCliCommand", () => {
         providerProfiles: ["anthropic-live", "openrouter-live", "private-live"],
         credentialName: "internal-api",
       },
-      nextCommands: expect.arrayContaining([expect.stringContaining("setup --env-file")]),
+      nextCommands: expect.arrayContaining([
+        expect.stringContaining("setup --env-file"),
+        expect.stringContaining(`model --env-file ${envPath}`),
+      ]),
     });
     expect(existsSync(profilesPath)).toBe(false);
     expect(existsSync(credentialsPath)).toBe(false);
@@ -303,6 +308,7 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).toContain("anthropic-live");
     expect(setup.output).toContain("--confirm-write");
     expect(setup.output).toContain("vivarium setup --env-file");
+    expect(setup.output).toContain(`vivarium model --env-file ${envPath}`);
     expect(setup.output).not.toContain("bun apps/cli/src/main.ts");
 
     const confirmed = await dispatchCliCommand([
@@ -323,10 +329,13 @@ describe("dispatchCliCommand", () => {
       live: { ok: true, written: true },
       nextCommands: [
         expect.stringContaining("run --goal"),
+        expect.stringContaining(`model --env-file ${envPath}`),
         expect.stringContaining("doctor --live"),
       ],
     });
     expect(confirmed.output).toContain("Live setup written");
+    expect(confirmed.output).toContain(`vivarium model --env-file ${envPath}`);
+    expect(confirmed.output).toContain(`vivarium doctor --live --env-file ${envPath}`);
     expect(confirmed.output).not.toContain("cp docs/live-readiness.env.example");
   });
 

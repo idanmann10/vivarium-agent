@@ -51,10 +51,11 @@ function setupNextCommands(
     ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
   });
   const liveEnvFilePath = options.envFilePath ?? defaultLiveEnvFilePath;
+  const modelCommand = commandWithFlags("model", { "env-file": liveEnvFilePath });
   const doctorCommand = commandWithFlags("doctor", { live: true, "env-file": liveEnvFilePath });
 
   if (options.envFilePath !== undefined && live?.ok === true) {
-    return [runCommand, doctorCommand];
+    return [runCommand, modelCommand, doctorCommand];
   }
 
   if (
@@ -71,6 +72,7 @@ function setupNextCommands(
         "state-path": local.statePath,
         "confirm-write": true,
       }),
+      modelCommand,
       doctorCommand,
     ];
   }
@@ -91,6 +93,7 @@ function setupNextCommands(
       "state-path": local.statePath,
       "confirm-write": true,
     }),
+    modelCommand,
     doctorCommand,
   ];
 }
