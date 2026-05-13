@@ -659,14 +659,17 @@ describe("doctorCommand", () => {
       expect.objectContaining({
         check: "provider.openrouter:missing",
         env: expect.arrayContaining(["OPENROUTER_API_KEY"]),
-        command: expect.stringContaining('bun "/agent/apps/cli/src/main.ts" providers configure'),
+        command: expect.stringContaining("vivarium providers configure"),
       }),
     );
     expect(result.nextActions).toContainEqual(
       expect.objectContaining({
         check: "world.subscriptionsPath:missing",
-        command: expect.stringContaining('bun "/agent/apps/cli/src/main.ts" world subscribe'),
+        command: expect.stringContaining("vivarium world subscribe"),
       }),
+    );
+    expect(result.nextActions?.map((action) => action.command ?? "").join("\n")).not.toContain(
+      "apps/cli/src/main.ts",
     );
     expect(result.nextActions).toContainEqual(
       expect.objectContaining({

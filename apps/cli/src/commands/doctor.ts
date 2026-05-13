@@ -1508,8 +1508,8 @@ function shellQuote(value: string): string {
   return `"${value.replace(/["\\$`]/g, "\\$&")}"`;
 }
 
-function cliCommand(context: DoctorNextActionContext, args: string): string {
-  return `bun ${shellQuote(join(context.agentRoot, "apps/cli/src/main.ts"))} ${args}`;
+function cliCommand(_context: DoctorNextActionContext, args: string): string {
+  return `vivarium ${args}`;
 }
 
 function liveSetupCommand(context: DoctorNextActionContext): string {
