@@ -174,6 +174,29 @@ write_vivarium_command() {
   chmod +x "$command_path"
 }
 
+stage_label() {
+  paint_line 33 "  [$1] $2"
+}
+
+print_launch_sequence() {
+  local command="$1"
+
+  stage_label 1 "Prove the local loop"
+  printf '      %q run --goal "validate local setup" --state-path %q\n' "$command" "$state_path"
+  stage_label 2 "Prepare live readiness"
+  printf '      %q live env-init --path live-readiness.local.env\n' "$command"
+  printf '      %q setup --env-file live-readiness.local.env --domain %q --world-root %q --state-path %q\n' "$command" "$domain" "$world_root" "$state_path"
+  printf '      %q setup --env-file live-readiness.local.env --domain %q --world-root %q --state-path %q --confirm-write\n' "$command" "$domain" "$world_root" "$state_path"
+  stage_label 3 "Inspect configured models"
+  printf '      %q model --env-file live-readiness.local.env\n' "$command"
+  stage_label 4 "Run the readiness gate"
+  printf '      %q doctor --live --env-file live-readiness.local.env\n' "$command"
+  stage_label 5 "Keep moving"
+  printf '      %q status\n' "$command"
+  printf '      %q help\n' "$command"
+  printf '      %q update\n' "$command"
+}
+
 banner
 echo "Install directory: $install_dir"
 echo "Command path: $command_path"
@@ -207,25 +230,9 @@ run bun apps/cli/src/main.ts setup --domain "$domain" --world-root "$world_root"
 
 echo
 echo "After installation:"
-printf '  vivarium run --goal "validate local setup" --state-path %q\n' "$state_path"
-echo "  vivarium live env-init --path live-readiness.local.env"
-printf '  vivarium setup --env-file live-readiness.local.env --domain %q --world-root %q --state-path %q\n' "$domain" "$world_root" "$state_path"
-printf '  vivarium setup --env-file live-readiness.local.env --domain %q --world-root %q --state-path %q --confirm-write\n' "$domain" "$world_root" "$state_path"
-echo "  vivarium model --env-file live-readiness.local.env"
-echo "  vivarium doctor --live --env-file live-readiness.local.env"
-echo "  vivarium status"
-echo "  vivarium help"
-echo "  vivarium update"
+print_launch_sequence "vivarium"
 echo
 echo "Command path fallback:"
-printf '  %q run --goal "validate local setup" --state-path %q\n' "$command_path" "$state_path"
-printf '  %q live env-init --path live-readiness.local.env\n' "$command_path"
-printf '  %q setup --env-file live-readiness.local.env --domain %q --world-root %q --state-path %q\n' "$command_path" "$domain" "$world_root" "$state_path"
-printf '  %q setup --env-file live-readiness.local.env --domain %q --world-root %q --state-path %q --confirm-write\n' "$command_path" "$domain" "$world_root" "$state_path"
-printf '  %q model --env-file live-readiness.local.env\n' "$command_path"
-printf '  %q doctor --live --env-file live-readiness.local.env\n' "$command_path"
-printf '  %q status\n' "$command_path"
-printf '  %q help\n' "$command_path"
-printf '  %q update\n' "$command_path"
+print_launch_sequence "$command_path"
 echo
 echo "If 'vivarium' is not found, add $bin_dir to PATH or run a command path above."

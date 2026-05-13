@@ -41,6 +41,11 @@ describe("install.sh", () => {
       `Would run: bun apps/cli/src/main.ts setup --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
     );
     expect(stdout).toContain("After installation:");
+    expect(stdout).toContain("[1] Prove the local loop");
+    expect(stdout).toContain("[2] Prepare live readiness");
+    expect(stdout).toContain("[3] Inspect configured models");
+    expect(stdout).toContain("[4] Run the readiness gate");
+    expect(stdout).toContain("[5] Keep moving");
     expect(stdout).toContain("vivarium run --goal");
     expect(stdout).toContain(
       'vivarium run --goal "validate local setup" --state-path .vivarium/research.db',
