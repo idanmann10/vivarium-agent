@@ -175,8 +175,13 @@ run bun apps/cli/src/main.ts setup --domain "$domain" --world-root "$world_root"
 
 echo
 echo "After installation:"
+echo "  vivarium status"
+echo "  vivarium help"
+echo "  vivarium doctor"
+echo "  vivarium setup"
+echo "  vivarium update"
+echo
+echo "Command path fallback:"
 echo "  $command_path status"
-echo "  $command_path doctor"
-echo "  $command_path setup"
 echo
 echo "If 'vivarium' is not found, add $bin_dir to PATH or run the command path above."
