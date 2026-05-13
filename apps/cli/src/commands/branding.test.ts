@@ -18,6 +18,25 @@ describe("Vivarium terminal branding", () => {
     expect(themed).toContain("\u001b[32mReadiness: ready\u001b[0m");
   });
 
+  test("colors setup stage labels and commands", () => {
+    const output = [
+      renderVivariumGlobe(),
+      "",
+      "Vivarium Setup",
+      "--------------",
+      "Next commands:",
+      "  [1] Prove the local loop",
+      '      vivarium run --goal "validate local setup"',
+      "",
+    ].join("\n");
+    const themed = applyVivariumTerminalTheme(output, { env: { VIVARIUM_COLOR: "always" } });
+
+    expect(themed).toContain("\u001b[33m  [1] Prove the local loop\u001b[0m");
+    expect(themed).toContain(
+      '\u001b[36m      vivarium run --goal "validate local setup"\u001b[0m',
+    );
+  });
+
   test("honors NO_COLOR and FORCE_COLOR overrides", () => {
     const output = `${renderVivariumGlobe()}\n\nVivarium Doctor\n---------------\n`;
 

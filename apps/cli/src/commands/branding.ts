@@ -92,6 +92,12 @@ export function applyVivariumTerminalTheme(
       if (line.startsWith("Vivarium ")) {
         return paint(line, ansi.boldCyan);
       }
+      if (/^  \[\d+\] /.test(line)) {
+        return paint(line, ansi.gold);
+      }
+      if (line.trimStart().startsWith("vivarium ")) {
+        return paint(line, ansi.cyan);
+      }
       if (line === "Readiness: ready" || line === "Status: configured") {
         return paint(line, ansi.green);
       }
