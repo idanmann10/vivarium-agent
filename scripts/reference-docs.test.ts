@@ -147,6 +147,17 @@ const conceptDocs = {
   world: ["canonical", "private", "skills", "traces", "runs", "subscriptions"],
 } as const;
 
+function readAfterInstallationBlock(path: string): string {
+  const body = readFileSync(path, "utf8");
+  const marker = "After installation, reload your shell if needed and run:\n\n```bash\n";
+  const start = body.indexOf(marker);
+  expect(start, `${path} should document the after-install command block`).not.toBe(-1);
+  const blockStart = start + marker.length;
+  const blockEnd = body.indexOf("\n```", blockStart);
+  expect(blockEnd, `${path} should close the after-install command block`).not.toBe(-1);
+  return body.slice(blockStart, blockEnd);
+}
+
 const guideDocs = {
   "add-a-primitive": [
     "packages/runtime/src/primitives/<name>/",
@@ -574,12 +585,24 @@ describe("reference docs", () => {
     }
   });
 
-  test("keeps install docs on the initialized state database", () => {
+  test("keeps install docs on the installed live setup sequence", () => {
     for (const path of ["README.md", join("docs", "guides", "install.md")]) {
-      const body = readFileSync(path, "utf8");
-      expect(body).toContain(
+      const block = readAfterInstallationBlock(path);
+      for (const command of [
         'vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
-      );
+        "vivarium live env-init --path live-readiness.local.env",
+        "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
+        "vivarium model --env-file live-readiness.local.env",
+        "vivarium doctor --live --env-file live-readiness.local.env",
+        "vivarium status",
+        "vivarium help",
+        "vivarium update",
+      ]) {
+        expect(block).toContain(command);
+      }
+      expect(block).not.toContain("\nvivarium model\n");
+      expect(block).not.toContain("\nvivarium doctor\n");
+      expect(block).not.toContain("\nvivarium setup\n");
     }
   });
 

@@ -27,11 +27,11 @@ After installation, reload your shell if needed and run:
 ```bash
 vivarium run --goal "validate local setup" --state-path .vivarium/state.db
 vivarium live env-init --path live-readiness.local.env
+vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db
+vivarium model --env-file live-readiness.local.env
+vivarium doctor --live --env-file live-readiness.local.env
 vivarium status
 vivarium help
-vivarium model
-vivarium doctor
-vivarium setup
 vivarium update
 ```
 
