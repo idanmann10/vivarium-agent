@@ -1657,6 +1657,8 @@ describe("dispatchCliCommand", () => {
     expect(created.output).toContain("Vivarium Live Evidence");
     expect(created.output).toContain("Status: written");
     expect(created.output).toContain("Sections: 11");
+    expect(created.output).toContain("[1] Fill evidence manifest");
+    expect(created.output).toContain("[2] Run the readiness gate");
     expect(created.output).toContain("vivarium doctor --live");
     expect(created.output.trim().startsWith("{")).toBe(false);
     expect(created.result).toEqual({

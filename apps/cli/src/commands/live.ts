@@ -459,6 +459,8 @@ export function renderLiveEnvInitCommandResult(result: LiveEnvInitCommandResult)
 }
 
 export function renderLiveEvidenceInitCommandResult(result: LiveEvidenceInitCommandResult): string {
+  const nextCommands = ["vivarium doctor --live --env-file live-readiness.local.env"];
+
   return [
     renderVivariumGlobe(),
     "",
@@ -471,8 +473,9 @@ export function renderLiveEvidenceInitCommandResult(result: LiveEvidenceInitComm
           `Sections: ${result.sections.length}`,
           "",
           "Next commands:",
-          "  Fill the evidence file with real artifact links.",
-          "  vivarium doctor --live --env-file live-readiness.local.env",
+          "  [1] Fill evidence manifest",
+          `      Add real artifact links to ${result.path}.`,
+          ...renderLaunchSequence(nextCommands, { startAt: 2 }),
         ]
       : [`Error: ${result.error}`]),
     "",
