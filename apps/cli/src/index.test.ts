@@ -18,9 +18,13 @@ describe("CLI public API", () => {
 
     expect(typeof exports.listWorldSubscriptionsCommand).toBe("function");
     expect(typeof exports.searchWorldCommand).toBe("function");
+    expect(typeof exports.renderSearchWorldCommandResult).toBe("function");
     expect(typeof exports.subscribeWorldCommand).toBe("function");
+    expect(typeof exports.renderWorldSubscriptionsCommandResult).toBe("function");
     expect(typeof exports.pullWorldCommand).toBe("function");
+    expect(typeof exports.renderPullWorldCommandResult).toBe("function");
     expect(typeof exports.verifyWorldTransmissionCommand).toBe("function");
+    expect(typeof exports.renderVerifyWorldTransmissionCommandResult).toBe("function");
     expect(typeof exports.helpCommand).toBe("function");
     expect(typeof exports.renderHelpCommandResult).toBe("function");
     expect(typeof exports.modelCommand).toBe("function");

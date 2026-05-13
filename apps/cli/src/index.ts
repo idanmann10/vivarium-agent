@@ -166,6 +166,10 @@ export type {
 export {
   listWorldSubscriptionsCommand,
   pullWorldCommand,
+  renderPullWorldCommandResult,
+  renderSearchWorldCommandResult,
+  renderVerifyWorldTransmissionCommandResult,
+  renderWorldSubscriptionsCommandResult,
   searchWorldCommand,
   subscribeWorldCommand,
   verifyWorldTransmissionCommand,

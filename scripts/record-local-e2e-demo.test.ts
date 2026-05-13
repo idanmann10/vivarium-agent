@@ -38,7 +38,9 @@ describe("local e2e demo recorder", () => {
     expect(text).toContain("$ bun apps/cli/src/main.ts run");
     expect(text).toContain("$ bun apps/cli/src/main.ts world transmission-smoke");
     expect(text).toContain("$ bun run verify:sqlite-stack");
-    expect(text).toContain('"ok": true');
+    expect(text).toContain("Vivarium World Transmission");
+    expect(text).toContain("Status: ok");
+    expect(text).toContain('"ok":true');
     expect(text).toContain('"engine":"better-sqlite3"');
     expect(text).toContain("<demo-state.db>");
     expect(text).toContain("<demo-world-second-install>");

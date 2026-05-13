@@ -73,6 +73,10 @@ import {
 import {
   listWorldSubscriptionsCommand,
   pullWorldCommand,
+  renderPullWorldCommandResult,
+  renderSearchWorldCommandResult,
+  renderVerifyWorldTransmissionCommandResult,
+  renderWorldSubscriptionsCommandResult,
   searchWorldCommand,
   subscribeWorldCommand,
   verifyWorldTransmissionCommand,
@@ -372,38 +376,32 @@ export async function dispatchCliCommand(
       if (subcommand === "subscribe") {
         const priority = integerFlag(flags, "priority");
         const ref = value(flags, "world-ref");
-        return output(
-          command,
-          subscribeWorldCommand({
-            subscriptionsPath: required(flags, "subscriptions-path"),
-            root: required(flags, "world-root"),
-            label: required(flags, "world-label"),
-            ...(priority === undefined ? {} : { priority }),
-            ...(ref === undefined ? {} : { ref }),
-            ...(booleanFlag(flags, "auto-push") ? { autoPushEnabled: true } : {}),
-          }),
-        );
+        const result = subscribeWorldCommand({
+          subscriptionsPath: required(flags, "subscriptions-path"),
+          root: required(flags, "world-root"),
+          label: required(flags, "world-label"),
+          ...(priority === undefined ? {} : { priority }),
+          ...(ref === undefined ? {} : { ref }),
+          ...(booleanFlag(flags, "auto-push") ? { autoPushEnabled: true } : {}),
+        });
+        return { command, result, output: renderWorldSubscriptionsCommandResult(result) };
       }
 
       if (subcommand === "subscriptions") {
-        return output(
-          command,
-          listWorldSubscriptionsCommand({
-            subscriptionsPath: required(flags, "subscriptions-path"),
-          }),
-        );
+        const result = listWorldSubscriptionsCommand({
+          subscriptionsPath: required(flags, "subscriptions-path"),
+        });
+        return { command, result, output: renderWorldSubscriptionsCommandResult(result) };
       }
 
       if (subcommand === "pull") {
         const ref = value(flags, "ref");
-        return output(
-          command,
-          await pullWorldCommand({
-            remote: required(flags, "remote"),
-            destination: required(flags, "destination"),
-            ...(ref === undefined ? {} : { ref }),
-          }),
-        );
+        const result = await pullWorldCommand({
+          remote: required(flags, "remote"),
+          destination: required(flags, "destination"),
+          ...(ref === undefined ? {} : { ref }),
+        });
+        return { command, result, output: renderPullWorldCommandResult(result) };
       }
 
       if (subcommand === "search") {
@@ -416,45 +414,41 @@ export async function dispatchCliCommand(
         if (worldLabels.length > 0 && worldLabels.length !== worldRoots.length) {
           usage("--world-label must be provided once for each --world-root");
         }
-        return output(
-          command,
-          searchWorldCommand({
-            ...(worldRoots.length > 1
-              ? {
-                  worlds: worldRoots.map((root, index) => ({
-                    root,
-                    label: worldLabels[index] ?? `world-${index + 1}`,
-                    priority: index,
-                  })),
-                }
-              : worldRoots.length === 1
-                ? { worldRoot: worldRoots[0] as string }
-                : subscriptionsPath === undefined
-                  ? { worldRoot: required(flags, "world-root") }
-                  : { subscriptionsPath }),
-            domain: required(flags, "domain"),
-            query: required(flags, "query"),
-            ...(limit === undefined ? {} : { limit }),
-            ...(availableToolsets.length === 0 ? {} : { availableToolsets }),
-            ...(availableTools.length === 0 ? {} : { availableTools }),
-          }),
-        );
+        const result = searchWorldCommand({
+          ...(worldRoots.length > 1
+            ? {
+                worlds: worldRoots.map((root, index) => ({
+                  root,
+                  label: worldLabels[index] ?? `world-${index + 1}`,
+                  priority: index,
+                })),
+              }
+            : worldRoots.length === 1
+              ? { worldRoot: worldRoots[0] as string }
+              : subscriptionsPath === undefined
+                ? { worldRoot: required(flags, "world-root") }
+                : { subscriptionsPath }),
+          domain: required(flags, "domain"),
+          query: required(flags, "query"),
+          ...(limit === undefined ? {} : { limit }),
+          ...(availableToolsets.length === 0 ? {} : { availableToolsets }),
+          ...(availableTools.length === 0 ? {} : { availableTools }),
+        });
+        return { command, result, output: renderSearchWorldCommandResult(result) };
       }
 
       if (subcommand === "transmission-smoke") {
         const ref = value(flags, "ref");
         const limit = integerFlag(flags, "limit");
-        return output(
-          command,
-          await verifyWorldTransmissionCommand({
-            remote: required(flags, "remote"),
-            destination: required(flags, "destination"),
-            domain: required(flags, "domain"),
-            query: required(flags, "query"),
-            ...(ref === undefined ? {} : { ref }),
-            ...(limit === undefined ? {} : { limit }),
-          }),
-        );
+        const result = await verifyWorldTransmissionCommand({
+          remote: required(flags, "remote"),
+          destination: required(flags, "destination"),
+          domain: required(flags, "domain"),
+          query: required(flags, "query"),
+          ...(ref === undefined ? {} : { ref }),
+          ...(limit === undefined ? {} : { limit }),
+        });
+        return { command, result, output: renderVerifyWorldTransmissionCommandResult(result) };
       }
 
       usage(

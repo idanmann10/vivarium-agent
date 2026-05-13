@@ -648,6 +648,10 @@ describe("dispatchCliCommand", () => {
     ]);
 
     expect(pulled.result).toMatchObject({ mode: "cloned", remote, destination });
+    expect(pulled.output).toContain("Vivarium World Pull");
+    expect(pulled.output).toContain("Status: cloned");
+    expect(pulled.output).toContain(destination);
+    expect(pulled.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes multi-world search with source labels", async () => {
@@ -687,6 +691,10 @@ describe("dispatchCliCommand", () => {
         { source: "public", title: "Public Skill" },
       ],
     });
+    expect(result.output).toContain("Vivarium World Search");
+    expect(result.output).toContain("Results: 2");
+    expect(result.output).toContain("Private Skill");
+    expect(result.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes saved world subscriptions into search", async () => {
@@ -754,24 +762,36 @@ describe("dispatchCliCommand", () => {
     expect(publicSubscription.result).toMatchObject({
       subscriptions: [{ label: "public", priority: 1 }],
     });
+    expect(publicSubscription.output).toContain("Vivarium World Subscriptions");
+    expect(publicSubscription.output).toContain("Subscriptions: 1");
+    expect(publicSubscription.output).toContain("public");
+    expect(publicSubscription.output.trim().startsWith("{")).toBe(false);
     expect(privateSubscription.result).toMatchObject({
       subscriptions: [
         { label: "private", priority: 0, autoPushEnabled: true },
         { label: "public", priority: 1, autoPushEnabled: false },
       ],
     });
+    expect(privateSubscription.output).toContain("Subscriptions: 2");
+    expect(privateSubscription.output).toContain("Auto-push: enabled");
     expect(listed.result).toMatchObject({
       subscriptions: [
         { label: "private", priority: 0 },
         { label: "public", priority: 1 },
       ],
     });
+    expect(listed.output).toContain("Vivarium World Subscriptions");
+    expect(listed.output).toContain("private");
+    expect(listed.output.trim().startsWith("{")).toBe(false);
     expect(searched.result).toMatchObject({
       results: [
         { source: "private", title: "Private Skill" },
         { source: "public", title: "Public Skill" },
       ],
     });
+    expect(searched.output).toContain("Vivarium World Search");
+    expect(searched.output).toContain("Public Skill");
+    expect(searched.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes saved world subscriptions into runs", async () => {
@@ -923,6 +943,10 @@ describe("dispatchCliCommand", () => {
       pull: { mode: "cloned", remote, destination, ref: "main" },
       results: [{ kind: "skill", title: "Accepted Contribution" }],
     });
+    expect(checked.output).toContain("Vivarium World Transmission");
+    expect(checked.output).toContain("Status: ok");
+    expect(checked.output).toContain("Accepted Contribution");
+    expect(checked.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes run and credentials commands", async () => {
