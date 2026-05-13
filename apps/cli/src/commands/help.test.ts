@@ -6,6 +6,7 @@ describe("helpCommand", () => {
   test("renders branded first-run command help", () => {
     const result = helpCommand();
     const output = renderHelpCommandResult(result);
+    const firstRunBlock = output.slice(output.indexOf("First run"), output.indexOf("Commands"));
 
     expect(result.commands).toEqual(
       expect.arrayContaining([
@@ -30,6 +31,16 @@ describe("helpCommand", () => {
     expect(output).toContain("vivarium live evidence-init");
     expect(output).toContain("vivarium model");
     expect(output).toContain("vivarium help");
+    expect(firstRunBlock).toContain(
+      "vivarium run --goal \"validate local setup\" --state-path .vivarium/state.db",
+    );
+    expect(firstRunBlock).toContain(
+      "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
+    );
+    expect(firstRunBlock).toContain("vivarium model --env-file live-readiness.local.env");
+    expect(firstRunBlock).toContain("vivarium doctor --live --env-file live-readiness.local.env");
+    expect(firstRunBlock).not.toContain("  vivarium doctor                                     Check readiness.");
+    expect(firstRunBlock).not.toContain("  vivarium model                                      Show provider setup.");
     const liveEnvInitRow = output
       .split("\n")
       .find((line) => line.includes("Create a private live setup env file."));
