@@ -1253,9 +1253,9 @@ describe("dispatchCliCommand", () => {
       ].join("\n"),
     );
 
-    await expect(
-      dispatchCliCommand(["live", "setup", "--env-file", envPath]),
-    ).resolves.toMatchObject({
+    const dryRun = await dispatchCliCommand(["live", "setup", "--env-file", envPath]);
+
+    expect(dryRun).toMatchObject({
       command: "live",
       result: {
         ok: false,
@@ -1267,6 +1267,12 @@ describe("dispatchCliCommand", () => {
         paths: { providerProfilesPath: profilesPath, credentialsPath },
       },
     });
+    expect(dryRun.output).toContain("Vivarium Live Setup");
+    expect(dryRun.output).toContain("Status: dry run");
+    expect(dryRun.output).toContain("anthropic-main");
+    expect(dryRun.output).toContain("--confirm-write");
+    expect(dryRun.output).not.toContain("anthropic-secret");
+    expect(dryRun.output.trim().startsWith("{")).toBe(false);
     expect(existsSync(profilesPath)).toBe(false);
     expect(existsSync(credentialsPath)).toBe(false);
   });
@@ -1466,6 +1472,7 @@ describe("dispatchCliCommand", () => {
     const envPath = join(root, "live-readiness.local.env");
 
     const created = await dispatchCliCommand(["live", "env-init", "--path", envPath]);
+    const createdOutput = created.output;
     const body = readFileSync(envPath, "utf8");
     const mode = statSync(envPath).mode & 0o777;
     const refused = await dispatchCliCommand(["live", "env-init", "--path", envPath]);
@@ -1485,6 +1492,12 @@ describe("dispatchCliCommand", () => {
       mode: "0600",
       templatePath: "docs/live-readiness.env.example",
     });
+    expect(createdOutput).toContain("Vivarium Live Env");
+    expect(createdOutput).toContain("Status: written");
+    expect(createdOutput).toContain(envPath);
+    expect(createdOutput).toContain("Permissions: 0600");
+    expect(createdOutput).toContain("Next commands");
+    expect(createdOutput.trim().startsWith("{")).toBe(false);
     expect(body).toContain("VIVARIUM_PROVIDER_PROFILES_PATH");
     expect(body).toContain("source live-readiness.local.env");
     expect(mode).toBe(0o600);

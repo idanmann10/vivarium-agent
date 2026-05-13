@@ -40,6 +40,8 @@ import {
   liveEnvInitCommand,
   liveEvidenceInitCommand,
   liveSetupCommand,
+  renderLiveEnvInitCommandResult,
+  renderLiveSetupCommandResult,
 } from "./commands/live.js";
 import { modelCommand, renderModelCommandResult } from "./commands/model.js";
 import { publishListCommand, publishRunCommand, publishTraceCommand } from "./commands/publish.js";
@@ -701,13 +703,11 @@ export async function dispatchCliCommand(
     }
     case "live": {
       if (subcommand === "env-init") {
-        return output(
-          command,
-          liveEnvInitCommand({
-            path: required(flags, "path"),
-            overwrite: booleanFlag(flags, "overwrite"),
-          }),
-        );
+        const result = liveEnvInitCommand({
+          path: required(flags, "path"),
+          overwrite: booleanFlag(flags, "overwrite"),
+        });
+        return { command, result, output: renderLiveEnvInitCommandResult(result) };
       }
 
       if (subcommand === "evidence-init") {
@@ -722,13 +722,11 @@ export async function dispatchCliCommand(
 
       if (subcommand === "setup") {
         const envFile = required(flags, "env-file");
-        return output(
-          command,
-          liveSetupCommand({
-            env: readEnvFile(envFile, options.env ?? process.env),
-            confirmWrite: booleanFlag(flags, "confirm-write"),
-          }),
-        );
+        const result = liveSetupCommand({
+          env: readEnvFile(envFile, options.env ?? process.env),
+          confirmWrite: booleanFlag(flags, "confirm-write"),
+        });
+        return { command, result, output: renderLiveSetupCommandResult(result) };
       }
 
       usage('Unknown live subcommand. Use "env-init", "setup", or "evidence-init".');

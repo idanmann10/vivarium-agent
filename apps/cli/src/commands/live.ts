@@ -1,5 +1,6 @@
 import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { renderVivariumGlobe } from "./branding.js";
 import { addCredentialCommand } from "./credentials.js";
 import { configureProviderProfileCommand } from "./providers.js";
 
@@ -419,6 +420,74 @@ export function liveEnvInitCommand(options: LiveEnvInitCommandOptions): LiveEnvI
     mode: "0600",
     templatePath,
   };
+}
+
+export function renderLiveEnvInitCommandResult(result: LiveEnvInitCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Live Env",
+    "-----------------",
+    `Status: ${result.ok ? "written" : "blocked"}`,
+    `Env file: ${result.path}`,
+    ...(result.ok
+      ? [
+          `Template: ${result.templatePath}`,
+          `Permissions: ${result.mode}`,
+          "",
+          "Next commands:",
+          "  Fill the env file locally.",
+          "  vivarium setup --env-file live-readiness.local.env",
+          "  vivarium model --env-file live-readiness.local.env",
+          "  vivarium doctor --live --env-file live-readiness.local.env",
+        ]
+      : [`Error: ${result.error}`]),
+    "",
+  ].join("\n");
+}
+
+function renderList(label: string, values: readonly string[] | undefined): readonly string[] {
+  return values === undefined || values.length === 0 ? [] : [label, ...values.map((value) => `  ${value}`)];
+}
+
+export function renderLiveSetupCommandResult(result: LiveSetupCommandResult): string {
+  const status = result.ok ? "written" : result.requiresConfirmation === true ? "dry run" : "blocked";
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Live Setup",
+    "-------------------",
+    `Status: ${status}`,
+    ...(result.ok || result.requiresConfirmation === true
+      ? [
+          `Provider profiles: ${result.providerProfiles?.join(", ") ?? "none"}`,
+          `Credential: ${result.credentialName ?? "none"}`,
+          `Profiles path: ${result.paths?.providerProfilesPath ?? "not set"}`,
+          `Credentials path: ${result.paths?.credentialsPath ?? "not set"}`,
+        ]
+      : [
+          ...renderList("Missing:", result.missing),
+          ...renderList("Placeholders:", result.placeholders),
+          ...renderList("Invalid:", result.invalid),
+        ]),
+    "",
+    ...(result.ok
+      ? [
+          "Next commands:",
+          "  vivarium model --env-file live-readiness.local.env",
+          "  vivarium doctor --live --env-file live-readiness.local.env",
+        ]
+      : result.requiresConfirmation === true
+        ? [
+            "Next command:",
+            "  vivarium live setup --env-file live-readiness.local.env --confirm-write",
+          ]
+        : [
+            "Next command:",
+            "  Fill live-readiness.local.env, then re-run live setup.",
+          ]),
+    "",
+  ].join("\n");
 }
 
 export function liveEvidenceInitCommand(options: LiveEvidenceInitCommandOptions): LiveEvidenceInitCommandResult {

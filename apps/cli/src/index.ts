@@ -132,7 +132,13 @@ export type {
   DaemonSmokeCommandResult,
   DaemonSmokeFetch,
 } from "./commands/daemon.js";
-export { liveEnvInitCommand, liveEvidenceInitCommand, liveSetupCommand } from "./commands/live.js";
+export {
+  liveEnvInitCommand,
+  liveEvidenceInitCommand,
+  liveSetupCommand,
+  renderLiveEnvInitCommandResult,
+  renderLiveSetupCommandResult,
+} from "./commands/live.js";
 export type {
   LiveEnvInitCommandOptions,
   LiveEnvInitCommandResult,
