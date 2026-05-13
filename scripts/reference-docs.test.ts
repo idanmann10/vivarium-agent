@@ -637,6 +637,9 @@ describe("reference docs", () => {
     expect(body).toContain("source live-readiness.local.env");
     expect(body).toContain("Do not commit");
     expect(body).toContain("live-readiness.local.env");
+    expect(body).toContain("vivarium live env-init --path live-readiness.local.env");
+    expect(body).toContain("vivarium doctor --live");
+    expect(body).not.toContain("bun apps/cli/src/main.ts");
     for (const envVar of liveReadinessEnvVars) {
       expect(body).toContain(`export ${envVar}=`);
     }
