@@ -477,8 +477,13 @@ function renderList(label: string, values: readonly string[] | undefined): reado
   return values === undefined || values.length === 0 ? [] : [label, ...values.map((value) => `  ${value}`)];
 }
 
-export function renderLiveSetupCommandResult(result: LiveSetupCommandResult): string {
+export function renderLiveSetupCommandResult(
+  result: LiveSetupCommandResult,
+  options: { readonly envFilePath?: string } = {},
+): string {
   const status = result.ok ? "written" : result.requiresConfirmation === true ? "dry run" : "blocked";
+  const envFilePath = shellQuote(options.envFilePath ?? "live-readiness.local.env");
+
   return [
     renderVivariumGlobe(),
     "",
@@ -507,7 +512,7 @@ export function renderLiveSetupCommandResult(result: LiveSetupCommandResult): st
       : result.requiresConfirmation === true
         ? [
             "Next command:",
-            "  vivarium live setup --env-file live-readiness.local.env --confirm-write",
+            `  vivarium live setup --env-file ${envFilePath} --confirm-write`,
           ]
         : [
             "Next command:",

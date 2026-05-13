@@ -695,7 +695,7 @@ export async function dispatchCliCommand(
           env: readEnvFile(envFile, options.env ?? process.env),
           confirmWrite: booleanFlag(flags, "confirm-write"),
         });
-        return { command, result, output: renderLiveSetupCommandResult(result) };
+        return { command, result, output: renderLiveSetupCommandResult(result, { envFilePath: envFile }) };
       }
 
       usage('Unknown live subcommand. Use "env-init", "setup", or "evidence-init".');
