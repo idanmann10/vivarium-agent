@@ -51,6 +51,18 @@ describe("install.sh", () => {
     expect(stdout).toContain("If 'vivarium' is not found, add /tmp/vivarium-bin to PATH");
   });
 
+  test("prints a branded ANSI installer when color is forced", () => {
+    const forced = runInstallerDryRun({ FORCE_COLOR: "1" }).stdout.toString();
+    const disabled = runInstallerDryRun({
+      FORCE_COLOR: "1",
+      VIVARIUM_COLOR: "never",
+    }).stdout.toString();
+
+    expect(forced).toContain("\u001b[");
+    expect(forced).toContain("\u001b[1;36mVivarium Agent Installer\u001b[0m");
+    expect(disabled).not.toContain("\u001b[");
+  });
+
   test("documents strict shell behavior and dependency checks", () => {
     const source = readFileSync("scripts/install.sh", "utf8");
 

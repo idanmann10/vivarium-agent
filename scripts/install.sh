@@ -18,6 +18,7 @@ Environment:
   VIVARIUM_WORLD_ROOT         World checkout directory.
   VIVARIUM_DOMAIN             Initial setup domain.
   VIVARIUM_STATE_PATH         State database path relative to the agent checkout.
+  VIVARIUM_COLOR              Set to always or never to control ANSI output.
 
 Example:
   curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash
@@ -76,19 +77,50 @@ world_root="$(absolute_path "${VIVARIUM_WORLD_ROOT:-$default_world_root}")"
 domain="${VIVARIUM_DOMAIN:-coding}"
 state_path="${VIVARIUM_STATE_PATH:-.vivarium/state.db}"
 
-banner() {
-  cat <<'EOF'
-          .-""""-.
-       .-'  .--.  '-.
-      /   .' VI '.   \
-     |    | VAR |    |
-      \   '.IUM.'   /
-       '-.  '--'  .-'
-          '-.__.-'
+use_color() {
+  case "${VIVARIUM_COLOR:-}" in
+    always)
+      return 0
+      ;;
+    never)
+      return 1
+      ;;
+  esac
 
-Vivarium Agent Installer
-------------------------
-EOF
+  if [ "${FORCE_COLOR:-}" != "" ] && [ "${FORCE_COLOR:-}" != "0" ]; then
+    return 0
+  fi
+
+  if [ "${NO_COLOR:-}" != "" ]; then
+    return 1
+  fi
+
+  [ -t 1 ]
+}
+
+paint_line() {
+  local style="$1"
+  local text="$2"
+
+  if use_color; then
+    printf '\033[%sm%s\033[0m\n' "$style" "$text"
+    return 0
+  fi
+
+  printf '%s\n' "$text"
+}
+
+banner() {
+  paint_line 36 '          .-""""-.'
+  paint_line 36 "       .-'  .--.  '-."
+  paint_line 34 "      /   .' VI '.   \\"
+  paint_line 35 "     |    | VAR |    |"
+  paint_line 34 "      \\   '.IUM.'   /"
+  paint_line 36 "       '-.  '--'  .-'"
+  paint_line 33 "          '-.__.-'"
+  echo
+  paint_line "1;36" "Vivarium Agent Installer"
+  echo "------------------------"
 }
 
 need_command() {
