@@ -43,6 +43,7 @@ describe("install.sh", () => {
     expect(stdout).toContain("After installation:");
     expect(stdout).toContain("vivarium status");
     expect(stdout).toContain("vivarium help");
+    expect(stdout).toContain("vivarium model");
     expect(stdout).toContain("vivarium doctor");
     expect(stdout).toContain("vivarium update");
     expect(stdout).toContain("If 'vivarium' is not found, add /tmp/vivarium-bin to PATH");

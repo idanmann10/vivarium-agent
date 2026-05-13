@@ -177,6 +177,7 @@ echo
 echo "After installation:"
 echo "  vivarium status"
 echo "  vivarium help"
+echo "  vivarium model"
 echo "  vivarium doctor"
 echo "  vivarium setup"
 echo "  vivarium update"

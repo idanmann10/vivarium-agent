@@ -37,6 +37,7 @@ import {
 } from "./commands/identity.js";
 import { runInitCommand } from "./commands/init.js";
 import { liveEvidenceInitCommand, liveSetupCommand } from "./commands/live.js";
+import { modelCommand, renderModelCommandResult } from "./commands/model.js";
 import { publishListCommand, publishRunCommand, publishTraceCommand } from "./commands/publish.js";
 import {
   configureProviderProfileCommand,
@@ -252,6 +253,19 @@ export async function dispatchCliCommand(
         ...(booleanFlag(flags, "confirm-write") ? { confirmWrite: true } : {}),
       });
       return { command, result, output: renderSetupCommandResult(result) };
+    }
+    case "model": {
+      const profilesPath = value(flags, "profiles-path");
+      const envFile = value(flags, "env-file");
+      const env =
+        envFile === undefined
+          ? (options.env ?? process.env)
+          : readEnvFile(envFile, options.env ?? process.env);
+      const result = modelCommand({
+        ...(profilesPath === undefined ? {} : { profilesPath }),
+        env,
+      });
+      return { command, result, output: renderModelCommandResult(result) };
     }
     case "run": {
       const domain = value(flags, "domain");

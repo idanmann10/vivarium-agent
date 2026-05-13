@@ -92,6 +92,68 @@ describe("dispatchCliCommand", () => {
     ]);
   });
 
+  test("routes model through provider profile summary", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-model-"));
+    const profilesPath = join(root, "provider-profiles.json");
+    write(
+      profilesPath,
+      `${JSON.stringify({
+        profiles: [
+          {
+            name: "openrouter",
+            kind: "openai-compat",
+            apiKeyEnv: "OPENROUTER_API_KEY",
+            model: "openrouter/test-model",
+            capabilities: ["chat", "json_mode"],
+            contextWindow: 128000,
+            costClass: "medium",
+          },
+        ],
+      })}\n`,
+    );
+
+    const result = await dispatchCliCommand(["model", "--profiles-path", profilesPath]);
+
+    expect(result.command).toBe("model");
+    expect(result.result).toMatchObject({ ok: true, profilesPath });
+    expect(result.output).toContain("Vivarium Model");
+    expect(result.output).toContain("[ok] openrouter");
+    expect(result.output).toContain("openrouter/test-model");
+  });
+
+  test("routes model through a live readiness env file", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-model-env-"));
+    const profilesPath = join(root, "provider-profiles.json");
+    const envPath = join(root, "live-readiness.local.env");
+    write(
+      profilesPath,
+      `${JSON.stringify({
+        profiles: [
+          {
+            name: "anthropic-main",
+            kind: "anthropic",
+            apiKeyEnv: "ANTHROPIC_API_KEY",
+            model: "claude-test",
+            capabilities: ["chat", "tools"],
+            contextWindow: 200000,
+            costClass: "expensive",
+          },
+        ],
+      })}\n`,
+    );
+    write(envPath, `export VIVARIUM_PROVIDER_PROFILES_PATH="${profilesPath}"\n`);
+
+    const result = await dispatchCliCommand(["model", "--env-file", envPath], {
+      env: {},
+    });
+
+    expect(result.command).toBe("model");
+    expect(result.result).toMatchObject({ ok: true, profilesPath });
+    expect(result.output).toContain("Vivarium Model");
+    expect(result.output).toContain("[ok] anthropic-main");
+    expect(result.output).toContain("claude-test");
+  });
+
   test("routes setup through local init with branded terminal output", async () => {
     const worldRoot = createWorldFixture();
     const statePath = join(mkdtempSync(join(tmpdir(), "cli-dispatch-setup-state-")), "state.db");

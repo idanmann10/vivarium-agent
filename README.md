@@ -62,6 +62,7 @@ After installation, reload your shell if needed and run:
 ```bash
 vivarium status
 vivarium help
+vivarium model
 vivarium doctor
 vivarium setup
 vivarium update
@@ -95,6 +96,7 @@ confirm them:
 cp docs/live-readiness.env.example live-readiness.local.env
 chmod 600 live-readiness.local.env
 bun apps/cli/src/main.ts setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db
+bun apps/cli/src/main.ts model --env-file live-readiness.local.env
 bun apps/cli/src/main.ts doctor --live --env-file live-readiness.local.env
 ```
 

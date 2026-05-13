@@ -12,6 +12,7 @@ describe("helpCommand", () => {
         expect.objectContaining({ command: "vivarium setup" }),
         expect.objectContaining({ command: "vivarium status" }),
         expect.objectContaining({ command: "vivarium doctor" }),
+        expect.objectContaining({ command: "vivarium model" }),
         expect.objectContaining({ command: "vivarium update" }),
       ]),
     );
@@ -19,6 +20,7 @@ describe("helpCommand", () => {
     expect(output).toContain('.-""""-.');
     expect(output).toContain("First run");
     expect(output).toContain("vivarium setup");
+    expect(output).toContain("vivarium model");
     expect(output).toContain("vivarium help");
   });
 });

@@ -83,6 +83,9 @@ matching `VIVARIUM_*_PROVIDER_PROFILE` value is not present in that file.
 List configured profiles:
 
 ```bash
+bun apps/cli/src/main.ts model \
+  --env-file live-readiness.local.env
+
 bun apps/cli/src/main.ts providers list \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH"
 ```

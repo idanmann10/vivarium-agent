@@ -14,6 +14,7 @@ export const cliCommands = [
   "publish",
   "curriculum",
   "help",
+  "model",
   "status",
   "update",
   "doctor",
@@ -31,6 +32,13 @@ export { dreamCommand } from "./commands/dream.js";
 export type { DreamCommandOptions } from "./commands/dream.js";
 export { helpCommand, renderHelpCommandResult } from "./commands/help.js";
 export type { HelpCommandItem, HelpCommandResult } from "./commands/help.js";
+export { modelCommand, renderModelCommandResult } from "./commands/model.js";
+export type {
+  ModelCommandOptions,
+  ModelCommandProblem,
+  ModelCommandResult,
+  ModelProfileSummary,
+} from "./commands/model.js";
 export { renderStatusCommandResult, statusCommand } from "./commands/status.js";
 export { renderUpdateCommandResult, updateCommand } from "./commands/update.js";
 export type {
