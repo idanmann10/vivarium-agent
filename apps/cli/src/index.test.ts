@@ -71,7 +71,8 @@ describe("CLI entrypoint boundary", () => {
       bin?: Record<string, string>;
     };
 
-    expect(packageJson.bin?.["the-agent"]).toBe("./src/main.ts");
+    expect(packageJson.bin?.vivarium).toBe("./src/main.ts");
+    expect(packageJson.bin?.["the-agent"]).toBeUndefined();
 
     const mainPath = resolve(cliPackageRoot, "src/main.ts");
     const mainSource = readCliPackageFile("src/main.ts");
