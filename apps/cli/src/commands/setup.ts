@@ -84,6 +84,13 @@ function setupNextCommands(
       ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
       "state-path": local.statePath,
     }),
+    commandWithFlags("setup", {
+      "env-file": defaultLiveEnvFilePath,
+      domain: options.primaryDomain,
+      ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
+      "state-path": local.statePath,
+      "confirm-write": true,
+    }),
     doctorCommand,
   ];
 }

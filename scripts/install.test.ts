@@ -49,6 +49,9 @@ describe("install.sh", () => {
     expect(stdout).toContain(
       `vivarium setup --env-file live-readiness.local.env --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
     );
+    expect(stdout).toContain(
+      `vivarium setup --env-file live-readiness.local.env --domain research --world-root ${worldRoot} --state-path .vivarium/research.db --confirm-write`,
+    );
     expect(stdout).toContain("vivarium model --env-file live-readiness.local.env");
     expect(stdout).toContain("vivarium doctor --live --env-file live-readiness.local.env");
     expect(stdout).toContain("vivarium status");
@@ -62,6 +65,9 @@ describe("install.sh", () => {
     );
     expect(stdout).toContain(
       `/tmp/vivarium-bin/vivarium setup --env-file live-readiness.local.env --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
+    );
+    expect(stdout).toContain(
+      `/tmp/vivarium-bin/vivarium setup --env-file live-readiness.local.env --domain research --world-root ${worldRoot} --state-path .vivarium/research.db --confirm-write`,
     );
     expect(stdout).toContain(
       "/tmp/vivarium-bin/vivarium model --env-file live-readiness.local.env",

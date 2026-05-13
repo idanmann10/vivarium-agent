@@ -26,6 +26,10 @@ export function helpCommand(): HelpCommandResult {
         description: "Preview live setup writes.",
       },
       {
+        command: "vivarium setup --env-file live-readiness.local.env --confirm-write",
+        description: "Write live setup files after reviewing the dry run.",
+      },
+      {
         command: "vivarium live evidence-init --path v1-evidence.json",
         description: "Create a live evidence manifest skeleton.",
       },
@@ -58,6 +62,7 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
     '  vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
     "  vivarium live env-init --path live-readiness.local.env",
     "  vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
+    "  vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write",
     "  vivarium model --env-file live-readiness.local.env",
     "  vivarium doctor --live --env-file live-readiness.local.env",
     "",

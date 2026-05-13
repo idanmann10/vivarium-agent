@@ -216,6 +216,8 @@ describe("dispatchCliCommand", () => {
       nextCommands: expect.arrayContaining([
         expect.stringContaining("doctor --live --env-file live-readiness.local.env"),
         expect.stringContaining("run --goal"),
+        expect.stringContaining("setup --env-file live-readiness.local.env"),
+        expect.stringContaining("--confirm-write"),
       ]),
     });
     expect(localSkills).toEqual([expect.objectContaining({ name: "Red Green", domain: "coding" })]);
@@ -225,6 +227,13 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).toContain("Next commands");
     expect(setup.output).toContain("vivarium run --goal");
     expect(setup.output).toContain("live env-init --path live-readiness.local.env");
+    expect(setup.output).toContain(
+      "vivarium setup --env-file live-readiness.local.env --domain coding",
+    );
+    expect(setup.output).toContain(
+      "vivarium setup --env-file live-readiness.local.env --domain coding --world-root",
+    );
+    expect(setup.output).toContain("--confirm-write");
     expect(setup.output).toContain("vivarium doctor --live --env-file live-readiness.local.env");
     expect(setup.output).not.toContain("bun apps/cli/src/main.ts");
     expect(setup.output).not.toContain("cp docs/live-readiness.env.example");
@@ -1634,6 +1643,9 @@ describe("dispatchCliCommand", () => {
     expect(createdOutput).toContain("Next commands");
     expect(createdOutput).toContain(
       `vivarium setup --env-file ${envPath} --domain coding --world-root ../the-world --state-path .vivarium/state.db`,
+    );
+    expect(createdOutput).toContain(
+      `vivarium setup --env-file ${envPath} --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write`,
     );
     expect(createdOutput).toContain(`vivarium model --env-file ${envPath}`);
     expect(createdOutput).toContain(`vivarium doctor --live --env-file ${envPath}`);

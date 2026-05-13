@@ -17,6 +17,9 @@ describe("helpCommand", () => {
         expect.objectContaining({ command: "vivarium model" }),
         expect.objectContaining({ command: "vivarium live env-init --path live-readiness.local.env" }),
         expect.objectContaining({ command: "vivarium setup --env-file live-readiness.local.env" }),
+        expect.objectContaining({
+          command: "vivarium setup --env-file live-readiness.local.env --confirm-write",
+        }),
         expect.objectContaining({ command: "vivarium live evidence-init --path v1-evidence.json" }),
         expect.objectContaining({ command: "vivarium update" }),
       ]),
@@ -28,6 +31,7 @@ describe("helpCommand", () => {
     expect(output).toContain('vivarium run --goal "validate local setup"');
     expect(output).toContain("vivarium live env-init");
     expect(output).toContain("vivarium setup --env-file live-readiness.local.env");
+    expect(output).toContain("vivarium setup --env-file live-readiness.local.env --confirm-write");
     expect(output).toContain("vivarium live evidence-init");
     expect(output).toContain("vivarium model");
     expect(output).toContain("vivarium help");
@@ -37,6 +41,9 @@ describe("helpCommand", () => {
     expect(firstRunBlock).toContain(
       "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
     );
+    expect(firstRunBlock).toContain(
+      "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write",
+    );
     expect(firstRunBlock).toContain("vivarium model --env-file live-readiness.local.env");
     expect(firstRunBlock).toContain("vivarium doctor --live --env-file live-readiness.local.env");
     expect(firstRunBlock).not.toContain("  vivarium doctor                                     Check readiness.");
@@ -45,6 +52,10 @@ describe("helpCommand", () => {
       .split("\n")
       .find((line) => line.includes("Create a private live setup env file."));
     expect(liveEnvInitRow).toMatch(/live-readiness\.local\.env\s{2,}Create/);
+    const liveSetupConfirmRow = output
+      .split("\n")
+      .find((line) => line.includes("Write live setup files after reviewing the dry run."));
+    expect(liveSetupConfirmRow).toMatch(/--confirm-write\s{2,}Write/);
     const liveEvidenceInitRow = output
       .split("\n")
       .find((line) => line.includes("Create a live evidence manifest skeleton."));
