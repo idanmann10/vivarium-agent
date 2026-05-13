@@ -338,6 +338,16 @@ const topLevelDocs = {
   ],
 } as const;
 
+const installedCliDocs = [
+  "README.md",
+  "docs/guides/add-credentials.md",
+  "docs/guides/configure-providers.md",
+  "docs/guides/deploy-local-compose.md",
+  "docs/guides/fork-the-world-privately.md",
+  "docs/guides/install.md",
+  "docs/guides/live-readiness.md",
+] as const;
+
 const agentRootDocs = {
   "README.md": [
     "Vivarium Agent",
@@ -552,6 +562,14 @@ describe("reference docs", () => {
       for (const term of terms) {
         expect(body).toContain(term);
       }
+    }
+  });
+
+  test("keeps public operator docs on installed CLI commands", () => {
+    for (const path of installedCliDocs) {
+      const body = readFileSync(path, "utf8");
+      expect(body).not.toContain("bun apps/cli/src/main.ts");
+      expect(body).toContain("vivarium ");
     }
   });
 

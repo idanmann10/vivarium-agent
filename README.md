@@ -87,7 +87,7 @@ the state database, installs the starter pack, and prints the next commands in a
 terminal-friendly checklist:
 
 ```bash
-bun apps/cli/src/main.ts setup --domain coding --world-root ../the-world --state-path .vivarium/state.db
+vivarium setup --domain coding --world-root ../the-world --state-path .vivarium/state.db
 ```
 
 For live setup, generate a private readiness env file, fill it locally, and let
@@ -95,10 +95,10 @@ the setup command dry-run the guarded provider and credential writes before you
 confirm them:
 
 ```bash
-bun apps/cli/src/main.ts live env-init --path live-readiness.local.env
-bun apps/cli/src/main.ts setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db
-bun apps/cli/src/main.ts model --env-file live-readiness.local.env
-bun apps/cli/src/main.ts doctor --live --env-file live-readiness.local.env
+vivarium live env-init --path live-readiness.local.env
+vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db
+vivarium model --env-file live-readiness.local.env
+vivarium doctor --live --env-file live-readiness.local.env
 ```
 
 Filled `live-readiness.local.env` files are ignored by git. Do not commit API keys, credential values,

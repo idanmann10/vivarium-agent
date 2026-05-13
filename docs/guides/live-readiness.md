@@ -11,7 +11,7 @@ Use this guide after the local test suite is green and before claiming v1 is liv
 Run the readiness check from `the-agent`:
 
 ```bash
-bun apps/cli/src/main.ts doctor --live \
+vivarium doctor --live \
   --env-file live-readiness.local.env \
   --agent-root /Users/idanmann/Vivarium/the-agent \
   --world-root /Users/idanmann/Vivarium/the-world
@@ -33,7 +33,7 @@ ignored because filled copies contain provider keys, GitHub tokens, and internal
 API metadata.
 
 ```bash
-bun apps/cli/src/main.ts live env-init --path live-readiness.local.env
+vivarium live env-init --path live-readiness.local.env
 ```
 
 When `--env-file` is used, `doctor --live` reports `liveEnvFile.permissions:insecure` until group and world permissions are removed from the filled file.
@@ -114,7 +114,7 @@ Keep secrets out of git and shell history where possible.
 Create the live provider profile file and encrypted credential store from the filled env file:
 
 ```bash
-bun apps/cli/src/main.ts live setup \
+vivarium live setup \
   --env-file live-readiness.local.env \
   --confirm-write
 ```
@@ -127,7 +127,7 @@ OpenRouter, private OpenAI-compatible, and internal health URLs must be complete
 You can also save profiles individually. `docs/guides/configure-providers.md` shows the full Anthropic, OpenRouter, and private-compatible profile setup required before `doctor --live` is clear:
 
 ```bash
-bun apps/cli/src/main.ts providers configure \
+vivarium providers configure \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --name "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE" \
   --kind openai-compat \
@@ -145,15 +145,15 @@ For OpenAI or Anthropic profiles, use `--kind openai` or `--kind anthropic` and 
 Then run provider smoke completions through the saved profiles:
 
 ```bash
-bun apps/cli/src/main.ts providers smoke \
+vivarium providers smoke \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --profile "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE"
 
-bun apps/cli/src/main.ts providers smoke \
+vivarium providers smoke \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
 
-bun apps/cli/src/main.ts providers smoke \
+vivarium providers smoke \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --profile "$VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE"
 ```
@@ -161,7 +161,7 @@ bun apps/cli/src/main.ts providers smoke \
 The one-off smoke flags still work when you do not need to save the profile:
 
 ```bash
-bun apps/cli/src/main.ts providers smoke \
+vivarium providers smoke \
   --kind openai \
   --api-key-env OPENAI_API_KEY \
   --model <model>
@@ -170,7 +170,7 @@ bun apps/cli/src/main.ts providers smoke \
 For Anthropic, use `--kind anthropic --api-key-env ANTHROPIC_API_KEY`. For OpenAI-compatible providers, include a base URL:
 
 ```bash
-bun apps/cli/src/main.ts providers smoke \
+vivarium providers smoke \
   --kind openai-compat \
   --api-key-env OPENROUTER_API_KEY \
   --model <model> \
@@ -180,7 +180,7 @@ bun apps/cli/src/main.ts providers smoke \
 After smoke succeeds, run a real goal through the same provider path:
 
 ```bash
-bun apps/cli/src/main.ts run \
+vivarium run \
   --goal "<small real coding goal>" \
   --domain coding \
   --world-root /Users/idanmann/Vivarium/the-world \
@@ -198,7 +198,7 @@ One-off run flags also remain available. Use `--provider-kind openai` or `--prov
 After adding an internal API credential, smoke it through the encrypted keychain and HTTP dispatcher:
 
 ```bash
-bun apps/cli/src/main.ts credentials add \
+vivarium credentials add \
   --path "$VIVARIUM_CREDENTIALS_PATH" \
   --master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY" \
   --kind bearer \
@@ -206,7 +206,7 @@ bun apps/cli/src/main.ts credentials add \
   --purpose "Call internal API" \
   --value "$VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE"
 
-bun apps/cli/src/main.ts credentials smoke \
+vivarium credentials smoke \
   --path "$VIVARIUM_CREDENTIALS_PATH" \
   --master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY" \
   --name "$VIVARIUM_INTERNAL_API_CREDENTIAL_NAME" \
@@ -258,7 +258,7 @@ export VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID=<discussion-category-node-id>
 Then run a read-only GitHub smoke check:
 
 ```bash
-bun apps/cli/src/main.ts github smoke \
+vivarium github smoke \
   --owner <owner> \
   --repo <world-repo> \
   --token-env GITHUB_TOKEN
@@ -269,7 +269,7 @@ The command reports repository visibility, default branch, Discussions availabil
 Open the Phase 0 RFC Discussion only after the target repository ID and Discussion category ID are known:
 
 ```bash
-bun apps/cli/src/main.ts github discussion \
+vivarium github discussion \
   --owner <owner> \
   --repo <world-repo> \
   --token-env GITHUB_TOKEN \
@@ -299,7 +299,7 @@ conclusion. Pending, missing, failed, or unavailable runs remain live-readiness 
 After a generated artifact has been committed to a branch, open a contribution PR:
 
 ```bash
-bun apps/cli/src/main.ts github pull-request \
+vivarium github pull-request \
   --owner <owner> \
   --repo <world-repo> \
   --token-env GITHUB_TOKEN \
@@ -315,7 +315,7 @@ Without `--confirm-write`, the command refuses before reading credentials or cal
 After the Discussion or PR is open, inspect workflow runs:
 
 ```bash
-bun apps/cli/src/main.ts github workflow-runs \
+vivarium github workflow-runs \
   --owner <owner> \
   --repo <world-repo> \
   --token-env GITHUB_TOKEN \
@@ -340,14 +340,14 @@ export VIVARIUM_PRIVATE_WORLD_REF=<private-world-remote-url>
 ```
 
 ```bash
-bun apps/cli/src/main.ts world subscribe \
+vivarium world subscribe \
   --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" \
   --world-root /tmp/vivarium-world-canonical \
   --world-label canonical \
   --world-ref "$VIVARIUM_CANONICAL_WORLD_REF" \
   --priority 1
 
-bun apps/cli/src/main.ts world subscribe \
+vivarium world subscribe \
   --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" \
   --world-root /tmp/vivarium-world-private \
   --world-label private \
@@ -355,14 +355,14 @@ bun apps/cli/src/main.ts world subscribe \
   --priority 0 \
   --auto-push
 
-bun apps/cli/src/main.ts world subscriptions \
+vivarium world subscriptions \
   --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH"
 ```
 
 Search through the saved registry:
 
 ```bash
-bun apps/cli/src/main.ts world search \
+vivarium world search \
   --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" \
   --domain coding \
   --query "<artifact title or distinctive phrase>" \
@@ -372,7 +372,7 @@ bun apps/cli/src/main.ts world search \
 Use the same saved registry for real runs:
 
 ```bash
-bun apps/cli/src/main.ts run \
+vivarium run \
   --goal "<small real coding goal>" \
   --domain coding \
   --state-path /tmp/vivarium-live-state.db \
@@ -384,7 +384,7 @@ bun apps/cli/src/main.ts run \
 For one-off checks without writing the registry, repeated roots still work:
 
 ```bash
-bun apps/cli/src/main.ts world search \
+vivarium world search \
   --world-root /tmp/vivarium-world-private \
   --world-label private \
   --world-root /tmp/vivarium-world-canonical \
@@ -404,7 +404,7 @@ It also checks that `VIVARIUM_CANONICAL_WORLD_REF` and `VIVARIUM_PRIVATE_WORLD_R
 After a contribution has landed in the canonical world remote, verify that a separate local install can pull the remote and retrieve the accepted artifact:
 
 ```bash
-bun apps/cli/src/main.ts world transmission-smoke \
+vivarium world transmission-smoke \
   --remote "$VIVARIUM_CANONICAL_WORLD_REF" \
   --destination /tmp/vivarium-world-second-install \
   --ref main \
@@ -430,7 +430,7 @@ At least one Compose command must succeed. Then verify the daemon supervisor:
 ```bash
 docker compose -f /Users/idanmann/Vivarium/the-agent/docker-compose.yml config
 docker compose -f /Users/idanmann/Vivarium/the-agent/docker-compose.yml up --build vivarium-daemon
-bun apps/cli/src/main.ts daemon smoke --status-url http://127.0.0.1:8787/status
+vivarium daemon smoke --status-url http://127.0.0.1:8787/status
 ```
 
 ## V1 Evidence Manifest
@@ -439,7 +439,7 @@ bun apps/cli/src/main.ts daemon smoke --status-url http://127.0.0.1:8787/status
 
 ```bash
 export VIVARIUM_V1_EVIDENCE_PATH=/Users/idanmann/.codex/memories/vivarium-v1-evidence.json
-bun apps/cli/src/main.ts live evidence-init --path "$VIVARIUM_V1_EVIDENCE_PATH"
+vivarium live evidence-init --path "$VIVARIUM_V1_EVIDENCE_PATH"
 ```
 
 The manifest is a compact index of evidence, not a substitute for the underlying artifacts. Every evidence-bearing string should point to a command transcript, audit file, PR, Discussion, workflow run, run artifact, contributor profile, or other concrete evidence you can inspect. `doctor --live` accepts `http://` and `https://` evidence links as external artifacts. Local evidence references must be paths that exist relative to the manifest file, the agent root, or the world root; bare run IDs or artifact IDs alone are not enough. `worldSubscriptions.canonical` and `worldSubscriptions.privateFork` must be distinct remote-style refs; when `VIVARIUM_CANONICAL_WORLD_REF` and `VIVARIUM_PRIVATE_WORLD_REF` are configured, those manifest refs must match the configured values exactly. `publicContribution.canonicalSkill` and every `twoWeekImprovement.competingSkillReferences` entry must be GitHub blob URLs for canonical-world `SKILL.md` files, and the two-week competing references must include the public skill that landed. When `VIVARIUM_GITHUB_OWNER` and `VIVARIUM_WORLD_REPO_NAME` are configured, `publicContribution.publicSkillPr`, `publicContribution.autoMerge`, `publicContribution.canonicalSkill`, `publishedArtifacts.antiPattern`, `publishedArtifacts.trace`, `publishedArtifacts.run`, `twoWeekImprovement.competingDiscussion`, and `twoWeekImprovement.competingSkillReferences` must target that configured canonical world repository. `publishedArtifacts.antiPattern`, `publishedArtifacts.trace`, and `publishedArtifacts.run` must be GitHub blob URLs for canonical-world `ANTI-PATTERN.md`, `TRACE.md`, and `RUN.md` files. `twoWeekImprovement.competingDiscussion` is stricter than generic evidence references: it must be a `https://github.com/<owner>/<repo>/discussions/<number>` URL for the competing variant Discussion. The same developer's agent must stay identifiable across the loop: `publishedArtifacts.contributorAgent`, `curationStats.agentContributor`, and `twoWeekImprovement.contributorAgent` must match `publicContribution.contributorAgent`; other-agent signal, pull/use, Plan-read, and refinement evidence must still exclude that contributor identity.

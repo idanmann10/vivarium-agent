@@ -31,7 +31,7 @@ export VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE=private-finetune
 Create all v1 profiles from `live-readiness.local.env` with the guarded setup command:
 
 ```bash
-bun apps/cli/src/main.ts live setup \
+vivarium live setup \
   --env-file live-readiness.local.env \
   --confirm-write
 ```
@@ -40,7 +40,7 @@ Save named profiles locally for Anthropic, OpenRouter, and the private
 OpenAI-compatible target:
 
 ```bash
-bun apps/cli/src/main.ts providers configure \
+vivarium providers configure \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --name "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE" \
   --kind anthropic \
@@ -51,7 +51,7 @@ bun apps/cli/src/main.ts providers configure \
   --context-window "$VIVARIUM_ANTHROPIC_CONTEXT_WINDOW" \
   --cost-class expensive
 
-bun apps/cli/src/main.ts providers configure \
+vivarium providers configure \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --name "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE" \
   --kind openai-compat \
@@ -63,7 +63,7 @@ bun apps/cli/src/main.ts providers configure \
   --context-window "$VIVARIUM_OPENROUTER_CONTEXT_WINDOW" \
   --cost-class medium
 
-bun apps/cli/src/main.ts providers configure \
+vivarium providers configure \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --name "$VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE" \
   --kind openai-compat \
@@ -83,25 +83,25 @@ matching `VIVARIUM_*_PROVIDER_PROFILE` value is not present in that file.
 List configured profiles:
 
 ```bash
-bun apps/cli/src/main.ts model \
+vivarium model \
   --env-file live-readiness.local.env
 
-bun apps/cli/src/main.ts providers list \
+vivarium providers list \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH"
 ```
 
 Smoke every v1 profile without repeating model details:
 
 ```bash
-bun apps/cli/src/main.ts providers smoke \
+vivarium providers smoke \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --profile "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE"
 
-bun apps/cli/src/main.ts providers smoke \
+vivarium providers smoke \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
 
-bun apps/cli/src/main.ts providers smoke \
+vivarium providers smoke \
   --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --profile "$VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE"
 ```
@@ -112,7 +112,7 @@ three calls succeed.
 Run a goal through a profile:
 
 ```bash
-bun apps/cli/src/main.ts run \
+vivarium run \
   --goal "<small real goal>" \
   --provider-profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
   --provider-profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"

@@ -29,7 +29,7 @@ through `credentials smoke` without keeping `VIVARIUM_INTERNAL_API_CREDENTIAL_VA
 Add the encrypted record with `credentials add`:
 
 ```bash
-bun apps/cli/src/main.ts credentials add \
+vivarium credentials add \
   --path "$VIVARIUM_CREDENTIALS_PATH" \
   --master-key <local-master-key> \
   --kind bearer \
@@ -41,7 +41,7 @@ bun apps/cli/src/main.ts credentials add \
 Then verify dispatch without exposing the secret:
 
 ```bash
-bun apps/cli/src/main.ts credentials smoke \
+vivarium credentials smoke \
   --path "$VIVARIUM_CREDENTIALS_PATH" \
   --master-key <local-master-key> \
   --name "$VIVARIUM_INTERNAL_API_CREDENTIAL_NAME" \

@@ -48,10 +48,10 @@ bun run test
 bun run build
 ```
 
-Run the setup entrypoint with the coding starter pack from a sibling world checkout:
+Run setup with the coding starter pack from a sibling world checkout:
 
 ```bash
-bun apps/cli/src/main.ts setup \
+vivarium setup \
   --domain coding \
   --world-root ../the-world \
   --state-path .vivarium/state.db
