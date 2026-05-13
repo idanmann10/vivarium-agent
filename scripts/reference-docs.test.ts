@@ -573,6 +573,20 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents installed CLI terminal color controls", () => {
+    for (const path of ["README.md", join("docs", "guides", "install.md")]) {
+      const body = readFileSync(path, "utf8");
+      for (const term of [
+        "VIVARIUM_COLOR=always",
+        "VIVARIUM_COLOR=never",
+        "NO_COLOR",
+        "FORCE_COLOR",
+      ]) {
+        expect(body).toContain(term);
+      }
+    }
+  });
+
   test("keeps guide pages free of placeholder wording", () => {
     for (const doc of Object.keys(guideDocs)) {
       const body = readFileSync(join("docs", "guides", `${doc}.md`), "utf8");

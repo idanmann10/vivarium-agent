@@ -56,6 +56,9 @@ curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scri
 Use `VIVARIUM_INSTALL_DIR`, `VIVARIUM_WORLD_ROOT`, `VIVARIUM_DOMAIN`, and
 `VIVARIUM_STATE_PATH` to override the default install layout. Use
 `VIVARIUM_BIN_DIR` to choose where the `vivarium` command is written.
+Interactive terminals use the branded ANSI theme automatically. Set
+`VIVARIUM_COLOR=always` to force it, `VIVARIUM_COLOR=never` or `NO_COLOR` to
+disable it, or `FORCE_COLOR=1` when a wrapper strips TTY detection.
 
 After installation, reload your shell if needed and run:
 

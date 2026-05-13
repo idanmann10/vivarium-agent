@@ -80,7 +80,11 @@ describe("CLI entrypoint boundary", () => {
 
     expect(existsSync(mainPath)).toBe(true);
     expect(mainSource).toContain('import { dispatchCliCommand } from "./dispatcher.js";');
+    expect(mainSource).toContain(
+      'import { applyVivariumTerminalTheme } from "./commands/branding.js";',
+    );
     expect(mainSource).toContain("dispatchCliCommand(Bun.argv.slice(2))");
+    expect(mainSource).toContain("applyVivariumTerminalTheme(result.output");
     expect(indexSource).not.toContain("import.meta.main");
   });
 });

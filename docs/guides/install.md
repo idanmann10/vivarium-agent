@@ -18,6 +18,9 @@ runs the guided `setup` command. It also writes a `vivarium` command to
 `~/.local/bin` so future commands can run from any directory. Override the layout
 with `VIVARIUM_INSTALL_DIR`, `VIVARIUM_BIN_DIR`, `VIVARIUM_WORLD_ROOT`,
 `VIVARIUM_DOMAIN`, or `VIVARIUM_STATE_PATH`.
+Interactive terminals use the branded ANSI theme automatically. Set
+`VIVARIUM_COLOR=always` to force it, `VIVARIUM_COLOR=never` or `NO_COLOR` to
+disable it, or `FORCE_COLOR=1` when a wrapper strips TTY detection.
 
 After installation, reload your shell if needed and run:
 
