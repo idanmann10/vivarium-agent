@@ -295,7 +295,14 @@ export async function dispatchCliCommand(
         ...(profilesPath === undefined ? {} : { profilesPath }),
         env,
       });
-      return { command, result, output: renderModelCommandResult(result) };
+      return {
+        command,
+        result,
+        output: renderModelCommandResult(
+          result,
+          envFile === undefined ? {} : { envFilePath: envFile },
+        ),
+      };
     }
     case "run": {
       const domain = value(flags, "domain");

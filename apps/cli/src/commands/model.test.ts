@@ -64,7 +64,7 @@ describe("modelCommand", () => {
     expect(output).toContain("Profiles path: not set");
     expect(output).toContain("VIVARIUM_PROVIDER_PROFILES_PATH");
     expect(output).toContain("vivarium model --env-file live-readiness.local.env");
-    expect(output).toContain("vivarium setup");
+    expect(output).toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");
     expect(output).toContain("docs/guides/configure-providers.md");
   });
 
@@ -83,7 +83,7 @@ describe("modelCommand", () => {
     });
     expect(output).toContain("No provider profiles found");
     expect(output).toContain(profilesPath);
-    expect(output).toContain("vivarium setup --env-file live-readiness.local.env --confirm-write");
+    expect(output).toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");
   });
 
   test("reports expected live profiles that are absent from the profile file", () => {
@@ -119,7 +119,7 @@ describe("modelCommand", () => {
     expect(output).toContain("[ok] anthropic-main");
     expect(output).toContain("[fix] openrouter");
     expect(output).toContain("[fix] private-finetune");
-    expect(output).toContain("vivarium setup --env-file live-readiness.local.env --confirm-write");
+    expect(output).toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");
   });
 
   test("renders invalid profile errors without printing secret values", () => {

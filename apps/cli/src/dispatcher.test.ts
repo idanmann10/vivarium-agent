@@ -165,6 +165,29 @@ describe("dispatchCliCommand", () => {
     expect(result.output).toContain("claude-test");
   });
 
+  test("keeps model setup guidance on the selected live env file", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-model-empty-env-"));
+    const profilesPath = join(root, "provider-profiles.json");
+    const envPath = join(root, "custom-live-readiness.local.env");
+    write(profilesPath, `${JSON.stringify({ profiles: [] })}\n`);
+    write(envPath, `export VIVARIUM_PROVIDER_PROFILES_PATH="${profilesPath}"\n`);
+
+    const result = await dispatchCliCommand(["model", "--env-file", envPath], {
+      env: {},
+    });
+
+    expect(result.command).toBe("model");
+    expect(result.result).toMatchObject({
+      ok: false,
+      profilesPath,
+      problem: "no_profiles",
+    });
+    expect(result.output).toContain(`vivarium live setup --env-file ${envPath} --confirm-write`);
+    expect(result.output).not.toContain(
+      "vivarium setup --env-file live-readiness.local.env --confirm-write",
+    );
+  });
+
   test("routes setup through local init with branded terminal output", async () => {
     const worldRoot = createWorldFixture();
     const statePath = join(mkdtempSync(join(tmpdir(), "cli-dispatch-setup-state-")), "state.db");

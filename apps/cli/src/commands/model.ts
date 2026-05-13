@@ -34,6 +34,10 @@ export interface ModelCommandResult {
   readonly error?: string;
 }
 
+function shellQuote(value: string): string {
+  return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
+}
+
 function envProfilesPath(env: Readonly<Record<string, string | undefined>>): string | undefined {
   const value = env.VIVARIUM_PROVIDER_PROFILES_PATH?.trim();
   return value === undefined || value.length === 0 ? undefined : value;
@@ -119,7 +123,12 @@ function renderModelProfile(profile: ModelProfileSummary): readonly string[] {
   ];
 }
 
-function renderModelGuidance(result: ModelCommandResult): readonly string[] {
+function renderModelGuidance(
+  result: ModelCommandResult,
+  options: { readonly envFilePath?: string },
+): readonly string[] {
+  const envFilePath = shellQuote(options.envFilePath ?? "live-readiness.local.env");
+
   if (result.problem === "invalid_profiles") {
     return [
       "Next steps:",
@@ -133,8 +142,8 @@ function renderModelGuidance(result: ModelCommandResult): readonly string[] {
     return [
       "Next steps:",
       `  No provider profiles found at: ${result.profilesPath}`,
-      "  Fill live-readiness.local.env, then write the guarded setup files:",
-      "  vivarium setup --env-file live-readiness.local.env --confirm-write",
+      `  Fill ${envFilePath}, then write the guarded setup files:`,
+      `  vivarium live setup --env-file ${envFilePath} --confirm-write`,
       "  Or add one profile with: vivarium providers configure ...",
       "  Guide: docs/guides/configure-providers.md",
     ];
@@ -144,13 +153,18 @@ function renderModelGuidance(result: ModelCommandResult): readonly string[] {
     "Next steps:",
     "  Set VIVARIUM_PROVIDER_PROFILES_PATH, pass --profiles-path <path>,",
     "  or load a readiness file:",
-    "  vivarium model --env-file live-readiness.local.env",
-    "  vivarium setup --env-file live-readiness.local.env",
+    `  vivarium model --env-file ${envFilePath}`,
+    `  vivarium live setup --env-file ${envFilePath} --confirm-write`,
     "  Guide: docs/guides/configure-providers.md",
   ];
 }
 
-function renderMissingProfiles(result: ModelCommandResult): readonly string[] {
+function renderMissingProfiles(
+  result: ModelCommandResult,
+  options: { readonly envFilePath?: string },
+): readonly string[] {
+  const envFilePath = shellQuote(options.envFilePath ?? "live-readiness.local.env");
+
   if (result.problem !== "missing_expected_profiles" || result.missingProfiles === undefined) {
     return [];
   }
@@ -161,13 +175,16 @@ function renderMissingProfiles(result: ModelCommandResult): readonly string[] {
     ...result.missingProfiles.map((profile) => `  [fix] ${profile}`),
     "",
     "Next steps:",
-    "  Re-run guarded setup after filling live-readiness.local.env:",
-    "  vivarium setup --env-file live-readiness.local.env --confirm-write",
-    "  Then inspect again: vivarium model --env-file live-readiness.local.env",
+    `  Re-run guarded setup after filling ${envFilePath}:`,
+    `  vivarium live setup --env-file ${envFilePath} --confirm-write`,
+    `  Then inspect again: vivarium model --env-file ${envFilePath}`,
   ];
 }
 
-export function renderModelCommandResult(result: ModelCommandResult): string {
+export function renderModelCommandResult(
+  result: ModelCommandResult,
+  options: { readonly envFilePath?: string } = {},
+): string {
   return [
     renderVivariumGlobe(),
     "",
@@ -177,8 +194,8 @@ export function renderModelCommandResult(result: ModelCommandResult): string {
     `Profiles path: ${result.profilesPath ?? "not set"}`,
     "",
     ...(result.profiles.length > 0
-      ? ["Profiles:", ...result.profiles.flatMap(renderModelProfile), ...renderMissingProfiles(result)]
-      : renderModelGuidance(result)),
+      ? ["Profiles:", ...result.profiles.flatMap(renderModelProfile), ...renderMissingProfiles(result, options)]
+      : renderModelGuidance(result, options)),
     "",
   ].join("\n");
 }
