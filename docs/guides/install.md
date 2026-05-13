@@ -14,7 +14,7 @@ curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scri
 
 The installer checks for `git` and `bun`, clones or updates the agent checkout,
 clones or updates the canonical world beside it, installs dependencies, and then
-runs the guided `setup` command. It also writes a `vivarium` command to
+runs the guided `setup --quick` command. It also writes a `vivarium` command to
 `~/.local/bin` so future commands can run from any directory. Override the layout
 with `VIVARIUM_INSTALL_DIR`, `VIVARIUM_BIN_DIR`, `VIVARIUM_WORLD_ROOT`,
 `VIVARIUM_DOMAIN`, or `VIVARIUM_STATE_PATH`.
@@ -31,7 +31,7 @@ After installation, reload your shell if needed and run:
 vivarium run --goal "validate local setup" --state-path .vivarium/state.db
 
 # [2] Prepare live readiness
-vivarium live env-init --path live-readiness.local.env
+# Edit live-readiness.local.env locally. Keep it out of git.
 vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db
 vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write
 
@@ -70,17 +70,19 @@ Run setup with the coding starter pack from a sibling world checkout:
 
 ```bash
 vivarium setup \
+  --quick \
   --domain coding \
   --world-root ../the-world \
   --state-path .vivarium/state.db
 ```
 
-`setup` initializes the same local state as `init`, renders a terminal-friendly
-summary, and prints the next commands for a first run, live setup, and
-`doctor --live`. Use `init` directly only when you need local initialization
-without the aggregate setup checklist.
-Use `live env-init --path live-readiness.local.env` when you need to create the
-private live-readiness env file from the terminal.
+`setup --quick` initializes the same local state as `init`, creates the private
+live-readiness env file from the template when it is missing, renders a
+terminal-friendly summary, and prints the next commands for a first run, live
+setup, and `doctor --live`. Use `init` directly only when you need local
+initialization without the aggregate setup checklist. Use
+`vivarium live env-init --path live-readiness.local.env` when you only need to
+create the private live-readiness env file.
 When repository names are known, add `--github-owner`, `--agent-repo`,
 `--world-repo`, `--canonical-world-ref`, and `--private-world-ref` to prefill
 the non-secret public GitHub and world values.

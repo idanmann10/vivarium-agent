@@ -216,6 +216,7 @@ const guideDocs = {
     "VIVARIUM_BIN_DIR",
     "vivarium run --goal",
     "--state-path .vivarium/state.db",
+    "setup --quick",
     "vivarium live env-init --path live-readiness.local.env",
     "vivarium help",
     "vivarium status",
@@ -606,7 +607,7 @@ describe("reference docs", () => {
       }
       for (const command of [
         'vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
-        "vivarium live env-init --path live-readiness.local.env",
+        "Edit live-readiness.local.env locally. Keep it out of git.",
         "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
         "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write",
         "vivarium model --env-file live-readiness.local.env",

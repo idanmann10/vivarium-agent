@@ -38,7 +38,7 @@ describe("install.sh", () => {
     expect(stdout).toContain("Would run: bun install --frozen-lockfile");
     expect(stdout).toContain("Would write vivarium command: /tmp/vivarium-bin/vivarium");
     expect(stdout).toContain(
-      `Would run: bun apps/cli/src/main.ts setup --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
+      `Would run: bun apps/cli/src/main.ts setup --quick --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
     );
     expect(stdout).toContain("After installation:");
     expect(stdout).toContain("[1] Prove the local loop");
@@ -51,7 +51,8 @@ describe("install.sh", () => {
     expect(stdout).toContain(
       'vivarium run --goal "validate local setup" --state-path .vivarium/research.db',
     );
-    expect(stdout).toContain("vivarium live env-init --path live-readiness.local.env");
+    expect(stdout).toContain("Edit live-readiness.local.env locally. Keep it out of git.");
+    expect(stdout).not.toContain("vivarium live env-init --path live-readiness.local.env");
     expect(stdout).toContain(
       `vivarium setup --env-file live-readiness.local.env --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
     );
@@ -67,7 +68,7 @@ describe("install.sh", () => {
     expect(stdout).toContain(
       '/tmp/vivarium-bin/vivarium run --goal "validate local setup" --state-path .vivarium/research.db',
     );
-    expect(stdout).toContain(
+    expect(stdout).not.toContain(
       "/tmp/vivarium-bin/vivarium live env-init --path live-readiness.local.env",
     );
     expect(stdout).toContain(

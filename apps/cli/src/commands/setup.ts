@@ -2,8 +2,12 @@ import type { InitCommandResult } from "./init.js";
 import { renderVivariumGlobe } from "./branding.js";
 import { runInitCommand } from "./init.js";
 import { renderLaunchSequence } from "./launch-sequence.js";
-import type { LiveSetupCommandResult } from "./live.js";
-import { liveSetupCommand } from "./live.js";
+import type {
+  LiveEnvInitCommandResult,
+  LiveEnvPrefillOptions,
+  LiveSetupCommandResult,
+} from "./live.js";
+import { liveEnvInitCommand, liveSetupCommand } from "./live.js";
 
 const defaultLiveEnvFilePath = "live-readiness.local.env";
 
@@ -14,12 +18,16 @@ export interface SetupCommandOptions {
   readonly envFilePath?: string;
   readonly env?: Readonly<Record<string, string | undefined>>;
   readonly confirmWrite?: boolean;
+  readonly quick?: boolean;
+  readonly liveEnvPath?: string;
+  readonly prefill?: LiveEnvPrefillOptions;
 }
 
 export interface SetupCommandResult {
   readonly ok: boolean;
   readonly local: InitCommandResult;
   readonly live?: LiveSetupCommandResult;
+  readonly quickEnv?: LiveEnvInitCommandResult;
   readonly nextCommands: readonly string[];
 }
 
@@ -44,6 +52,7 @@ function setupNextCommands(
   options: SetupCommandOptions,
   local: InitCommandResult,
   live: LiveSetupCommandResult | undefined,
+  quickEnv: LiveEnvInitCommandResult | undefined,
 ): readonly string[] {
   const runCommand = commandWithFlags("run", {
     goal: "validate local setup",
@@ -51,7 +60,7 @@ function setupNextCommands(
     "state-path": local.statePath,
     ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
   });
-  const liveEnvFilePath = options.envFilePath ?? defaultLiveEnvFilePath;
+  const liveEnvFilePath = options.envFilePath ?? quickEnv?.path ?? defaultLiveEnvFilePath;
   const modelCommand = commandWithFlags("model", { "env-file": liveEnvFilePath });
   const evidenceCommand = commandWithFlags("live evidence-init", { path: "v1-evidence.json" });
   const doctorCommand = commandWithFlags("doctor", { live: true, "env-file": liveEnvFilePath });
@@ -95,6 +104,28 @@ function setupNextCommands(
     ];
   }
 
+  if (quickEnv !== undefined) {
+    return [
+      runCommand,
+      commandWithFlags("setup", {
+        "env-file": quickEnv.path,
+        domain: options.primaryDomain,
+        ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
+        "state-path": local.statePath,
+      }),
+      commandWithFlags("setup", {
+        "env-file": quickEnv.path,
+        domain: options.primaryDomain,
+        ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
+        "state-path": local.statePath,
+        "confirm-write": true,
+      }),
+      modelCommand,
+      evidenceCommand,
+      doctorCommand,
+    ];
+  }
+
   return [
     runCommand,
     commandWithFlags("live env-init", { path: defaultLiveEnvFilePath }),
@@ -117,6 +148,10 @@ function setupNextCommands(
   ];
 }
 
+function isExistingLiveEnv(result: LiveEnvInitCommandResult): boolean {
+  return result.ok === false && result.error.includes("already exists");
+}
+
 export function setupCommand(options: SetupCommandOptions): SetupCommandResult {
   const local = runInitCommand({
     primaryDomain: options.primaryDomain,
@@ -124,16 +159,57 @@ export function setupCommand(options: SetupCommandOptions): SetupCommandResult {
     ...(options.worldRoot === undefined ? {} : { worldRoot: options.worldRoot }),
     ...(options.statePath === undefined ? {} : { statePath: options.statePath }),
   });
+  const quickEnv =
+    options.quick === true && options.env === undefined
+      ? liveEnvInitCommand({
+          path: options.liveEnvPath ?? options.envFilePath ?? defaultLiveEnvFilePath,
+          ...(options.prefill === undefined ? {} : { prefill: options.prefill }),
+        })
+      : undefined;
   const live =
     options.env === undefined
       ? undefined
       : liveSetupCommand({ env: options.env, confirmWrite: options.confirmWrite ?? false });
   return {
-    ok: live === undefined ? true : live.ok,
+    ok:
+      live === undefined
+        ? quickEnv === undefined || quickEnv.ok || isExistingLiveEnv(quickEnv)
+        : live.ok,
     local,
     ...(live === undefined ? {} : { live }),
-    nextCommands: setupNextCommands(options, local, live),
+    ...(quickEnv === undefined ? {} : { quickEnv }),
+    nextCommands: setupNextCommands(options, local, live, quickEnv),
   };
+}
+
+function renderQuickEnvSummary(quickEnv: LiveEnvInitCommandResult | undefined): readonly string[] {
+  if (quickEnv === undefined) {
+    return [];
+  }
+
+  if (quickEnv.ok) {
+    return [
+      "Live env quick start: written",
+      `Env file: ${quickEnv.path}`,
+      `Permissions: ${quickEnv.mode}`,
+      ...(quickEnv.prefilled.length === 0 ? [] : [`Prefilled: ${quickEnv.prefilled.join(", ")}`]),
+      `Fill live settings: edit ${quickEnv.path} locally. Keep it out of git.`,
+    ];
+  }
+
+  if (isExistingLiveEnv(quickEnv)) {
+    return [
+      "Live env quick start: already exists",
+      `Env file: ${quickEnv.path}`,
+      `Fill live settings: edit ${quickEnv.path} locally. Keep it out of git.`,
+    ];
+  }
+
+  return [
+    "Live env quick start: blocked",
+    `Env file: ${quickEnv.path}`,
+    `Error: ${quickEnv.error}`,
+  ];
 }
 
 function renderLiveSummary(live: LiveSetupCommandResult | undefined): readonly string[] {
@@ -176,7 +252,9 @@ export function renderSetupCommandResult(result: SetupCommandResult): string {
     `Domain: ${result.local.primaryDomain}`,
     `Starter skills: ${result.local.starterSkills.length}`,
     `Starter traces: ${result.local.starterTraces.length}`,
-    ...renderLiveSummary(result.live),
+    ...(result.quickEnv === undefined
+      ? renderLiveSummary(result.live)
+      : renderQuickEnvSummary(result.quickEnv)),
     "",
     ...renderLaunchSequence(result.nextCommands, { heading: "Next commands:" }),
     "",

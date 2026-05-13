@@ -34,7 +34,7 @@ Interactive terminals use the branded ANSI theme automatically. Set `VIVARIUM_CO
 
 ## Terminal-first setup
 
-`vivarium setup` initializes local state, installs the starter pack, and prints the next terminal commands as a numbered launch sequence:
+`vivarium setup --quick` initializes local state, installs the starter pack, creates `live-readiness.local.env` from the template when it is missing, and prints the next terminal commands as a numbered launch sequence:
 
 After installation, reload your shell if needed and run:
 
@@ -43,7 +43,7 @@ After installation, reload your shell if needed and run:
 vivarium run --goal "validate local setup" --state-path .vivarium/state.db
 
 # [2] Prepare live readiness
-vivarium live env-init --path live-readiness.local.env
+# Edit live-readiness.local.env locally. Keep it out of git.
 vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db
 vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write
 
@@ -66,7 +66,7 @@ For a source checkout, run the same setup directly:
 
 ```bash
 bun install
-vivarium setup --domain coding --world-root ../the-world --state-path .vivarium/state.db
+vivarium setup --quick --domain coding --world-root ../the-world --state-path .vivarium/state.db
 ```
 
 Filled `live-readiness.local.env` files are ignored by git. Do not commit API keys, credential values, provider secrets, or evidence files that contain private paths or private customer data.
@@ -74,8 +74,12 @@ Filled `live-readiness.local.env` files are ignored by git. Do not commit API ke
 When the public repository names are already settled, prefill the non-secret GitHub and world values while creating the env file:
 
 ```bash
-vivarium live env-init \
-  --path live-readiness.local.env \
+vivarium setup \
+  --quick \
+  --live-env-path live-readiness.local.env \
+  --domain coding \
+  --world-root ../the-world \
+  --state-path .vivarium/state.db \
   --github-owner idanmann10 \
   --agent-repo vivarium-agent \
   --world-repo vivarium-world \

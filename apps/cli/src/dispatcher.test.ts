@@ -249,6 +249,107 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).not.toContain("chmod 600 live-readiness.local.env");
   });
 
+  test("routes quick setup through local init and live env bootstrap", async () => {
+    const worldRoot = createWorldFixture();
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-setup-quick-"));
+    const statePath = join(root, ".vivarium", "state.db");
+    const envPath = join(root, "live-readiness.local.env");
+
+    const setup = await dispatchCliCommand([
+      "setup",
+      "--quick",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+      "--live-env-path",
+      envPath,
+      "--github-owner",
+      "idanmann10",
+      "--agent-repo",
+      "vivarium-agent",
+      "--world-repo",
+      "vivarium-world",
+      "--canonical-world-ref",
+      "https://github.com/idanmann10/vivarium-world.git",
+      "--private-world-ref",
+      "git@github.com:idanmann10/vivarium-world-private.git",
+    ]);
+    const body = readFileSync(envPath, "utf8");
+
+    expect(setup.command).toBe("setup");
+    expect(setup.result).toMatchObject({
+      ok: true,
+      local: { statePath },
+      quickEnv: {
+        ok: true,
+        written: true,
+        path: envPath,
+        mode: "0600",
+        prefilled: [
+          "VIVARIUM_GITHUB_OWNER",
+          "VIVARIUM_AGENT_REPO_NAME",
+          "VIVARIUM_WORLD_REPO_NAME",
+          "VIVARIUM_CANONICAL_WORLD_REF",
+          "VIVARIUM_PRIVATE_WORLD_REF",
+        ],
+      },
+      nextCommands: expect.arrayContaining([
+        expect.stringContaining(`setup --env-file ${envPath}`),
+        expect.stringContaining(`model --env-file ${envPath}`),
+        expect.stringContaining(`doctor --live --env-file ${envPath}`),
+      ]),
+    });
+    expect(statSync(envPath).mode & 0o777).toBe(0o600);
+    expect(body).toContain("export VIVARIUM_GITHUB_OWNER='idanmann10'");
+    expect(body).toContain("export VIVARIUM_AGENT_REPO_NAME='vivarium-agent'");
+    expect(body).toContain("export VIVARIUM_WORLD_REPO_NAME='vivarium-world'");
+    expect(body).toContain(
+      "export VIVARIUM_CANONICAL_WORLD_REF='https://github.com/idanmann10/vivarium-world.git'",
+    );
+    expect(body).toContain(
+      "export VIVARIUM_PRIVATE_WORLD_REF='git@github.com:idanmann10/vivarium-world-private.git'",
+    );
+    expect(setup.output).toContain("Live env quick start: written");
+    expect(setup.output).toContain(`Env file: ${envPath}`);
+    expect(setup.output).toContain("Fill live settings");
+    expect(setup.output).toContain(`vivarium setup --env-file ${envPath}`);
+    expect(setup.output).toContain(`vivarium model --env-file ${envPath}`);
+    expect(setup.output).not.toContain("live env-init");
+
+    const repeated = await dispatchCliCommand([
+      "setup",
+      "--quick",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+      "--live-env-path",
+      envPath,
+    ]);
+
+    expect(repeated.result).toMatchObject({
+      ok: true,
+      quickEnv: {
+        ok: false,
+        written: false,
+        path: envPath,
+        error: "Live readiness env already exists. Pass --overwrite to replace it.",
+      },
+      nextCommands: expect.arrayContaining([
+        expect.stringContaining(`setup --env-file ${envPath}`),
+        expect.stringContaining(`doctor --live --env-file ${envPath}`),
+      ]),
+    });
+    expect(repeated.output).toContain("Live env quick start: already exists");
+    expect(repeated.output).toContain(`Env file: ${envPath}`);
+    expect(repeated.output).not.toContain("live env-init");
+  });
+
   test("routes setup through missing local state parent directories", async () => {
     const worldRoot = createWorldFixture();
     const statePath = join(

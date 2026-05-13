@@ -213,7 +213,7 @@ print_launch_sequence() {
   stage_label 1 "Prove the local loop"
   printf '      %q run --goal "validate local setup" --state-path %q\n' "$command" "$state_path"
   stage_label 2 "Prepare live readiness"
-  printf '      %q live env-init --path live-readiness.local.env\n' "$command"
+  printf '      Edit live-readiness.local.env locally. Keep it out of git.\n'
   printf '      %q setup --env-file live-readiness.local.env --domain %q --world-root %q --state-path %q\n' "$command" "$domain" "$world_root" "$state_path"
   printf '      %q setup --env-file live-readiness.local.env --domain %q --world-root %q --state-path %q --confirm-write\n' "$command" "$domain" "$world_root" "$state_path"
   stage_label 3 "Inspect configured models"
@@ -257,7 +257,7 @@ run bun install --frozen-lockfile
 run mkdir -p "$bin_dir"
 write_vivarium_command
 run mkdir -p "$(dirname "$state_path")"
-run bun apps/cli/src/main.ts setup --domain "$domain" --world-root "$world_root" --state-path "$state_path"
+run bun apps/cli/src/main.ts setup --quick --domain "$domain" --world-root "$world_root" --state-path "$state_path"
 
 echo
 echo "After installation:"
