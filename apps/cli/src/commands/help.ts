@@ -21,6 +21,10 @@ export function helpCommand(): HelpCommandResult {
         description: "Create a private live setup env file.",
       },
       {
+        command: "vivarium live evidence-init --path v1-evidence.json",
+        description: "Create a live evidence manifest skeleton.",
+      },
+      {
         command: "vivarium update",
         description: "Pull the latest agent and refresh dependencies.",
       },

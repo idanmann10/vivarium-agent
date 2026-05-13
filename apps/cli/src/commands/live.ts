@@ -446,6 +446,27 @@ export function renderLiveEnvInitCommandResult(result: LiveEnvInitCommandResult)
   ].join("\n");
 }
 
+export function renderLiveEvidenceInitCommandResult(result: LiveEvidenceInitCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Live Evidence",
+    "----------------------",
+    `Status: ${result.ok ? "written" : "blocked"}`,
+    `Evidence file: ${result.path}`,
+    ...(result.ok
+      ? [
+          `Sections: ${result.sections.length}`,
+          "",
+          "Next commands:",
+          "  Fill the evidence file with real artifact links.",
+          "  vivarium doctor --live --env-file live-readiness.local.env",
+        ]
+      : [`Error: ${result.error}`]),
+    "",
+  ].join("\n");
+}
+
 function renderList(label: string, values: readonly string[] | undefined): readonly string[] {
   return values === undefined || values.length === 0 ? [] : [label, ...values.map((value) => `  ${value}`)];
 }

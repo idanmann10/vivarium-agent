@@ -137,6 +137,7 @@ export {
   liveEvidenceInitCommand,
   liveSetupCommand,
   renderLiveEnvInitCommandResult,
+  renderLiveEvidenceInitCommandResult,
   renderLiveSetupCommandResult,
 } from "./commands/live.js";
 export type {

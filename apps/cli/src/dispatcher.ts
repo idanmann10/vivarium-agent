@@ -41,6 +41,7 @@ import {
   liveEvidenceInitCommand,
   liveSetupCommand,
   renderLiveEnvInitCommandResult,
+  renderLiveEvidenceInitCommandResult,
   renderLiveSetupCommandResult,
 } from "./commands/live.js";
 import { modelCommand, renderModelCommandResult } from "./commands/model.js";
@@ -711,13 +712,11 @@ export async function dispatchCliCommand(
       }
 
       if (subcommand === "evidence-init") {
-        return output(
-          command,
-          liveEvidenceInitCommand({
-            path: required(flags, "path"),
-            overwrite: booleanFlag(flags, "overwrite"),
-          }),
-        );
+        const result = liveEvidenceInitCommand({
+          path: required(flags, "path"),
+          overwrite: booleanFlag(flags, "overwrite"),
+        });
+        return { command, result, output: renderLiveEvidenceInitCommandResult(result) };
       }
 
       if (subcommand === "setup") {

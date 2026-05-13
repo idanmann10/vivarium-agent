@@ -14,6 +14,7 @@ describe("helpCommand", () => {
         expect.objectContaining({ command: "vivarium doctor" }),
         expect.objectContaining({ command: "vivarium model" }),
         expect.objectContaining({ command: "vivarium live env-init --path live-readiness.local.env" }),
+        expect.objectContaining({ command: "vivarium live evidence-init --path v1-evidence.json" }),
         expect.objectContaining({ command: "vivarium update" }),
       ]),
     );
@@ -22,11 +23,16 @@ describe("helpCommand", () => {
     expect(output).toContain("First run");
     expect(output).toContain("vivarium setup");
     expect(output).toContain("vivarium live env-init");
+    expect(output).toContain("vivarium live evidence-init");
     expect(output).toContain("vivarium model");
     expect(output).toContain("vivarium help");
     const liveEnvInitRow = output
       .split("\n")
       .find((line) => line.includes("Create a private live setup env file."));
     expect(liveEnvInitRow).toMatch(/live-readiness\.local\.env\s{2,}Create/);
+    const liveEvidenceInitRow = output
+      .split("\n")
+      .find((line) => line.includes("Create a live evidence manifest skeleton."));
+    expect(liveEvidenceInitRow).toMatch(/v1-evidence\.json\s{2,}Create/);
   });
 });

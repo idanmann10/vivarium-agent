@@ -1433,6 +1433,11 @@ describe("dispatchCliCommand", () => {
     ]);
 
     expect(created.command).toBe("live");
+    expect(created.output).toContain("Vivarium Live Evidence");
+    expect(created.output).toContain("Status: written");
+    expect(created.output).toContain("Sections: 11");
+    expect(created.output).toContain("vivarium doctor --live");
+    expect(created.output.trim().startsWith("{")).toBe(false);
     expect(created.result).toEqual({
       ok: true,
       written: true,
@@ -1464,6 +1469,9 @@ describe("dispatchCliCommand", () => {
       path: evidencePath,
       error: "Evidence manifest already exists. Pass --overwrite to replace it.",
     });
+    expect(refused.output).toContain("Status: blocked");
+    expect(refused.output).toContain("--overwrite");
+    expect(refused.output.trim().startsWith("{")).toBe(false);
     expect(overwritten.result).toMatchObject({ ok: true, written: true, path: evidencePath });
   });
 
