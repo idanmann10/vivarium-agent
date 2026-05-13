@@ -38,6 +38,9 @@ describe("CLI public API", () => {
     expect(typeof exports.liveEvidenceInitCommand).toBe("function");
     expect(typeof exports.renderProviderProfilesCommandResult).toBe("function");
     expect(typeof exports.renderProviderSmokeCommandResult).toBe("function");
+    expect(typeof exports.renderAddCredentialCommandResult).toBe("function");
+    expect(typeof exports.renderListCredentialsCommandResult).toBe("function");
+    expect(typeof exports.renderCredentialSmokeCommandResult).toBe("function");
   });
 });
 

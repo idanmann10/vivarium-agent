@@ -983,16 +983,33 @@ describe("dispatchCliCommand", () => {
 
     expect(run.result).toMatchObject({ success: true });
     expect(added.result).toEqual({ stored: true, name: "OPENAI_API_KEY", kind: "api_key" });
+    expect(added.output).toContain("Vivarium Credentials");
+    expect(added.output).toContain("Status: stored");
+    expect(added.output).toContain("OPENAI_API_KEY");
+    expect(added.output).not.toContain("sk-test");
+    expect(added.output).not.toContain("dispatch-secret");
+    expect(added.output.trim().startsWith("{")).toBe(false);
     expect(listed.result).toEqual({
       credentials: [
         { name: "OPENAI_API_KEY", kind: "api_key", purpose: "provider", scopes: ["model:chat"] },
       ],
     });
+    expect(listed.output).toContain("Vivarium Credentials");
+    expect(listed.output).toContain("Credentials: 1");
+    expect(listed.output).toContain("model:chat");
+    expect(listed.output).not.toContain("sk-test");
+    expect(listed.output.trim().startsWith("{")).toBe(false);
     expect(smoked.result).toMatchObject({
       ok: false,
       credentialName: "OPENAI_API_KEY",
       error: "Missing external adapter for http.request",
     });
+    expect(smoked.output).toContain("Vivarium Credential Smoke");
+    expect(smoked.output).toContain("Status: blocked");
+    expect(smoked.output).toContain("Missing external adapter for http.request");
+    expect(smoked.output).not.toContain("sk-test");
+    expect(smoked.output).not.toContain("dispatch-secret");
+    expect(smoked.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes configured provider runs without credentials", async () => {

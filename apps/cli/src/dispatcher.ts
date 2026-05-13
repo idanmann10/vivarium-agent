@@ -10,6 +10,9 @@ import {
   addCredentialCommand,
   credentialSmokeCommand,
   listCredentialsCommand,
+  renderAddCredentialCommandResult,
+  renderCredentialSmokeCommandResult,
+  renderListCredentialsCommandResult,
 } from "./commands/credentials.js";
 import {
   curriculumAdvanceCommand,
@@ -311,44 +314,38 @@ export async function dispatchCliCommand(
     }
     case "credentials": {
       if (subcommand === "add") {
-        return output(
-          command,
-          addCredentialCommand({
-            credentialsPath: required(flags, "path"),
-            masterKey: required(flags, "master-key"),
-            kind: required(flags, "kind") as CredentialKind,
-            name: required(flags, "name"),
-            purpose: required(flags, "purpose"),
-            value: required(flags, "value"),
-            scopes: values(flags, "scope"),
-          }),
-        );
+        const result = addCredentialCommand({
+          credentialsPath: required(flags, "path"),
+          masterKey: required(flags, "master-key"),
+          kind: required(flags, "kind") as CredentialKind,
+          name: required(flags, "name"),
+          purpose: required(flags, "purpose"),
+          value: required(flags, "value"),
+          scopes: values(flags, "scope"),
+        });
+        return { command, result, output: renderAddCredentialCommandResult(result) };
       }
 
       if (subcommand === "list") {
-        return output(
-          command,
-          listCredentialsCommand({
-            credentialsPath: required(flags, "path"),
-            masterKey: required(flags, "master-key"),
-          }),
-        );
+        const result = listCredentialsCommand({
+          credentialsPath: required(flags, "path"),
+          masterKey: required(flags, "master-key"),
+        });
+        return { command, result, output: renderListCredentialsCommandResult(result) };
       }
 
       if (subcommand === "smoke") {
         const method = value(flags, "method") as HttpMethod | undefined;
         const body = value(flags, "body");
-        return output(
-          command,
-          await credentialSmokeCommand({
-            credentialsPath: required(flags, "path"),
-            masterKey: required(flags, "master-key"),
-            name: required(flags, "name"),
-            url: required(flags, "url"),
-            ...(method === undefined ? {} : { method }),
-            ...(body === undefined ? {} : { body }),
-          }),
-        );
+        const result = await credentialSmokeCommand({
+          credentialsPath: required(flags, "path"),
+          masterKey: required(flags, "master-key"),
+          name: required(flags, "name"),
+          url: required(flags, "url"),
+          ...(method === undefined ? {} : { method }),
+          ...(body === undefined ? {} : { body }),
+        });
+        return { command, result, output: renderCredentialSmokeCommandResult(result) };
       }
 
       usage('Unknown credentials subcommand. Use "add", "list", or "smoke".');

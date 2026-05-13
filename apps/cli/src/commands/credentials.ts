@@ -5,6 +5,7 @@ import {
   type ExternalToolAdapters,
 } from "../../../../packages/tools/src/index.js";
 import type { HttpMethod } from "../../../../packages/tools/src/external/index.js";
+import { renderVivariumGlobe } from "./branding.js";
 
 export interface CredentialStoreCommandOptions {
   readonly credentialsPath: string;
@@ -80,6 +81,22 @@ export function addCredentialCommand(options: AddCredentialCommandOptions): AddC
   return { stored: true, name: options.name, kind: options.kind };
 }
 
+export function renderAddCredentialCommandResult(result: AddCredentialCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Credentials",
+    "--------------------",
+    "Status: stored",
+    `Credential: ${result.name}`,
+    `Kind: ${result.kind}`,
+    "",
+    "Next command:",
+    "  vivarium credentials list --path <credentials-path> --master-key <master-key>",
+    "",
+  ].join("\n");
+}
+
 export function listCredentialsCommand(options: CredentialStoreCommandOptions): ListCredentialsCommandResult {
   return {
     credentials: store(options).list().map((credential) => ({
@@ -89,6 +106,33 @@ export function listCredentialsCommand(options: CredentialStoreCommandOptions): 
       scopes: credential.scopes ?? [],
     })),
   };
+}
+
+function renderListedCredential(credential: ListedCredential): readonly string[] {
+  return [
+    `  ${credential.name}`,
+    `    Kind: ${credential.kind}`,
+    `    Purpose: ${credential.purpose}`,
+    `    Scopes: ${credential.scopes.length === 0 ? "none" : credential.scopes.join(", ")}`,
+  ];
+}
+
+export function renderListCredentialsCommandResult(result: ListCredentialsCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Credentials",
+    "--------------------",
+    `Credentials: ${result.credentials.length}`,
+    ...(result.credentials.length === 0
+      ? [
+          "",
+          "Next command:",
+          "  vivarium live setup --env-file live-readiness.local.env --confirm-write",
+        ]
+      : ["", ...result.credentials.flatMap(renderListedCredential)]),
+    "",
+  ].join("\n");
 }
 
 export async function credentialSmokeCommand(options: CredentialSmokeCommandOptions): Promise<CredentialSmokeCommandResult> {
@@ -130,4 +174,32 @@ export async function credentialSmokeCommand(options: CredentialSmokeCommandOpti
     status: typeof value.status === "number" ? value.status : 0,
     bodyPreview: typeof value.body === "string" ? preview(value.body) : "",
   };
+}
+
+export function renderCredentialSmokeCommandResult(result: CredentialSmokeCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Credential Smoke",
+    "-------------------------",
+    `Status: ${result.ok ? "ok" : "blocked"}`,
+    `Credential: ${result.credentialName}`,
+    `Method: ${result.method}`,
+    `URL: ${result.url}`,
+    ...(result.ok
+      ? [
+          `HTTP status: ${result.status}`,
+          `Preview: ${result.bodyPreview}`,
+          "",
+          "Next command:",
+          "  vivarium doctor --live --env-file live-readiness.local.env",
+        ]
+      : [
+          `Error: ${result.error}`,
+          "",
+          "Next command:",
+          "  Check the encrypted credential store and rerun credential smoke.",
+        ]),
+    "",
+  ].join("\n");
 }

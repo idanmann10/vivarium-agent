@@ -51,6 +51,9 @@ export {
   addCredentialCommand,
   credentialSmokeCommand,
   listCredentialsCommand,
+  renderAddCredentialCommandResult,
+  renderCredentialSmokeCommandResult,
+  renderListCredentialsCommandResult,
 } from "./commands/credentials.js";
 export type {
   AddCredentialCommandOptions,
