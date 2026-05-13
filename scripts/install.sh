@@ -217,6 +217,7 @@ echo "  vivarium setup"
 echo "  vivarium update"
 echo
 echo "Command path fallback:"
+printf '  %q run --goal "validate local setup" --state-path %q\n' "$command_path" "$state_path"
 echo "  $command_path status"
 echo
-echo "If 'vivarium' is not found, add $bin_dir to PATH or run the command path above."
+echo "If 'vivarium' is not found, add $bin_dir to PATH or run a command path above."

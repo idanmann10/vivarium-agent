@@ -51,6 +51,9 @@ describe("install.sh", () => {
     expect(stdout).toContain("vivarium model");
     expect(stdout).toContain("vivarium doctor");
     expect(stdout).toContain("vivarium update");
+    expect(stdout).toContain(
+      '/tmp/vivarium-bin/vivarium run --goal "validate local setup" --state-path .vivarium/research.db',
+    );
     expect(stdout).toContain("If 'vivarium' is not found, add /tmp/vivarium-bin to PATH");
   });
 
