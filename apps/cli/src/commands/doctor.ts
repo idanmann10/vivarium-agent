@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, extname, isAbsolute, join, resolve } from "node:path";
+import { renderVivariumGlobe } from "./branding.js";
 
 export interface DoctorResult {
   readonly ok: boolean;
@@ -93,7 +94,9 @@ const internalApiHealthUrlEnv = "VIVARIUM_INTERNAL_API_HEALTH_URL";
 const v1EvidencePathEnv = "VIVARIUM_V1_EVIDENCE_PATH";
 type EnvValueStatus = "missing" | "placeholder" | "configured";
 
-function spawnEnv(env: Readonly<Record<string, string | undefined>>): Record<string, string | undefined> {
+function spawnEnv(
+  env: Readonly<Record<string, string | undefined>>,
+): Record<string, string | undefined> {
   const merged: Record<string, string | undefined> = {};
   for (const [key, value] of Object.entries(process.env)) {
     if (value !== undefined) {
@@ -148,7 +151,10 @@ function isPlaceholderValue(value: string): boolean {
   return /^<[^>]+>$/.test(value.trim());
 }
 
-function envValueStatus(env: Readonly<Record<string, string | undefined>>, envName: string): EnvValueStatus {
+function envValueStatus(
+  env: Readonly<Record<string, string | undefined>>,
+  envName: string,
+): EnvValueStatus {
   const value = env[envName]?.trim();
   if (value === undefined || value.length === 0) {
     return "missing";
@@ -194,13 +200,17 @@ function remoteCheck(
     return `${label}.remote:configured`;
   }
 
-  return result.stdout.includes(`${owner}/${repo}`) ? `${label}.remote:configured` : `${label}.remote:mismatch`;
+  return result.stdout.includes(`${owner}/${repo}`)
+    ? `${label}.remote:configured`
+    : `${label}.remote:mismatch`;
 }
 
 function providerEnvCheck(env: Readonly<Record<string, string | undefined>>): string {
   const statuses = [
     ...Object.entries(env).flatMap(([key, value]) =>
-      providerEnvPrefixes.some((prefix) => key.startsWith(prefix)) && value !== undefined && value.trim().length > 0
+      providerEnvPrefixes.some((prefix) => key.startsWith(prefix)) &&
+      value !== undefined &&
+      value.trim().length > 0
         ? [isPlaceholderValue(value) ? "placeholder" : "configured"]
         : [],
     ),
@@ -223,20 +233,35 @@ function githubEnvCheck(env: Readonly<Record<string, string | undefined>>): stri
   return statuses.includes("placeholder") ? "github.env:placeholder" : "github.env:missing";
 }
 
-function repoNameCheck(env: Readonly<Record<string, string | undefined>>, envName: string, placeholder: string, label: string): string {
+function repoNameCheck(
+  env: Readonly<Record<string, string | undefined>>,
+  envName: string,
+  placeholder: string,
+  label: string,
+): string {
   const value = env[envName]?.trim();
   if (value === undefined || value.length === 0) {
     return `${label}.name:missing`;
   }
 
-  return value === placeholder || isPlaceholderValue(value) ? `${label}.name:placeholder` : `${label}.name:configured`;
+  return value === placeholder || isPlaceholderValue(value)
+    ? `${label}.name:placeholder`
+    : `${label}.name:configured`;
 }
 
-function requiredEnvCheck(env: Readonly<Record<string, string | undefined>>, envName: string, label: string): string {
+function requiredEnvCheck(
+  env: Readonly<Record<string, string | undefined>>,
+  envName: string,
+  label: string,
+): string {
   return `${label}:${envValueStatus(env, envName)}`;
 }
 
-function positiveIntegerEnvCheck(env: Readonly<Record<string, string | undefined>>, envName: string, label: string): string {
+function positiveIntegerEnvCheck(
+  env: Readonly<Record<string, string | undefined>>,
+  envName: string,
+  label: string,
+): string {
   const status = envValueStatus(env, envName);
   if (status !== "configured") {
     return `${label}:${status}`;
@@ -246,7 +271,10 @@ function positiveIntegerEnvCheck(env: Readonly<Record<string, string | undefined
   return Number.isInteger(parsed) && parsed > 0 ? `${label}:configured` : `${label}:invalid`;
 }
 
-function positiveIntegerEnvValue(env: Readonly<Record<string, string | undefined>>, envName: string): number | undefined {
+function positiveIntegerEnvValue(
+  env: Readonly<Record<string, string | undefined>>,
+  envName: string,
+): number | undefined {
   const parsed = Number.parseInt(env[envName] ?? "", 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
@@ -260,7 +288,11 @@ function isHttpUrlValue(value: string): boolean {
   }
 }
 
-function httpUrlEnvCheck(env: Readonly<Record<string, string | undefined>>, envName: string, label: string): string {
+function httpUrlEnvCheck(
+  env: Readonly<Record<string, string | undefined>>,
+  envName: string,
+  label: string,
+): string {
   const status = envValueStatus(env, envName);
   if (status !== "configured") {
     return `${label}:${status}`;
@@ -270,7 +302,11 @@ function httpUrlEnvCheck(env: Readonly<Record<string, string | undefined>>, envN
   return isHttpUrlValue(value) ? `${label}:configured` : `${label}:invalid`;
 }
 
-function requiredFileCheck(env: Readonly<Record<string, string | undefined>>, envName: string, label: string): string {
+function requiredFileCheck(
+  env: Readonly<Record<string, string | undefined>>,
+  envName: string,
+  label: string,
+): string {
   const value = env[envName]?.trim();
   if (value === undefined || value.length === 0) {
     return `${label}:missing`;
@@ -296,14 +332,18 @@ function liveEnvFilePermissionChecks(envFilePath: string | undefined): readonly 
       return ["liveEnvFile.permissions:unavailable"];
     }
 
-    return (stat.mode & 0o077) === 0 ? ["liveEnvFile.permissions:configured"] : ["liveEnvFile.permissions:insecure"];
+    return (stat.mode & 0o077) === 0
+      ? ["liveEnvFile.permissions:configured"]
+      : ["liveEnvFile.permissions:insecure"];
   } catch {
     return ["liveEnvFile.permissions:unavailable"];
   }
 }
 
 function asRecord(value: unknown): Readonly<Record<string, unknown>> | undefined {
-  return typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Readonly<Record<string, unknown>>) : undefined;
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Readonly<Record<string, unknown>>)
+    : undefined;
 }
 
 function recordArray(value: unknown): ReadonlyArray<Readonly<Record<string, unknown>>> {
@@ -342,10 +382,19 @@ function isUrlReference(value: string): boolean {
 }
 
 function isPathLikeReference(value: string): boolean {
-  return isAbsolute(value) || value.startsWith(".") || value.includes("/") || value.includes("\\") || extname(value).length > 0;
+  return (
+    isAbsolute(value) ||
+    value.startsWith(".") ||
+    value.includes("/") ||
+    value.includes("\\") ||
+    extname(value).length > 0
+  );
 }
 
-function evidenceReferenceIdentity(value: unknown, context: V1EvidenceReferenceContext): string | undefined {
+function evidenceReferenceIdentity(
+  value: unknown,
+  context: V1EvidenceReferenceContext,
+): string | undefined {
   const text = textValue(value);
   if (text === undefined) {
     return undefined;
@@ -357,7 +406,13 @@ function evidenceReferenceIdentity(value: unknown, context: V1EvidenceReferenceC
     return undefined;
   }
 
-  const candidates = isAbsolute(text) ? [text] : [join(context.manifestDir, text), join(context.agentRoot, text), join(context.worldRoot, text)];
+  const candidates = isAbsolute(text)
+    ? [text]
+    : [
+        join(context.manifestDir, text),
+        join(context.agentRoot, text),
+        join(context.worldRoot, text),
+      ];
   const match = candidates.find((candidate) => existsSync(candidate));
   return match === undefined ? undefined : resolve(match);
 }
@@ -366,11 +421,18 @@ function evidenceReference(value: unknown, context: V1EvidenceReferenceContext):
   return evidenceReferenceIdentity(value, context) !== undefined;
 }
 
-function distinctEvidenceReferenceCount(value: unknown, context: V1EvidenceReferenceContext): number {
-  return new Set(textArray(value).flatMap((item) => evidenceReferenceIdentity(item, context) ?? [])).size;
+function distinctEvidenceReferenceCount(
+  value: unknown,
+  context: V1EvidenceReferenceContext,
+): number {
+  return new Set(textArray(value).flatMap((item) => evidenceReferenceIdentity(item, context) ?? []))
+    .size;
 }
 
-function agentEvidenceRecords(value: unknown, context: V1EvidenceReferenceContext): readonly { readonly agent: string; readonly evidence: string }[] {
+function agentEvidenceRecords(
+  value: unknown,
+  context: V1EvidenceReferenceContext,
+): readonly { readonly agent: string; readonly evidence: string }[] {
   return recordArray(value).flatMap((record) => {
     const agent = textValue(record.agent);
     const evidence = evidenceReferenceIdentity(record.evidence, context);
@@ -378,14 +440,21 @@ function agentEvidenceRecords(value: unknown, context: V1EvidenceReferenceContex
   });
 }
 
-function agentEvidenceRecord(value: unknown, context: V1EvidenceReferenceContext): { readonly agent: string; readonly evidence: string } | undefined {
+function agentEvidenceRecord(
+  value: unknown,
+  context: V1EvidenceReferenceContext,
+): { readonly agent: string; readonly evidence: string } | undefined {
   const record = asRecord(value);
   const agent = textValue(record?.agent);
   const evidence = evidenceReferenceIdentity(record?.evidence, context);
   return agent === undefined || evidence === undefined ? undefined : { agent, evidence };
 }
 
-function orderedEvidenceSequence(value: unknown, expectedSteps: readonly string[], context: V1EvidenceReferenceContext): boolean {
+function orderedEvidenceSequence(
+  value: unknown,
+  expectedSteps: readonly string[],
+  context: V1EvidenceReferenceContext,
+): boolean {
   const records = recordArray(value);
   const evidence = records.flatMap((record, index) => {
     if (textValue(record.step) !== expectedSteps[index]) {
@@ -395,7 +464,11 @@ function orderedEvidenceSequence(value: unknown, expectedSteps: readonly string[
     return reference === undefined ? [] : [reference];
   });
 
-  return records.length === expectedSteps.length && evidence.length === expectedSteps.length && new Set(evidence).size === expectedSteps.length;
+  return (
+    records.length === expectedSteps.length &&
+    evidence.length === expectedSteps.length &&
+    new Set(evidence).size === expectedSteps.length
+  );
 }
 
 function worldSubscriptionReference(value: unknown): string | undefined {
@@ -404,14 +477,25 @@ function worldSubscriptionReference(value: unknown): string | undefined {
     return undefined;
   }
 
-  if (isUrlReference(text) || /^git@[^:]+:[^/]+\/[^/]+(?:\.git)?$/.test(text) || /^(?:ssh|git):\/\/.+/.test(text)) {
+  if (
+    isUrlReference(text) ||
+    /^git@[^:]+:[^/]+\/[^/]+(?:\.git)?$/.test(text) ||
+    /^(?:ssh|git):\/\/.+/.test(text)
+  ) {
     return text;
   }
 
   return undefined;
 }
 
-function githubUrlReference(value: unknown): { readonly text: string; readonly owner: string; readonly repo: string; readonly parts: readonly string[] } | undefined {
+function githubUrlReference(value: unknown):
+  | {
+      readonly text: string;
+      readonly owner: string;
+      readonly repo: string;
+      readonly parts: readonly string[];
+    }
+  | undefined {
   const text = textValue(value);
   if (text === undefined) {
     return undefined;
@@ -443,27 +527,42 @@ function matchesCanonicalGitHubRepo(
   return reference.owner === repo.owner && reference.repo === repo.repo;
 }
 
-function githubDiscussionReference(value: unknown, context: V1EvidenceReferenceContext): string | undefined {
+function githubDiscussionReference(
+  value: unknown,
+  context: V1EvidenceReferenceContext,
+): string | undefined {
   const reference = githubUrlReference(value);
   if (reference === undefined || !matchesCanonicalGitHubRepo(reference, context)) {
     return undefined;
   }
 
-  return reference.parts[2] === "discussions" && /^\d+$/.test(reference.parts[3] ?? "") && reference.parts.length === 4
+  return reference.parts[2] === "discussions" &&
+    /^\d+$/.test(reference.parts[3] ?? "") &&
+    reference.parts.length === 4
     ? reference.text
     : undefined;
 }
 
-function githubPullRequestReference(value: unknown, context: V1EvidenceReferenceContext): string | undefined {
+function githubPullRequestReference(
+  value: unknown,
+  context: V1EvidenceReferenceContext,
+): string | undefined {
   const reference = githubUrlReference(value);
   if (reference === undefined || !matchesCanonicalGitHubRepo(reference, context)) {
     return undefined;
   }
 
-  return reference.parts[2] === "pull" && /^\d+$/.test(reference.parts[3] ?? "") && reference.parts.length === 4 ? reference.text : undefined;
+  return reference.parts[2] === "pull" &&
+    /^\d+$/.test(reference.parts[3] ?? "") &&
+    reference.parts.length === 4
+    ? reference.text
+    : undefined;
 }
 
-function githubActionsRunReference(value: unknown, context: V1EvidenceReferenceContext): string | undefined {
+function githubActionsRunReference(
+  value: unknown,
+  context: V1EvidenceReferenceContext,
+): string | undefined {
   const reference = githubUrlReference(value);
   if (reference === undefined || !matchesCanonicalGitHubRepo(reference, context)) {
     return undefined;
@@ -477,7 +576,10 @@ function githubActionsRunReference(value: unknown, context: V1EvidenceReferenceC
     : undefined;
 }
 
-function githubCanonicalSkillReference(value: unknown, context: V1EvidenceReferenceContext): string | undefined {
+function githubCanonicalSkillReference(
+  value: unknown,
+  context: V1EvidenceReferenceContext,
+): string | undefined {
   const reference = githubUrlReference(value);
   if (reference === undefined || !matchesCanonicalGitHubRepo(reference, context)) {
     return undefined;
@@ -492,7 +594,10 @@ function githubCanonicalSkillReference(value: unknown, context: V1EvidenceRefere
     : undefined;
 }
 
-function githubCanonicalSkillReferences(value: unknown, context: V1EvidenceReferenceContext): readonly string[] {
+function githubCanonicalSkillReferences(
+  value: unknown,
+  context: V1EvidenceReferenceContext,
+): readonly string[] {
   return textArray(value).flatMap((item) => {
     const reference = githubCanonicalSkillReference(item, context);
     return reference === undefined ? [] : [reference];
@@ -505,7 +610,11 @@ function githubCanonicalWorldArtifactReference(
   kind: "antiPattern" | "trace" | "run",
 ): string | undefined {
   const reference = githubUrlReference(value);
-  if (reference === undefined || !matchesCanonicalGitHubRepo(reference, context) || reference.parts[2] !== "blob") {
+  if (
+    reference === undefined ||
+    !matchesCanonicalGitHubRepo(reference, context) ||
+    reference.parts[2] !== "blob"
+  ) {
     return undefined;
   }
 
@@ -545,46 +654,69 @@ function v1Check(label: string, configured: boolean): string {
   return `v1.${label}:${configured ? "configured" : "missing"}`;
 }
 
-function canonicalGitHubRepo(env: Readonly<Record<string, string | undefined>>): V1EvidenceReferenceContext["canonicalGitHubRepo"] {
+function canonicalGitHubRepo(
+  env: Readonly<Record<string, string | undefined>>,
+): V1EvidenceReferenceContext["canonicalGitHubRepo"] {
   const owner = textValue(env[githubOwnerEnv]);
   const repo = textValue(env[worldRepoNameEnv]);
-  return owner !== undefined && repo !== undefined && repo !== "the-world" ? { owner, repo } : undefined;
+  return owner !== undefined && repo !== undefined && repo !== "the-world"
+    ? { owner, repo }
+    : undefined;
 }
 
-function configuredWorldReference(env: Readonly<Record<string, string | undefined>>, envName: string): string | undefined {
+function configuredWorldReference(
+  env: Readonly<Record<string, string | undefined>>,
+  envName: string,
+): string | undefined {
   const value = textValue(env[envName]);
   return value !== undefined && !isPlaceholderValue(value) ? value : undefined;
 }
 
-function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, context: V1EvidenceReferenceContext): readonly string[] {
+function v1EvidenceDetailChecks(
+  manifest: Readonly<Record<string, unknown>>,
+  context: V1EvidenceReferenceContext,
+): readonly string[] {
   const starterPack = asRecord(manifest.starterPack);
   const skillCount = numberValue(starterPack?.skillCount);
   const traceCount = numberValue(starterPack?.traceCount);
-  const starterSkillReferenceCount = distinctEvidenceReferenceCount(starterPack?.skillReferences, context);
-  const starterTraceReferenceCount = distinctEvidenceReferenceCount(starterPack?.traceReferences, context);
+  const starterSkillReferenceCount = distinctEvidenceReferenceCount(
+    starterPack?.skillReferences,
+    context,
+  );
+  const starterTraceReferenceCount = distinctEvidenceReferenceCount(
+    starterPack?.traceReferences,
+    context,
+  );
   const realGoals = recordArray(manifest.realGoals);
   const realGoalIds = new Set(realGoals.flatMap((goal) => textValue(goal.id) ?? []));
-  const realGoalEvidenceCount = new Set(realGoals.flatMap((goal) => evidenceReferenceIdentity(goal.evidence, context) ?? [])).size;
+  const realGoalEvidenceCount = new Set(
+    realGoals.flatMap((goal) => evidenceReferenceIdentity(goal.evidence, context) ?? []),
+  ).size;
   const realGoalDates = realGoals.flatMap((goal) => {
     const millis = dateMillis(goal.date);
     return millis === undefined ? [] : [millis];
   });
-  const realGoalDatesAreNotFuture = realGoalDates.length > 0 && realGoalDates.every((millis) => millis <= context.nowMillis);
+  const realGoalDatesAreNotFuture =
+    realGoalDates.length > 0 && realGoalDates.every((millis) => millis <= context.nowMillis);
   const firstGoal = realGoalDates.length === 0 ? undefined : Math.min(...realGoalDates);
   const lastGoal = realGoalDates.length === 0 ? undefined : Math.max(...realGoalDates);
   const providerSmokes = asRecord(manifest.providerSmokes);
   const providerSmokeEvidenceCount = new Set(
-    [providerSmokes?.anthropic, providerSmokes?.openRouter, providerSmokes?.privateOaiCompat].flatMap(
-      (reference) => evidenceReferenceIdentity(reference, context) ?? [],
-    ),
+    [
+      providerSmokes?.anthropic,
+      providerSmokes?.openRouter,
+      providerSmokes?.privateOaiCompat,
+    ].flatMap((reference) => evidenceReferenceIdentity(reference, context) ?? []),
   ).size;
   const worldSubscriptions = asRecord(manifest.worldSubscriptions);
   const canonicalWorldSubscription = worldSubscriptionReference(worldSubscriptions?.canonical);
   const privateForkWorldSubscription = worldSubscriptionReference(worldSubscriptions?.privateFork);
   const canonicalWorldSubscriptionMatchesConfiguredRef =
-    context.canonicalWorldRef === undefined || canonicalWorldSubscription === context.canonicalWorldRef;
+    context.canonicalWorldRef === undefined ||
+    canonicalWorldSubscription === context.canonicalWorldRef;
   const privateForkWorldSubscriptionMatchesConfiguredRef =
-    context.privateWorldRef === undefined || privateForkWorldSubscription === context.privateWorldRef;
+    context.privateWorldRef === undefined ||
+    privateForkWorldSubscription === context.privateWorldRef;
   const behaviorLoop = asRecord(manifest.behaviorLoop);
   const destructiveEndpoint = asRecord(behaviorLoop?.destructiveEndpoint);
   const destructiveEndpointRun = evidenceReferenceIdentity(destructiveEndpoint?.run, context);
@@ -596,18 +728,43 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const dreamArtifacts = asRecord(manifest.dreamArtifacts);
   const publicContribution = asRecord(manifest.publicContribution);
   const publicContributionContributorAgent = textValue(publicContribution?.contributorAgent);
-  const publicContributionPositiveSignals = agentEvidenceRecords(publicContribution?.positiveSignals, context);
-  const publicContributionPositiveSignalAgents = new Set(publicContributionPositiveSignals.map((signal) => signal.agent));
-  const publicContributionPositiveSignalEvidence = new Set(publicContributionPositiveSignals.map((signal) => signal.evidence));
-  const publicContributionPullUses = agentEvidenceRecords(publicContribution?.externalPullUses, context);
-  const publicContributionPullUseAgents = new Set(publicContributionPullUses.map((pullUse) => pullUse.agent));
-  const publicContributionPullUseEvidence = new Set(publicContributionPullUses.map((pullUse) => pullUse.evidence));
-  const dreamInternalSkillEvidence = evidenceReferenceIdentity(dreamArtifacts?.internalSkill, context);
+  const publicContributionPositiveSignals = agentEvidenceRecords(
+    publicContribution?.positiveSignals,
+    context,
+  );
+  const publicContributionPositiveSignalAgents = new Set(
+    publicContributionPositiveSignals.map((signal) => signal.agent),
+  );
+  const publicContributionPositiveSignalEvidence = new Set(
+    publicContributionPositiveSignals.map((signal) => signal.evidence),
+  );
+  const publicContributionPullUses = agentEvidenceRecords(
+    publicContribution?.externalPullUses,
+    context,
+  );
+  const publicContributionPullUseAgents = new Set(
+    publicContributionPullUses.map((pullUse) => pullUse.agent),
+  );
+  const publicContributionPullUseEvidence = new Set(
+    publicContributionPullUses.map((pullUse) => pullUse.evidence),
+  );
+  const dreamInternalSkillEvidence = evidenceReferenceIdentity(
+    dreamArtifacts?.internalSkill,
+    context,
+  );
   const dreamPublicSkillEvidence = evidenceReferenceIdentity(dreamArtifacts?.publicSkill, context);
   const publishedArtifacts = asRecord(manifest.publishedArtifacts);
   const publishedArtifactsContributorAgent = textValue(publishedArtifacts?.contributorAgent);
-  const publishedAntiPattern = publishedWorldArtifactReference(publishedArtifacts?.antiPattern, context, "antiPattern");
-  const publishedTrace = publishedWorldArtifactReference(publishedArtifacts?.trace, context, "trace");
+  const publishedAntiPattern = publishedWorldArtifactReference(
+    publishedArtifacts?.antiPattern,
+    context,
+    "antiPattern",
+  );
+  const publishedTrace = publishedWorldArtifactReference(
+    publishedArtifacts?.trace,
+    context,
+    "trace",
+  );
   const publishedRun = publishedWorldArtifactReference(publishedArtifacts?.run, context, "run");
   const publishedTracePlanRead = agentEvidenceRecord(publishedArtifacts?.tracePlanRead, context);
   const publishedRunPlanRead = agentEvidenceRecord(publishedArtifacts?.runPlanRead, context);
@@ -620,17 +777,27 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
   const twoWeekBaselineMetric = numberValue(twoWeekImprovement?.baselineMetric);
   const twoWeekFollowupMetric = numberValue(twoWeekImprovement?.followupMetric);
   const twoWeekImprovementPercent = numberValue(twoWeekImprovement?.improvementPercent);
-  const publicCanonicalSkill = githubCanonicalSkillReference(publicContribution?.canonicalSkill, context);
-  const twoWeekCompetingSkillReferences = new Set(githubCanonicalSkillReferences(twoWeekImprovement?.competingSkillReferences, context));
+  const publicCanonicalSkill = githubCanonicalSkillReference(
+    publicContribution?.canonicalSkill,
+    context,
+  );
+  const twoWeekCompetingSkillReferences = new Set(
+    githubCanonicalSkillReferences(twoWeekImprovement?.competingSkillReferences, context),
+  );
   const twoWeekContributorAgent = textValue(twoWeekImprovement?.contributorAgent);
   const twoWeekRefinements = agentEvidenceRecords(twoWeekImprovement?.refinementEvidence, context);
   const twoWeekRefinementAgents = new Set(twoWeekRefinements.map((refinement) => refinement.agent));
-  const twoWeekRefinementEvidence = new Set(twoWeekRefinements.map((refinement) => refinement.evidence));
+  const twoWeekRefinementEvidence = new Set(
+    twoWeekRefinements.map((refinement) => refinement.evidence),
+  );
   const loopContributorAgent = publicContributionContributorAgent;
   const publishedArtifactsUsesLoopContributor =
-    loopContributorAgent !== undefined && publishedArtifactsContributorAgent === loopContributorAgent;
-  const curationUsesLoopContributor = loopContributorAgent !== undefined && curationAgentContributor === loopContributorAgent;
-  const twoWeekUsesLoopContributor = loopContributorAgent !== undefined && twoWeekContributorAgent === loopContributorAgent;
+    loopContributorAgent !== undefined &&
+    publishedArtifactsContributorAgent === loopContributorAgent;
+  const curationUsesLoopContributor =
+    loopContributorAgent !== undefined && curationAgentContributor === loopContributorAgent;
+  const twoWeekUsesLoopContributor =
+    loopContributorAgent !== undefined && twoWeekContributorAgent === loopContributorAgent;
 
   return [
     v1Check(
@@ -665,11 +832,11 @@ function v1EvidenceDetailChecks(manifest: Readonly<Record<string, unknown>>, con
         lastGoal !== undefined &&
         lastGoal - firstGoal >= 7 * 24 * 60 * 60 * 1000,
     ),
+    v1Check("providerSmokes", providerSmokeEvidenceCount === 3),
     v1Check(
-      "providerSmokes",
-      providerSmokeEvidenceCount === 3,
+      "internalCredentialSmoke",
+      evidenceReference(manifest.internalCredentialSmoke, context),
     ),
-    v1Check("internalCredentialSmoke", evidenceReference(manifest.internalCredentialSmoke, context)),
     v1Check(
       "worldSubscriptions",
       canonicalWorldSubscription !== undefined &&
@@ -811,14 +978,22 @@ function v1EvidenceChecks(
   }
 }
 
-function worldSubscriptionRefs(env: Readonly<Record<string, string | undefined>>): ReadonlySet<string> | undefined {
+function worldSubscriptionRefs(
+  env: Readonly<Record<string, string | undefined>>,
+): ReadonlySet<string> | undefined {
   const subscriptionsPath = env[worldSubscriptionsPathEnv]?.trim();
-  if (subscriptionsPath === undefined || subscriptionsPath.length === 0 || !existsSync(subscriptionsPath)) {
+  if (
+    subscriptionsPath === undefined ||
+    subscriptionsPath.length === 0 ||
+    !existsSync(subscriptionsPath)
+  ) {
     return undefined;
   }
 
   try {
-    const parsed = JSON.parse(readFileSync(subscriptionsPath, "utf8")) as { readonly worlds?: readonly { readonly ref?: unknown }[] };
+    const parsed = JSON.parse(readFileSync(subscriptionsPath, "utf8")) as {
+      readonly worlds?: readonly { readonly ref?: unknown }[];
+    };
     return new Set(
       (parsed.worlds ?? []).flatMap((world) => {
         const ref = typeof world.ref === "string" ? world.ref.trim() : "";
@@ -857,7 +1032,9 @@ interface ExpectedProviderProfile {
   readonly costClass: string;
 }
 
-function providerProfilesByName(env: Readonly<Record<string, string | undefined>>): ReadonlyMap<string, Readonly<Record<string, unknown>>> | undefined {
+function providerProfilesByName(
+  env: Readonly<Record<string, string | undefined>>,
+): ReadonlyMap<string, Readonly<Record<string, unknown>>> | undefined {
   const profilesPath = env[providerProfilesPathEnv]?.trim();
   if (profilesPath === undefined || profilesPath.length === 0 || !existsSync(profilesPath)) {
     return undefined;
@@ -900,10 +1077,15 @@ function providerProfileCheck(
     return `${label}:unavailable`;
   }
 
-  return expected === undefined || providerProfileMatches(profile, expected) ? `${label}:configured` : `${label}:mismatch`;
+  return expected === undefined || providerProfileMatches(profile, expected)
+    ? `${label}:configured`
+    : `${label}:mismatch`;
 }
 
-function providerProfileMatches(profile: Readonly<Record<string, unknown>>, expected: ExpectedProviderProfile): boolean {
+function providerProfileMatches(
+  profile: Readonly<Record<string, unknown>>,
+  expected: ExpectedProviderProfile,
+): boolean {
   return (
     textValue(profile.kind) === expected.kind &&
     textValue(profile.apiKeyEnv) === expected.apiKeyEnv &&
@@ -915,7 +1097,9 @@ function providerProfileMatches(profile: Readonly<Record<string, unknown>>, expe
   );
 }
 
-function expectedAnthropicProviderProfile(env: Readonly<Record<string, string | undefined>>): ExpectedProviderProfile | undefined {
+function expectedAnthropicProviderProfile(
+  env: Readonly<Record<string, string | undefined>>,
+): ExpectedProviderProfile | undefined {
   const model = textValue(env[anthropicModelEnv]);
   const contextWindow = positiveIntegerEnvValue(env, anthropicContextWindowEnv);
   return model === undefined || contextWindow === undefined
@@ -930,11 +1114,16 @@ function expectedAnthropicProviderProfile(env: Readonly<Record<string, string | 
       };
 }
 
-function expectedOpenRouterProviderProfile(env: Readonly<Record<string, string | undefined>>): ExpectedProviderProfile | undefined {
+function expectedOpenRouterProviderProfile(
+  env: Readonly<Record<string, string | undefined>>,
+): ExpectedProviderProfile | undefined {
   const model = textValue(env[openRouterModelEnv]);
   const baseUrl = textValue(env[openRouterBaseUrlEnv]);
   const contextWindow = positiveIntegerEnvValue(env, openRouterContextWindowEnv);
-  return model === undefined || baseUrl === undefined || !isHttpUrlValue(baseUrl) || contextWindow === undefined
+  return model === undefined ||
+    baseUrl === undefined ||
+    !isHttpUrlValue(baseUrl) ||
+    contextWindow === undefined
     ? undefined
     : {
         kind: "openai-compat",
@@ -947,11 +1136,16 @@ function expectedOpenRouterProviderProfile(env: Readonly<Record<string, string |
       };
 }
 
-function expectedPrivateOaiCompatProviderProfile(env: Readonly<Record<string, string | undefined>>): ExpectedProviderProfile | undefined {
+function expectedPrivateOaiCompatProviderProfile(
+  env: Readonly<Record<string, string | undefined>>,
+): ExpectedProviderProfile | undefined {
   const model = textValue(env[privateOaiCompatModelEnv]);
   const baseUrl = textValue(env[privateOaiCompatBaseUrlEnv]);
   const contextWindow = positiveIntegerEnvValue(env, privateOaiCompatContextWindowEnv);
-  return model === undefined || baseUrl === undefined || !isHttpUrlValue(baseUrl) || contextWindow === undefined
+  return model === undefined ||
+    baseUrl === undefined ||
+    !isHttpUrlValue(baseUrl) ||
+    contextWindow === undefined
     ? undefined
     : {
         kind: "openai-compat",
@@ -964,7 +1158,9 @@ function expectedPrivateOaiCompatProviderProfile(env: Readonly<Record<string, st
       };
 }
 
-function cliResultRecord(result: DoctorCommandRunResult): Readonly<Record<string, unknown>> | undefined {
+function cliResultRecord(
+  result: DoctorCommandRunResult,
+): Readonly<Record<string, unknown>> | undefined {
   if (result.exitCode !== 0) {
     return undefined;
   }
@@ -1030,17 +1226,24 @@ function privateOaiCompatCheck(env: Readonly<Record<string, string | undefined>>
     baseUrlStatus,
     envValueStatus(env, privateOaiCompatModelEnv),
   ];
-  if (baseUrlStatus === "configured" && !isHttpUrlValue(env[privateOaiCompatBaseUrlEnv]?.trim() ?? "")) {
+  if (
+    baseUrlStatus === "configured" &&
+    !isHttpUrlValue(env[privateOaiCompatBaseUrlEnv]?.trim() ?? "")
+  ) {
     return "provider.privateOaiCompat:invalid";
   }
   if (statuses.every((status) => status === "configured")) {
     return "provider.privateOaiCompat:configured";
   }
 
-  return statuses.includes("placeholder") ? "provider.privateOaiCompat:placeholder" : "provider.privateOaiCompat:missing";
+  return statuses.includes("placeholder")
+    ? "provider.privateOaiCompat:placeholder"
+    : "provider.privateOaiCompat:missing";
 }
 
-function internalApiCredentialValueCheck(env: Readonly<Record<string, string | undefined>>): string {
+function internalApiCredentialValueCheck(
+  env: Readonly<Record<string, string | undefined>>,
+): string {
   const status = envValueStatus(env, internalApiCredentialValueEnv);
   if (status === "configured") {
     return "internalApi.credentialValue:configured";
@@ -1107,7 +1310,10 @@ function credentialSmokeCheck(
     : "credentials.smoke:failed";
 }
 
-function githubAuthCheck(runner: DoctorCommandRunner, env: Readonly<Record<string, string | undefined>>): string {
+function githubAuthCheck(
+  runner: DoctorCommandRunner,
+  env: Readonly<Record<string, string | undefined>>,
+): string {
   const result = run(runner, "gh", ["auth", "status"], env);
   if (result.exitCode === 0) {
     return "github.auth:ok";
@@ -1128,7 +1334,9 @@ function githubRepoTarget(
 ): { readonly owner: string; readonly repo: string } | undefined {
   const owner = textValue(env[githubOwnerEnv]);
   const repo = textValue(env[repoNameEnv]);
-  return owner === undefined || repo === undefined || repo === placeholder ? undefined : { owner, repo };
+  return owner === undefined || repo === undefined || repo === placeholder
+    ? undefined
+    : { owner, repo };
 }
 
 function githubCiCheck(
@@ -1189,7 +1397,10 @@ function githubCiCheck(
   }
 }
 
-function githubDiscussionCheck(runner: DoctorCommandRunner, env: Readonly<Record<string, string | undefined>>): string {
+function githubDiscussionCheck(
+  runner: DoctorCommandRunner,
+  env: Readonly<Record<string, string | undefined>>,
+): string {
   const target = githubRepoTarget(env, worldRepoNameEnv, "the-world");
   if (target === undefined) {
     return "github.discussion:missing";
@@ -1232,7 +1443,10 @@ function githubDiscussionCheck(runner: DoctorCommandRunner, env: Readonly<Record
   }
 }
 
-function dockerCheck(runner: DoctorCommandRunner, env: Readonly<Record<string, string | undefined>>): readonly string[] {
+function dockerCheck(
+  runner: DoctorCommandRunner,
+  env: Readonly<Record<string, string | undefined>>,
+): readonly string[] {
   const docker = run(runner, "docker", ["--version"], env);
   const dockerStatus = docker.exitCode === 0 ? "docker:installed" : "docker:missing";
   const dockerCompose = run(runner, "docker", ["compose", "version"], env);
@@ -1241,11 +1455,53 @@ function dockerCheck(runner: DoctorCommandRunner, env: Readonly<Record<string, s
   }
 
   const standaloneCompose = run(runner, "docker-compose", ["version"], env);
-  return [dockerStatus, standaloneCompose.exitCode === 0 ? "docker.compose:installed" : "docker.compose:missing"];
+  return [
+    dockerStatus,
+    standaloneCompose.exitCode === 0 ? "docker.compose:installed" : "docker.compose:missing",
+  ];
 }
 
 function isPassingCheck(check: string): boolean {
   return check.endsWith(":configured") || check.endsWith(":ok") || check.endsWith(":installed");
+}
+
+function renderDoctorAction(action: DoctorNextAction): readonly string[] {
+  return [
+    `  [fix] ${action.check}`,
+    `        ${action.action}`,
+    ...(action.env === undefined ? [] : [`        Env: ${action.env.join(", ")}`]),
+    ...(action.command === undefined ? [] : [`        Command: ${action.command}`]),
+    `        Guide: ${action.guide}`,
+    ...(action.completionGuide === undefined
+      ? []
+      : [`        Completion: ${action.completionGuide}`]),
+  ];
+}
+
+export function renderDoctorCommandResult(result: DoctorResult): string {
+  const passingChecks = result.ok ? result.checks : result.checks.filter(isPassingCheck);
+  const blockedChecks = result.ok ? [] : result.checks.filter((check) => !isPassingCheck(check));
+  const readyLabel = result.ok ? "ready" : "needs attention";
+
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Doctor",
+    "---------------",
+    `Readiness: ${readyLabel}`,
+    `Checks: ${passingChecks.length} passing, ${blockedChecks.length} blocked`,
+    "",
+    ...(blockedChecks.length === 0
+      ? ["Checks:", ...passingChecks.map((check) => `  [ok] ${check}`)]
+      : [
+          "Blocked checks:",
+          ...blockedChecks.map((check) => `  [fix] ${check}`),
+          ...(result.nextActions === undefined || result.nextActions.length === 0
+            ? []
+            : ["", "Next actions:", ...result.nextActions.flatMap(renderDoctorAction)]),
+        ]),
+    "",
+  ].join("\n");
 }
 
 function shellQuote(value: string): string {
@@ -1284,8 +1540,11 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "liveEnvFile.permissions":
       return {
         check,
-        action: "Restrict the filled live-readiness env file to the current user before storing live secrets.",
-        ...(context.envFilePath === undefined ? {} : { command: `chmod 600 ${shellQuote(context.envFilePath)}` }),
+        action:
+          "Restrict the filled live-readiness env file to the current user before storing live secrets.",
+        ...(context.envFilePath === undefined
+          ? {}
+          : { command: `chmod 600 ${shellQuote(context.envFilePath)}` }),
         guide,
       };
     case "agent.remote":
@@ -1327,7 +1586,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "world.privateForkRef":
       return {
         check,
-        action: "Export the private fork world ref and ensure it exists in the subscription registry.",
+        action:
+          "Export the private fork world ref and ensure it exists in the subscription registry.",
         env: [privateWorldRefEnv],
         command: cliCommand(
           context,
@@ -1352,7 +1612,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "provider.anthropicModel":
       return {
         check,
-        action: "Export the Anthropic model name used by live setup when creating the Anthropic provider profile.",
+        action:
+          "Export the Anthropic model name used by live setup when creating the Anthropic provider profile.",
         env: [anthropicModelEnv],
         guide: `${guide}#provider-environment`,
       };
@@ -1367,7 +1628,13 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action: "Export the OpenRouter API key and save an OpenRouter provider profile.",
-        env: [openRouterApiKeyEnv, openRouterProviderProfileEnv, openRouterModelEnv, openRouterBaseUrlEnv, openRouterContextWindowEnv],
+        env: [
+          openRouterApiKeyEnv,
+          openRouterProviderProfileEnv,
+          openRouterModelEnv,
+          openRouterBaseUrlEnv,
+          openRouterContextWindowEnv,
+        ],
         command: cliCommand(
           context,
           'providers configure --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --name "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE" --kind openai-compat --api-key-env OPENROUTER_API_KEY --model "$VIVARIUM_OPENROUTER_MODEL" --base-url "$VIVARIUM_OPENROUTER_BASE_URL" --capability chat --capability json_mode --context-window "$VIVARIUM_OPENROUTER_CONTEXT_WINDOW" --cost-class medium',
@@ -1377,14 +1644,16 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "provider.openrouterModel":
       return {
         check,
-        action: "Export the OpenRouter model name used by live setup when creating the OpenRouter provider profile.",
+        action:
+          "Export the OpenRouter model name used by live setup when creating the OpenRouter provider profile.",
         env: [openRouterModelEnv],
         guide: `${guide}#provider-environment`,
       };
     case "provider.openrouterBaseUrl":
       return {
         check,
-        action: "Export the complete http:// or https:// OpenRouter-compatible base URL used by live setup.",
+        action:
+          "Export the complete http:// or https:// OpenRouter-compatible base URL used by live setup.",
         env: [openRouterBaseUrlEnv],
         guide: `${guide}#provider-environment`,
       };
@@ -1398,7 +1667,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "provider.privateOaiCompat":
       return {
         check,
-        action: "Export the private OpenAI-compatible provider key, complete http:// or https:// base URL, and model.",
+        action:
+          "Export the private OpenAI-compatible provider key, complete http:// or https:// base URL, and model.",
         env: [
           privateOaiCompatApiKeyEnv,
           privateOaiCompatBaseUrlEnv,
@@ -1410,7 +1680,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "provider.privateOaiCompatContextWindow":
       return {
         check,
-        action: "Export a positive integer private OpenAI-compatible context window used by live setup.",
+        action:
+          "Export a positive integer private OpenAI-compatible context window used by live setup.",
         env: [privateOaiCompatContextWindowEnv],
         guide: `${guide}#provider-environment`,
       };
@@ -1447,7 +1718,13 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action: "Run a successful Anthropic provider smoke through the saved provider profile.",
-        env: [providerProfilesPathEnv, anthropicProviderProfileEnv, anthropicApiKeyEnv, anthropicModelEnv, anthropicContextWindowEnv],
+        env: [
+          providerProfilesPathEnv,
+          anthropicProviderProfileEnv,
+          anthropicApiKeyEnv,
+          anthropicModelEnv,
+          anthropicContextWindowEnv,
+        ],
         command: cliCommand(
           context,
           'providers smoke --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --profile "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE"',
@@ -1475,7 +1752,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "provider.privateOaiCompatSmoke":
       return {
         check,
-        action: "Run a successful private OpenAI-compatible provider smoke through the saved provider profile.",
+        action:
+          "Run a successful private OpenAI-compatible provider smoke through the saved provider profile.",
         env: [
           providerProfilesPathEnv,
           privateOaiCompatProviderProfileEnv,
@@ -1522,15 +1800,22 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "internalApi.healthUrl":
       return {
         check,
-        action: "Export the complete http:// or https:// internal API health URL used by credential smoke tests.",
+        action:
+          "Export the complete http:// or https:// internal API health URL used by credential smoke tests.",
         env: [internalApiHealthUrlEnv],
         guide: `${guide}#internal-api-credential`,
       };
     case "credentials.smoke":
       return {
         check,
-        action: "Run a successful internal API credential smoke through the encrypted credential store.",
-        env: [credentialsPathEnv, credentialsMasterKeyEnv, internalApiCredentialNameEnv, internalApiHealthUrlEnv],
+        action:
+          "Run a successful internal API credential smoke through the encrypted credential store.",
+        env: [
+          credentialsPathEnv,
+          credentialsMasterKeyEnv,
+          internalApiCredentialNameEnv,
+          internalApiHealthUrlEnv,
+        ],
         command: cliCommand(
           context,
           'credentials smoke --path "$VIVARIUM_CREDENTIALS_PATH" --master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY" --name "$VIVARIUM_INTERNAL_API_CREDENTIAL_NAME" --url "$VIVARIUM_INTERNAL_API_HEALTH_URL" --method GET',
@@ -1576,8 +1861,14 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "github.discussion":
       return {
         check,
-        action: "Open the Phase 0 RFC Discussion in the canonical world repo and verify it is visible through GitHub.",
-        env: [githubOwnerEnv, worldRepoNameEnv, githubRepositoryIdEnv, githubDiscussionCategoryIdEnv],
+        action:
+          "Open the Phase 0 RFC Discussion in the canonical world repo and verify it is visible through GitHub.",
+        env: [
+          githubOwnerEnv,
+          worldRepoNameEnv,
+          githubRepositoryIdEnv,
+          githubDiscussionCategoryIdEnv,
+        ],
         command: cliCommand(
           context,
           'github discussion --owner "$VIVARIUM_GITHUB_OWNER" --repo "$VIVARIUM_WORLD_REPO_NAME" --token-env GITHUB_TOKEN --repository-id "$VIVARIUM_GITHUB_REPOSITORY_ID" --category-id "$VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID" --title "RFC 0001: Phase 0 Bootstrap" --body "$(cat ../the-world/proposals/0001-phase-0-bootstrap-rfc.md)" --confirm-write',
@@ -1589,7 +1880,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: "Make the latest agent GitHub Actions CI run on main complete successfully.",
         env: [githubOwnerEnv, agentRepoNameEnv],
-        command: 'gh run list --repo "$VIVARIUM_GITHUB_OWNER/$VIVARIUM_AGENT_REPO_NAME" --branch main --workflow CI --limit 1',
+        command:
+          'gh run list --repo "$VIVARIUM_GITHUB_OWNER/$VIVARIUM_AGENT_REPO_NAME" --branch main --workflow CI --limit 1',
         guide: `${guide}#github-auth`,
       };
     case "github.worldCi":
@@ -1597,7 +1889,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: "Make the latest world GitHub Actions CI run on main complete successfully.",
         env: [githubOwnerEnv, worldRepoNameEnv],
-        command: 'gh run list --repo "$VIVARIUM_GITHUB_OWNER/$VIVARIUM_WORLD_REPO_NAME" --branch main --workflow CI --limit 1',
+        command:
+          'gh run list --repo "$VIVARIUM_GITHUB_OWNER/$VIVARIUM_WORLD_REPO_NAME" --branch main --workflow CI --limit 1',
         guide: `${guide}#github-auth`,
       };
     case "docker":
@@ -1617,7 +1910,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.evidencePath":
       return {
         check,
-        action: "Create the v1 evidence manifest and export its path before claiming live v1 verification.",
+        action:
+          "Create the v1 evidence manifest and export its path before claiming live v1 verification.",
         env: [v1EvidencePathEnv],
         command: cliCommand(context, 'live evidence-init --path "$VIVARIUM_V1_EVIDENCE_PATH"'),
         guide: `${guide}#v1-evidence-manifest`,
@@ -1642,14 +1936,16 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "v1.providerSmokes":
       return {
         check,
-        action: "Record distinct successful Anthropic, OpenRouter, and private OpenAI-compatible provider smoke evidence.",
+        action:
+          "Record distinct successful Anthropic, OpenRouter, and private OpenAI-compatible provider smoke evidence.",
         guide: `${guide}#v1-evidence-manifest`,
         completionGuide,
       };
     case "v1.internalCredentialSmoke":
       return {
         check,
-        action: "Record internal API credential smoke evidence from the encrypted credential store.",
+        action:
+          "Record internal API credential smoke evidence from the encrypted credential store.",
         guide: `${guide}#v1-evidence-manifest`,
         completionGuide,
       };
@@ -1711,7 +2007,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     default:
       return {
         check,
-        action: "Inspect this live-readiness check and clear it before claiming v1 live verification.",
+        action:
+          "Inspect this live-readiness check and clear it before claiming v1 live verification.",
         guide,
       };
   }
@@ -1731,15 +2028,27 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     ...(options.envFilePath === undefined ? {} : { envFilePath: options.envFilePath }),
   };
   const providerAnthropicCheck = requiredEnvCheck(env, anthropicApiKeyEnv, "provider.anthropic");
-  const providerAnthropicModelCheck = requiredEnvCheck(env, anthropicModelEnv, "provider.anthropicModel");
+  const providerAnthropicModelCheck = requiredEnvCheck(
+    env,
+    anthropicModelEnv,
+    "provider.anthropicModel",
+  );
   const providerAnthropicContextWindowCheck = positiveIntegerEnvCheck(
     env,
     anthropicContextWindowEnv,
     "provider.anthropicContextWindow",
   );
   const providerOpenrouterCheck = requiredEnvCheck(env, openRouterApiKeyEnv, "provider.openrouter");
-  const providerOpenrouterModelCheck = requiredEnvCheck(env, openRouterModelEnv, "provider.openrouterModel");
-  const providerOpenrouterBaseUrlCheck = httpUrlEnvCheck(env, openRouterBaseUrlEnv, "provider.openrouterBaseUrl");
+  const providerOpenrouterModelCheck = requiredEnvCheck(
+    env,
+    openRouterModelEnv,
+    "provider.openrouterModel",
+  );
+  const providerOpenrouterBaseUrlCheck = httpUrlEnvCheck(
+    env,
+    openRouterBaseUrlEnv,
+    "provider.openrouterBaseUrl",
+  );
   const providerOpenrouterContextWindowCheck = positiveIntegerEnvCheck(
     env,
     openRouterContextWindowEnv,
@@ -1751,7 +2060,11 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     privateOaiCompatContextWindowEnv,
     "provider.privateOaiCompatContextWindow",
   );
-  const providerProfilesPathCheck = requiredFileCheck(env, providerProfilesPathEnv, "provider.profilesPath");
+  const providerProfilesPathCheck = requiredFileCheck(
+    env,
+    providerProfilesPathEnv,
+    "provider.profilesPath",
+  );
   const providerAnthropicProfileCheck = providerProfileCheck(
     env,
     profiles,
@@ -1774,10 +2087,22 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     expectedPrivateOaiCompatProviderProfile(env),
   );
   const credentialsPathCheck = requiredFileCheck(env, credentialsPathEnv, "credentials.path");
-  const credentialsMasterKeyCheck = requiredEnvCheck(env, credentialsMasterKeyEnv, "credentials.masterKey");
-  const internalApiCredentialNameCheck = requiredEnvCheck(env, internalApiCredentialNameEnv, "internalApi.credentialName");
+  const credentialsMasterKeyCheck = requiredEnvCheck(
+    env,
+    credentialsMasterKeyEnv,
+    "credentials.masterKey",
+  );
+  const internalApiCredentialNameCheck = requiredEnvCheck(
+    env,
+    internalApiCredentialNameEnv,
+    "internalApi.credentialName",
+  );
   const internalApiCredentialValue = internalApiCredentialValueCheck(env);
-  const internalApiHealthUrlCheck = httpUrlEnvCheck(env, internalApiHealthUrlEnv, "internalApi.healthUrl");
+  const internalApiHealthUrlCheck = httpUrlEnvCheck(
+    env,
+    internalApiHealthUrlEnv,
+    "internalApi.healthUrl",
+  );
   const checks = [
     ...liveEnvFilePermissionChecks(options.envFilePath),
     repoNameCheck(env, agentRepoNameEnv, "the-agent", "agent"),
@@ -1808,7 +2133,13 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
       "anthropic",
       anthropicProviderProfileEnv,
       [anthropicApiKeyEnv, anthropicModelEnv, anthropicContextWindowEnv],
-      [providerProfilesPathCheck, providerAnthropicProfileCheck, providerAnthropicCheck, providerAnthropicModelCheck, providerAnthropicContextWindowCheck],
+      [
+        providerProfilesPathCheck,
+        providerAnthropicProfileCheck,
+        providerAnthropicCheck,
+        providerAnthropicModelCheck,
+        providerAnthropicContextWindowCheck,
+      ],
     ),
     providerSmokeCheck(
       runner,
@@ -1832,8 +2163,18 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
       agentRoot,
       "privateOaiCompat",
       privateOaiCompatProviderProfileEnv,
-      [privateOaiCompatApiKeyEnv, privateOaiCompatBaseUrlEnv, privateOaiCompatModelEnv, privateOaiCompatContextWindowEnv],
-      [providerProfilesPathCheck, providerPrivateOaiCompatProfileCheck, providerPrivateOaiCompatCheck, providerPrivateOaiCompatContextWindowCheck],
+      [
+        privateOaiCompatApiKeyEnv,
+        privateOaiCompatBaseUrlEnv,
+        privateOaiCompatModelEnv,
+        privateOaiCompatContextWindowEnv,
+      ],
+      [
+        providerProfilesPathCheck,
+        providerPrivateOaiCompatProfileCheck,
+        providerPrivateOaiCompatCheck,
+        providerPrivateOaiCompatContextWindowCheck,
+      ],
     ),
     credentialsPathCheck,
     credentialsMasterKeyCheck,

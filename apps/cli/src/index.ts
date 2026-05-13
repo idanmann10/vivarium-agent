@@ -38,7 +38,7 @@ export type {
   UpdateCommandResult,
   UpdateCommandRunner,
 } from "./commands/update.js";
-export { doctorCommand } from "./commands/doctor.js";
+export { doctorCommand, renderDoctorCommandResult } from "./commands/doctor.js";
 export {
   addCredentialCommand,
   credentialSmokeCommand,

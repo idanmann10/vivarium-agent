@@ -230,7 +230,12 @@ describe("dispatchCliCommand", () => {
     await expect(dispatchCliCommand(["doctor"])).resolves.toMatchObject({
       command: "doctor",
       result: { ok: true },
+      output: expect.stringContaining("Vivarium Doctor"),
     });
+    const doctor = await dispatchCliCommand(["doctor"]);
+    expect(doctor.output).toContain("Readiness: ready");
+    expect(doctor.output).toContain("[ok] state:in-memory");
+
     await expect(
       dispatchCliCommand(["doctor", "--live", "--agent-root", "/agent", "--world-root", "/world"], {
         doctorRunner: deterministicDoctorRunner,
@@ -252,6 +257,14 @@ describe("dispatchCliCommand", () => {
         ]),
       },
     });
+    const liveDoctor = await dispatchCliCommand(
+      ["doctor", "--live", "--agent-root", "/agent", "--world-root", "/world"],
+      {
+        doctorRunner: deterministicDoctorRunner,
+      },
+    );
+    expect(liveDoctor.output).toContain("Readiness: needs attention");
+    expect(liveDoctor.output).toContain("[fix] agent.name:missing");
   });
 
   test("routes live doctor checks through injected probes", async () => {

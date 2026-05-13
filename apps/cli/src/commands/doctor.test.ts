@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { doctorCommand, type DoctorCommandRunner } from "./doctor.js";
+import { doctorCommand, renderDoctorCommandResult, type DoctorCommandRunner } from "./doctor.js";
 
 const blockedRunner: DoctorCommandRunner = ({ command, args, cwd }) => {
   const text = [command, ...args].join(" ");
@@ -40,7 +40,8 @@ const mismatchedRemoteRunner: DoctorCommandRunner = (run) => {
   if (text === "git remote -v" && run.cwd === "/agent") {
     return {
       exitCode: 0,
-      stdout: "origin\tgit@github.com:owner/wrong-agent.git (fetch)\norigin\tgit@github.com:owner/wrong-agent.git (push)\n",
+      stdout:
+        "origin\tgit@github.com:owner/wrong-agent.git (fetch)\norigin\tgit@github.com:owner/wrong-agent.git (push)\n",
       stderr: "",
     };
   }
@@ -48,7 +49,8 @@ const mismatchedRemoteRunner: DoctorCommandRunner = (run) => {
   if (text === "git remote -v" && run.cwd === "/world") {
     return {
       exitCode: 0,
-      stdout: "origin\thttps://github.com/other/world-final.git (fetch)\norigin\thttps://github.com/other/world-final.git (push)\n",
+      stdout:
+        "origin\thttps://github.com/other/world-final.git (fetch)\norigin\thttps://github.com/other/world-final.git (push)\n",
       stderr: "",
     };
   }
@@ -61,7 +63,8 @@ const readyRunner: DoctorCommandRunner = (run) => {
   if (text === "git remote -v" && run.cwd === "/agent") {
     return {
       exitCode: 0,
-      stdout: "origin\tgit@github.com:owner/agent-final.git (fetch)\norigin\tgit@github.com:owner/agent-final.git (push)\n",
+      stdout:
+        "origin\tgit@github.com:owner/agent-final.git (fetch)\norigin\tgit@github.com:owner/agent-final.git (push)\n",
       stderr: "",
     };
   }
@@ -69,7 +72,8 @@ const readyRunner: DoctorCommandRunner = (run) => {
   if (text === "git remote -v" && run.cwd === "/world") {
     return {
       exitCode: 0,
-      stdout: "origin\tgit@github.com:owner/world-final.git (fetch)\norigin\tgit@github.com:owner/world-final.git (push)\n",
+      stdout:
+        "origin\tgit@github.com:owner/world-final.git (fetch)\norigin\tgit@github.com:owner/world-final.git (push)\n",
       stderr: "",
     };
   }
@@ -89,7 +93,8 @@ const readyRunner: DoctorCommandRunner = (run) => {
   if (text.includes(" providers smoke ") && text.includes("--profile anthropic-main")) {
     return {
       exitCode: 0,
-      stdout: '{"command":"providers","result":{"ok":true,"kind":"anthropic","model":"claude","responsePreview":"ok","responseLength":2}}',
+      stdout:
+        '{"command":"providers","result":{"ok":true,"kind":"anthropic","model":"claude","responsePreview":"ok","responseLength":2}}',
       stderr: "",
     };
   }
@@ -121,11 +126,17 @@ const readyRunner: DoctorCommandRunner = (run) => {
     };
   }
 
-  if (text === "gh run list --repo owner/agent-final --branch main --workflow CI --limit 1 --json status,conclusion") {
+  if (
+    text ===
+    "gh run list --repo owner/agent-final --branch main --workflow CI --limit 1 --json status,conclusion"
+  ) {
     return { exitCode: 0, stdout: '[{"status":"completed","conclusion":"success"}]', stderr: "" };
   }
 
-  if (text === "gh run list --repo owner/world-final --branch main --workflow CI --limit 1 --json status,conclusion") {
+  if (
+    text ===
+    "gh run list --repo owner/world-final --branch main --workflow CI --limit 1 --json status,conclusion"
+  ) {
     return { exitCode: 0, stdout: '[{"status":"completed","conclusion":"success"}]', stderr: "" };
   }
 
@@ -144,16 +155,26 @@ const readyRunner: DoctorCommandRunner = (run) => {
 const missingGitHubLiveRunner: DoctorCommandRunner = (run) => {
   const text = [run.command, ...run.args].join(" ");
 
-  if (text === "gh run list --repo owner/agent-final --branch main --workflow CI --limit 1 --json status,conclusion") {
+  if (
+    text ===
+    "gh run list --repo owner/agent-final --branch main --workflow CI --limit 1 --json status,conclusion"
+  ) {
     return { exitCode: 0, stdout: '[{"status":"completed","conclusion":"failure"}]', stderr: "" };
   }
 
-  if (text === "gh run list --repo owner/world-final --branch main --workflow CI --limit 1 --json status,conclusion") {
+  if (
+    text ===
+    "gh run list --repo owner/world-final --branch main --workflow CI --limit 1 --json status,conclusion"
+  ) {
     return { exitCode: 0, stdout: "[]", stderr: "" };
   }
 
   if (text.startsWith("gh api graphql")) {
-    return { exitCode: 0, stdout: '{"data":{"repository":{"discussions":{"nodes":[]}}}}', stderr: "" };
+    return {
+      exitCode: 0,
+      stdout: '{"data":{"repository":{"discussions":{"nodes":[]}}}}',
+      stderr: "",
+    };
   }
 
   return readyRunner(run);
@@ -165,7 +186,8 @@ const failedLiveSmokeRunner: DoctorCommandRunner = (run) => {
   if (text.includes(" providers smoke ") && text.includes("--profile anthropic-main")) {
     return {
       exitCode: 0,
-      stdout: '{"command":"providers","result":{"ok":false,"kind":"anthropic","model":"claude","error":"provider rejected request"}}',
+      stdout:
+        '{"command":"providers","result":{"ok":false,"kind":"anthropic","model":"claude","error":"provider rejected request"}}',
       stderr: "",
     };
   }
@@ -173,7 +195,8 @@ const failedLiveSmokeRunner: DoctorCommandRunner = (run) => {
   if (text.includes(" providers smoke ") && text.includes("--profile openrouter")) {
     return {
       exitCode: 0,
-      stdout: '{"command":"providers","result":{"ok":false,"kind":"openai-compat","model":"openrouter/test-model","error":"provider rejected request"}}',
+      stdout:
+        '{"command":"providers","result":{"ok":false,"kind":"openai-compat","model":"openrouter/test-model","error":"provider rejected request"}}',
       stderr: "",
     };
   }
@@ -201,7 +224,11 @@ const failedLiveSmokeRunner: DoctorCommandRunner = (run) => {
 
 const missingDockerRunner: DoctorCommandRunner = (run) => {
   const text = [run.command, ...run.args].join(" ");
-  if (text === "docker --version" || text === "docker compose version" || text === "docker-compose version") {
+  if (
+    text === "docker --version" ||
+    text === "docker compose version" ||
+    text === "docker-compose version"
+  ) {
     return { exitCode: 1, stdout: "", stderr: "missing docker" };
   }
 
@@ -237,8 +264,14 @@ function writeLiveReadyFiles(root: string): Readonly<{
   const evidencePath = join(root, "v1-evidence.json");
   const localEvidencePaths = [
     "domains/coding/curriculum.md",
-    ...Array.from({ length: 20 }, (_, index) => `domains/coding/skills/starter-${index + 1}/SKILL.md`),
-    ...Array.from({ length: 3 }, (_, index) => `domains/coding/traces/starter-${index + 1}/TRACE.md`),
+    ...Array.from(
+      { length: 20 },
+      (_, index) => `domains/coding/skills/starter-${index + 1}/SKILL.md`,
+    ),
+    ...Array.from(
+      { length: 3 },
+      (_, index) => `domains/coding/traces/starter-${index + 1}/TRACE.md`,
+    ),
     "docs/live/starter-run-1.md",
     "docs/live/starter-run-2.md",
     "docs/live/goal-1.md",
@@ -301,8 +334,20 @@ function writeLiveReadyFiles(root: string): Readonly<{
     subscriptionsPath,
     `${JSON.stringify({
       worlds: [
-        { label: "canonical", root: "/world", priority: 1, ref: "git@github.com:owner/world-final.git", autoPushEnabled: false },
-        { label: "private", root: "/private-world", priority: 0, ref: "git@github.com:team/world-private.git", autoPushEnabled: true },
+        {
+          label: "canonical",
+          root: "/world",
+          priority: 1,
+          ref: "git@github.com:owner/world-final.git",
+          autoPushEnabled: false,
+        },
+        {
+          label: "private",
+          root: "/private-world",
+          priority: 0,
+          ref: "git@github.com:team/world-private.git",
+          autoPushEnabled: true,
+        },
       ],
     })}\n`,
     "utf8",
@@ -358,16 +403,52 @@ function writeLiveReadyFiles(root: string): Readonly<{
         skillCount: 20,
         traceCount: 3,
         curriculum: "domains/coding/curriculum.md",
-        skillReferences: Array.from({ length: 20 }, (_, index) => `domains/coding/skills/starter-${index + 1}/SKILL.md`),
-        traceReferences: Array.from({ length: 3 }, (_, index) => `domains/coding/traces/starter-${index + 1}/TRACE.md`),
+        skillReferences: Array.from(
+          { length: 20 },
+          (_, index) => `domains/coding/skills/starter-${index + 1}/SKILL.md`,
+        ),
+        traceReferences: Array.from(
+          { length: 3 },
+          (_, index) => `domains/coding/traces/starter-${index + 1}/TRACE.md`,
+        ),
         firstRunReferences: ["docs/live/starter-run-1.md", "docs/live/starter-run-2.md"],
       },
       realGoals: [
-        { id: "goal-1", goal: "Fix a flaky coding test", domain: "coding", date: "2026-05-01", evidence: "docs/live/goal-1.md" },
-        { id: "goal-2", goal: "Add a coding CLI command", domain: "coding", date: "2026-05-02", evidence: "docs/live/goal-2.md" },
-        { id: "goal-3", goal: "Refactor a coding module", domain: "coding", date: "2026-05-04", evidence: "docs/live/goal-3.md" },
-        { id: "goal-4", goal: "Debug a coding integration", domain: "coding", date: "2026-05-06", evidence: "docs/live/goal-4.md" },
-        { id: "goal-5", goal: "Ship a coding workflow", domain: "coding", date: "2026-05-08", evidence: "docs/live/goal-5.md" },
+        {
+          id: "goal-1",
+          goal: "Fix a flaky coding test",
+          domain: "coding",
+          date: "2026-05-01",
+          evidence: "docs/live/goal-1.md",
+        },
+        {
+          id: "goal-2",
+          goal: "Add a coding CLI command",
+          domain: "coding",
+          date: "2026-05-02",
+          evidence: "docs/live/goal-2.md",
+        },
+        {
+          id: "goal-3",
+          goal: "Refactor a coding module",
+          domain: "coding",
+          date: "2026-05-04",
+          evidence: "docs/live/goal-3.md",
+        },
+        {
+          id: "goal-4",
+          goal: "Debug a coding integration",
+          domain: "coding",
+          date: "2026-05-06",
+          evidence: "docs/live/goal-4.md",
+        },
+        {
+          id: "goal-5",
+          goal: "Ship a coding workflow",
+          domain: "coding",
+          date: "2026-05-08",
+          evidence: "docs/live/goal-5.md",
+        },
       ],
       providerSmokes: {
         anthropic: "docs/live/provider-anthropic.md",
@@ -418,7 +499,8 @@ function writeLiveReadyFiles(root: string): Readonly<{
         mathGate: "docs/live/math-gate.md",
         contributorTrust: 0.5,
         autoMerge: "https://github.com/owner/world-final/actions/runs/1",
-        canonicalSkill: "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
+        canonicalSkill:
+          "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
         positiveSignals: [
           { agent: "signal-agent-a", evidence: "docs/live/signal-1.md" },
           { agent: "signal-agent-b", evidence: "docs/live/signal-2.md" },
@@ -434,8 +516,10 @@ function writeLiveReadyFiles(root: string): Readonly<{
       },
       publishedArtifacts: {
         contributorAgent: "live-agent",
-        antiPattern: "https://github.com/owner/world-final/blob/main/domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
-        trace: "https://github.com/owner/world-final/blob/main/domains/coding/traces/workflow/TRACE.md",
+        antiPattern:
+          "https://github.com/owner/world-final/blob/main/domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
+        trace:
+          "https://github.com/owner/world-final/blob/main/domains/coding/traces/workflow/TRACE.md",
         run: "https://github.com/owner/world-final/blob/main/runs/run-live-001/RUN.md",
         tracePlanRead: { agent: "plan-reader-a", evidence: "docs/live/trace-plan-read.md" },
         runPlanRead: { agent: "plan-reader-b", evidence: "docs/live/run-plan-read.md" },
@@ -487,6 +571,41 @@ describe("doctorCommand", () => {
       ok: true,
       checks: ["state:in-memory", "provider:local", "world:filesystem"],
     });
+  });
+
+  test("renders a branded ready report", () => {
+    const output = renderDoctorCommandResult(doctorCommand());
+
+    expect(output).toContain("Vivarium Doctor");
+    expect(output).toContain('.-""""-.');
+    expect(output).toContain("Readiness: ready");
+    expect(output).toContain("Checks: 3 passing, 0 blocked");
+    expect(output).toContain("[ok] state:in-memory");
+    expect(output).toContain("[ok] provider:local");
+    expect(output).not.toContain("Next actions");
+  });
+
+  test("renders blocked checks with next actions", () => {
+    const output = renderDoctorCommandResult({
+      ok: false,
+      checks: ["github.auth:invalid", "docker:installed"],
+      nextActions: [
+        {
+          check: "github.auth:invalid",
+          action: "Authenticate the GitHub CLI.",
+          command: "gh auth login",
+          guide: "docs/guides/live-readiness.md#github",
+        },
+      ],
+    });
+
+    expect(output).toContain("Readiness: needs attention");
+    expect(output).toContain("Checks: 1 passing, 1 blocked");
+    expect(output).toContain("[fix] github.auth:invalid");
+    expect(output).toContain("Authenticate the GitHub CLI.");
+    expect(output).toContain("gh auth login");
+    expect(output).toContain("docs/guides/live-readiness.md#github");
+    expect(output).not.toContain("[fix] docker:installed");
   });
 
   test("reports live readiness blockers with injected probes", () => {
@@ -584,13 +703,17 @@ describe("doctorCommand", () => {
     expect(result.nextActions).toContainEqual(
       expect.objectContaining({
         check: "provider.profilesPath:missing",
-        command: expect.stringContaining('live setup --env-file "live-readiness.local.env" --confirm-write'),
+        command: expect.stringContaining(
+          'live setup --env-file "live-readiness.local.env" --confirm-write',
+        ),
       }),
     );
     expect(result.nextActions).toContainEqual(
       expect.objectContaining({
         check: "credentials.path:missing",
-        command: expect.stringContaining('live setup --env-file "live-readiness.local.env" --confirm-write'),
+        command: expect.stringContaining(
+          'live setup --env-file "live-readiness.local.env" --confirm-write',
+        ),
       }),
     );
   });
@@ -608,7 +731,10 @@ describe("doctorCommand", () => {
     for (const action of result.nextActions ?? []) {
       const [, anchor] = action.guide.split("#");
       if (anchor !== undefined) {
-        expect(anchors.has(anchor), `${action.check} guide ${action.guide} should reference an existing heading`).toBe(true);
+        expect(
+          anchors.has(anchor),
+          `${action.check} guide ${action.guide} should reference an existing heading`,
+        ).toBe(true);
       }
     }
   });
@@ -624,7 +750,9 @@ describe("doctorCommand", () => {
       env: { GH_PAGER: "cat", VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
       runner: blockedRunner,
     });
-    const actions = new Map((result.nextActions ?? []).map((action) => [action.check, action.action]));
+    const actions = new Map(
+      (result.nextActions ?? []).map((action) => [action.check, action.action]),
+    );
     const completionGuides = new Map(
       (result.nextActions ?? []).map((action) => [action.check, action.completionGuide]),
     );
@@ -639,7 +767,9 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.publicContribution:missing")).toContain("contributor trust");
     expect(actions.get("v1.publicContribution:missing")).toContain("contributor agent identity");
     expect(actions.get("v1.publicContribution:missing")).toContain("GitHub public skill PR URL");
-    expect(actions.get("v1.publicContribution:missing")).toContain("GitHub Actions auto-merge run URL");
+    expect(actions.get("v1.publicContribution:missing")).toContain(
+      "GitHub Actions auto-merge run URL",
+    );
     expect(actions.get("v1.publicContribution:missing")).toContain("distinct");
     expect(actions.get("v1.publicContribution:missing")).toContain("agent/evidence");
     expect(actions.get("v1.publicContribution:missing")).toContain("other-agent");
@@ -652,23 +782,39 @@ describe("doctorCommand", () => {
     expect(actions.get("v1.providerSmokes:missing")).toContain("distinct");
     expect(actions.get("v1.behaviorLoop:missing")).toContain("unfamiliar territory");
     expect(actions.get("v1.behaviorLoop:missing")).toContain("similar workflows");
-    expect(actions.get("v1.behaviorLoop:missing")).toContain("ordered destructive-endpoint run sequence");
+    expect(actions.get("v1.behaviorLoop:missing")).toContain(
+      "ordered destructive-endpoint run sequence",
+    );
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("fourteen days");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("faster");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("similar goals");
-    expect(actions.get("v1.twoWeekImprovement:missing")).toContain("similar-goal comparison evidence");
+    expect(actions.get("v1.twoWeekImprovement:missing")).toContain(
+      "similar-goal comparison evidence",
+    );
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("profile counts");
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("contributor agent identity");
-    expect(actions.get("v1.twoWeekImprovement:missing")).toContain("same public contribution contributor");
+    expect(actions.get("v1.twoWeekImprovement:missing")).toContain(
+      "same public contribution contributor",
+    );
     expect(actions.get("v1.twoWeekImprovement:missing")).toContain("GitHub Discussion URL");
-    expect(actions.get("v1.twoWeekImprovement:missing")).toContain("competing skill variant references");
-    expect(actions.get("v1.twoWeekImprovement:missing")).toContain("other-agent refinement agent/evidence");
-    expect(actions.get("v1.publishedArtifacts:missing")).toContain("trace and run Plan-read agent/evidence");
+    expect(actions.get("v1.twoWeekImprovement:missing")).toContain(
+      "competing skill variant references",
+    );
+    expect(actions.get("v1.twoWeekImprovement:missing")).toContain(
+      "other-agent refinement agent/evidence",
+    );
+    expect(actions.get("v1.publishedArtifacts:missing")).toContain(
+      "trace and run Plan-read agent/evidence",
+    );
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("canonical-world GitHub blob");
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("contributor agent identity");
-    expect(actions.get("v1.publishedArtifacts:missing")).toContain("same public contribution contributor");
+    expect(actions.get("v1.publishedArtifacts:missing")).toContain(
+      "same public contribution contributor",
+    );
     expect(actions.get("v1.publishedArtifacts:missing")).toContain("other-agent");
-    expect(actions.get("v1.curationStats:missing")).toContain("same public contribution contributor");
+    expect(actions.get("v1.curationStats:missing")).toContain(
+      "same public contribution contributor",
+    );
     for (const check of [
       "v1.realGoals:missing",
       "v1.providerSmokes:missing",
@@ -765,8 +911,14 @@ describe("doctorCommand", () => {
   test("reports missing v1 loop evidence from an incomplete evidence manifest", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-evidence-incomplete-"));
     const evidencePath = join(root, "v1-evidence.json");
-    const starterSkillReferences = Array.from({ length: 20 }, (_, index) => `domains/coding/skills/starter-${index + 1}/SKILL.md`);
-    const starterTraceReferences = Array.from({ length: 3 }, (_, index) => `domains/coding/traces/starter-${index + 1}/TRACE.md`);
+    const starterSkillReferences = Array.from(
+      { length: 20 },
+      (_, index) => `domains/coding/skills/starter-${index + 1}/SKILL.md`,
+    );
+    const starterTraceReferences = Array.from(
+      { length: 3 },
+      (_, index) => `domains/coding/traces/starter-${index + 1}/TRACE.md`,
+    );
     for (const path of [
       "domains/coding/curriculum.md",
       ...starterSkillReferences,
@@ -824,7 +976,12 @@ describe("doctorCommand", () => {
     writeFileSync(
       evidencePath,
       `${JSON.stringify({
-        starterPack: { primaryDomain: "coding", skillCount: 20, traceCount: 3, curriculum: "domains/coding/curriculum.md" },
+        starterPack: {
+          primaryDomain: "coding",
+          skillCount: 20,
+          traceCount: 3,
+          curriculum: "domains/coding/curriculum.md",
+        },
       })}\n`,
       "utf8",
     );
@@ -845,7 +1002,11 @@ describe("doctorCommand", () => {
   test("requires v1 starter pack counts to cite installed skills and traces", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-starter-artifacts-"));
     const evidencePath = join(root, "v1-evidence.json");
-    for (const path of ["domains/coding/curriculum.md", "docs/live/starter-run-1.md", "docs/live/starter-run-2.md"]) {
+    for (const path of [
+      "domains/coding/curriculum.md",
+      "docs/live/starter-run-1.md",
+      "docs/live/starter-run-2.md",
+    ]) {
       const absolutePath = join(root, path);
       mkdirSync(dirname(absolutePath), { recursive: true });
       writeFileSync(absolutePath, "starter evidence\n", "utf8");
@@ -957,7 +1118,12 @@ describe("doctorCommand", () => {
     writeFileSync(
       evidencePath,
       `${JSON.stringify({
-        starterPack: { primaryDomain: "coding", skillCount: 20, traceCount: 3, curriculum: "domains/coding/curriculum.md" },
+        starterPack: {
+          primaryDomain: "coding",
+          skillCount: 20,
+          traceCount: 3,
+          curriculum: "domains/coding/curriculum.md",
+        },
         realGoals: [
           { id: "goal-1", date: "2026-05-01", evidence: "docs/live/goal-1.md" },
           { id: "goal-2", date: "2026-05-02", evidence: "docs/live/goal-2.md" },
@@ -1117,7 +1283,8 @@ describe("doctorCommand", () => {
           mathGate: "docs/live/math-gate.md",
           contributorTrust: 0.5,
           autoMerge: "https://github.com/owner/world-final/actions/runs/1",
-          canonicalSkill: "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
+          canonicalSkill:
+            "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
           positiveSignals: [
             { agent: "signal-agent-a", evidence: "docs/live/signal.md" },
             { agent: "signal-agent-a", evidence: "docs/live/signal.md" },
@@ -1540,7 +1707,8 @@ describe("doctorCommand", () => {
           contributorAgent: "live-agent",
           publicSkillPr: "https://github.com/owner/world-final/pull/1",
           autoMerge: "https://github.com/owner/world-final/actions/runs/1",
-          canonicalSkill: "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
+          canonicalSkill:
+            "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
           positiveSignals: 5,
           externalPulls: 3,
         },
@@ -1624,7 +1792,9 @@ describe("doctorCommand", () => {
   });
 
   test("requires v1 public contribution pull/use evidence from distinct other agents", () => {
-    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-public-contribution-other-agents-"));
+    const root = mkdtempSync(
+      join(tmpdir(), "vivarium-doctor-v1-public-contribution-other-agents-"),
+    );
     const evidencePath = join(root, "v1-evidence.json");
     const localEvidencePaths = [
       "domains/coding/skills/public/SKILL.md",
@@ -1652,7 +1822,8 @@ describe("doctorCommand", () => {
           mathGate: "docs/live/math-gate.md",
           contributorTrust: 0.5,
           autoMerge: "https://github.com/owner/world-final/actions/runs/1",
-          canonicalSkill: "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
+          canonicalSkill:
+            "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
           positiveSignals: [
             { agent: "signal-agent-a", evidence: "docs/live/signal-1.md" },
             { agent: "signal-agent-a", evidence: "docs/live/signal-2.md" },
@@ -1684,7 +1855,9 @@ describe("doctorCommand", () => {
   });
 
   test("requires v1 public contribution positive signals from distinct agents", () => {
-    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-public-contribution-positive-agents-"));
+    const root = mkdtempSync(
+      join(tmpdir(), "vivarium-doctor-v1-public-contribution-positive-agents-"),
+    );
     const evidencePath = join(root, "v1-evidence.json");
     const localEvidencePaths = [
       "domains/coding/skills/public/SKILL.md",
@@ -1712,7 +1885,8 @@ describe("doctorCommand", () => {
           mathGate: "docs/live/math-gate.md",
           contributorTrust: 0.5,
           autoMerge: "https://github.com/owner/world-final/actions/runs/1",
-          canonicalSkill: "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
+          canonicalSkill:
+            "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
           positiveSignals: [
             { agent: "signal-agent-a", evidence: "docs/live/signal-1.md" },
             { agent: "signal-agent-a", evidence: "docs/live/signal-2.md" },
@@ -1771,7 +1945,8 @@ describe("doctorCommand", () => {
           mathGate: "docs/live/math-gate.md",
           contributorTrust: 0.5,
           autoMerge: "https://github.com/owner/world-final/actions/runs/1",
-          canonicalSkill: "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
+          canonicalSkill:
+            "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
           positiveSignals: [
             { agent: "live-agent", evidence: "docs/live/signal-1.md" },
             { agent: "signal-agent-b", evidence: "docs/live/signal-2.md" },
@@ -1828,7 +2003,8 @@ describe("doctorCommand", () => {
           contributorAgent: "live-agent",
           publicSkillPr: "https://github.com/owner/world-final/pull/1",
           autoMerge: "https://github.com/owner/world-final/actions/runs/1",
-          canonicalSkill: "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
+          canonicalSkill:
+            "https://github.com/owner/world-final/blob/main/domains/coding/skills/public/SKILL.md",
           positiveSignals: [
             { agent: "signal-agent-a", evidence: "docs/live/signal-1.md" },
             { agent: "signal-agent-b", evidence: "docs/live/signal-2.md" },
@@ -1916,7 +2092,8 @@ describe("doctorCommand", () => {
         run: string;
       };
     };
-    manifest.publishedArtifacts.antiPattern = "domains/coding/anti-patterns/failure/ANTI-PATTERN.md";
+    manifest.publishedArtifacts.antiPattern =
+      "domains/coding/anti-patterns/failure/ANTI-PATTERN.md";
     manifest.publishedArtifacts.trace = "domains/coding/traces/workflow/TRACE.md";
     manifest.publishedArtifacts.run = "runs/run-live-001/RUN.md";
     writeFileSync(evidencePath, `${JSON.stringify(manifest)}\n`, "utf8");
@@ -2025,7 +2202,9 @@ describe("doctorCommand", () => {
   });
 
   test("requires v1 published trace and run Plan-read agents to differ from the contributor", () => {
-    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-v1-published-plan-read-other-contributor-"));
+    const root = mkdtempSync(
+      join(tmpdir(), "vivarium-doctor-v1-published-plan-read-other-contributor-"),
+    );
     const evidencePath = join(root, "v1-evidence.json");
     const localEvidencePaths = [
       "domains/coding/anti-patterns/failure/ANTI-PATTERN.md",
@@ -2406,7 +2585,10 @@ describe("doctorCommand", () => {
           improvementPercent: 25,
           contributorProfile: "contributors/live-agent.json",
           competingDiscussion: "https://github.com/owner/world-final/discussions/2",
-          competingSkillReferences: ["domains/coding/skills/public/SKILL.md", "domains/coding/skills/public-variant/SKILL.md"],
+          competingSkillReferences: [
+            "domains/coding/skills/public/SKILL.md",
+            "domains/coding/skills/public-variant/SKILL.md",
+          ],
           refinementEvidence: "docs/live/refinement-evidence.md",
           contributorProfileSummary: {
             publicSkills: 1,
@@ -2471,7 +2653,10 @@ describe("doctorCommand", () => {
           improvementPercent: 25,
           contributorProfile: "contributors/live-agent.json",
           competingDiscussion: "https://github.com/owner/world-final/discussions/2",
-          competingSkillReferences: ["domains/coding/skills/public/SKILL.md", "domains/coding/skills/public-variant/SKILL.md"],
+          competingSkillReferences: [
+            "domains/coding/skills/public/SKILL.md",
+            "domains/coding/skills/public-variant/SKILL.md",
+          ],
           similarGoalsEvidence: "docs/live/similar-goals.md",
           refinementEvidence: "docs/live/refinement-evidence.md",
           contributorProfileSummary: {
@@ -2603,8 +2788,10 @@ describe("doctorCommand", () => {
     };
     manifest.publicContribution.publicSkillPr = "https://github.com/other/wrong-world/pull/1";
     manifest.publicContribution.autoMerge = "https://github.com/other/wrong-world/actions/runs/1";
-    manifest.publicContribution.canonicalSkill = "https://github.com/other/wrong-world/blob/main/domains/coding/skills/public/SKILL.md";
-    manifest.twoWeekImprovement.competingDiscussion = "https://github.com/other/wrong-world/discussions/2";
+    manifest.publicContribution.canonicalSkill =
+      "https://github.com/other/wrong-world/blob/main/domains/coding/skills/public/SKILL.md";
+    manifest.twoWeekImprovement.competingDiscussion =
+      "https://github.com/other/wrong-world/discussions/2";
     writeFileSync(evidencePath, `${JSON.stringify(manifest)}\n`, "utf8");
 
     const result = doctorCommand({
@@ -2844,7 +3031,10 @@ describe("doctorCommand", () => {
     expect(result.nextActions).toContainEqual(
       expect.objectContaining({
         check: "provider.anthropicSmoke:missing",
-        env: expect.arrayContaining(["VIVARIUM_ANTHROPIC_MODEL", "VIVARIUM_ANTHROPIC_CONTEXT_WINDOW"]),
+        env: expect.arrayContaining([
+          "VIVARIUM_ANTHROPIC_MODEL",
+          "VIVARIUM_ANTHROPIC_CONTEXT_WINDOW",
+        ]),
       }),
     );
     expect(result.nextActions).toContainEqual(
@@ -3167,7 +3357,9 @@ describe("doctorCommand", () => {
   });
 
   test("does not run provider smoke probes while configured profiles are unavailable", () => {
-    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-provider-smoke-unavailable-profiles-"));
+    const root = mkdtempSync(
+      join(tmpdir(), "vivarium-doctor-provider-smoke-unavailable-profiles-"),
+    );
     const files = writeLiveReadyFiles(root);
     writeFileSync(
       files.profilesPath,
@@ -3528,7 +3720,8 @@ describe("doctorCommand", () => {
       if (text === "git remote -v" && run.cwd === agentRoot) {
         return {
           exitCode: 0,
-          stdout: "origin\thttps://github.com/owner/agent-final.git (fetch)\norigin\thttps://github.com/owner/agent-final.git (push)\n",
+          stdout:
+            "origin\thttps://github.com/owner/agent-final.git (fetch)\norigin\thttps://github.com/owner/agent-final.git (push)\n",
           stderr: "",
         };
       }
@@ -3536,7 +3729,8 @@ describe("doctorCommand", () => {
       if (text === "git remote -v" && run.cwd === worldRoot) {
         return {
           exitCode: 0,
-          stdout: "origin\thttps://github.com/owner/world-final.git (fetch)\norigin\thttps://github.com/owner/world-final.git (push)\n",
+          stdout:
+            "origin\thttps://github.com/owner/world-final.git (fetch)\norigin\thttps://github.com/owner/world-final.git (push)\n",
           stderr: "",
         };
       }

@@ -17,7 +17,11 @@ import {
   curriculumReadCommand,
 } from "./commands/curriculum.js";
 import { daemonSmokeCommand } from "./commands/daemon.js";
-import { doctorCommand, type DoctorCommandRunner } from "./commands/doctor.js";
+import {
+  doctorCommand,
+  renderDoctorCommandResult,
+  type DoctorCommandRunner,
+} from "./commands/doctor.js";
 import { dreamCommand } from "./commands/dream.js";
 import {
   githubDiscussionCommand,
@@ -716,17 +720,15 @@ export async function dispatchCliCommand(
       const envFile = value(flags, "env-file");
       const env =
         envFile === undefined ? options.env : readEnvFile(envFile, options.env ?? process.env);
-      return output(
-        command,
-        doctorCommand({
-          ...(booleanFlag(flags, "live") ? { mode: "live-readiness" } : {}),
-          ...(agentRoot === undefined ? {} : { agentRoot }),
-          ...(worldRoot === undefined ? {} : { worldRoot }),
-          ...(options.doctorRunner === undefined ? {} : { runner: options.doctorRunner }),
-          ...(env === undefined ? {} : { env }),
-          ...(envFile === undefined ? {} : { envFilePath: envFile }),
-        }),
-      );
+      const result = doctorCommand({
+        ...(booleanFlag(flags, "live") ? { mode: "live-readiness" } : {}),
+        ...(agentRoot === undefined ? {} : { agentRoot }),
+        ...(worldRoot === undefined ? {} : { worldRoot }),
+        ...(options.doctorRunner === undefined ? {} : { runner: options.doctorRunner }),
+        ...(env === undefined ? {} : { env }),
+        ...(envFile === undefined ? {} : { envFilePath: envFile }),
+      });
+      return { command, result, output: renderDoctorCommandResult(result) };
     }
     default:
       usage(`Unknown command "${command}"`);
