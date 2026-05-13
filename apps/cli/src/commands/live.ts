@@ -433,6 +433,7 @@ export function renderLiveEnvInitCommandResult(result: LiveEnvInitCommandResult)
     `vivarium setup --env-file ${envFilePath} --domain coding --world-root ../the-world --state-path .vivarium/state.db`,
     `vivarium setup --env-file ${envFilePath} --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write`,
     `vivarium model --env-file ${envFilePath}`,
+    "vivarium live evidence-init --path v1-evidence.json",
     `vivarium doctor --live --env-file ${envFilePath}`,
   ];
 

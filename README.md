@@ -74,10 +74,13 @@ vivarium setup --env-file live-readiness.local.env --domain coding --world-root 
 # [3] Inspect configured models
 vivarium model --env-file live-readiness.local.env
 
-# [4] Run the readiness gate
+# [4] Prepare live evidence
+vivarium live evidence-init --path v1-evidence.json
+
+# [5] Run the readiness gate
 vivarium doctor --live --env-file live-readiness.local.env
 
-# [5] Keep moving
+# [6] Keep moving
 vivarium status
 vivarium help
 vivarium update

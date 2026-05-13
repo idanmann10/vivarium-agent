@@ -28,6 +28,10 @@ const launchCommandStages: readonly LaunchCommandStage[] = [
     matches: (command) => command.startsWith("vivarium model"),
   },
   {
+    label: "Prepare live evidence",
+    matches: (command) => command.startsWith("vivarium live evidence-init"),
+  },
+  {
     label: "Run the readiness gate",
     matches: (command) => command.startsWith("vivarium doctor"),
   },

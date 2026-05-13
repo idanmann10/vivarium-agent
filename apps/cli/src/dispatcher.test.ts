@@ -1757,7 +1757,8 @@ describe("dispatchCliCommand", () => {
     expect(createdOutput).toContain("[1] Fill live settings");
     expect(createdOutput).toContain("[2] Prepare live readiness");
     expect(createdOutput).toContain("[3] Inspect configured models");
-    expect(createdOutput).toContain("[4] Run the readiness gate");
+    expect(createdOutput).toContain("[4] Prepare live evidence");
+    expect(createdOutput).toContain("[5] Run the readiness gate");
     expect(createdOutput).toContain(
       `vivarium setup --env-file ${envPath} --domain coding --world-root ../the-world --state-path .vivarium/state.db`,
     );
@@ -1765,6 +1766,7 @@ describe("dispatchCliCommand", () => {
       `vivarium setup --env-file ${envPath} --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write`,
     );
     expect(createdOutput).toContain(`vivarium model --env-file ${envPath}`);
+    expect(createdOutput).toContain("vivarium live evidence-init --path v1-evidence.json");
     expect(createdOutput).toContain(`vivarium doctor --live --env-file ${envPath}`);
     expect(createdOutput.trim().startsWith("{")).toBe(false);
     expect(body).toContain("VIVARIUM_PROVIDER_PROFILES_PATH");

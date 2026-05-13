@@ -592,8 +592,9 @@ describe("reference docs", () => {
         "# [1] Prove the local loop",
         "# [2] Prepare live readiness",
         "# [3] Inspect configured models",
-        "# [4] Run the readiness gate",
-        "# [5] Keep moving",
+        "# [4] Prepare live evidence",
+        "# [5] Run the readiness gate",
+        "# [6] Keep moving",
       ]) {
         expect(block).toContain(stage);
       }
@@ -603,6 +604,7 @@ describe("reference docs", () => {
         "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
         "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write",
         "vivarium model --env-file live-readiness.local.env",
+        "vivarium live evidence-init --path v1-evidence.json",
         "vivarium doctor --live --env-file live-readiness.local.env",
         "vivarium status",
         "vivarium help",

@@ -58,6 +58,7 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
     "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
     "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write",
     "vivarium model --env-file live-readiness.local.env",
+    "vivarium live evidence-init --path v1-evidence.json",
     "vivarium doctor --live --env-file live-readiness.local.env",
     "vivarium status",
     "vivarium help",
