@@ -81,10 +81,30 @@ describe("CLI entrypoint boundary", () => {
     expect(existsSync(mainPath)).toBe(true);
     expect(mainSource).toContain('import { dispatchCliCommand } from "./dispatcher.js";');
     expect(mainSource).toContain(
-      'import { applyVivariumTerminalTheme } from "./commands/branding.js";',
+      'import { applyVivariumTerminalTheme, renderVivariumError } from "./commands/branding.js";',
     );
     expect(mainSource).toContain("dispatchCliCommand(Bun.argv.slice(2))");
     expect(mainSource).toContain("applyVivariumTerminalTheme(result.output");
+    expect(mainSource).toContain("applyVivariumTerminalTheme(renderVivariumError(message)");
     expect(indexSource).not.toContain("import.meta.main");
+  });
+
+  test("renders branded usage errors from the process entrypoint", () => {
+    const result = Bun.spawnSync(["bun", "apps/cli/src/main.ts", "run"], {
+      cwd: resolve(cliPackageRoot, "../.."),
+      stdout: "pipe",
+      stderr: "pipe",
+      env: { ...process.env, NO_COLOR: "1" },
+    });
+
+    const stderr = result.stderr.toString();
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout.toString()).toBe("");
+    expect(stderr).toContain("Vivarium Error");
+    expect(stderr).toContain('.-""""-.');
+    expect(stderr).toContain("Message: Missing required --goal");
+    expect(stderr).toContain("Next command:");
+    expect(stderr).toContain("vivarium help");
   });
 });

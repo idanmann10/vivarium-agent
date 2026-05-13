@@ -10,6 +10,20 @@ export function renderVivariumGlobe(): string {
   ].join("\n");
 }
 
+export function renderVivariumError(message: string): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Error",
+    "--------------",
+    `Message: ${message}`,
+    "",
+    "Next command:",
+    "  vivarium help",
+    "",
+  ].join("\n");
+}
+
 export interface VivariumTerminalThemeOptions {
   readonly env?: Readonly<Record<string, string | undefined>>;
   readonly isTty?: boolean;

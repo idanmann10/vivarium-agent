@@ -1,4 +1,4 @@
-import { applyVivariumTerminalTheme } from "./commands/branding.js";
+import { applyVivariumTerminalTheme, renderVivariumError } from "./commands/branding.js";
 import { dispatchCliCommand } from "./dispatcher.js";
 
 try {
@@ -11,6 +11,11 @@ try {
   );
 } catch (error) {
   const message = error instanceof Error ? error.message : "Unknown CLI error";
-  process.stderr.write(`${message}\n`);
+  process.stderr.write(
+    applyVivariumTerminalTheme(renderVivariumError(message), {
+      env: process.env,
+      isTty: process.stderr.isTTY,
+    }),
+  );
   process.exitCode = 1;
 }
