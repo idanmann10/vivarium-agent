@@ -58,6 +58,8 @@ bun apps/cli/src/main.ts setup \
 `setup` initializes the same local state as `init`, renders a terminal-friendly
 summary, and prints the next commands for a first run, live setup, and
 `doctor --live`. Use `init` directly only when you need the raw JSON result.
+Use `live env-init --path live-readiness.local.env` when you need to create the
+private live-readiness env file from the terminal.
 
 Provider-backed runs require environment variables for the selected provider. Use
 `docs/guides/configure-providers.md` for provider profiles and `docs/guides/live-readiness.md` for the

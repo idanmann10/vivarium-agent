@@ -26,11 +26,14 @@ Path-based checks report `:unavailable` when the env var is set but the expected
 When the world subscription registry exists, canonical/private world refs also report `:unavailable` if the configured refs are not present in that registry.
 For live-readiness mode, the JSON result also includes `nextActions` for every non-passing check. Each action names the failed check, the env vars or command needed to clear it, and the guide section to read before making live changes.
 
-Use `docs/live-readiness.env.example` as a copyable environment skeleton. Copy it to `live-readiness.local.env` before filling values, restrict it to the current user, then pass it to `doctor --live` with `--env-file live-readiness.local.env`; that filename is ignored because filled copies contain provider keys, GitHub tokens, and internal API metadata.
+Use `live env-init` to create `live-readiness.local.env` from the tracked
+environment skeleton with `0600` permissions before filling values. Then pass it
+to `doctor --live` with `--env-file live-readiness.local.env`; that filename is
+ignored because filled copies contain provider keys, GitHub tokens, and internal
+API metadata.
 
 ```bash
-cp docs/live-readiness.env.example live-readiness.local.env
-chmod 600 live-readiness.local.env
+bun apps/cli/src/main.ts live env-init --path live-readiness.local.env
 ```
 
 When `--env-file` is used, `doctor --live` reports `liveEnvFile.permissions:insecure` until group and world permissions are removed from the filled file.

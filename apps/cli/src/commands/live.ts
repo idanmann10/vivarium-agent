@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { addCredentialCommand } from "./credentials.js";
 import { configureProviderProfileCommand } from "./providers.js";
@@ -39,6 +39,27 @@ export interface LiveEvidenceInitCommandOptions {
   readonly path: string;
   readonly overwrite?: boolean;
 }
+
+export interface LiveEnvInitCommandOptions {
+  readonly path: string;
+  readonly overwrite?: boolean;
+  readonly templatePath?: string;
+}
+
+export type LiveEnvInitCommandResult =
+  | {
+      readonly ok: true;
+      readonly written: true;
+      readonly path: string;
+      readonly mode: "0600";
+      readonly templatePath: string;
+    }
+  | {
+      readonly ok: false;
+      readonly written: false;
+      readonly path: string;
+      readonly error: string;
+    };
 
 export type LiveEvidenceInitCommandResult =
   | {
@@ -106,6 +127,8 @@ const v1EvidenceSections = [
   "curationStats",
   "twoWeekImprovement",
 ] as const;
+
+const defaultLiveEnvTemplatePath = "docs/live-readiness.env.example";
 
 function v1EvidenceSkeleton(): Readonly<Record<string, unknown>> {
   return {
@@ -356,6 +379,45 @@ export function liveSetupCommand(options: LiveSetupCommandOptions): LiveSetupCom
     providerProfiles,
     credentialName,
     paths,
+  };
+}
+
+export function liveEnvInitCommand(options: LiveEnvInitCommandOptions): LiveEnvInitCommandResult {
+  const templatePath = options.templatePath ?? defaultLiveEnvTemplatePath;
+  const template = readFileSync(templatePath, "utf8");
+  mkdirSync(dirname(options.path), { recursive: true });
+
+  try {
+    writeFileSync(options.path, template, {
+      encoding: "utf8",
+      flag: options.overwrite === true ? "w" : "wx",
+      mode: 0o600,
+    });
+    chmodSync(options.path, 0o600);
+  } catch (error) {
+    if (
+      options.overwrite !== true &&
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { readonly code?: unknown }).code === "EEXIST"
+    ) {
+      return {
+        ok: false,
+        written: false,
+        path: options.path,
+        error: "Live readiness env already exists. Pass --overwrite to replace it.",
+      };
+    }
+    throw error;
+  }
+
+  return {
+    ok: true,
+    written: true,
+    path: options.path,
+    mode: "0600",
+    templatePath,
   };
 }
 

@@ -4,6 +4,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -189,6 +190,9 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).toContain('.-""""-.');
     expect(setup.output).toContain("Local state initialized");
     expect(setup.output).toContain("Next commands");
+    expect(setup.output).toContain("live env-init --path live-readiness.local.env");
+    expect(setup.output).not.toContain("cp docs/live-readiness.env.example");
+    expect(setup.output).not.toContain("chmod 600 live-readiness.local.env");
   });
 
   test("routes setup live env files through the live setup dry run", async () => {
@@ -1455,6 +1459,43 @@ describe("dispatchCliCommand", () => {
       error: "Evidence manifest already exists. Pass --overwrite to replace it.",
     });
     expect(overwritten.result).toMatchObject({ ok: true, written: true, path: evidencePath });
+  });
+
+  test("routes live env init with private permissions and refuses accidental overwrite", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-env-init-"));
+    const envPath = join(root, "live-readiness.local.env");
+
+    const created = await dispatchCliCommand(["live", "env-init", "--path", envPath]);
+    const body = readFileSync(envPath, "utf8");
+    const mode = statSync(envPath).mode & 0o777;
+    const refused = await dispatchCliCommand(["live", "env-init", "--path", envPath]);
+    writeFileSync(envPath, "changed\n", "utf8");
+    const overwritten = await dispatchCliCommand([
+      "live",
+      "env-init",
+      "--path",
+      envPath,
+      "--overwrite",
+    ]);
+
+    expect(created.result).toEqual({
+      ok: true,
+      written: true,
+      path: envPath,
+      mode: "0600",
+      templatePath: "docs/live-readiness.env.example",
+    });
+    expect(body).toContain("VIVARIUM_PROVIDER_PROFILES_PATH");
+    expect(body).toContain("source live-readiness.local.env");
+    expect(mode).toBe(0o600);
+    expect(refused.result).toEqual({
+      ok: false,
+      written: false,
+      path: envPath,
+      error: "Live readiness env already exists. Pass --overwrite to replace it.",
+    });
+    expect(overwritten.result).toMatchObject({ ok: true, written: true, path: envPath });
+    expect(readFileSync(envPath, "utf8")).toContain("VIVARIUM_PROVIDER_PROFILES_PATH");
   });
 
   test("routes GitHub smoke checks without credentials", async () => {

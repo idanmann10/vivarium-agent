@@ -36,7 +36,11 @@ import {
   identitySummaryCommand,
 } from "./commands/identity.js";
 import { runInitCommand } from "./commands/init.js";
-import { liveEvidenceInitCommand, liveSetupCommand } from "./commands/live.js";
+import {
+  liveEnvInitCommand,
+  liveEvidenceInitCommand,
+  liveSetupCommand,
+} from "./commands/live.js";
 import { modelCommand, renderModelCommandResult } from "./commands/model.js";
 import { publishListCommand, publishRunCommand, publishTraceCommand } from "./commands/publish.js";
 import {
@@ -696,6 +700,16 @@ export async function dispatchCliCommand(
       );
     }
     case "live": {
+      if (subcommand === "env-init") {
+        return output(
+          command,
+          liveEnvInitCommand({
+            path: required(flags, "path"),
+            overwrite: booleanFlag(flags, "overwrite"),
+          }),
+        );
+      }
+
       if (subcommand === "evidence-init") {
         return output(
           command,
@@ -717,7 +731,7 @@ export async function dispatchCliCommand(
         );
       }
 
-      usage('Unknown live subcommand. Use "setup" or "evidence-init".');
+      usage('Unknown live subcommand. Use "env-init", "setup", or "evidence-init".');
     }
     case "status": {
       const result = statusCommand();

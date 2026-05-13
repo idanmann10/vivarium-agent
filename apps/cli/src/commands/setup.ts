@@ -77,8 +77,7 @@ function setupNextCommands(
 
   return [
     runCommand,
-    "cp docs/live-readiness.env.example live-readiness.local.env",
-    "chmod 600 live-readiness.local.env",
+    commandWithFlags("live env-init", { path: "live-readiness.local.env" }),
     commandWithFlags("setup", {
       "env-file": "live-readiness.local.env",
       domain: options.primaryDomain,

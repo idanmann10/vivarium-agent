@@ -11,7 +11,7 @@ Implemented command groups include:
 - `setup`, `init`, `run`, `model`, `status`, `doctor`, and `doctor --live`
 - `credentials add/list/smoke`
 - `providers configure/list/smoke`
-- `live setup/evidence-init`
+- `live env-init/setup/evidence-init`
 - `skills list`
 - `dream run`
 - `identity summary/stage/history`

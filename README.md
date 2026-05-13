@@ -88,13 +88,12 @@ terminal-friendly checklist:
 bun apps/cli/src/main.ts setup --domain coding --world-root ../the-world --state-path .vivarium/state.db
 ```
 
-For live setup, copy the readiness template, restrict permissions, and let the
-setup command dry-run the guarded provider and credential writes before you
+For live setup, generate a private readiness env file, fill it locally, and let
+the setup command dry-run the guarded provider and credential writes before you
 confirm them:
 
 ```bash
-cp docs/live-readiness.env.example live-readiness.local.env
-chmod 600 live-readiness.local.env
+bun apps/cli/src/main.ts live env-init --path live-readiness.local.env
 bun apps/cli/src/main.ts setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db
 bun apps/cli/src/main.ts model --env-file live-readiness.local.env
 bun apps/cli/src/main.ts doctor --live --env-file live-readiness.local.env
