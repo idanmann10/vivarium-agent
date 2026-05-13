@@ -1112,13 +1112,25 @@ describe("dispatchCliCommand", () => {
         },
       ],
     });
+    expect(configured.output).toContain("Vivarium Providers");
+    expect(configured.output).toContain("Profiles: 1");
+    expect(configured.output).toContain("openrouter");
+    expect(configured.output.trim().startsWith("{")).toBe(false);
     expect(listed.result).toEqual(configured.result);
+    expect(listed.output).toContain("Vivarium Providers");
+    expect(listed.output).toContain("openrouter/test-model");
+    expect(listed.output.trim().startsWith("{")).toBe(false);
     expect(smoked.result).toEqual({
       ok: false,
       kind: "openai-compat",
       model: "openrouter/test-model",
       error: "Missing provider environment variable: VIVARIUM_MISSING_PROVIDER_KEY",
     });
+    expect(smoked.output).toContain("Vivarium Provider Smoke");
+    expect(smoked.output).toContain("Status: blocked");
+    expect(smoked.output).toContain("openai-compat");
+    expect(smoked.output).not.toContain("provider-secret");
+    expect(smoked.output.trim().startsWith("{")).toBe(false);
     expect(run.result).toEqual({
       success: false,
       runId: null,

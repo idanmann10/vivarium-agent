@@ -50,6 +50,8 @@ import {
   configureProviderProfileCommand,
   listProviderProfilesCommand,
   providerSmokeCommand,
+  renderProviderProfilesCommandResult,
+  renderProviderSmokeCommandResult,
   type ProviderSmokeKind,
 } from "./commands/providers.js";
 import { runCommand, type RunProviderKind } from "./commands/run.js";
@@ -581,29 +583,25 @@ export async function dispatchCliCommand(
         if (contextWindow === undefined) {
           usage("Missing required --context-window");
         }
-        return output(
-          command,
-          configureProviderProfileCommand({
-            profilesPath: required(flags, "profiles-path"),
-            name: required(flags, "name"),
-            kind: required(flags, "kind") as ProviderSmokeKind,
-            apiKeyEnv: required(flags, "api-key-env"),
-            model: required(flags, "model"),
-            ...(baseUrl === undefined ? {} : { baseUrl }),
-            capabilities: values(flags, "capability") as readonly Capability[],
-            contextWindow,
-            costClass: required(flags, "cost-class") as CostClass,
-          }),
-        );
+        const result = configureProviderProfileCommand({
+          profilesPath: required(flags, "profiles-path"),
+          name: required(flags, "name"),
+          kind: required(flags, "kind") as ProviderSmokeKind,
+          apiKeyEnv: required(flags, "api-key-env"),
+          model: required(flags, "model"),
+          ...(baseUrl === undefined ? {} : { baseUrl }),
+          capabilities: values(flags, "capability") as readonly Capability[],
+          contextWindow,
+          costClass: required(flags, "cost-class") as CostClass,
+        });
+        return { command, result, output: renderProviderProfilesCommandResult(result) };
       }
 
       if (subcommand === "list") {
-        return output(
-          command,
-          listProviderProfilesCommand({
-            profilesPath: required(flags, "profiles-path"),
-          }),
-        );
+        const result = listProviderProfilesCommand({
+          profilesPath: required(flags, "profiles-path"),
+        });
+        return { command, result, output: renderProviderProfilesCommandResult(result) };
       }
 
       if (subcommand !== "smoke") {
@@ -616,18 +614,16 @@ export async function dispatchCliCommand(
       const model = value(flags, "model");
       const profilesPath = value(flags, "profiles-path");
       const profile = value(flags, "profile");
-      return output(
-        command,
-        await providerSmokeCommand({
-          ...(kind === undefined ? {} : { kind }),
-          ...(apiKeyEnv === undefined ? {} : { apiKeyEnv }),
-          ...(model === undefined ? {} : { model }),
-          ...(baseUrl === undefined ? {} : { baseUrl }),
-          ...(profilesPath === undefined ? {} : { profilesPath }),
-          ...(profile === undefined ? {} : { profile }),
-          ...(prompt === undefined ? {} : { prompt }),
-        }),
-      );
+      const result = await providerSmokeCommand({
+        ...(kind === undefined ? {} : { kind }),
+        ...(apiKeyEnv === undefined ? {} : { apiKeyEnv }),
+        ...(model === undefined ? {} : { model }),
+        ...(baseUrl === undefined ? {} : { baseUrl }),
+        ...(profilesPath === undefined ? {} : { profilesPath }),
+        ...(profile === undefined ? {} : { profile }),
+        ...(prompt === undefined ? {} : { prompt }),
+      });
+      return { command, result, output: renderProviderSmokeCommandResult(result) };
     }
     case "github": {
       if (subcommand === "smoke") {

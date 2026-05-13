@@ -65,6 +65,8 @@ export {
   configureProviderProfileCommand,
   listProviderProfilesCommand,
   providerSmokeCommand,
+  renderProviderProfilesCommandResult,
+  renderProviderSmokeCommandResult,
 } from "./commands/providers.js";
 export type {
   ConfigureProviderProfileCommandOptions,
