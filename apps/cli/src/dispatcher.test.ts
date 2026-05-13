@@ -226,6 +226,10 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).toContain('.-""""-.');
     expect(setup.output).toContain("Local state initialized");
     expect(setup.output).toContain("Next commands");
+    expect(setup.output).toContain("[1] Prove the local loop");
+    expect(setup.output).toContain("[2] Prepare live readiness");
+    expect(setup.output).toContain("[3] Inspect configured models");
+    expect(setup.output).toContain("[4] Run the readiness gate");
     expect(setup.output).toContain("vivarium run --goal");
     expect(setup.output).toContain("live env-init --path live-readiness.local.env");
     expect(setup.output).toContain(
