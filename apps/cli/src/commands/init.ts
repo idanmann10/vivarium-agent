@@ -6,6 +6,7 @@ import { agentId, skillId } from "../../../../packages/core/src/index.js";
 import { migrationVersions, SQLiteStateRepository } from "../../../../packages/state/src/index.js";
 import type { LocalSkillRecord } from "../../../../packages/state/src/index.js";
 import { createLocalWorldReader, type LocalWorldSearchResult } from "../../../../packages/world/src/index.js";
+import { renderVivariumGlobe } from "./branding.js";
 
 export interface InitCommandOptions {
   readonly primaryDomain: string;
@@ -99,4 +100,36 @@ export function runInitCommand(options: InitCommandOptions): InitCommandResult {
     migrations: migrationVersions,
     prompts: initPrompts(options),
   };
+}
+
+function shellQuote(value: string): string {
+  return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
+}
+
+function renderStarterArtifacts(label: string, artifacts: readonly StarterArtifact[]): readonly string[] {
+  return [
+    `${label}: ${artifacts.length}`,
+    ...artifacts.slice(0, 5).map((artifact) => `  ${artifact.title}`),
+    ...(artifacts.length > 5 ? [`  ...and ${artifacts.length - 5} more`] : []),
+  ];
+}
+
+export function renderInitCommandResult(result: InitCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Init",
+    "-------------",
+    `Domain: ${result.primaryDomain}`,
+    `State: ${result.statePath}`,
+    `Curriculum: ${result.curriculumPath ?? "not found"}`,
+    `Migrations: ${result.migrations.length === 0 ? "none" : result.migrations.join(", ")}`,
+    ...renderStarterArtifacts("Starter skills", result.starterSkills),
+    ...renderStarterArtifacts("Starter traces", result.starterTraces),
+    ...(result.prompts.length === 0 ? [] : ["", "Prompts:", ...result.prompts.map((prompt) => `  ${prompt}`)]),
+    "",
+    "Next command:",
+    `  vivarium run --goal ${shellQuote("validate local setup")} --domain ${shellQuote(result.primaryDomain)} --state-path ${shellQuote(result.statePath)}`,
+    "",
+  ].join("\n");
 }

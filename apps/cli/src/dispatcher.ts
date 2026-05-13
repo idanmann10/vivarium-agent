@@ -42,7 +42,7 @@ import {
   identityStageCommand,
   identitySummaryCommand,
 } from "./commands/identity.js";
-import { runInitCommand } from "./commands/init.js";
+import { renderInitCommandResult, runInitCommand } from "./commands/init.js";
 import {
   liveEnvInitCommand,
   liveEvidenceInitCommand,
@@ -61,7 +61,7 @@ import {
   renderProviderSmokeCommandResult,
   type ProviderSmokeKind,
 } from "./commands/providers.js";
-import { runCommand, type RunProviderKind } from "./commands/run.js";
+import { renderRunCommandResult, runCommand, type RunProviderKind } from "./commands/run.js";
 import { renderSetupCommandResult, setupCommand } from "./commands/setup.js";
 import { listSkillsCommand } from "./commands/skills.js";
 import { renderStatusCommandResult, statusCommand } from "./commands/status.js";
@@ -244,17 +244,15 @@ export async function dispatchCliCommand(
     case "init": {
       const worldRoot = value(flags, "world-root");
       const statePath = value(flags, "state-path");
-      return output(
-        command,
-        runInitCommand({
-          primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? "coding",
-          bindGithubIdentity: booleanFlag(flags, "bind-github"),
-          providerProfiles: values(flags, "provider"),
-          credentialNames: values(flags, "credential"),
-          ...(worldRoot === undefined ? {} : { worldRoot }),
-          ...(statePath === undefined ? {} : { statePath }),
-        }),
-      );
+      const result = runInitCommand({
+        primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? "coding",
+        bindGithubIdentity: booleanFlag(flags, "bind-github"),
+        providerProfiles: values(flags, "provider"),
+        credentialNames: values(flags, "credential"),
+        ...(worldRoot === undefined ? {} : { worldRoot }),
+        ...(statePath === undefined ? {} : { statePath }),
+      });
+      return { command, result, output: renderInitCommandResult(result) };
     }
     case "setup": {
       const worldRoot = value(flags, "world-root");
@@ -300,25 +298,23 @@ export async function dispatchCliCommand(
       const providerProfile = value(flags, "provider-profile");
       const availableToolsets = values(flags, "available-toolset");
       const availableTools = values(flags, "available-tool");
-      return output(
-        command,
-        await runCommand({
-          goal: required(flags, "goal"),
-          ...(domain === undefined ? {} : { domain }),
-          ...(worldRoot === undefined ? {} : { worldRoot }),
-          ...(worldSubscriptionsPath === undefined ? {} : { worldSubscriptionsPath }),
-          ...(statePath === undefined ? {} : { statePath }),
-          ...(booleanFlag(flags, "force-failure") ? { forceFailure: true } : {}),
-          ...(providerKind === undefined ? {} : { providerKind }),
-          ...(providerApiKeyEnv === undefined ? {} : { providerApiKeyEnv }),
-          ...(providerModel === undefined ? {} : { providerModel }),
-          ...(providerBaseUrl === undefined ? {} : { providerBaseUrl }),
-          ...(providerProfilesPath === undefined ? {} : { providerProfilesPath }),
-          ...(providerProfile === undefined ? {} : { providerProfile }),
-          ...(availableToolsets.length === 0 ? {} : { availableToolsets }),
-          ...(availableTools.length === 0 ? {} : { availableTools }),
-        }),
-      );
+      const result = await runCommand({
+        goal: required(flags, "goal"),
+        ...(domain === undefined ? {} : { domain }),
+        ...(worldRoot === undefined ? {} : { worldRoot }),
+        ...(worldSubscriptionsPath === undefined ? {} : { worldSubscriptionsPath }),
+        ...(statePath === undefined ? {} : { statePath }),
+        ...(booleanFlag(flags, "force-failure") ? { forceFailure: true } : {}),
+        ...(providerKind === undefined ? {} : { providerKind }),
+        ...(providerApiKeyEnv === undefined ? {} : { providerApiKeyEnv }),
+        ...(providerModel === undefined ? {} : { providerModel }),
+        ...(providerBaseUrl === undefined ? {} : { providerBaseUrl }),
+        ...(providerProfilesPath === undefined ? {} : { providerProfilesPath }),
+        ...(providerProfile === undefined ? {} : { providerProfile }),
+        ...(availableToolsets.length === 0 ? {} : { availableToolsets }),
+        ...(availableTools.length === 0 ? {} : { availableTools }),
+      });
+      return { command, result, output: renderRunCommandResult(result) };
     }
     case "credentials": {
       if (subcommand === "add") {

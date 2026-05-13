@@ -11,6 +11,7 @@ import { runGoal } from "../../../../packages/runtime/src/index.js";
 import { InMemoryStateRepository, SQLiteStateRepository, type StateRepository } from "../../../../packages/state/src/index.js";
 import { createSelfTools } from "../../../../packages/tools/src/index.js";
 import { createLocalWorldReader, searchWorlds, type LocalWorldReader } from "../../../../packages/world/src/index.js";
+import { renderVivariumGlobe } from "./branding.js";
 import { resolveProviderProfile } from "./providers.js";
 import { listWorldSubscriptionsCommand } from "./world.js";
 
@@ -316,4 +317,65 @@ export async function runCommand(options: RunCommandOptions): Promise<RunCommand
     episodeKinds,
     transparency,
   };
+}
+
+function renderProviderSummary(provider: RunCommandResult["provider"]): string {
+  return provider.model === null ? provider.kind : `${provider.kind} (${provider.model})`;
+}
+
+function renderValidationSummary(validation: RunValidationSummary | null): string {
+  if (validation === null) {
+    return "Validation: not run";
+  }
+
+  return `Validation: ${validation.passed ? "pass" : "fail"} (${validation.score})`;
+}
+
+function renderPredictionSummary(prediction: Prediction | null): readonly string[] {
+  if (prediction === null) {
+    return [];
+  }
+
+  return [
+    `Prediction: ${prediction.about}`,
+    `Confidence: ${prediction.confidence}`,
+  ];
+}
+
+function renderRunGuidance(result: RunCommandResult): readonly string[] {
+  if (result.success) {
+    return [
+      "Next command:",
+      result.runId === null
+        ? "  vivarium doctor"
+        : `  vivarium publish run --run-id ${result.runId} --visibility public --contributor <agent-id>`,
+    ];
+  }
+
+  return [
+    "Next command:",
+    "  vivarium doctor --live",
+  ];
+}
+
+export function renderRunCommandResult(result: RunCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Run",
+    "------------",
+    `Status: ${result.success ? "success" : "blocked"}`,
+    `Run ID: ${result.runId ?? "not started"}`,
+    `Provider: ${renderProviderSummary(result.provider)}`,
+    `Episodes: ${result.episodeKinds.length === 0 ? "none" : result.episodeKinds.join(", ")}`,
+    `Consulted skills: ${result.transparency.consulted.skills.length}`,
+    `Consulted traces: ${result.transparency.consulted.traces.length}`,
+    renderValidationSummary(result.transparency.validation),
+    ...renderPredictionSummary(result.transparency.prediction),
+    `High surprises: ${result.transparency.highSurprises.length}`,
+    ...(result.error === undefined ? [] : ["", `Error: ${result.error}`]),
+    "",
+    ...renderRunGuidance(result),
+    "",
+  ].join("\n");
 }

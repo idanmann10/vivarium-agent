@@ -564,6 +564,11 @@ describe("dispatchCliCommand", () => {
         "Add credential: GITHUB_TOKEN",
       ],
     });
+    expect(init.output).toContain("Vivarium Init");
+    expect(init.output).toContain("Domain: coding");
+    expect(init.output).toContain("Starter skills:");
+    expect(init.output).toContain("Next command:");
+    expect(init.output.trim().startsWith("{")).toBe(false);
     expect(skills.result).toMatchObject({ skills: [{ name: "Red Green", domain: "coding" }] });
     expect(world.result).toMatchObject({ results: [{ title: "Red Green" }] });
   });
@@ -1006,6 +1011,11 @@ describe("dispatchCliCommand", () => {
     ]);
 
     expect(run.result).toMatchObject({ success: true });
+    expect(run.output).toContain("Vivarium Run");
+    expect(run.output).toContain("Status: success");
+    expect(run.output).toContain("Provider: local");
+    expect(run.output).toContain("Episodes:");
+    expect(run.output.trim().startsWith("{")).toBe(false);
     expect(added.result).toEqual({ stored: true, name: "OPENAI_API_KEY", kind: "api_key" });
     expect(added.output).toContain("Vivarium Credentials");
     expect(added.output).toContain("Status: stored");
@@ -1066,6 +1076,10 @@ describe("dispatchCliCommand", () => {
       },
       error: "Missing provider environment variable: VIVARIUM_MISSING_PROVIDER_KEY",
     });
+    expect(run.output).toContain("Vivarium Run");
+    expect(run.output).toContain("Status: blocked");
+    expect(run.output).toContain("Missing provider environment variable: VIVARIUM_MISSING_PROVIDER_KEY");
+    expect(run.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes provider smoke checks without credentials", async () => {

@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import { SQLiteStateRepository } from "../../../../packages/state/src/index.js";
-import { runInitCommand } from "./init.js";
+import { renderInitCommandResult, runInitCommand } from "./init.js";
 
 function write(path: string, content: string): void {
   mkdirSync(dirname(path), { recursive: true });
@@ -59,5 +59,30 @@ describe("runInitCommand", () => {
       runsCompleted: 0,
     });
     state.close();
+  });
+
+  test("renders branded setup guidance for terminal use", () => {
+    const output = renderInitCommandResult({
+      primaryDomain: "coding",
+      statePath: "/tmp/vivarium-state.db",
+      starterSkills: [
+        {
+          id: "domains/coding/skills/red-green/SKILL.md",
+          title: "Red Green",
+          path: "/tmp/world/domains/coding/skills/red-green/SKILL.md",
+        },
+      ],
+      starterTraces: [],
+      curriculumPath: "/tmp/world/domains/coding/curriculum.md",
+      migrations: ["0001_initial"],
+      prompts: ["Configure provider: anthropic"],
+    });
+
+    expect(output).toContain("Vivarium Init");
+    expect(output).toContain("Domain: coding");
+    expect(output).toContain("Starter skills: 1");
+    expect(output).toContain("Prompts:");
+    expect(output).toContain("Next command:");
+    expect(output.trim().startsWith("{")).toBe(false);
   });
 });
