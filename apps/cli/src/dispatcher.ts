@@ -701,9 +701,21 @@ export async function dispatchCliCommand(
     }
     case "live": {
       if (subcommand === "env-init") {
+        const githubOwner = value(flags, "github-owner");
+        const agentRepo = value(flags, "agent-repo");
+        const worldRepo = value(flags, "world-repo");
+        const canonicalWorldRef = value(flags, "canonical-world-ref");
+        const privateWorldRef = value(flags, "private-world-ref");
         const result = liveEnvInitCommand({
           path: required(flags, "path"),
           overwrite: booleanFlag(flags, "overwrite"),
+          prefill: {
+            ...(githubOwner === undefined ? {} : { githubOwner }),
+            ...(agentRepo === undefined ? {} : { agentRepo }),
+            ...(worldRepo === undefined ? {} : { worldRepo }),
+            ...(canonicalWorldRef === undefined ? {} : { canonicalWorldRef }),
+            ...(privateWorldRef === undefined ? {} : { privateWorldRef }),
+          },
         });
         return { command, result, output: renderLiveEnvInitCommandResult(result) };
       }

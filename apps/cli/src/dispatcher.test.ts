@@ -1754,6 +1754,7 @@ describe("dispatchCliCommand", () => {
       path: envPath,
       mode: "0600",
       templatePath: "docs/live-readiness.env.example",
+      prefilled: [],
     });
     expect(createdOutput).toContain("Vivarium Live Env");
     expect(createdOutput).toContain("Status: written");
@@ -1788,6 +1789,54 @@ describe("dispatchCliCommand", () => {
       error: "Live readiness env already exists. Pass --overwrite to replace it.",
     });
     expect(overwritten.result).toMatchObject({ ok: true, written: true, path: envPath });
+  });
+
+  test("routes live env init with public repo prefill flags", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-env-init-prefill-"));
+    const envPath = join(root, "live-readiness.local.env");
+
+    const created = await dispatchCliCommand([
+      "live",
+      "env-init",
+      "--path",
+      envPath,
+      "--github-owner",
+      "idanmann10",
+      "--agent-repo",
+      "vivarium-agent",
+      "--world-repo",
+      "vivarium-world",
+      "--canonical-world-ref",
+      "https://github.com/idanmann10/vivarium-world.git",
+      "--private-world-ref",
+      "git@github.com:idanmann10/vivarium-world-private.git",
+    ]);
+    const body = readFileSync(envPath, "utf8");
+
+    expect(created.result).toMatchObject({
+      ok: true,
+      written: true,
+      path: envPath,
+      prefilled: [
+        "VIVARIUM_GITHUB_OWNER",
+        "VIVARIUM_AGENT_REPO_NAME",
+        "VIVARIUM_WORLD_REPO_NAME",
+        "VIVARIUM_CANONICAL_WORLD_REF",
+        "VIVARIUM_PRIVATE_WORLD_REF",
+      ],
+    });
+    expect(body).toContain("export VIVARIUM_GITHUB_OWNER='idanmann10'");
+    expect(body).toContain("export VIVARIUM_AGENT_REPO_NAME='vivarium-agent'");
+    expect(body).toContain("export VIVARIUM_WORLD_REPO_NAME='vivarium-world'");
+    expect(body).toContain(
+      "export VIVARIUM_CANONICAL_WORLD_REF='https://github.com/idanmann10/vivarium-world.git'",
+    );
+    expect(body).toContain(
+      "export VIVARIUM_PRIVATE_WORLD_REF='git@github.com:idanmann10/vivarium-world-private.git'",
+    );
+    expect(body).toContain('export GITHUB_TOKEN="<redacted-github-token>"');
+    expect(created.output).toContain("Prefilled:");
+    expect(created.output).toContain("VIVARIUM_GITHUB_OWNER");
   });
 
   test("routes GitHub smoke checks without credentials", async () => {

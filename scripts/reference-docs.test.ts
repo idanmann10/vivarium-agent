@@ -640,6 +640,21 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents live env init public prefill flags", () => {
+    for (const path of ["README.md", join("docs", "guides", "install.md")]) {
+      const body = readFileSync(path, "utf8");
+      for (const term of [
+        "--github-owner",
+        "--agent-repo",
+        "--world-repo",
+        "--canonical-world-ref",
+        "--private-world-ref",
+      ]) {
+        expect(body).toContain(term);
+      }
+    }
+  });
+
   test("documents the launch security branch protection terminal workflow", () => {
     const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
 

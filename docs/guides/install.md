@@ -81,6 +81,9 @@ summary, and prints the next commands for a first run, live setup, and
 without the aggregate setup checklist.
 Use `live env-init --path live-readiness.local.env` when you need to create the
 private live-readiness env file from the terminal.
+When repository names are known, add `--github-owner`, `--agent-repo`,
+`--world-repo`, `--canonical-world-ref`, and `--private-world-ref` to prefill
+the non-secret public GitHub and world values.
 
 Provider-backed runs require environment variables for the selected provider. Use
 `docs/guides/configure-providers.md` for provider profiles and `docs/guides/live-readiness.md` for the

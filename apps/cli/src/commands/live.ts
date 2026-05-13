@@ -46,6 +46,15 @@ export interface LiveEnvInitCommandOptions {
   readonly path: string;
   readonly overwrite?: boolean;
   readonly templatePath?: string;
+  readonly prefill?: LiveEnvPrefillOptions;
+}
+
+export interface LiveEnvPrefillOptions {
+  readonly githubOwner?: string;
+  readonly agentRepo?: string;
+  readonly worldRepo?: string;
+  readonly canonicalWorldRef?: string;
+  readonly privateWorldRef?: string;
 }
 
 export type LiveEnvInitCommandResult =
@@ -55,6 +64,7 @@ export type LiveEnvInitCommandResult =
       readonly path: string;
       readonly mode: "0600";
       readonly templatePath: string;
+      readonly prefilled: readonly string[];
     }
   | {
       readonly ok: false;
@@ -135,6 +145,44 @@ const v1EvidenceSections = [
 ] as const;
 
 const defaultLiveEnvTemplatePath = "docs/live-readiness.env.example";
+
+const liveEnvPrefillMap = {
+  githubOwner: "VIVARIUM_GITHUB_OWNER",
+  agentRepo: "VIVARIUM_AGENT_REPO_NAME",
+  worldRepo: "VIVARIUM_WORLD_REPO_NAME",
+  canonicalWorldRef: "VIVARIUM_CANONICAL_WORLD_REF",
+  privateWorldRef: "VIVARIUM_PRIVATE_WORLD_REF",
+} as const;
+
+type LiveEnvPrefillKey = keyof typeof liveEnvPrefillMap;
+
+function shellEnvLiteral(value: string): string {
+  return `'${value.replaceAll("'", "'\\''")}'`;
+}
+
+function applyLiveEnvPrefill(
+  template: string,
+  prefill: LiveEnvPrefillOptions | undefined,
+): { readonly body: string; readonly prefilled: readonly string[] } {
+  let body = template;
+  const prefilled: string[] = [];
+
+  for (const key of Object.keys(liveEnvPrefillMap) as LiveEnvPrefillKey[]) {
+    const value = prefill?.[key]?.trim();
+    if (value === undefined || value.length === 0) {
+      continue;
+    }
+
+    const envName = liveEnvPrefillMap[key];
+    body = body.replace(
+      new RegExp(`^export ${envName}=.*$`, "m"),
+      `export ${envName}=${shellEnvLiteral(value)}`,
+    );
+    prefilled.push(envName);
+  }
+
+  return { body, prefilled };
+}
 
 function v1EvidenceSkeleton(): Readonly<Record<string, unknown>> {
   return {
@@ -390,11 +438,14 @@ export function liveSetupCommand(options: LiveSetupCommandOptions): LiveSetupCom
 
 export function liveEnvInitCommand(options: LiveEnvInitCommandOptions): LiveEnvInitCommandResult {
   const templatePath = options.templatePath ?? defaultLiveEnvTemplatePath;
-  const template = readFileSync(templatePath, "utf8");
+  const { body, prefilled } = applyLiveEnvPrefill(
+    readFileSync(templatePath, "utf8"),
+    options.prefill,
+  );
   mkdirSync(dirname(options.path), { recursive: true });
 
   try {
-    writeFileSync(options.path, template, {
+    writeFileSync(options.path, body, {
       encoding: "utf8",
       flag: options.overwrite === true ? "w" : "wx",
       mode: 0o600,
@@ -424,6 +475,7 @@ export function liveEnvInitCommand(options: LiveEnvInitCommandOptions): LiveEnvI
     path: options.path,
     mode: "0600",
     templatePath,
+    prefilled,
   };
 }
 
@@ -448,6 +500,9 @@ export function renderLiveEnvInitCommandResult(result: LiveEnvInitCommandResult)
       ? [
           `Template: ${result.templatePath}`,
           `Permissions: ${result.mode}`,
+          ...(result.prefilled.length === 0
+            ? []
+            : [`Prefilled: ${result.prefilled.join(", ")}`]),
           "",
           "Next commands:",
           "  [1] Fill live settings",

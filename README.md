@@ -71,6 +71,18 @@ vivarium setup --domain coding --world-root ../the-world --state-path .vivarium/
 
 Filled `live-readiness.local.env` files are ignored by git. Do not commit API keys, credential values, provider secrets, or evidence files that contain private paths or private customer data.
 
+When the public repository names are already settled, prefill the non-secret GitHub and world values while creating the env file:
+
+```bash
+vivarium live env-init \
+  --path live-readiness.local.env \
+  --github-owner idanmann10 \
+  --agent-repo vivarium-agent \
+  --world-repo vivarium-world \
+  --canonical-world-ref https://github.com/idanmann10/vivarium-world.git \
+  --private-world-ref git@github.com:idanmann10/vivarium-world-private.git
+```
+
 ## Architecture At A Glance
 
 Vivarium keeps the agent brain, hands, session log, and credentials behind explicit interfaces:
