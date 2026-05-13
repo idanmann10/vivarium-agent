@@ -135,7 +135,7 @@ export type {
   GitHubWorkflowRunsCommandOptions,
   GitHubWorkflowRunsCommandResult,
 } from "./commands/github.js";
-export { daemonSmokeCommand } from "./commands/daemon.js";
+export { daemonSmokeCommand, renderDaemonSmokeCommandResult } from "./commands/daemon.js";
 export type {
   DaemonSmokeCommandOptions,
   DaemonSmokeCommandResult,

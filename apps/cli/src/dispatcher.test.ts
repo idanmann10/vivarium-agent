@@ -1671,14 +1671,23 @@ describe("dispatchCliCommand", () => {
   });
 
   test("routes daemon smoke checks", async () => {
-    await expect(
-      dispatchCliCommand(["daemon", "smoke", "--status-url", "http://127.0.0.1:9/status"]),
-    ).resolves.toMatchObject({
+    const result = await dispatchCliCommand([
+      "daemon",
+      "smoke",
+      "--status-url",
+      "http://127.0.0.1:9/status",
+    ]);
+
+    expect(result).toMatchObject({
       command: "daemon",
       result: {
         ok: false,
       },
     });
+    expect(result.output).toContain("Vivarium Daemon Smoke");
+    expect(result.output).toContain("Status: blocked");
+    expect(result.output).toContain("http://127.0.0.1:9/status");
+    expect(result.output.trim().startsWith("{")).toBe(false);
   });
 
   test("returns a usage error for unsupported commands", async () => {

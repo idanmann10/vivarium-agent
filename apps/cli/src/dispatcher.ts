@@ -19,7 +19,7 @@ import {
   curriculumProgressCommand,
   curriculumReadCommand,
 } from "./commands/curriculum.js";
-import { daemonSmokeCommand } from "./commands/daemon.js";
+import { daemonSmokeCommand, renderDaemonSmokeCommandResult } from "./commands/daemon.js";
 import {
   doctorCommand,
   renderDoctorCommandResult,
@@ -686,10 +686,8 @@ export async function dispatchCliCommand(
         usage('Unknown daemon subcommand. Use "smoke".');
       }
       const statusUrl = value(flags, "status-url");
-      return output(
-        command,
-        await daemonSmokeCommand(statusUrl === undefined ? {} : { statusUrl }),
-      );
+      const result = await daemonSmokeCommand(statusUrl === undefined ? {} : { statusUrl });
+      return { command, result, output: renderDaemonSmokeCommandResult(result) };
     }
     case "live": {
       if (subcommand === "env-init") {
