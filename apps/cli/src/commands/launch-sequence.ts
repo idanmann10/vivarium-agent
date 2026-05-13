@@ -31,6 +31,11 @@ const launchCommandStages: readonly LaunchCommandStage[] = [
     label: "Run the readiness gate",
     matches: (command) => command.startsWith("vivarium doctor"),
   },
+  {
+    label: "Keep moving",
+    matches: (command) =>
+      command === "vivarium status" || command === "vivarium help" || command === "vivarium update",
+  },
 ];
 
 export function renderLaunchSequence(

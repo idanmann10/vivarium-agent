@@ -25,12 +25,21 @@ disable it, or `FORCE_COLOR=1` when a wrapper strips TTY detection.
 After installation, reload your shell if needed and run:
 
 ```bash
+# [1] Prove the local loop
 vivarium run --goal "validate local setup" --state-path .vivarium/state.db
+
+# [2] Prepare live readiness
 vivarium live env-init --path live-readiness.local.env
 vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db
 vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write
+
+# [3] Inspect configured models
 vivarium model --env-file live-readiness.local.env
+
+# [4] Run the readiness gate
 vivarium doctor --live --env-file live-readiness.local.env
+
+# [5] Keep moving
 vivarium status
 vivarium help
 vivarium update

@@ -43,6 +43,7 @@ describe("helpCommand", () => {
     expect(firstRunBlock).toContain("[3] Prepare live readiness");
     expect(firstRunBlock).toContain("[4] Inspect configured models");
     expect(firstRunBlock).toContain("[5] Run the readiness gate");
+    expect(firstRunBlock).toContain("[6] Keep moving");
     expect(firstRunBlock).toContain(
       "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
     );
@@ -51,6 +52,10 @@ describe("helpCommand", () => {
     );
     expect(firstRunBlock).toContain("vivarium model --env-file live-readiness.local.env");
     expect(firstRunBlock).toContain("vivarium doctor --live --env-file live-readiness.local.env");
+    expect(firstRunBlock).toContain("vivarium status");
+    expect(firstRunBlock).toContain("vivarium help");
+    expect(firstRunBlock).toContain("vivarium update");
+    expect(firstRunBlock).not.toContain("[6] Continue");
     expect(firstRunBlock).not.toContain("  vivarium doctor                                     Check readiness.");
     expect(firstRunBlock).not.toContain("  vivarium model                                      Show provider setup.");
     const liveEnvInitRow = output

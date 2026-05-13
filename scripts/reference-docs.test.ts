@@ -588,6 +588,15 @@ describe("reference docs", () => {
   test("keeps install docs on the installed live setup sequence", () => {
     for (const path of ["README.md", join("docs", "guides", "install.md")]) {
       const block = readAfterInstallationBlock(path);
+      for (const stage of [
+        "# [1] Prove the local loop",
+        "# [2] Prepare live readiness",
+        "# [3] Inspect configured models",
+        "# [4] Run the readiness gate",
+        "# [5] Keep moving",
+      ]) {
+        expect(block).toContain(stage);
+      }
       for (const command of [
         'vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
         "vivarium live env-init --path live-readiness.local.env",
