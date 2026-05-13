@@ -10,7 +10,15 @@ export function renderVivariumGlobe(): string {
   ].join("\n");
 }
 
-export function renderVivariumError(message: string): string {
+export interface VivariumErrorRenderOptions {
+  readonly nextCommands?: readonly string[];
+}
+
+export function renderVivariumError(
+  message: string,
+  options: VivariumErrorRenderOptions = {},
+): string {
+  const nextCommands = options.nextCommands ?? ["vivarium help"];
   return [
     renderVivariumGlobe(),
     "",
@@ -18,8 +26,8 @@ export function renderVivariumError(message: string): string {
     "--------------",
     `Message: ${message}`,
     "",
-    "Next command:",
-    "  vivarium help",
+    nextCommands.length === 1 ? "Next command:" : "Next commands:",
+    ...nextCommands.map((command) => `  ${command}`),
     "",
   ].join("\n");
 }

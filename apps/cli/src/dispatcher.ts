@@ -5,7 +5,7 @@ import type {
   Visibility,
 } from "../../../packages/core/src/index.js";
 import type { HttpMethod } from "../../../packages/tools/src/external/index.js";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import {
   addCredentialCommand,
   credentialSmokeCommand,
@@ -109,8 +109,22 @@ export interface CliDispatchOptions {
 
 type FlagMap = ReadonlyMap<string, readonly string[]>;
 
-function usage(message: string): never {
-  throw new Error(message);
+export class CliUsageError extends Error {
+  readonly nextCommands: readonly string[];
+
+  constructor(message: string, nextCommands: readonly string[] = ["vivarium help"]) {
+    super(message);
+    this.name = "CliUsageError";
+    this.nextCommands = nextCommands;
+  }
+}
+
+function shellQuote(value: string): string {
+  return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
+}
+
+function usage(message: string, nextCommands?: readonly string[]): never {
+  throw new CliUsageError(message, nextCommands);
 }
 
 function parseFlags(argv: readonly string[]): {
@@ -203,6 +217,12 @@ function readEnvFile(
   baseEnv: Readonly<Record<string, string | undefined>>,
 ): Readonly<Record<string, string | undefined>> {
   const env: Record<string, string | undefined> = { ...baseEnv };
+  if (!existsSync(path)) {
+    usage(`Missing env file: ${path}`, [
+      `vivarium live env-init --path ${shellQuote(path)}`,
+      "vivarium help",
+    ]);
+  }
   const body = readFileSync(path, "utf8");
 
   for (const line of body.split(/\r?\n/)) {
