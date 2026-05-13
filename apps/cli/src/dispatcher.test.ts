@@ -81,10 +81,11 @@ describe("dispatchCliCommand", () => {
       },
     });
 
-    expect(result).toMatchObject({
-      command: "update",
-      result: { ok: true, agentRoot: "/tmp/vivarium-agent" },
-    });
+    expect(result.command).toBe("update");
+    expect(result.result).toMatchObject({ ok: true, agentRoot: "/tmp/vivarium-agent" });
+    expect(result.output).toContain("Vivarium Update");
+    expect(result.output).toContain("Status: updated");
+    expect(result.output).toContain("[ok] git pull");
     expect(calls).toEqual([
       "git -C /tmp/vivarium-agent pull --ff-only",
       "bun install --frozen-lockfile",

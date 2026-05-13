@@ -1,3 +1,5 @@
+import { renderVivariumGlobe } from "./branding.js";
+
 export interface UpdateCommandRunOptions {
   readonly cwd?: string;
 }
@@ -107,4 +109,31 @@ export function updateCommand(options: UpdateCommandOptions = {}): UpdateCommand
       { name: "bun install", ok: true, command: installCommand },
     ],
   };
+}
+
+function renderUpdateStep(step: UpdateCommandStep): readonly string[] {
+  const prefix = step.ok ? "[ok]" : "[fix]";
+  return [
+    `  ${prefix} ${step.name}`,
+    `       Command: ${step.command}`,
+    ...(step.exitCode === undefined ? [] : [`       Exit code: ${step.exitCode}`]),
+    ...(step.stdout === undefined ? [] : [`       Stdout: ${step.stdout}`]),
+    ...(step.stderr === undefined ? [] : [`       Stderr: ${step.stderr}`]),
+  ];
+}
+
+export function renderUpdateCommandResult(result: UpdateCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Update",
+    "---------------",
+    `Status: ${result.ok ? "updated" : "failed"}`,
+    `Agent root: ${result.agentRoot}`,
+    ...(result.error === undefined ? [] : [`Error: ${result.error}`]),
+    "",
+    "Steps:",
+    ...result.steps.flatMap(renderUpdateStep),
+    "",
+  ].join("\n");
 }

@@ -28,6 +28,7 @@ describe("CLI public API", () => {
     expect(typeof exports.renderSetupCommandResult).toBe("function");
     expect(typeof exports.renderDoctorCommandResult).toBe("function");
     expect(typeof exports.updateCommand).toBe("function");
+    expect(typeof exports.renderUpdateCommandResult).toBe("function");
     expect(typeof exports.liveEvidenceInitCommand).toBe("function");
   });
 });

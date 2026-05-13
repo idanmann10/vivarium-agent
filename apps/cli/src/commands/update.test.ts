@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { updateCommand, type UpdateCommandRunner } from "./update.js";
+import { renderUpdateCommandResult, updateCommand, type UpdateCommandRunner } from "./update.js";
 
 describe("updateCommand", () => {
   test("pulls the agent checkout and refreshes dependencies", () => {
@@ -28,6 +28,14 @@ describe("updateCommand", () => {
       { command: "git", args: ["-C", "/tmp/vivarium-agent", "pull", "--ff-only"] },
       { command: "bun", args: ["install", "--frozen-lockfile"], cwd: "/tmp/vivarium-agent" },
     ]);
+
+    const output = renderUpdateCommandResult(result);
+    expect(output).toContain("Vivarium Update");
+    expect(output).toContain('.-""""-.');
+    expect(output).toContain("Status: updated");
+    expect(output).toContain("Agent root: /tmp/vivarium-agent");
+    expect(output).toContain("[ok] git pull");
+    expect(output).toContain("[ok] bun install");
   });
 
   test("stops when the git update fails", () => {
@@ -54,5 +62,11 @@ describe("updateCommand", () => {
       error: "git pull failed",
     });
     expect(calls).toEqual(["git"]);
+
+    const output = renderUpdateCommandResult(result);
+    expect(output).toContain("Status: failed");
+    expect(output).toContain("[fix] git pull");
+    expect(output).toContain("Error: git pull failed");
+    expect(output).toContain("not a git checkout");
   });
 });

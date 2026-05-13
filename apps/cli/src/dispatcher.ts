@@ -48,7 +48,11 @@ import { runCommand, type RunProviderKind } from "./commands/run.js";
 import { renderSetupCommandResult, setupCommand } from "./commands/setup.js";
 import { listSkillsCommand } from "./commands/skills.js";
 import { renderStatusCommandResult, statusCommand } from "./commands/status.js";
-import { updateCommand, type UpdateCommandRunner } from "./commands/update.js";
+import {
+  renderUpdateCommandResult,
+  updateCommand,
+  type UpdateCommandRunner,
+} from "./commands/update.js";
 import {
   listWorldSubscriptionsCommand,
   pullWorldCommand,
@@ -706,13 +710,11 @@ export async function dispatchCliCommand(
       return { command, result, output: renderStatusCommandResult(result) };
     }
     case "update": {
-      return output(
-        command,
-        updateCommand({
-          agentRoot: value(flags, "agent-root") ?? process.cwd(),
-          ...(options.updateRunner === undefined ? {} : { runner: options.updateRunner }),
-        }),
-      );
+      const result = updateCommand({
+        agentRoot: value(flags, "agent-root") ?? process.cwd(),
+        ...(options.updateRunner === undefined ? {} : { runner: options.updateRunner }),
+      });
+      return { command, result, output: renderUpdateCommandResult(result) };
     }
     case "doctor": {
       const agentRoot = value(flags, "agent-root");

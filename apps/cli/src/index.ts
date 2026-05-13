@@ -32,7 +32,7 @@ export type { DreamCommandOptions } from "./commands/dream.js";
 export { helpCommand, renderHelpCommandResult } from "./commands/help.js";
 export type { HelpCommandItem, HelpCommandResult } from "./commands/help.js";
 export { renderStatusCommandResult, statusCommand } from "./commands/status.js";
-export { updateCommand } from "./commands/update.js";
+export { renderUpdateCommandResult, updateCommand } from "./commands/update.js";
 export type {
   UpdateCommandOptions,
   UpdateCommandResult,
