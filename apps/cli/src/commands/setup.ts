@@ -4,6 +4,8 @@ import { runInitCommand } from "./init.js";
 import type { LiveSetupCommandResult } from "./live.js";
 import { liveSetupCommand } from "./live.js";
 
+const defaultLiveEnvFilePath = "live-readiness.local.env";
+
 export interface SetupCommandOptions {
   readonly primaryDomain: string;
   readonly worldRoot?: string;
@@ -48,10 +50,8 @@ function setupNextCommands(
     "state-path": local.statePath,
     ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
   });
-  const doctorCommand =
-    options.envFilePath === undefined
-      ? "vivarium doctor --live"
-      : commandWithFlags("doctor", { live: true, "env-file": options.envFilePath });
+  const liveEnvFilePath = options.envFilePath ?? defaultLiveEnvFilePath;
+  const doctorCommand = commandWithFlags("doctor", { live: true, "env-file": liveEnvFilePath });
 
   if (options.envFilePath !== undefined && live?.ok === true) {
     return [runCommand, doctorCommand];
@@ -77,9 +77,9 @@ function setupNextCommands(
 
   return [
     runCommand,
-    commandWithFlags("live env-init", { path: "live-readiness.local.env" }),
+    commandWithFlags("live env-init", { path: defaultLiveEnvFilePath }),
     commandWithFlags("setup", {
-      "env-file": "live-readiness.local.env",
+      "env-file": defaultLiveEnvFilePath,
       domain: options.primaryDomain,
       ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
       "state-path": local.statePath,

@@ -181,7 +181,7 @@ describe("dispatchCliCommand", () => {
         starterSkills: [{ title: "Red Green" }],
       },
       nextCommands: expect.arrayContaining([
-        expect.stringContaining("doctor --live"),
+        expect.stringContaining("doctor --live --env-file live-readiness.local.env"),
         expect.stringContaining("run --goal"),
       ]),
     });
@@ -192,6 +192,7 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).toContain("Next commands");
     expect(setup.output).toContain("vivarium run --goal");
     expect(setup.output).toContain("live env-init --path live-readiness.local.env");
+    expect(setup.output).toContain("vivarium doctor --live --env-file live-readiness.local.env");
     expect(setup.output).not.toContain("bun apps/cli/src/main.ts");
     expect(setup.output).not.toContain("cp docs/live-readiness.env.example");
     expect(setup.output).not.toContain("chmod 600 live-readiness.local.env");
