@@ -53,10 +53,11 @@ function setupNextCommands(
   });
   const liveEnvFilePath = options.envFilePath ?? defaultLiveEnvFilePath;
   const modelCommand = commandWithFlags("model", { "env-file": liveEnvFilePath });
+  const evidenceCommand = commandWithFlags("live evidence-init", { path: "v1-evidence.json" });
   const doctorCommand = commandWithFlags("doctor", { live: true, "env-file": liveEnvFilePath });
 
   if (options.envFilePath !== undefined && live?.ok === true) {
-    return [runCommand, modelCommand, doctorCommand];
+    return [runCommand, modelCommand, evidenceCommand, doctorCommand];
   }
 
   if (
@@ -74,6 +75,7 @@ function setupNextCommands(
         "confirm-write": true,
       }),
       modelCommand,
+      evidenceCommand,
       doctorCommand,
     ];
   }
@@ -88,6 +90,7 @@ function setupNextCommands(
         "state-path": local.statePath,
       }),
       modelCommand,
+      evidenceCommand,
       doctorCommand,
     ];
   }
@@ -109,6 +112,7 @@ function setupNextCommands(
       "confirm-write": true,
     }),
     modelCommand,
+    evidenceCommand,
     doctorCommand,
   ];
 }
