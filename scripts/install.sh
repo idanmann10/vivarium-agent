@@ -18,6 +18,8 @@ Environment:
   VIVARIUM_WORLD_ROOT         World checkout directory.
   VIVARIUM_DOMAIN             Initial setup domain.
   VIVARIUM_STATE_PATH         State database path relative to the agent checkout.
+  VIVARIUM_COLOR              Set to always or never to control ANSI output.
+  VIVARIUM_THEME              Set to matrix or amber for alternate ASCII palettes.
 
 Example:
   curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash
@@ -76,19 +78,78 @@ world_root="$(absolute_path "${VIVARIUM_WORLD_ROOT:-$default_world_root}")"
 domain="${VIVARIUM_DOMAIN:-coding}"
 state_path="${VIVARIUM_STATE_PATH:-.vivarium/state.db}"
 
-banner() {
-  cat <<'EOF'
-          .-""""-.
-       .-'  .--.  '-.
-      /   .' VI '.   \
-     |    | VAR |    |
-      \   '.IUM.'   /
-       '-.  '--'  .-'
-          '-.__.-'
+use_color() {
+  case "${VIVARIUM_COLOR:-}" in
+    always)
+      return 0
+      ;;
+    never)
+      return 1
+      ;;
+  esac
 
-Vivarium Agent Installer
-------------------------
-EOF
+  if [ "${FORCE_COLOR:-}" != "" ] && [ "${FORCE_COLOR:-}" != "0" ]; then
+    return 0
+  fi
+
+  if [ "${NO_COLOR:-}" != "" ]; then
+    return 1
+  fi
+
+  [ -t 1 ]
+}
+
+paint_line() {
+  local style="$1"
+  local text="$2"
+
+  if use_color; then
+    printf '\033[%sm%s\033[0m\n' "$style" "$text"
+    return 0
+  fi
+
+  printf '%s\n' "$text"
+}
+
+theme_line_style() {
+  local index="$1"
+
+  case "${VIVARIUM_THEME:-vivarium}" in
+    matrix)
+      printf '32'
+      ;;
+    amber)
+      printf '33'
+      ;;
+    *)
+      case "$index" in
+        1 | 2)
+          printf '36'
+          ;;
+        3 | 5)
+          printf '34'
+          ;;
+        4)
+          printf '35'
+          ;;
+        *)
+          printf '33'
+          ;;
+      esac
+      ;;
+  esac
+}
+
+banner() {
+  paint_line "$(theme_line_style 1)" ' __      __ _____ __      __    _     ____  ___  _   _  __  __'
+  paint_line "$(theme_line_style 2)" ' \ \    / /|_   _|\ \    / /   / \   |  _ \|_ _|| | | ||  \/  |'
+  paint_line "$(theme_line_style 3)" '  \ \  / /   | |   \ \  / /   / _ \  | |_) || | | | | || |\/| |'
+  paint_line "$(theme_line_style 4)" '   \ \/ /    | |    \ \/ /   / ___ \ |  _ < | | | |_| || |  | |'
+  paint_line "$(theme_line_style 5)" '    \__/    |____|   \__/   /_/   \_\|_| \_\___| \___/ |_|  |_|'
+  paint_line "$(theme_line_style 6)" '            VIVARIUM // local memory // world culture'
+  echo
+  paint_line "1;36" "Vivarium Agent Installer"
+  echo "------------------------"
 }
 
 need_command() {
@@ -142,6 +203,31 @@ write_vivarium_command() {
   chmod +x "$command_path"
 }
 
+stage_label() {
+  paint_line 33 "  [$1] $2"
+}
+
+print_launch_sequence() {
+  local command="$1"
+
+  stage_label 1 "Prove the local loop"
+  printf '      %q run --goal "validate local setup" --state-path %q\n' "$command" "$state_path"
+  stage_label 2 "Prepare live readiness"
+  printf '      %q live env-init --path live-readiness.local.env\n' "$command"
+  printf '      %q setup --env-file live-readiness.local.env --domain %q --world-root %q --state-path %q\n' "$command" "$domain" "$world_root" "$state_path"
+  printf '      %q setup --env-file live-readiness.local.env --domain %q --world-root %q --state-path %q --confirm-write\n' "$command" "$domain" "$world_root" "$state_path"
+  stage_label 3 "Inspect configured models"
+  printf '      %q model --env-file live-readiness.local.env\n' "$command"
+  stage_label 4 "Prepare live evidence"
+  printf '      %q live evidence-init --path v1-evidence.json\n' "$command"
+  stage_label 5 "Run the readiness gate"
+  printf '      %q doctor --live --env-file live-readiness.local.env\n' "$command"
+  stage_label 6 "Keep moving"
+  printf '      %q status\n' "$command"
+  printf '      %q help\n' "$command"
+  printf '      %q update\n' "$command"
+}
+
 banner
 echo "Install directory: $install_dir"
 echo "Command path: $command_path"
@@ -175,13 +261,9 @@ run bun apps/cli/src/main.ts setup --domain "$domain" --world-root "$world_root"
 
 echo
 echo "After installation:"
-echo "  vivarium status"
-echo "  vivarium help"
-echo "  vivarium doctor"
-echo "  vivarium setup"
-echo "  vivarium update"
+print_launch_sequence "vivarium"
 echo
 echo "Command path fallback:"
-echo "  $command_path status"
+print_launch_sequence "$command_path"
 echo
-echo "If 'vivarium' is not found, add $bin_dir to PATH or run the command path above."
+echo "If 'vivarium' is not found, add $bin_dir to PATH or run a command path above."

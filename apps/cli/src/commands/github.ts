@@ -1,4 +1,5 @@
 import { createGitHubWorldClient, type GitHubFetch } from "../../../../packages/world/src/index.js";
+import { renderVivariumGlobe } from "./branding.js";
 
 export interface GitHubSmokeCommandOptions {
   readonly owner: string;
@@ -250,6 +251,42 @@ export async function githubSmokeCommand(options: GitHubSmokeCommandOptions): Pr
   }
 }
 
+function renderRepositoryHeader(title: string, result: { readonly owner: string; readonly repo: string; readonly ok: boolean }): string[] {
+  return [
+    renderVivariumGlobe(),
+    "",
+    title,
+    "-".repeat(title.length),
+    `Status: ${result.ok ? "ok" : "blocked"}`,
+    `Repository: ${result.owner}/${result.repo}`,
+  ];
+}
+
+export function renderGitHubSmokeCommandResult(result: GitHubSmokeCommandResult): string {
+  return [
+    ...renderRepositoryHeader("Vivarium GitHub Smoke", result),
+    ...(result.ok
+      ? [
+          `Full name: ${result.fullName}`,
+          `Visibility: ${result.visibility}`,
+          `Default branch: ${result.defaultBranch}`,
+          `Discussions: ${result.discussionsEnabled ? "enabled" : "disabled"}`,
+          ...(result.permissions === undefined
+            ? []
+            : [
+                `Permissions: pull=${result.permissions.pull}, push=${result.permissions.push}, admin=${result.permissions.admin}`,
+              ]),
+        ]
+      : [
+          `Error: ${result.error}`,
+          "",
+          "Next command:",
+          "  Export a GitHub token, then rerun github smoke.",
+        ]),
+    "",
+  ].join("\n");
+}
+
 export async function githubDiscussionCommand(options: GitHubDiscussionCommandOptions): Promise<GitHubDiscussionCommandResult> {
   if (!options.confirmWrite) {
     return { ok: false, owner: options.owner, repo: options.repo, error: "Missing --confirm-write for GitHub discussion creation" };
@@ -290,6 +327,21 @@ export async function githubDiscussionCommand(options: GitHubDiscussionCommandOp
     const message = error instanceof Error ? error.message : String(error);
     return { ok: false, owner: options.owner, repo: options.repo, error: message };
   }
+}
+
+export function renderGitHubDiscussionCommandResult(result: GitHubDiscussionCommandResult): string {
+  return [
+    ...renderRepositoryHeader("Vivarium GitHub Discussion", result),
+    ...(result.ok
+      ? [`Discussion: ${result.discussionUrl}`, `Discussion ID: ${result.discussionId}`]
+      : [
+          `Error: ${result.error}`,
+          "",
+          "Next command:",
+          "  Re-run github discussion with --confirm-write after reviewing the body.",
+        ]),
+    "",
+  ].join("\n");
 }
 
 export async function githubPullRequestCommand(options: GitHubPullRequestCommandOptions): Promise<GitHubPullRequestCommandResult> {
@@ -334,6 +386,21 @@ export async function githubPullRequestCommand(options: GitHubPullRequestCommand
   }
 }
 
+export function renderGitHubPullRequestCommandResult(result: GitHubPullRequestCommandResult): string {
+  return [
+    ...renderRepositoryHeader("Vivarium GitHub Pull Request", result),
+    ...(result.ok
+      ? [`Pull request: ${result.pullRequestUrl}`, `Number: ${result.pullRequestNumber}`]
+      : [
+          `Error: ${result.error}`,
+          "",
+          "Next command:",
+          "  Re-run github pull-request with --confirm-write after reviewing the branch and body.",
+        ]),
+    "",
+  ].join("\n");
+}
+
 export async function githubWorkflowRunsCommand(options: GitHubWorkflowRunsCommandOptions): Promise<GitHubWorkflowRunsCommandResult> {
   const env = options.env ?? process.env;
   const token = env[options.tokenEnv];
@@ -361,4 +428,32 @@ export async function githubWorkflowRunsCommand(options: GitHubWorkflowRunsComma
     const message = error instanceof Error ? error.message : String(error);
     return { ok: false, owner: options.owner, repo: options.repo, error: message };
   }
+}
+
+function renderWorkflowRun(run: GitHubWorkflowRunSummary): readonly string[] {
+  return [
+    `  ${run.name}`,
+    `    Status: ${run.status}`,
+    `    Conclusion: ${run.conclusion ?? "pending"}`,
+    `    Branch: ${run.headBranch}`,
+    `    URL: ${run.url}`,
+  ];
+}
+
+export function renderGitHubWorkflowRunsCommandResult(result: GitHubWorkflowRunsCommandResult): string {
+  return [
+    ...renderRepositoryHeader("Vivarium GitHub Workflows", result),
+    ...(result.ok
+      ? [
+          `Runs: ${result.runs.length}`,
+          ...(result.runs.length === 0 ? [] : ["", ...result.runs.flatMap(renderWorkflowRun)]),
+        ]
+      : [
+          `Error: ${result.error}`,
+          "",
+          "Next command:",
+          "  Export a GitHub token, then rerun github workflow-runs.",
+        ]),
+    "",
+  ].join("\n");
 }

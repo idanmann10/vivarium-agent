@@ -14,6 +14,7 @@ export const cliCommands = [
   "publish",
   "curriculum",
   "help",
+  "model",
   "status",
   "update",
   "doctor",
@@ -21,16 +22,23 @@ export const cliCommands = [
 
 export type CliCommand = (typeof cliCommands)[number];
 
-export { describeInitCommand, runInitCommand } from "./commands/init.js";
+export { describeInitCommand, renderInitCommandResult, runInitCommand } from "./commands/init.js";
 export type { InitCommandOptions, InitCommandResult, StarterArtifact } from "./commands/init.js";
 export { renderSetupCommandResult, setupCommand } from "./commands/setup.js";
 export type { SetupCommandOptions, SetupCommandResult } from "./commands/setup.js";
-export { runCommand } from "./commands/run.js";
+export { renderRunCommandResult, runCommand } from "./commands/run.js";
 export type { RunCommandOptions, RunCommandResult, RunProviderKind } from "./commands/run.js";
-export { dreamCommand } from "./commands/dream.js";
+export { dreamCommand, renderDreamCommandResult } from "./commands/dream.js";
 export type { DreamCommandOptions } from "./commands/dream.js";
 export { helpCommand, renderHelpCommandResult } from "./commands/help.js";
 export type { HelpCommandItem, HelpCommandResult } from "./commands/help.js";
+export { modelCommand, renderModelCommandResult } from "./commands/model.js";
+export type {
+  ModelCommandOptions,
+  ModelCommandProblem,
+  ModelCommandResult,
+  ModelProfileSummary,
+} from "./commands/model.js";
 export { renderStatusCommandResult, statusCommand } from "./commands/status.js";
 export { renderUpdateCommandResult, updateCommand } from "./commands/update.js";
 export type {
@@ -43,6 +51,9 @@ export {
   addCredentialCommand,
   credentialSmokeCommand,
   listCredentialsCommand,
+  renderAddCredentialCommandResult,
+  renderCredentialSmokeCommandResult,
+  renderListCredentialsCommandResult,
 } from "./commands/credentials.js";
 export type {
   AddCredentialCommandOptions,
@@ -57,6 +68,8 @@ export {
   configureProviderProfileCommand,
   listProviderProfilesCommand,
   providerSmokeCommand,
+  renderProviderProfilesCommandResult,
+  renderProviderSmokeCommandResult,
 } from "./commands/providers.js";
 export type {
   ConfigureProviderProfileCommandOptions,
@@ -71,6 +84,8 @@ export {
   curriculumAdvanceCommand,
   curriculumProgressCommand,
   curriculumReadCommand,
+  renderCurriculumProgressCommandResult,
+  renderCurriculumReadCommandResult,
 } from "./commands/curriculum.js";
 export type {
   CurriculumAdvanceCommandOptions,
@@ -83,6 +98,9 @@ export {
   identityHistoryCommand,
   identityStageCommand,
   identitySummaryCommand,
+  renderIdentityHistoryCommandResult,
+  renderIdentityStageCommandResult,
+  renderIdentitySummaryCommandResult,
 } from "./commands/identity.js";
 export type {
   IdentityCommandOptions,
@@ -93,8 +111,16 @@ export type {
   IdentityStageCommandResult,
   IdentitySummaryCommandResult,
 } from "./commands/identity.js";
-export { publishListCommand, publishRunCommand, publishTraceCommand } from "./commands/publish.js";
+export {
+  publishListCommand,
+  publishRunCommand,
+  publishTraceCommand,
+  renderPublishListCommandResult,
+  renderPublishRunCommandResult,
+  renderPublishTraceCommandResult,
+} from "./commands/publish.js";
 export type {
+  PublishArtifactCommandResult,
   PublishListCommandOptions,
   PublishListCommandResult,
   PublishRunCommandOptions,
@@ -105,6 +131,10 @@ export {
   githubPullRequestCommand,
   githubSmokeCommand,
   githubWorkflowRunsCommand,
+  renderGitHubDiscussionCommandResult,
+  renderGitHubPullRequestCommandResult,
+  renderGitHubSmokeCommandResult,
+  renderGitHubWorkflowRunsCommandResult,
 } from "./commands/github.js";
 export type {
   GitHubDiscussionCommandOptions,
@@ -118,20 +148,29 @@ export type {
   GitHubWorkflowRunsCommandOptions,
   GitHubWorkflowRunsCommandResult,
 } from "./commands/github.js";
-export { daemonSmokeCommand } from "./commands/daemon.js";
+export { daemonSmokeCommand, renderDaemonSmokeCommandResult } from "./commands/daemon.js";
 export type {
   DaemonSmokeCommandOptions,
   DaemonSmokeCommandResult,
   DaemonSmokeFetch,
 } from "./commands/daemon.js";
-export { liveEvidenceInitCommand, liveSetupCommand } from "./commands/live.js";
+export {
+  liveEnvInitCommand,
+  liveEvidenceInitCommand,
+  liveSetupCommand,
+  renderLiveEnvInitCommandResult,
+  renderLiveEvidenceInitCommandResult,
+  renderLiveSetupCommandResult,
+} from "./commands/live.js";
 export type {
+  LiveEnvInitCommandOptions,
+  LiveEnvInitCommandResult,
   LiveEvidenceInitCommandOptions,
   LiveEvidenceInitCommandResult,
   LiveSetupCommandOptions,
   LiveSetupCommandResult,
 } from "./commands/live.js";
-export { listSkillsCommand } from "./commands/skills.js";
+export { listSkillsCommand, renderListSkillsCommandResult } from "./commands/skills.js";
 export type {
   ListedSkill,
   ListSkillsCommandOptions,
@@ -140,6 +179,10 @@ export type {
 export {
   listWorldSubscriptionsCommand,
   pullWorldCommand,
+  renderPullWorldCommandResult,
+  renderSearchWorldCommandResult,
+  renderVerifyWorldTransmissionCommandResult,
+  renderWorldSubscriptionsCommandResult,
   searchWorldCommand,
   subscribeWorldCommand,
   verifyWorldTransmissionCommand,

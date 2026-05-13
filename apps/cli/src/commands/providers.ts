@@ -9,6 +9,7 @@ import {
   type LocalProvider,
   type ProviderFetch,
 } from "../../../../packages/providers/src/index.js";
+import { renderVivariumGlobe } from "./branding.js";
 
 export type ProviderSmokeKind = "anthropic" | "openai" | "openai-compat";
 
@@ -205,6 +206,37 @@ export function configureProviderProfileCommand(options: ConfigureProviderProfil
   return { profiles: next };
 }
 
+function renderProviderProfile(profile: ProviderProfile): readonly string[] {
+  return [
+    `  ${profile.name}`,
+    `    Kind: ${profile.kind}`,
+    `    Model: ${profile.model}`,
+    `    Key env: ${profile.apiKeyEnv}`,
+    ...(profile.baseUrl === undefined ? [] : [`    Base URL: ${profile.baseUrl}`]),
+    `    Capabilities: ${profile.capabilities.join(", ")}`,
+    `    Context window: ${profile.contextWindow}`,
+    `    Cost: ${profile.costClass}`,
+  ];
+}
+
+export function renderProviderProfilesCommandResult(result: ProviderProfilesCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Providers",
+    "------------------",
+    `Profiles: ${result.profiles.length}`,
+    ...(result.profiles.length === 0
+      ? [
+          "",
+          "Next command:",
+          "  vivarium live setup --env-file live-readiness.local.env --confirm-write",
+        ]
+      : ["", ...result.profiles.flatMap(renderProviderProfile)]),
+    "",
+  ].join("\n");
+}
+
 export function resolveProviderProfile(options: {
   readonly profilesPath: string;
   readonly profile: string;
@@ -315,4 +347,31 @@ export async function providerSmokeCommand(options: ProviderSmokeCommandOptions)
     const message = error instanceof Error ? error.message : String(error);
     return { ok: false, kind: config.kind, model: config.model, error: message };
   }
+}
+
+export function renderProviderSmokeCommandResult(result: ProviderSmokeCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Provider Smoke",
+    "-----------------------",
+    `Status: ${result.ok ? "ok" : "blocked"}`,
+    `Kind: ${result.kind}`,
+    `Model: ${result.model ?? "not set"}`,
+    ...(result.ok
+      ? [
+          `Response length: ${result.responseLength}`,
+          `Preview: ${result.responsePreview}`,
+          "",
+          "Next command:",
+          "  vivarium doctor --live --env-file live-readiness.local.env",
+        ]
+      : [
+          `Error: ${result.error}`,
+          "",
+          "Next command:",
+          "  Export the missing provider value, then rerun provider smoke.",
+        ]),
+    "",
+  ].join("\n");
 }

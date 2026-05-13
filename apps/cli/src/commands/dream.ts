@@ -1,5 +1,6 @@
 import { runDream, type DreamDomainStats, type DreamResult } from "../../../../packages/runtime/src/index.js";
 import { SQLiteStateRepository } from "../../../../packages/state/src/index.js";
+import { renderVivariumGlobe } from "./branding.js";
 
 export interface DreamCommandOptions {
   readonly statePath: string;
@@ -50,4 +51,37 @@ export function dreamCommand(options: DreamCommandOptions): DreamResult {
   } finally {
     state.close();
   }
+}
+
+function renderCountedItems(label: string, items: readonly string[]): readonly string[] {
+  return [
+    `${label}: ${items.length}`,
+    ...items.slice(0, 5).map((item) => `  ${item}`),
+    ...(items.length > 5 ? [`  ...and ${items.length - 5} more`] : []),
+  ];
+}
+
+export function renderDreamCommandResult(result: DreamResult): string {
+  const stages = Object.entries(result.devStages);
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Dream",
+    "--------------",
+    `Identity: ${result.identitySummary}`,
+    ...renderCountedItems("Promoted", result.promoted),
+    ...renderCountedItems("Pruned", result.pruned),
+    ...renderCountedItems("Habitual", result.habitual),
+    ...renderCountedItems("Skill candidates", result.skillCandidates),
+    ...renderCountedItems("Anti-pattern candidates", result.antiPatternCandidates),
+    ...renderCountedItems("Trace candidates", result.traceCandidates),
+    ...(stages.length === 0 ? [] : ["", "Stages:", ...stages.map(([domain, stage]) => `  ${domain}: ${stage}`)]),
+    ...(result.confidenceNotes.length === 0
+      ? []
+      : ["", "Confidence notes:", ...result.confidenceNotes.map((note) => `  ${note}`)]),
+    "",
+    "Next command:",
+    "  vivarium identity summary --state-path <state.db>",
+    "",
+  ].join("\n");
 }

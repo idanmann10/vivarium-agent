@@ -5,48 +5,77 @@ import type {
   Visibility,
 } from "../../../packages/core/src/index.js";
 import type { HttpMethod } from "../../../packages/tools/src/external/index.js";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import {
   addCredentialCommand,
   credentialSmokeCommand,
   listCredentialsCommand,
+  renderAddCredentialCommandResult,
+  renderCredentialSmokeCommandResult,
+  renderListCredentialsCommandResult,
 } from "./commands/credentials.js";
 import {
   curriculumAdvanceCommand,
   curriculumProgressCommand,
   curriculumReadCommand,
+  renderCurriculumProgressCommandResult,
+  renderCurriculumReadCommandResult,
 } from "./commands/curriculum.js";
-import { daemonSmokeCommand } from "./commands/daemon.js";
+import { daemonSmokeCommand, renderDaemonSmokeCommandResult } from "./commands/daemon.js";
 import {
   doctorCommand,
   renderDoctorCommandResult,
   type DoctorCommandRunner,
 } from "./commands/doctor.js";
-import { dreamCommand } from "./commands/dream.js";
+import { dreamCommand, renderDreamCommandResult } from "./commands/dream.js";
 import {
   githubDiscussionCommand,
   githubPullRequestCommand,
   githubSmokeCommand,
   githubWorkflowRunsCommand,
+  renderGitHubDiscussionCommandResult,
+  renderGitHubPullRequestCommandResult,
+  renderGitHubSmokeCommandResult,
+  renderGitHubWorkflowRunsCommandResult,
 } from "./commands/github.js";
 import { helpCommand, renderHelpCommandResult } from "./commands/help.js";
 import {
   identityHistoryCommand,
   identityStageCommand,
   identitySummaryCommand,
+  renderIdentityHistoryCommandResult,
+  renderIdentityStageCommandResult,
+  renderIdentitySummaryCommandResult,
 } from "./commands/identity.js";
-import { runInitCommand } from "./commands/init.js";
-import { liveEvidenceInitCommand, liveSetupCommand } from "./commands/live.js";
-import { publishListCommand, publishRunCommand, publishTraceCommand } from "./commands/publish.js";
+import { renderInitCommandResult, runInitCommand } from "./commands/init.js";
+import {
+  liveEnvInitCommand,
+  liveEvidenceInitCommand,
+  liveSetupCommand,
+  renderLiveEnvInitCommandResult,
+  renderLiveEvidenceInitCommandResult,
+  renderLiveSetupCommandResult,
+} from "./commands/live.js";
+import { modelCommand, renderModelCommandResult } from "./commands/model.js";
+import {
+  publishListCommand,
+  publishRunCommand,
+  publishTraceCommand,
+  renderPublishListCommandResult,
+  renderPublishRunCommandResult,
+  renderPublishTraceCommandResult,
+} from "./commands/publish.js";
 import {
   configureProviderProfileCommand,
   listProviderProfilesCommand,
   providerSmokeCommand,
+  renderProviderProfilesCommandResult,
+  renderProviderSmokeCommandResult,
   type ProviderSmokeKind,
 } from "./commands/providers.js";
-import { runCommand, type RunProviderKind } from "./commands/run.js";
+import { renderRunCommandResult, runCommand, type RunProviderKind } from "./commands/run.js";
 import { renderSetupCommandResult, setupCommand } from "./commands/setup.js";
-import { listSkillsCommand } from "./commands/skills.js";
+import { listSkillsCommand, renderListSkillsCommandResult } from "./commands/skills.js";
 import { renderStatusCommandResult, statusCommand } from "./commands/status.js";
 import {
   renderUpdateCommandResult,
@@ -56,6 +85,10 @@ import {
 import {
   listWorldSubscriptionsCommand,
   pullWorldCommand,
+  renderPullWorldCommandResult,
+  renderSearchWorldCommandResult,
+  renderVerifyWorldTransmissionCommandResult,
+  renderWorldSubscriptionsCommandResult,
   searchWorldCommand,
   subscribeWorldCommand,
   verifyWorldTransmissionCommand,
@@ -76,8 +109,22 @@ export interface CliDispatchOptions {
 
 type FlagMap = ReadonlyMap<string, readonly string[]>;
 
-function usage(message: string): never {
-  throw new Error(message);
+export class CliUsageError extends Error {
+  readonly nextCommands: readonly string[];
+
+  constructor(message: string, nextCommands: readonly string[] = ["vivarium help"]) {
+    super(message);
+    this.name = "CliUsageError";
+    this.nextCommands = nextCommands;
+  }
+}
+
+function shellQuote(value: string): string {
+  return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
+}
+
+function usage(message: string, nextCommands?: readonly string[]): never {
+  throw new CliUsageError(message, nextCommands);
 }
 
 function parseFlags(argv: readonly string[]): {
@@ -170,6 +217,12 @@ function readEnvFile(
   baseEnv: Readonly<Record<string, string | undefined>>,
 ): Readonly<Record<string, string | undefined>> {
   const env: Record<string, string | undefined> = { ...baseEnv };
+  if (!existsSync(path)) {
+    usage(`Missing env file: ${path}`, [
+      `vivarium live env-init --path ${shellQuote(path)}`,
+      "vivarium help",
+    ]);
+  }
   const body = readFileSync(path, "utf8");
 
   for (const line of body.split(/\r?\n/)) {
@@ -198,10 +251,6 @@ function readEnvFile(
   return env;
 }
 
-function output(command: CliCommand, result: unknown): CliDispatchResult {
-  return { command, result, output: `${JSON.stringify(result, null, 2)}\n` };
-}
-
 export async function dispatchCliCommand(
   argv: readonly string[],
   options: CliDispatchOptions = {},
@@ -214,6 +263,10 @@ export async function dispatchCliCommand(
 
   const commandArgs = (subcommand?.startsWith("--") ?? true) ? argv.slice(1) : rest;
   const { flags } = parseFlags(commandArgs);
+  if (flags.has("help") || flags.has("h")) {
+    const result = helpCommand();
+    return { command: "help", result, output: renderHelpCommandResult(result) };
+  }
 
   switch (command) {
     case "help": {
@@ -223,17 +276,15 @@ export async function dispatchCliCommand(
     case "init": {
       const worldRoot = value(flags, "world-root");
       const statePath = value(flags, "state-path");
-      return output(
-        command,
-        runInitCommand({
-          primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? "coding",
-          bindGithubIdentity: booleanFlag(flags, "bind-github"),
-          providerProfiles: values(flags, "provider"),
-          credentialNames: values(flags, "credential"),
-          ...(worldRoot === undefined ? {} : { worldRoot }),
-          ...(statePath === undefined ? {} : { statePath }),
-        }),
-      );
+      const result = runInitCommand({
+        primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? "coding",
+        bindGithubIdentity: booleanFlag(flags, "bind-github"),
+        providerProfiles: values(flags, "provider"),
+        credentialNames: values(flags, "credential"),
+        ...(worldRoot === undefined ? {} : { worldRoot }),
+        ...(statePath === undefined ? {} : { statePath }),
+      });
+      return { command, result, output: renderInitCommandResult(result) };
     }
     case "setup": {
       const worldRoot = value(flags, "world-root");
@@ -253,6 +304,26 @@ export async function dispatchCliCommand(
       });
       return { command, result, output: renderSetupCommandResult(result) };
     }
+    case "model": {
+      const profilesPath = value(flags, "profiles-path");
+      const envFile = value(flags, "env-file");
+      const env =
+        envFile === undefined
+          ? (options.env ?? process.env)
+          : readEnvFile(envFile, options.env ?? process.env);
+      const result = modelCommand({
+        ...(profilesPath === undefined ? {} : { profilesPath }),
+        env,
+      });
+      return {
+        command,
+        result,
+        output: renderModelCommandResult(
+          result,
+          envFile === undefined ? {} : { envFilePath: envFile },
+        ),
+      };
+    }
     case "run": {
       const domain = value(flags, "domain");
       const worldRoot = value(flags, "world-root");
@@ -266,66 +337,58 @@ export async function dispatchCliCommand(
       const providerProfile = value(flags, "provider-profile");
       const availableToolsets = values(flags, "available-toolset");
       const availableTools = values(flags, "available-tool");
-      return output(
-        command,
-        await runCommand({
-          goal: required(flags, "goal"),
-          ...(domain === undefined ? {} : { domain }),
-          ...(worldRoot === undefined ? {} : { worldRoot }),
-          ...(worldSubscriptionsPath === undefined ? {} : { worldSubscriptionsPath }),
-          ...(statePath === undefined ? {} : { statePath }),
-          ...(booleanFlag(flags, "force-failure") ? { forceFailure: true } : {}),
-          ...(providerKind === undefined ? {} : { providerKind }),
-          ...(providerApiKeyEnv === undefined ? {} : { providerApiKeyEnv }),
-          ...(providerModel === undefined ? {} : { providerModel }),
-          ...(providerBaseUrl === undefined ? {} : { providerBaseUrl }),
-          ...(providerProfilesPath === undefined ? {} : { providerProfilesPath }),
-          ...(providerProfile === undefined ? {} : { providerProfile }),
-          ...(availableToolsets.length === 0 ? {} : { availableToolsets }),
-          ...(availableTools.length === 0 ? {} : { availableTools }),
-        }),
-      );
+      const result = await runCommand({
+        goal: required(flags, "goal"),
+        ...(domain === undefined ? {} : { domain }),
+        ...(worldRoot === undefined ? {} : { worldRoot }),
+        ...(worldSubscriptionsPath === undefined ? {} : { worldSubscriptionsPath }),
+        ...(statePath === undefined ? {} : { statePath }),
+        ...(booleanFlag(flags, "force-failure") ? { forceFailure: true } : {}),
+        ...(providerKind === undefined ? {} : { providerKind }),
+        ...(providerApiKeyEnv === undefined ? {} : { providerApiKeyEnv }),
+        ...(providerModel === undefined ? {} : { providerModel }),
+        ...(providerBaseUrl === undefined ? {} : { providerBaseUrl }),
+        ...(providerProfilesPath === undefined ? {} : { providerProfilesPath }),
+        ...(providerProfile === undefined ? {} : { providerProfile }),
+        ...(availableToolsets.length === 0 ? {} : { availableToolsets }),
+        ...(availableTools.length === 0 ? {} : { availableTools }),
+      });
+      return { command, result, output: renderRunCommandResult(result) };
     }
     case "credentials": {
       if (subcommand === "add") {
-        return output(
-          command,
-          addCredentialCommand({
-            credentialsPath: required(flags, "path"),
-            masterKey: required(flags, "master-key"),
-            kind: required(flags, "kind") as CredentialKind,
-            name: required(flags, "name"),
-            purpose: required(flags, "purpose"),
-            value: required(flags, "value"),
-            scopes: values(flags, "scope"),
-          }),
-        );
+        const result = addCredentialCommand({
+          credentialsPath: required(flags, "path"),
+          masterKey: required(flags, "master-key"),
+          kind: required(flags, "kind") as CredentialKind,
+          name: required(flags, "name"),
+          purpose: required(flags, "purpose"),
+          value: required(flags, "value"),
+          scopes: values(flags, "scope"),
+        });
+        return { command, result, output: renderAddCredentialCommandResult(result) };
       }
 
       if (subcommand === "list") {
-        return output(
-          command,
-          listCredentialsCommand({
-            credentialsPath: required(flags, "path"),
-            masterKey: required(flags, "master-key"),
-          }),
-        );
+        const result = listCredentialsCommand({
+          credentialsPath: required(flags, "path"),
+          masterKey: required(flags, "master-key"),
+        });
+        return { command, result, output: renderListCredentialsCommandResult(result) };
       }
 
       if (subcommand === "smoke") {
         const method = value(flags, "method") as HttpMethod | undefined;
         const body = value(flags, "body");
-        return output(
-          command,
-          await credentialSmokeCommand({
-            credentialsPath: required(flags, "path"),
-            masterKey: required(flags, "master-key"),
-            name: required(flags, "name"),
-            url: required(flags, "url"),
-            ...(method === undefined ? {} : { method }),
-            ...(body === undefined ? {} : { body }),
-          }),
-        );
+        const result = await credentialSmokeCommand({
+          credentialsPath: required(flags, "path"),
+          masterKey: required(flags, "master-key"),
+          name: required(flags, "name"),
+          url: required(flags, "url"),
+          ...(method === undefined ? {} : { method }),
+          ...(body === undefined ? {} : { body }),
+        });
+        return { command, result, output: renderCredentialSmokeCommandResult(result) };
       }
 
       usage('Unknown credentials subcommand. Use "add", "list", or "smoke".');
@@ -336,50 +399,42 @@ export async function dispatchCliCommand(
       }
       {
         const domain = value(flags, "domain");
-        return output(
-          command,
-          listSkillsCommand({
-            statePath: required(flags, "state-path"),
-            ...(domain === undefined ? {} : { domain }),
-          }),
-        );
+        const result = listSkillsCommand({
+          statePath: required(flags, "state-path"),
+          ...(domain === undefined ? {} : { domain }),
+        });
+        return { command, result, output: renderListSkillsCommandResult(result) };
       }
     case "world":
       if (subcommand === "subscribe") {
         const priority = integerFlag(flags, "priority");
         const ref = value(flags, "world-ref");
-        return output(
-          command,
-          subscribeWorldCommand({
-            subscriptionsPath: required(flags, "subscriptions-path"),
-            root: required(flags, "world-root"),
-            label: required(flags, "world-label"),
-            ...(priority === undefined ? {} : { priority }),
-            ...(ref === undefined ? {} : { ref }),
-            ...(booleanFlag(flags, "auto-push") ? { autoPushEnabled: true } : {}),
-          }),
-        );
+        const result = subscribeWorldCommand({
+          subscriptionsPath: required(flags, "subscriptions-path"),
+          root: required(flags, "world-root"),
+          label: required(flags, "world-label"),
+          ...(priority === undefined ? {} : { priority }),
+          ...(ref === undefined ? {} : { ref }),
+          ...(booleanFlag(flags, "auto-push") ? { autoPushEnabled: true } : {}),
+        });
+        return { command, result, output: renderWorldSubscriptionsCommandResult(result) };
       }
 
       if (subcommand === "subscriptions") {
-        return output(
-          command,
-          listWorldSubscriptionsCommand({
-            subscriptionsPath: required(flags, "subscriptions-path"),
-          }),
-        );
+        const result = listWorldSubscriptionsCommand({
+          subscriptionsPath: required(flags, "subscriptions-path"),
+        });
+        return { command, result, output: renderWorldSubscriptionsCommandResult(result) };
       }
 
       if (subcommand === "pull") {
         const ref = value(flags, "ref");
-        return output(
-          command,
-          await pullWorldCommand({
-            remote: required(flags, "remote"),
-            destination: required(flags, "destination"),
-            ...(ref === undefined ? {} : { ref }),
-          }),
-        );
+        const result = await pullWorldCommand({
+          remote: required(flags, "remote"),
+          destination: required(flags, "destination"),
+          ...(ref === undefined ? {} : { ref }),
+        });
+        return { command, result, output: renderPullWorldCommandResult(result) };
       }
 
       if (subcommand === "search") {
@@ -392,45 +447,41 @@ export async function dispatchCliCommand(
         if (worldLabels.length > 0 && worldLabels.length !== worldRoots.length) {
           usage("--world-label must be provided once for each --world-root");
         }
-        return output(
-          command,
-          searchWorldCommand({
-            ...(worldRoots.length > 1
-              ? {
-                  worlds: worldRoots.map((root, index) => ({
-                    root,
-                    label: worldLabels[index] ?? `world-${index + 1}`,
-                    priority: index,
-                  })),
-                }
-              : worldRoots.length === 1
-                ? { worldRoot: worldRoots[0] as string }
-                : subscriptionsPath === undefined
-                  ? { worldRoot: required(flags, "world-root") }
-                  : { subscriptionsPath }),
-            domain: required(flags, "domain"),
-            query: required(flags, "query"),
-            ...(limit === undefined ? {} : { limit }),
-            ...(availableToolsets.length === 0 ? {} : { availableToolsets }),
-            ...(availableTools.length === 0 ? {} : { availableTools }),
-          }),
-        );
+        const result = searchWorldCommand({
+          ...(worldRoots.length > 1
+            ? {
+                worlds: worldRoots.map((root, index) => ({
+                  root,
+                  label: worldLabels[index] ?? `world-${index + 1}`,
+                  priority: index,
+                })),
+              }
+            : worldRoots.length === 1
+              ? { worldRoot: worldRoots[0] as string }
+              : subscriptionsPath === undefined
+                ? { worldRoot: required(flags, "world-root") }
+                : { subscriptionsPath }),
+          domain: required(flags, "domain"),
+          query: required(flags, "query"),
+          ...(limit === undefined ? {} : { limit }),
+          ...(availableToolsets.length === 0 ? {} : { availableToolsets }),
+          ...(availableTools.length === 0 ? {} : { availableTools }),
+        });
+        return { command, result, output: renderSearchWorldCommandResult(result) };
       }
 
       if (subcommand === "transmission-smoke") {
         const ref = value(flags, "ref");
         const limit = integerFlag(flags, "limit");
-        return output(
-          command,
-          await verifyWorldTransmissionCommand({
-            remote: required(flags, "remote"),
-            destination: required(flags, "destination"),
-            domain: required(flags, "domain"),
-            query: required(flags, "query"),
-            ...(ref === undefined ? {} : { ref }),
-            ...(limit === undefined ? {} : { limit }),
-          }),
-        );
+        const result = await verifyWorldTransmissionCommand({
+          remote: required(flags, "remote"),
+          destination: required(flags, "destination"),
+          domain: required(flags, "domain"),
+          query: required(flags, "query"),
+          ...(ref === undefined ? {} : { ref }),
+          ...(limit === undefined ? {} : { limit }),
+        });
+        return { command, result, output: renderVerifyWorldTransmissionCommandResult(result) };
       }
 
       usage(
@@ -441,64 +492,52 @@ export async function dispatchCliCommand(
         usage('Unknown dream subcommand. Use "run".');
       }
       const domain = value(flags, "domain");
-      return output(
-        command,
-        dreamCommand({
-          statePath: required(flags, "state-path"),
-          ...(domain === undefined ? {} : { domain }),
-        }),
-      );
+      const result = dreamCommand({
+        statePath: required(flags, "state-path"),
+        ...(domain === undefined ? {} : { domain }),
+      });
+      return { command, result, output: renderDreamCommandResult(result) };
     }
     case "identity": {
       if (subcommand === "summary") {
-        return output(
-          command,
-          identitySummaryCommand({ statePath: required(flags, "state-path") }),
-        );
+        const result = identitySummaryCommand({ statePath: required(flags, "state-path") });
+        return { command, result, output: renderIdentitySummaryCommandResult(result) };
       }
 
       if (subcommand === "stage") {
-        return output(
-          command,
-          identityStageCommand({
-            statePath: required(flags, "state-path"),
-            domain: required(flags, "domain"),
-          }),
-        );
+        const result = identityStageCommand({
+          statePath: required(flags, "state-path"),
+          domain: required(flags, "domain"),
+        });
+        return { command, result, output: renderIdentityStageCommandResult(result) };
       }
 
       if (subcommand === "history") {
         const limit = integerFlag(flags, "limit");
-        return output(
-          command,
-          identityHistoryCommand({
-            statePath: required(flags, "state-path"),
-            ...(limit === undefined ? {} : { limit }),
-          }),
-        );
+        const result = identityHistoryCommand({
+          statePath: required(flags, "state-path"),
+          ...(limit === undefined ? {} : { limit }),
+        });
+        return { command, result, output: renderIdentityHistoryCommandResult(result) };
       }
 
       usage('Unknown identity subcommand. Use "summary", "stage", or "history".');
     }
     case "curriculum": {
       if (subcommand === "read") {
-        return output(
-          command,
-          curriculumReadCommand({
-            worldRoot: required(flags, "world-root"),
-            domain: required(flags, "domain"),
-          }),
-        );
+        const result = curriculumReadCommand({
+          worldRoot: required(flags, "world-root"),
+          domain: required(flags, "domain"),
+        });
+        return { command, result, output: renderCurriculumReadCommandResult(result) };
       }
 
       if (subcommand === "progress") {
-        return output(
-          command,
-          curriculumProgressCommand({
-            statePath: required(flags, "state-path"),
-            domain: required(flags, "domain"),
-          }),
-        );
+        const result = curriculumProgressCommand({
+          statePath: required(flags, "state-path"),
+          domain: required(flags, "domain"),
+        });
+        return { command, result, output: renderCurriculumProgressCommandResult(result) };
       }
 
       if (subcommand === "advance") {
@@ -506,49 +545,44 @@ export async function dispatchCliCommand(
         if (stepIndex === undefined) {
           usage("Missing required --step");
         }
-        return output(
-          command,
-          curriculumAdvanceCommand({
-            statePath: required(flags, "state-path"),
-            domain: required(flags, "domain"),
-            stepIndex,
-          }),
-        );
+        const result = curriculumAdvanceCommand({
+          statePath: required(flags, "state-path"),
+          domain: required(flags, "domain"),
+          stepIndex,
+        });
+        return { command, result, output: renderCurriculumProgressCommandResult(result) };
       }
 
       usage('Unknown curriculum subcommand. Use "read", "progress", or "advance".');
     }
     case "publish": {
       if (subcommand === "list") {
-        return output(command, publishListCommand({ statePath: required(flags, "state-path") }));
+        const result = publishListCommand({ statePath: required(flags, "state-path") });
+        return { command, result, output: renderPublishListCommandResult(result) };
       }
 
       if (subcommand === "run") {
-        return output(
-          command,
-          publishRunCommand({
-            statePath: required(flags, "state-path"),
-            worldRoot: required(flags, "world-root"),
-            worldSubscriptionsPath: required(flags, "world-subscriptions-path"),
-            runId: required(flags, "run-id"),
-            visibility: required(flags, "visibility") as Visibility,
-            contributor: required(flags, "contributor"),
-          }),
-        );
+        const result = publishRunCommand({
+          statePath: required(flags, "state-path"),
+          worldRoot: required(flags, "world-root"),
+          worldSubscriptionsPath: required(flags, "world-subscriptions-path"),
+          runId: required(flags, "run-id"),
+          visibility: required(flags, "visibility") as Visibility,
+          contributor: required(flags, "contributor"),
+        });
+        return { command, result, output: renderPublishRunCommandResult(result) };
       }
 
       if (subcommand === "trace") {
-        return output(
-          command,
-          publishTraceCommand({
-            statePath: required(flags, "state-path"),
-            worldRoot: required(flags, "world-root"),
-            worldSubscriptionsPath: required(flags, "world-subscriptions-path"),
-            traceId: required(flags, "trace-id"),
-            visibility: required(flags, "visibility") as Visibility,
-            contributor: required(flags, "contributor"),
-          }),
-        );
+        const result = publishTraceCommand({
+          statePath: required(flags, "state-path"),
+          worldRoot: required(flags, "world-root"),
+          worldSubscriptionsPath: required(flags, "world-subscriptions-path"),
+          traceId: required(flags, "trace-id"),
+          visibility: required(flags, "visibility") as Visibility,
+          contributor: required(flags, "contributor"),
+        });
+        return { command, result, output: renderPublishTraceCommandResult(result) };
       }
 
       usage('Unknown publish subcommand. Use "list", "run", or "trace".');
@@ -560,29 +594,25 @@ export async function dispatchCliCommand(
         if (contextWindow === undefined) {
           usage("Missing required --context-window");
         }
-        return output(
-          command,
-          configureProviderProfileCommand({
-            profilesPath: required(flags, "profiles-path"),
-            name: required(flags, "name"),
-            kind: required(flags, "kind") as ProviderSmokeKind,
-            apiKeyEnv: required(flags, "api-key-env"),
-            model: required(flags, "model"),
-            ...(baseUrl === undefined ? {} : { baseUrl }),
-            capabilities: values(flags, "capability") as readonly Capability[],
-            contextWindow,
-            costClass: required(flags, "cost-class") as CostClass,
-          }),
-        );
+        const result = configureProviderProfileCommand({
+          profilesPath: required(flags, "profiles-path"),
+          name: required(flags, "name"),
+          kind: required(flags, "kind") as ProviderSmokeKind,
+          apiKeyEnv: required(flags, "api-key-env"),
+          model: required(flags, "model"),
+          ...(baseUrl === undefined ? {} : { baseUrl }),
+          capabilities: values(flags, "capability") as readonly Capability[],
+          contextWindow,
+          costClass: required(flags, "cost-class") as CostClass,
+        });
+        return { command, result, output: renderProviderProfilesCommandResult(result) };
       }
 
       if (subcommand === "list") {
-        return output(
-          command,
-          listProviderProfilesCommand({
-            profilesPath: required(flags, "profiles-path"),
-          }),
-        );
+        const result = listProviderProfilesCommand({
+          profilesPath: required(flags, "profiles-path"),
+        });
+        return { command, result, output: renderProviderProfilesCommandResult(result) };
       }
 
       if (subcommand !== "smoke") {
@@ -595,76 +625,66 @@ export async function dispatchCliCommand(
       const model = value(flags, "model");
       const profilesPath = value(flags, "profiles-path");
       const profile = value(flags, "profile");
-      return output(
-        command,
-        await providerSmokeCommand({
-          ...(kind === undefined ? {} : { kind }),
-          ...(apiKeyEnv === undefined ? {} : { apiKeyEnv }),
-          ...(model === undefined ? {} : { model }),
-          ...(baseUrl === undefined ? {} : { baseUrl }),
-          ...(profilesPath === undefined ? {} : { profilesPath }),
-          ...(profile === undefined ? {} : { profile }),
-          ...(prompt === undefined ? {} : { prompt }),
-        }),
-      );
+      const result = await providerSmokeCommand({
+        ...(kind === undefined ? {} : { kind }),
+        ...(apiKeyEnv === undefined ? {} : { apiKeyEnv }),
+        ...(model === undefined ? {} : { model }),
+        ...(baseUrl === undefined ? {} : { baseUrl }),
+        ...(profilesPath === undefined ? {} : { profilesPath }),
+        ...(profile === undefined ? {} : { profile }),
+        ...(prompt === undefined ? {} : { prompt }),
+      });
+      return { command, result, output: renderProviderSmokeCommandResult(result) };
     }
     case "github": {
       if (subcommand === "smoke") {
-        return output(
-          command,
-          await githubSmokeCommand({
-            owner: required(flags, "owner"),
-            repo: required(flags, "repo"),
-            tokenEnv: required(flags, "token-env"),
-          }),
-        );
+        const result = await githubSmokeCommand({
+          owner: required(flags, "owner"),
+          repo: required(flags, "repo"),
+          tokenEnv: required(flags, "token-env"),
+        });
+        return { command, result, output: renderGitHubSmokeCommandResult(result) };
       }
 
       if (subcommand === "discussion") {
-        return output(
-          command,
-          await githubDiscussionCommand({
-            owner: required(flags, "owner"),
-            repo: required(flags, "repo"),
-            tokenEnv: required(flags, "token-env"),
-            repositoryId: required(flags, "repository-id"),
-            categoryId: required(flags, "category-id"),
-            title: required(flags, "title"),
-            body: required(flags, "body"),
-            confirmWrite: booleanFlag(flags, "confirm-write"),
-          }),
-        );
+        const result = await githubDiscussionCommand({
+          owner: required(flags, "owner"),
+          repo: required(flags, "repo"),
+          tokenEnv: required(flags, "token-env"),
+          repositoryId: required(flags, "repository-id"),
+          categoryId: required(flags, "category-id"),
+          title: required(flags, "title"),
+          body: required(flags, "body"),
+          confirmWrite: booleanFlag(flags, "confirm-write"),
+        });
+        return { command, result, output: renderGitHubDiscussionCommandResult(result) };
       }
 
       if (subcommand === "pull-request") {
-        return output(
-          command,
-          await githubPullRequestCommand({
-            owner: required(flags, "owner"),
-            repo: required(flags, "repo"),
-            tokenEnv: required(flags, "token-env"),
-            title: required(flags, "title"),
-            body: required(flags, "body"),
-            head: required(flags, "head"),
-            base: required(flags, "base"),
-            confirmWrite: booleanFlag(flags, "confirm-write"),
-          }),
-        );
+        const result = await githubPullRequestCommand({
+          owner: required(flags, "owner"),
+          repo: required(flags, "repo"),
+          tokenEnv: required(flags, "token-env"),
+          title: required(flags, "title"),
+          body: required(flags, "body"),
+          head: required(flags, "head"),
+          base: required(flags, "base"),
+          confirmWrite: booleanFlag(flags, "confirm-write"),
+        });
+        return { command, result, output: renderGitHubPullRequestCommandResult(result) };
       }
 
       if (subcommand === "workflow-runs") {
         const branch = value(flags, "branch");
         const limit = integerFlag(flags, "limit");
-        return output(
-          command,
-          await githubWorkflowRunsCommand({
-            owner: required(flags, "owner"),
-            repo: required(flags, "repo"),
-            tokenEnv: required(flags, "token-env"),
-            ...(branch === undefined ? {} : { branch }),
-            ...(limit === undefined ? {} : { limit }),
-          }),
-        );
+        const result = await githubWorkflowRunsCommand({
+          owner: required(flags, "owner"),
+          repo: required(flags, "repo"),
+          tokenEnv: required(flags, "token-env"),
+          ...(branch === undefined ? {} : { branch }),
+          ...(limit === undefined ? {} : { limit }),
+        });
+        return { command, result, output: renderGitHubWorkflowRunsCommandResult(result) };
       }
 
       usage(
@@ -676,34 +696,48 @@ export async function dispatchCliCommand(
         usage('Unknown daemon subcommand. Use "smoke".');
       }
       const statusUrl = value(flags, "status-url");
-      return output(
-        command,
-        await daemonSmokeCommand(statusUrl === undefined ? {} : { statusUrl }),
-      );
+      const result = await daemonSmokeCommand(statusUrl === undefined ? {} : { statusUrl });
+      return { command, result, output: renderDaemonSmokeCommandResult(result) };
     }
     case "live": {
+      if (subcommand === "env-init") {
+        const githubOwner = value(flags, "github-owner");
+        const agentRepo = value(flags, "agent-repo");
+        const worldRepo = value(flags, "world-repo");
+        const canonicalWorldRef = value(flags, "canonical-world-ref");
+        const privateWorldRef = value(flags, "private-world-ref");
+        const result = liveEnvInitCommand({
+          path: required(flags, "path"),
+          overwrite: booleanFlag(flags, "overwrite"),
+          prefill: {
+            ...(githubOwner === undefined ? {} : { githubOwner }),
+            ...(agentRepo === undefined ? {} : { agentRepo }),
+            ...(worldRepo === undefined ? {} : { worldRepo }),
+            ...(canonicalWorldRef === undefined ? {} : { canonicalWorldRef }),
+            ...(privateWorldRef === undefined ? {} : { privateWorldRef }),
+          },
+        });
+        return { command, result, output: renderLiveEnvInitCommandResult(result) };
+      }
+
       if (subcommand === "evidence-init") {
-        return output(
-          command,
-          liveEvidenceInitCommand({
-            path: required(flags, "path"),
-            overwrite: booleanFlag(flags, "overwrite"),
-          }),
-        );
+        const result = liveEvidenceInitCommand({
+          path: required(flags, "path"),
+          overwrite: booleanFlag(flags, "overwrite"),
+        });
+        return { command, result, output: renderLiveEvidenceInitCommandResult(result) };
       }
 
       if (subcommand === "setup") {
         const envFile = required(flags, "env-file");
-        return output(
-          command,
-          liveSetupCommand({
-            env: readEnvFile(envFile, options.env ?? process.env),
-            confirmWrite: booleanFlag(flags, "confirm-write"),
-          }),
-        );
+        const result = liveSetupCommand({
+          env: readEnvFile(envFile, options.env ?? process.env),
+          confirmWrite: booleanFlag(flags, "confirm-write"),
+        });
+        return { command, result, output: renderLiveSetupCommandResult(result, { envFilePath: envFile }) };
       }
 
-      usage('Unknown live subcommand. Use "setup" or "evidence-init".');
+      usage('Unknown live subcommand. Use "env-init", "setup", or "evidence-init".');
     }
     case "status": {
       const result = statusCommand();

@@ -6,7 +6,7 @@ import { describe, expect, test } from "bun:test";
 import { agentId, episodeId, runId, skillId, traceId, type Episode } from "../../../../packages/core/src/index.js";
 import { SQLiteStateRepository } from "../../../../packages/state/src/index.js";
 import { configureProviderProfileCommand } from "./providers.js";
-import { runCommand, summarizeRunEpisodes } from "./run.js";
+import { renderRunCommandResult, runCommand, summarizeRunEpisodes } from "./run.js";
 import { subscribeWorldCommand } from "./world.js";
 
 function write(path: string, content: string): void {
@@ -332,5 +332,63 @@ describe("runCommand", () => {
       },
       error: "Unsupported --provider-kind: ollama",
     });
+  });
+
+  test("renders successful runs as branded terminal output", () => {
+    const output = renderRunCommandResult({
+      success: true,
+      runId: "run-demo-000",
+      provider: { kind: "local", id: "local", model: null },
+      episodeKinds: ["run_start", "plan", "validation", "run_end"],
+      transparency: {
+        plan: "Plan: inspect and verify.",
+        prediction: {
+          about: "local-provider.execute",
+          expected: "Prediction: goal should complete.",
+          confidence: 0.72,
+        },
+        validation: { score: 0.8, passed: true, reasons: ["validated"] },
+        consulted: {
+          skills: ["domains/coding/skills/red-green/SKILL.md"],
+          traces: ["domains/coding/traces/debugging/TRACE.md"],
+        },
+        highSurprises: [],
+      },
+    });
+
+    expect(output).toContain("Vivarium Run");
+    expect(output).toContain("Status: success");
+    expect(output).toContain("Run ID: run-demo-000");
+    expect(output).toContain("Provider: local");
+    expect(output).toContain("Episodes: run_start, plan, validation, run_end");
+    expect(output).toContain("Consulted skills: 1");
+    expect(output).toContain("Validation: pass (0.8)");
+    expect(output.trim().startsWith("{")).toBe(false);
+  });
+
+  test("renders blocked runs with actionable errors", () => {
+    const output = renderRunCommandResult({
+      success: false,
+      runId: null,
+      provider: { kind: "openai", id: "run-openai", model: "gpt-test" },
+      episodeKinds: [],
+      transparency: {
+        plan: null,
+        prediction: null,
+        validation: null,
+        consulted: { skills: [], traces: [] },
+        highSurprises: [],
+      },
+      error: "Missing provider environment variable: OPENAI_API_KEY",
+    });
+
+    expect(output).toContain("Vivarium Run");
+    expect(output).toContain("Status: blocked");
+    expect(output).toContain("Run ID: not started");
+    expect(output).toContain("Provider: openai (gpt-test)");
+    expect(output).toContain("Episodes: none");
+    expect(output).toContain("Error: Missing provider environment variable: OPENAI_API_KEY");
+    expect(output).toContain("Next command:");
+    expect(output.trim().startsWith("{")).toBe(false);
   });
 });

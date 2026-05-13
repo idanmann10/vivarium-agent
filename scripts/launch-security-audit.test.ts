@@ -79,6 +79,24 @@ describe("launch security audit", () => {
     expect(audit.manualDecisions).toContain(
       "vivarium-world.branchProtectionOrRulesets:decision-required",
     );
+    expect(audit.nextActions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          check: "vivarium-agent.branchProtectionOrRulesets:decision-required",
+          guide: "docs/guides/live-readiness.md#launch-security-audit",
+          command: expect.stringContaining(
+            "repos/$VIVARIUM_GITHUB_OWNER/vivarium-agent/branches/main/protection",
+          ),
+        }),
+        expect.objectContaining({
+          check: "vivarium-world.branchProtectionOrRulesets:decision-required",
+          guide: "docs/guides/live-readiness.md#launch-security-audit",
+          command: expect.stringContaining(
+            "repos/$VIVARIUM_GITHUB_OWNER/vivarium-world/branches/main/protection",
+          ),
+        }),
+      ]),
+    );
   });
 
   test("passes when both repositories are public with clean security signals and a recorded protection decision", () => {
@@ -108,6 +126,7 @@ describe("launch security audit", () => {
       ok: true,
       blockers: [],
       manualDecisions: [],
+      nextActions: [],
     });
   });
 

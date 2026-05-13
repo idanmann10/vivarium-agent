@@ -18,14 +18,35 @@ runs the guided `setup` command. It also writes a `vivarium` command to
 `~/.local/bin` so future commands can run from any directory. Override the layout
 with `VIVARIUM_INSTALL_DIR`, `VIVARIUM_BIN_DIR`, `VIVARIUM_WORLD_ROOT`,
 `VIVARIUM_DOMAIN`, or `VIVARIUM_STATE_PATH`.
+Interactive terminals use the branded ANSI theme automatically. Set
+`VIVARIUM_COLOR=always` to force it, `VIVARIUM_COLOR=never` or `NO_COLOR` to
+disable it, or `FORCE_COLOR=1` when a wrapper strips TTY detection. Set
+`VIVARIUM_THEME=matrix` or `VIVARIUM_THEME=amber` for alternate ASCII-art
+palettes.
 
 After installation, reload your shell if needed and run:
 
 ```bash
+# [1] Prove the local loop
+vivarium run --goal "validate local setup" --state-path .vivarium/state.db
+
+# [2] Prepare live readiness
+vivarium live env-init --path live-readiness.local.env
+vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db
+vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write
+
+# [3] Inspect configured models
+vivarium model --env-file live-readiness.local.env
+
+# [4] Prepare live evidence
+vivarium live evidence-init --path v1-evidence.json
+
+# [5] Run the readiness gate
+vivarium doctor --live --env-file live-readiness.local.env
+
+# [6] Keep moving
 vivarium status
 vivarium help
-vivarium doctor
-vivarium setup
 vivarium update
 ```
 
@@ -45,10 +66,10 @@ bun run test
 bun run build
 ```
 
-Run the setup entrypoint with the coding starter pack from a sibling world checkout:
+Run setup with the coding starter pack from a sibling world checkout:
 
 ```bash
-bun apps/cli/src/main.ts setup \
+vivarium setup \
   --domain coding \
   --world-root ../the-world \
   --state-path .vivarium/state.db
@@ -56,7 +77,13 @@ bun apps/cli/src/main.ts setup \
 
 `setup` initializes the same local state as `init`, renders a terminal-friendly
 summary, and prints the next commands for a first run, live setup, and
-`doctor --live`. Use `init` directly only when you need the raw JSON result.
+`doctor --live`. Use `init` directly only when you need local initialization
+without the aggregate setup checklist.
+Use `live env-init --path live-readiness.local.env` when you need to create the
+private live-readiness env file from the terminal.
+When repository names are known, add `--github-owner`, `--agent-repo`,
+`--world-repo`, `--canonical-world-ref`, and `--private-world-ref` to prefill
+the non-secret public GitHub and world values.
 
 Provider-backed runs require environment variables for the selected provider. Use
 `docs/guides/configure-providers.md` for provider profiles and `docs/guides/live-readiness.md` for the

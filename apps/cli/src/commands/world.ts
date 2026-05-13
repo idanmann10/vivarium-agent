@@ -12,6 +12,7 @@ import {
   type SubscribeWorldRequest,
   type WorldSubscriptionSearch,
 } from "../../../../packages/world/src/index.js";
+import { renderVivariumGlobe } from "./branding.js";
 
 export type { PersistedWorldSubscription } from "../../../../packages/world/src/index.js";
 
@@ -68,6 +69,34 @@ export function subscribeWorldCommand(options: SubscribeWorldCommandOptions): Wo
   return { subscriptions: subscribeWorld(options) };
 }
 
+function renderSubscription(subscription: PersistedWorldSubscription): readonly string[] {
+  return [
+    `  ${subscription.label}`,
+    `    Priority: ${subscription.priority}`,
+    `    Root: ${subscription.root}`,
+    ...(subscription.ref === undefined ? [] : [`    Ref: ${subscription.ref}`]),
+    `    Auto-push: ${subscription.autoPushEnabled ? "enabled" : "disabled"}`,
+  ];
+}
+
+export function renderWorldSubscriptionsCommandResult(result: WorldSubscriptionsCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium World Subscriptions",
+    "---------------------------",
+    `Subscriptions: ${result.subscriptions.length}`,
+    ...(result.subscriptions.length === 0
+      ? [
+          "",
+          "Next command:",
+          "  vivarium world subscribe --subscriptions-path <path> --world-root <root> --world-label <label>",
+        ]
+      : ["", ...result.subscriptions.flatMap(renderSubscription)]),
+    "",
+  ].join("\n");
+}
+
 export function searchWorldCommand(options: SearchWorldCommandOptions): SearchWorldCommandResult {
   const request = {
     domain: options.domain,
@@ -107,8 +136,54 @@ export function searchWorldCommand(options: SearchWorldCommandOptions): SearchWo
   };
 }
 
+function resultSource(result: LocalWorldSearchResult | SourcedWorldSearchResult): string | undefined {
+  return "source" in result ? result.source : undefined;
+}
+
+function renderWorldSearchResult(result: LocalWorldSearchResult | SourcedWorldSearchResult): readonly string[] {
+  const source = resultSource(result);
+  return [
+    `  ${source === undefined ? result.title : `${source}: ${result.title}`}`,
+    `    Kind: ${result.kind}`,
+    `    Score: ${result.score}`,
+    `    Path: ${result.path}`,
+  ];
+}
+
+export function renderSearchWorldCommandResult(result: SearchWorldCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium World Search",
+    "---------------------",
+    `Results: ${result.results.length}`,
+    ...(result.results.length === 0
+      ? [
+          "",
+          "Next command:",
+          "  Check the world root, domain, query, and active tool availability.",
+        ]
+      : ["", ...result.results.flatMap(renderWorldSearchResult)]),
+    "",
+  ].join("\n");
+}
+
 export function pullWorldCommand(options: PullWorldCommandOptions): Promise<PullWorldResult> {
   return pullWorld(options);
+}
+
+export function renderPullWorldCommandResult(result: PullWorldResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium World Pull",
+    "-------------------",
+    `Status: ${result.mode}`,
+    `Remote: ${result.remote}`,
+    `Destination: ${result.destination}`,
+    ...(result.ref === undefined ? [] : [`Ref: ${result.ref}`]),
+    "",
+  ].join("\n");
 }
 
 export async function verifyWorldTransmissionCommand(
@@ -127,4 +202,22 @@ export async function verifyWorldTransmissionCommand(
   }
 
   return { ok: true, pull, results };
+}
+
+export function renderVerifyWorldTransmissionCommandResult(result: VerifyWorldTransmissionCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium World Transmission",
+    "---------------------------",
+    `Status: ${result.ok ? "ok" : "blocked"}`,
+    `Pull: ${result.pull.mode}`,
+    `Remote: ${result.pull.remote}`,
+    `Destination: ${result.pull.destination}`,
+    ...(result.pull.ref === undefined ? [] : [`Ref: ${result.pull.ref}`]),
+    `Results: ${result.results.length}`,
+    ...(result.results.length === 0 ? [] : ["", ...result.results.flatMap(renderWorldSearchResult)]),
+    ...(result.error === undefined ? [] : ["", `Error: ${result.error}`]),
+    "",
+  ].join("\n");
 }

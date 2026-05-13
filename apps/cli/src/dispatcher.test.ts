@@ -4,6 +4,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -65,11 +66,21 @@ describe("dispatchCliCommand", () => {
 
       expect(result.command).toBe("help");
       expect(result.output).toContain("Vivarium Agent");
-      expect(result.output).toContain('.-""""-.');
+      expect(result.output).toContain("VIVARIUM // local memory // world culture");
       expect(result.output).toContain("vivarium setup");
       expect(result.output).toContain("vivarium update");
       expect(result.output).toContain("vivarium help");
     }
+  });
+
+  test("routes command-level help flags to the safe command guide", async () => {
+    const result = await dispatchCliCommand(["run", "--help"]);
+
+    expect(result.command).toBe("help");
+    expect(result.output).toContain("Vivarium Agent");
+    expect(result.output).toContain("Commands");
+    expect(result.output).toContain("vivarium setup");
+    expect(result.output).toContain("vivarium run --goal");
   });
 
   test("routes update through the installed checkout updater", async () => {
@@ -90,6 +101,91 @@ describe("dispatchCliCommand", () => {
       "git -C /tmp/vivarium-agent pull --ff-only",
       "bun install --frozen-lockfile",
     ]);
+  });
+
+  test("routes model through provider profile summary", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-model-"));
+    const profilesPath = join(root, "provider-profiles.json");
+    write(
+      profilesPath,
+      `${JSON.stringify({
+        profiles: [
+          {
+            name: "openrouter",
+            kind: "openai-compat",
+            apiKeyEnv: "OPENROUTER_API_KEY",
+            model: "openrouter/test-model",
+            capabilities: ["chat", "json_mode"],
+            contextWindow: 128000,
+            costClass: "medium",
+          },
+        ],
+      })}\n`,
+    );
+
+    const result = await dispatchCliCommand(["model", "--profiles-path", profilesPath]);
+
+    expect(result.command).toBe("model");
+    expect(result.result).toMatchObject({ ok: true, profilesPath });
+    expect(result.output).toContain("Vivarium Model");
+    expect(result.output).toContain("[ok] openrouter");
+    expect(result.output).toContain("openrouter/test-model");
+  });
+
+  test("routes model through a live readiness env file", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-model-env-"));
+    const profilesPath = join(root, "provider-profiles.json");
+    const envPath = join(root, "live-readiness.local.env");
+    write(
+      profilesPath,
+      `${JSON.stringify({
+        profiles: [
+          {
+            name: "anthropic-main",
+            kind: "anthropic",
+            apiKeyEnv: "ANTHROPIC_API_KEY",
+            model: "claude-test",
+            capabilities: ["chat", "tools"],
+            contextWindow: 200000,
+            costClass: "expensive",
+          },
+        ],
+      })}\n`,
+    );
+    write(envPath, `export VIVARIUM_PROVIDER_PROFILES_PATH="${profilesPath}"\n`);
+
+    const result = await dispatchCliCommand(["model", "--env-file", envPath], {
+      env: {},
+    });
+
+    expect(result.command).toBe("model");
+    expect(result.result).toMatchObject({ ok: true, profilesPath });
+    expect(result.output).toContain("Vivarium Model");
+    expect(result.output).toContain("[ok] anthropic-main");
+    expect(result.output).toContain("claude-test");
+  });
+
+  test("keeps model setup guidance on the selected live env file", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-model-empty-env-"));
+    const profilesPath = join(root, "provider-profiles.json");
+    const envPath = join(root, "custom-live-readiness.local.env");
+    write(profilesPath, `${JSON.stringify({ profiles: [] })}\n`);
+    write(envPath, `export VIVARIUM_PROVIDER_PROFILES_PATH="${profilesPath}"\n`);
+
+    const result = await dispatchCliCommand(["model", "--env-file", envPath], {
+      env: {},
+    });
+
+    expect(result.command).toBe("model");
+    expect(result.result).toMatchObject({
+      ok: false,
+      profilesPath,
+      problem: "no_profiles",
+    });
+    expect(result.output).toContain(`vivarium live setup --env-file ${envPath} --confirm-write`);
+    expect(result.output).not.toContain(
+      "vivarium setup --env-file live-readiness.local.env --confirm-write",
+    );
   });
 
   test("routes setup through local init with branded terminal output", async () => {
@@ -118,15 +214,63 @@ describe("dispatchCliCommand", () => {
         starterSkills: [{ title: "Red Green" }],
       },
       nextCommands: expect.arrayContaining([
-        expect.stringContaining("doctor --live"),
+        expect.stringContaining("doctor --live --env-file live-readiness.local.env"),
         expect.stringContaining("run --goal"),
+        expect.stringContaining("setup --env-file live-readiness.local.env"),
+        expect.stringContaining("--confirm-write"),
+        expect.stringContaining("model --env-file live-readiness.local.env"),
+        expect.stringContaining("live evidence-init --path v1-evidence.json"),
       ]),
     });
     expect(localSkills).toEqual([expect.objectContaining({ name: "Red Green", domain: "coding" })]);
     expect(setup.output).toContain("Vivarium Setup");
-    expect(setup.output).toContain('.-""""-.');
+    expect(setup.output).toContain("VIVARIUM // local memory // world culture");
     expect(setup.output).toContain("Local state initialized");
     expect(setup.output).toContain("Next commands");
+    expect(setup.output).toContain("[1] Prove the local loop");
+    expect(setup.output).toContain("[2] Prepare live readiness");
+    expect(setup.output).toContain("[3] Inspect configured models");
+    expect(setup.output).toContain("[4] Prepare live evidence");
+    expect(setup.output).toContain("[5] Run the readiness gate");
+    expect(setup.output).toContain("vivarium run --goal");
+    expect(setup.output).toContain("live env-init --path live-readiness.local.env");
+    expect(setup.output).toContain(
+      "vivarium setup --env-file live-readiness.local.env --domain coding",
+    );
+    expect(setup.output).toContain(
+      "vivarium setup --env-file live-readiness.local.env --domain coding --world-root",
+    );
+    expect(setup.output).toContain("--confirm-write");
+    expect(setup.output).toContain("vivarium model --env-file live-readiness.local.env");
+    expect(setup.output).toContain("vivarium live evidence-init --path v1-evidence.json");
+    expect(setup.output).toContain("vivarium doctor --live --env-file live-readiness.local.env");
+    expect(setup.output).not.toContain("bun apps/cli/src/main.ts");
+    expect(setup.output).not.toContain("cp docs/live-readiness.env.example");
+    expect(setup.output).not.toContain("chmod 600 live-readiness.local.env");
+  });
+
+  test("routes setup through missing local state parent directories", async () => {
+    const worldRoot = createWorldFixture();
+    const statePath = join(
+      mkdtempSync(join(tmpdir(), "cli-dispatch-missing-setup-state-")),
+      ".vivarium",
+      "state.db",
+    );
+
+    const setup = await dispatchCliCommand([
+      "setup",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+    ]);
+
+    expect(setup.command).toBe("setup");
+    expect(setup.result).toMatchObject({ ok: true, local: { statePath } });
+    expect(existsSync(statePath)).toBe(true);
+    expect(setup.output).toContain("Local state initialized");
   });
 
   test("routes setup live env files through the live setup dry run", async () => {
@@ -184,13 +328,21 @@ describe("dispatchCliCommand", () => {
         providerProfiles: ["anthropic-live", "openrouter-live", "private-live"],
         credentialName: "internal-api",
       },
-      nextCommands: expect.arrayContaining([expect.stringContaining("setup --env-file")]),
+      nextCommands: expect.arrayContaining([
+        expect.stringContaining("setup --env-file"),
+        expect.stringContaining(`model --env-file ${envPath}`),
+        expect.stringContaining("live evidence-init --path v1-evidence.json"),
+      ]),
     });
     expect(existsSync(profilesPath)).toBe(false);
     expect(existsSync(credentialsPath)).toBe(false);
     expect(setup.output).toContain("Live setup dry run");
     expect(setup.output).toContain("anthropic-live");
     expect(setup.output).toContain("--confirm-write");
+    expect(setup.output).toContain("vivarium setup --env-file");
+    expect(setup.output).toContain(`vivarium model --env-file ${envPath}`);
+    expect(setup.output).toContain("vivarium live evidence-init --path v1-evidence.json");
+    expect(setup.output).not.toContain("bun apps/cli/src/main.ts");
 
     const confirmed = await dispatchCliCommand([
       "setup",
@@ -210,11 +362,82 @@ describe("dispatchCliCommand", () => {
       live: { ok: true, written: true },
       nextCommands: [
         expect.stringContaining("run --goal"),
+        expect.stringContaining(`model --env-file ${envPath}`),
+        expect.stringContaining("live evidence-init --path v1-evidence.json"),
         expect.stringContaining("doctor --live"),
       ],
     });
     expect(confirmed.output).toContain("Live setup written");
+    expect(confirmed.output).toContain(`vivarium model --env-file ${envPath}`);
+    expect(confirmed.output).toContain("vivarium live evidence-init --path v1-evidence.json");
+    expect(confirmed.output).toContain(`vivarium doctor --live --env-file ${envPath}`);
     expect(confirmed.output).not.toContain("cp docs/live-readiness.env.example");
+  });
+
+  test("keeps custom env files in blocked setup next commands", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-setup-live-blocked-"));
+    const worldRoot = createWorldFixture();
+    const statePath = join(root, "state.db");
+    const envPath = join(root, "operator-live.env");
+    const profilesPath = join(root, "provider-profiles.json");
+    const credentialsPath = join(root, "credentials.enc");
+    write(
+      envPath,
+      [
+        `export VIVARIUM_PROVIDER_PROFILES_PATH="${profilesPath}"`,
+        'export ANTHROPIC_API_KEY="anthropic-secret"',
+        'export VIVARIUM_ANTHROPIC_PROVIDER_PROFILE="anthropic-live"',
+        'export VIVARIUM_ANTHROPIC_MODEL="claude-test"',
+        'export VIVARIUM_ANTHROPIC_CONTEXT_WINDOW="200000"',
+        'export OPENROUTER_API_KEY="openrouter-secret"',
+        'export VIVARIUM_OPENROUTER_PROVIDER_PROFILE="openrouter-live"',
+        'export VIVARIUM_OPENROUTER_MODEL="openrouter/test"',
+        'export VIVARIUM_OPENROUTER_BASE_URL="https://openrouter.example/v1"',
+        'export VIVARIUM_OPENROUTER_CONTEXT_WINDOW="128000"',
+        'export VIVARIUM_OAI_COMPAT_API_KEY="compat-secret"',
+        'export VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE="private-live"',
+        'export VIVARIUM_OAI_COMPAT_MODEL="private/test"',
+        'export VIVARIUM_OAI_COMPAT_BASE_URL="https://private.example/v1"',
+        'export VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW="64000"',
+        `export VIVARIUM_CREDENTIALS_PATH="${credentialsPath}"`,
+        'export VIVARIUM_CREDENTIALS_MASTER_KEY="master-secret"',
+        'export VIVARIUM_INTERNAL_API_CREDENTIAL_NAME="internal-api"',
+        'export VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE="internal-secret"',
+      ].join("\n"),
+    );
+
+    const setup = await dispatchCliCommand([
+      "setup",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+      "--env-file",
+      envPath,
+    ]);
+
+    expect(setup.result).toMatchObject({
+      ok: false,
+      live: {
+        ok: false,
+        written: false,
+        missing: ["VIVARIUM_INTERNAL_API_HEALTH_URL"],
+      },
+      nextCommands: expect.arrayContaining([
+        expect.stringContaining(`setup --env-file ${envPath}`),
+        expect.stringContaining(`model --env-file ${envPath}`),
+        expect.stringContaining(`doctor --live --env-file ${envPath}`),
+      ]),
+    });
+    expect(setup.output).toContain(`vivarium setup --env-file ${envPath}`);
+    expect(setup.output).toContain(`vivarium model --env-file ${envPath}`);
+    expect(setup.output).toContain(`vivarium doctor --live --env-file ${envPath}`);
+    expect(setup.output).not.toContain("live env-init --path live-readiness.local.env");
+    expect(setup.output).not.toContain("setup --env-file live-readiness.local.env");
+    expect(existsSync(profilesPath)).toBe(false);
+    expect(existsSync(credentialsPath)).toBe(false);
   });
 
   test("routes status and doctor commands", async () => {
@@ -224,7 +447,7 @@ describe("dispatchCliCommand", () => {
       output: expect.stringContaining("Vivarium Status"),
     });
     const status = await dispatchCliCommand(["status"]);
-    expect(status.output).toContain('.-""""-.');
+    expect(status.output).toContain("VIVARIUM // local memory // world culture");
     expect(status.output).toContain("Repository: the-agent");
     expect(status.output).toContain("vivarium doctor");
 
@@ -498,7 +721,15 @@ describe("dispatchCliCommand", () => {
         "Add credential: GITHUB_TOKEN",
       ],
     });
+    expect(init.output).toContain("Vivarium Init");
+    expect(init.output).toContain("Domain: coding");
+    expect(init.output).toContain("Starter skills:");
+    expect(init.output).toContain("Next command:");
+    expect(init.output.trim().startsWith("{")).toBe(false);
     expect(skills.result).toMatchObject({ skills: [{ name: "Red Green", domain: "coding" }] });
+    expect(skills.output).toContain("Vivarium Skills");
+    expect(skills.output).toContain("Skills: 1");
+    expect(skills.output.trim().startsWith("{")).toBe(false);
     expect(world.result).toMatchObject({ results: [{ title: "Red Green" }] });
   });
 
@@ -519,51 +750,69 @@ describe("dispatchCliCommand", () => {
       statePath,
     ]);
 
-    await expect(
-      dispatchCliCommand(["identity", "summary", "--state-path", statePath]),
-    ).resolves.toMatchObject({
+    const identitySummary = await dispatchCliCommand(["identity", "summary", "--state-path", statePath]);
+    const identityStage = await dispatchCliCommand([
+      "identity",
+      "stage",
+      "--state-path",
+      statePath,
+      "--domain",
+      "coding",
+    ]);
+    const curriculumRead = await dispatchCliCommand(["curriculum", "read", "--world-root", worldRoot, "--domain", "coding"]);
+    const curriculumAdvance = await dispatchCliCommand([
+      "curriculum",
+      "advance",
+      "--state-path",
+      statePath,
+      "--domain",
+      "coding",
+      "--step",
+      "2",
+    ]);
+    const dream = await dispatchCliCommand(["dream", "run", "--state-path", statePath, "--domain", "coding"]);
+    const publish = await dispatchCliCommand(["publish", "list", "--state-path", statePath]);
+
+    expect(identitySummary).toMatchObject({
       command: "identity",
       result: { summary: "Newborn local agent initialized for coding." },
     });
-    await expect(
-      dispatchCliCommand(["identity", "stage", "--state-path", statePath, "--domain", "coding"]),
-    ).resolves.toMatchObject({
+    expect(identitySummary.output).toContain("Vivarium Identity");
+    expect(identitySummary.output).toContain("Newborn local agent initialized for coding.");
+    expect(identitySummary.output.trim().startsWith("{")).toBe(false);
+    expect(identityStage).toMatchObject({
       command: "identity",
       result: { domain: "coding", stage: "newborn" },
     });
-    await expect(
-      dispatchCliCommand(["curriculum", "read", "--world-root", worldRoot, "--domain", "coding"]),
-    ).resolves.toMatchObject({
+    expect(identityStage.output).toContain("Stage: newborn");
+    expect(identityStage.output.trim().startsWith("{")).toBe(false);
+    expect(curriculumRead).toMatchObject({
       command: "curriculum",
       result: { domain: "coding", body: "# Coding Curriculum\n" },
     });
-    await expect(
-      dispatchCliCommand([
-        "curriculum",
-        "advance",
-        "--state-path",
-        statePath,
-        "--domain",
-        "coding",
-        "--step",
-        "2",
-      ]),
-    ).resolves.toMatchObject({
+    expect(curriculumRead.output).toContain("Vivarium Curriculum");
+    expect(curriculumRead.output).toContain("# Coding Curriculum");
+    expect(curriculumRead.output.trim().startsWith("{")).toBe(false);
+    expect(curriculumAdvance).toMatchObject({
       command: "curriculum",
       result: { domain: "coding", progress: { currentStepIndex: 2, completedSteps: [0, 2] } },
     });
-    await expect(
-      dispatchCliCommand(["dream", "run", "--state-path", statePath, "--domain", "coding"]),
-    ).resolves.toMatchObject({
+    expect(curriculumAdvance.output).toContain("Current step: 2");
+    expect(curriculumAdvance.output.trim().startsWith("{")).toBe(false);
+    expect(dream).toMatchObject({
       command: "dream",
       result: { identitySummary: "Dream consolidated 1 local skills across coding." },
     });
-    await expect(
-      dispatchCliCommand(["publish", "list", "--state-path", statePath]),
-    ).resolves.toMatchObject({
+    expect(dream.output).toContain("Vivarium Dream");
+    expect(dream.output).toContain("Dream consolidated 1 local skills across coding.");
+    expect(dream.output.trim().startsWith("{")).toBe(false);
+    expect(publish).toMatchObject({
       command: "publish",
       result: { publishables: [] },
     });
+    expect(publish.output).toContain("Vivarium Publish");
+    expect(publish.output).toContain("Publishables: 0");
+    expect(publish.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes world pull with a local git remote", async () => {
@@ -582,6 +831,10 @@ describe("dispatchCliCommand", () => {
     ]);
 
     expect(pulled.result).toMatchObject({ mode: "cloned", remote, destination });
+    expect(pulled.output).toContain("Vivarium World Pull");
+    expect(pulled.output).toContain("Status: cloned");
+    expect(pulled.output).toContain(destination);
+    expect(pulled.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes multi-world search with source labels", async () => {
@@ -621,6 +874,10 @@ describe("dispatchCliCommand", () => {
         { source: "public", title: "Public Skill" },
       ],
     });
+    expect(result.output).toContain("Vivarium World Search");
+    expect(result.output).toContain("Results: 2");
+    expect(result.output).toContain("Private Skill");
+    expect(result.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes saved world subscriptions into search", async () => {
@@ -688,24 +945,36 @@ describe("dispatchCliCommand", () => {
     expect(publicSubscription.result).toMatchObject({
       subscriptions: [{ label: "public", priority: 1 }],
     });
+    expect(publicSubscription.output).toContain("Vivarium World Subscriptions");
+    expect(publicSubscription.output).toContain("Subscriptions: 1");
+    expect(publicSubscription.output).toContain("public");
+    expect(publicSubscription.output.trim().startsWith("{")).toBe(false);
     expect(privateSubscription.result).toMatchObject({
       subscriptions: [
         { label: "private", priority: 0, autoPushEnabled: true },
         { label: "public", priority: 1, autoPushEnabled: false },
       ],
     });
+    expect(privateSubscription.output).toContain("Subscriptions: 2");
+    expect(privateSubscription.output).toContain("Auto-push: enabled");
     expect(listed.result).toMatchObject({
       subscriptions: [
         { label: "private", priority: 0 },
         { label: "public", priority: 1 },
       ],
     });
+    expect(listed.output).toContain("Vivarium World Subscriptions");
+    expect(listed.output).toContain("private");
+    expect(listed.output.trim().startsWith("{")).toBe(false);
     expect(searched.result).toMatchObject({
       results: [
         { source: "private", title: "Private Skill" },
         { source: "public", title: "Public Skill" },
       ],
     });
+    expect(searched.output).toContain("Vivarium World Search");
+    expect(searched.output).toContain("Public Skill");
+    expect(searched.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes saved world subscriptions into runs", async () => {
@@ -857,6 +1126,10 @@ describe("dispatchCliCommand", () => {
       pull: { mode: "cloned", remote, destination, ref: "main" },
       results: [{ kind: "skill", title: "Accepted Contribution" }],
     });
+    expect(checked.output).toContain("Vivarium World Transmission");
+    expect(checked.output).toContain("Status: ok");
+    expect(checked.output).toContain("Accepted Contribution");
+    expect(checked.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes run and credentials commands", async () => {
@@ -916,17 +1189,39 @@ describe("dispatchCliCommand", () => {
     ]);
 
     expect(run.result).toMatchObject({ success: true });
+    expect(run.output).toContain("Vivarium Run");
+    expect(run.output).toContain("Status: success");
+    expect(run.output).toContain("Provider: local");
+    expect(run.output).toContain("Episodes:");
+    expect(run.output.trim().startsWith("{")).toBe(false);
     expect(added.result).toEqual({ stored: true, name: "OPENAI_API_KEY", kind: "api_key" });
+    expect(added.output).toContain("Vivarium Credentials");
+    expect(added.output).toContain("Status: stored");
+    expect(added.output).toContain("OPENAI_API_KEY");
+    expect(added.output).not.toContain("sk-test");
+    expect(added.output).not.toContain("dispatch-secret");
+    expect(added.output.trim().startsWith("{")).toBe(false);
     expect(listed.result).toEqual({
       credentials: [
         { name: "OPENAI_API_KEY", kind: "api_key", purpose: "provider", scopes: ["model:chat"] },
       ],
     });
+    expect(listed.output).toContain("Vivarium Credentials");
+    expect(listed.output).toContain("Credentials: 1");
+    expect(listed.output).toContain("model:chat");
+    expect(listed.output).not.toContain("sk-test");
+    expect(listed.output.trim().startsWith("{")).toBe(false);
     expect(smoked.result).toMatchObject({
       ok: false,
       credentialName: "OPENAI_API_KEY",
       error: "Missing external adapter for http.request",
     });
+    expect(smoked.output).toContain("Vivarium Credential Smoke");
+    expect(smoked.output).toContain("Status: blocked");
+    expect(smoked.output).toContain("Missing external adapter for http.request");
+    expect(smoked.output).not.toContain("sk-test");
+    expect(smoked.output).not.toContain("dispatch-secret");
+    expect(smoked.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes configured provider runs without credentials", async () => {
@@ -959,6 +1254,10 @@ describe("dispatchCliCommand", () => {
       },
       error: "Missing provider environment variable: VIVARIUM_MISSING_PROVIDER_KEY",
     });
+    expect(run.output).toContain("Vivarium Run");
+    expect(run.output).toContain("Status: blocked");
+    expect(run.output).toContain("Missing provider environment variable: VIVARIUM_MISSING_PROVIDER_KEY");
+    expect(run.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes provider smoke checks without credentials", async () => {
@@ -1046,13 +1345,25 @@ describe("dispatchCliCommand", () => {
         },
       ],
     });
+    expect(configured.output).toContain("Vivarium Providers");
+    expect(configured.output).toContain("Profiles: 1");
+    expect(configured.output).toContain("openrouter");
+    expect(configured.output.trim().startsWith("{")).toBe(false);
     expect(listed.result).toEqual(configured.result);
+    expect(listed.output).toContain("Vivarium Providers");
+    expect(listed.output).toContain("openrouter/test-model");
+    expect(listed.output.trim().startsWith("{")).toBe(false);
     expect(smoked.result).toEqual({
       ok: false,
       kind: "openai-compat",
       model: "openrouter/test-model",
       error: "Missing provider environment variable: VIVARIUM_MISSING_PROVIDER_KEY",
     });
+    expect(smoked.output).toContain("Vivarium Provider Smoke");
+    expect(smoked.output).toContain("Status: blocked");
+    expect(smoked.output).toContain("openai-compat");
+    expect(smoked.output).not.toContain("provider-secret");
+    expect(smoked.output.trim().startsWith("{")).toBe(false);
     expect(run.result).toEqual({
       success: false,
       runId: null,
@@ -1071,7 +1382,7 @@ describe("dispatchCliCommand", () => {
 
   test("routes live setup through a filled env file with explicit write confirmation", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-setup-"));
-    const envPath = join(root, "live-readiness.local.env");
+    const envPath = join(root, "operator-live.env");
     const profilesPath = join(root, "provider-profiles.json");
     const credentialsPath = join(root, "credentials.enc");
     write(
@@ -1154,6 +1465,10 @@ describe("dispatchCliCommand", () => {
     });
     expect(readFileSync(credentialsPath, "utf8")).not.toContain("internal-secret");
     expect(result.output).not.toContain("internal-secret");
+    expect(result.output).toContain(`vivarium model --env-file ${envPath}`);
+    expect(result.output).toContain(`vivarium doctor --live --env-file ${envPath}`);
+    expect(result.output).not.toContain("vivarium model --env-file live-readiness.local.env");
+    expect(result.output).not.toContain("vivarium doctor --live --env-file live-readiness.local.env");
   });
 
   test("refuses live setup writes without explicit confirmation", async () => {
@@ -1187,9 +1502,9 @@ describe("dispatchCliCommand", () => {
       ].join("\n"),
     );
 
-    await expect(
-      dispatchCliCommand(["live", "setup", "--env-file", envPath]),
-    ).resolves.toMatchObject({
+    const dryRun = await dispatchCliCommand(["live", "setup", "--env-file", envPath]);
+
+    expect(dryRun).toMatchObject({
       command: "live",
       result: {
         ok: false,
@@ -1201,13 +1516,21 @@ describe("dispatchCliCommand", () => {
         paths: { providerProfilesPath: profilesPath, credentialsPath },
       },
     });
+    expect(dryRun.output).toContain("Vivarium Live Setup");
+    expect(dryRun.output).toContain("Status: dry run");
+    expect(dryRun.output).toContain("anthropic-main");
+    expect(dryRun.output).toContain("--confirm-write");
+    expect(dryRun.output).toContain("[1] Confirm live writes");
+    expect(dryRun.output).toContain(`vivarium live setup --env-file ${envPath} --confirm-write`);
+    expect(dryRun.output).not.toContain("anthropic-secret");
+    expect(dryRun.output.trim().startsWith("{")).toBe(false);
     expect(existsSync(profilesPath)).toBe(false);
     expect(existsSync(credentialsPath)).toBe(false);
   });
 
   test("reports missing internal API health URL during live setup preflight", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-setup-health-"));
-    const envPath = join(root, "live-readiness.local.env");
+    const envPath = join(root, "operator-missing-health.env");
     const profilesPath = join(root, "provider-profiles.json");
     const credentialsPath = join(root, "credentials.enc");
     write(
@@ -1235,9 +1558,9 @@ describe("dispatchCliCommand", () => {
       ].join("\n"),
     );
 
-    await expect(
-      dispatchCliCommand(["live", "setup", "--env-file", envPath]),
-    ).resolves.toMatchObject({
+    const result = await dispatchCliCommand(["live", "setup", "--env-file", envPath]);
+
+    expect(result).toMatchObject({
       command: "live",
       result: {
         ok: false,
@@ -1245,6 +1568,9 @@ describe("dispatchCliCommand", () => {
         missing: ["VIVARIUM_INTERNAL_API_HEALTH_URL"],
       },
     });
+    expect(result.output).toContain(`Fill ${envPath}, then re-run live setup.`);
+    expect(result.output).toContain("[1] Fill live settings");
+    expect(result.output).not.toContain("Fill live-readiness.local.env");
     expect(existsSync(profilesPath)).toBe(false);
     expect(existsSync(credentialsPath)).toBe(false);
   });
@@ -1361,6 +1687,13 @@ describe("dispatchCliCommand", () => {
     ]);
 
     expect(created.command).toBe("live");
+    expect(created.output).toContain("Vivarium Live Evidence");
+    expect(created.output).toContain("Status: written");
+    expect(created.output).toContain("Sections: 11");
+    expect(created.output).toContain("[1] Fill evidence manifest");
+    expect(created.output).toContain("[2] Run the readiness gate");
+    expect(created.output).toContain("vivarium doctor --live");
+    expect(created.output.trim().startsWith("{")).toBe(false);
     expect(created.result).toEqual({
       ok: true,
       written: true,
@@ -1392,122 +1725,260 @@ describe("dispatchCliCommand", () => {
       path: evidencePath,
       error: "Evidence manifest already exists. Pass --overwrite to replace it.",
     });
+    expect(refused.output).toContain("Status: blocked");
+    expect(refused.output).toContain("--overwrite");
+    expect(refused.output.trim().startsWith("{")).toBe(false);
     expect(overwritten.result).toMatchObject({ ok: true, written: true, path: evidencePath });
   });
 
+  test("routes live env init with private permissions and refuses accidental overwrite", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-env-init-"));
+    const envPath = join(root, "live-readiness.local.env");
+
+    const created = await dispatchCliCommand(["live", "env-init", "--path", envPath]);
+    const createdOutput = created.output;
+    const body = readFileSync(envPath, "utf8");
+    const mode = statSync(envPath).mode & 0o777;
+    const refused = await dispatchCliCommand(["live", "env-init", "--path", envPath]);
+    const overwritten = await dispatchCliCommand([
+      "live",
+      "env-init",
+      "--path",
+      envPath,
+      "--overwrite",
+    ]);
+
+    expect(created.result).toEqual({
+      ok: true,
+      written: true,
+      path: envPath,
+      mode: "0600",
+      templatePath: "docs/live-readiness.env.example",
+      prefilled: [],
+    });
+    expect(createdOutput).toContain("Vivarium Live Env");
+    expect(createdOutput).toContain("Status: written");
+    expect(createdOutput).toContain(envPath);
+    expect(createdOutput).toContain("Permissions: 0600");
+    expect(createdOutput).toContain("Next commands");
+    expect(createdOutput).toContain("[1] Fill live settings");
+    expect(createdOutput).toContain("[2] Prepare live readiness");
+    expect(createdOutput).toContain("[3] Inspect configured models");
+    expect(createdOutput).toContain("[4] Prepare live evidence");
+    expect(createdOutput).toContain("[5] Run the readiness gate");
+    expect(createdOutput).toContain(
+      `vivarium setup --env-file ${envPath} --domain coding --world-root ../the-world --state-path .vivarium/state.db`,
+    );
+    expect(createdOutput).toContain(
+      `vivarium setup --env-file ${envPath} --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write`,
+    );
+    expect(createdOutput).toContain(`vivarium model --env-file ${envPath}`);
+    expect(createdOutput).toContain("vivarium live evidence-init --path v1-evidence.json");
+    expect(createdOutput).toContain(`vivarium doctor --live --env-file ${envPath}`);
+    expect(createdOutput.trim().startsWith("{")).toBe(false);
+    expect(body).toContain("VIVARIUM_PROVIDER_PROFILES_PATH");
+    expect(body).toContain("source live-readiness.local.env");
+    expect(body).toContain("vivarium live env-init --path live-readiness.local.env");
+    expect(body).toContain("vivarium doctor --live");
+    expect(body).not.toContain("bun apps/cli/src/main.ts");
+    expect(mode).toBe(0o600);
+    expect(refused.result).toEqual({
+      ok: false,
+      written: false,
+      path: envPath,
+      error: "Live readiness env already exists. Pass --overwrite to replace it.",
+    });
+    expect(overwritten.result).toMatchObject({ ok: true, written: true, path: envPath });
+  });
+
+  test("routes live env init with public repo prefill flags", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-live-env-init-prefill-"));
+    const envPath = join(root, "live-readiness.local.env");
+
+    const created = await dispatchCliCommand([
+      "live",
+      "env-init",
+      "--path",
+      envPath,
+      "--github-owner",
+      "idanmann10",
+      "--agent-repo",
+      "vivarium-agent",
+      "--world-repo",
+      "vivarium-world",
+      "--canonical-world-ref",
+      "https://github.com/idanmann10/vivarium-world.git",
+      "--private-world-ref",
+      "git@github.com:idanmann10/vivarium-world-private.git",
+    ]);
+    const body = readFileSync(envPath, "utf8");
+
+    expect(created.result).toMatchObject({
+      ok: true,
+      written: true,
+      path: envPath,
+      prefilled: [
+        "VIVARIUM_GITHUB_OWNER",
+        "VIVARIUM_AGENT_REPO_NAME",
+        "VIVARIUM_WORLD_REPO_NAME",
+        "VIVARIUM_CANONICAL_WORLD_REF",
+        "VIVARIUM_PRIVATE_WORLD_REF",
+      ],
+    });
+    expect(body).toContain("export VIVARIUM_GITHUB_OWNER='idanmann10'");
+    expect(body).toContain("export VIVARIUM_AGENT_REPO_NAME='vivarium-agent'");
+    expect(body).toContain("export VIVARIUM_WORLD_REPO_NAME='vivarium-world'");
+    expect(body).toContain(
+      "export VIVARIUM_CANONICAL_WORLD_REF='https://github.com/idanmann10/vivarium-world.git'",
+    );
+    expect(body).toContain(
+      "export VIVARIUM_PRIVATE_WORLD_REF='git@github.com:idanmann10/vivarium-world-private.git'",
+    );
+    expect(body).toContain('export GITHUB_TOKEN="<redacted-github-token>"');
+    expect(created.output).toContain("Prefilled:");
+    expect(created.output).toContain("VIVARIUM_GITHUB_OWNER");
+  });
+
   test("routes GitHub smoke checks without credentials", async () => {
-    await expect(
-      dispatchCliCommand([
-        "github",
-        "smoke",
-        "--owner",
-        "owner",
-        "--repo",
-        "world",
-        "--token-env",
-        "VIVARIUM_MISSING_GITHUB_TOKEN",
-      ]),
-    ).resolves.toMatchObject({
+    const result = await dispatchCliCommand([
+      "github",
+      "smoke",
+      "--owner",
+      "owner",
+      "--repo",
+      "world",
+      "--token-env",
+      "VIVARIUM_MISSING_GITHUB_TOKEN",
+    ]);
+
+    expect(result).toMatchObject({
       command: "github",
       result: {
         ok: false,
         error: "Missing GitHub token environment variable: VIVARIUM_MISSING_GITHUB_TOKEN",
       },
     });
+    expect(result.output).toContain("Vivarium GitHub Smoke");
+    expect(result.output).toContain("Status: blocked");
+    expect(result.output).toContain("owner/world");
+    expect(result.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes guarded GitHub discussion creation", async () => {
-    await expect(
-      dispatchCliCommand([
-        "github",
-        "discussion",
-        "--owner",
-        "owner",
-        "--repo",
-        "world",
-        "--token-env",
-        "GITHUB_TOKEN",
-        "--repository-id",
-        "R_1",
-        "--category-id",
-        "C_1",
-        "--title",
-        "Phase 0 RFC",
-        "--body",
-        "Bootstrap discussion",
-      ]),
-    ).resolves.toMatchObject({
+    const result = await dispatchCliCommand([
+      "github",
+      "discussion",
+      "--owner",
+      "owner",
+      "--repo",
+      "world",
+      "--token-env",
+      "GITHUB_TOKEN",
+      "--repository-id",
+      "R_1",
+      "--category-id",
+      "C_1",
+      "--title",
+      "Phase 0 RFC",
+      "--body",
+      "Bootstrap discussion",
+    ]);
+
+    expect(result).toMatchObject({
       command: "github",
       result: {
         ok: false,
         error: "Missing --confirm-write for GitHub discussion creation",
       },
     });
+    expect(result.output).toContain("Vivarium GitHub Discussion");
+    expect(result.output).toContain("Status: blocked");
+    expect(result.output).toContain("--confirm-write");
+    expect(result.output).not.toContain("Bootstrap discussion");
+    expect(result.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes guarded GitHub pull request creation", async () => {
-    await expect(
-      dispatchCliCommand([
-        "github",
-        "pull-request",
-        "--owner",
-        "owner",
-        "--repo",
-        "world",
-        "--token-env",
-        "GITHUB_TOKEN",
-        "--title",
-        "Add generated skill",
-        "--body",
-        "Generated artifact",
-        "--head",
-        "agent:add-generated-skill",
-        "--base",
-        "main",
-      ]),
-    ).resolves.toMatchObject({
+    const result = await dispatchCliCommand([
+      "github",
+      "pull-request",
+      "--owner",
+      "owner",
+      "--repo",
+      "world",
+      "--token-env",
+      "GITHUB_TOKEN",
+      "--title",
+      "Add generated skill",
+      "--body",
+      "Generated artifact",
+      "--head",
+      "agent:add-generated-skill",
+      "--base",
+      "main",
+    ]);
+
+    expect(result).toMatchObject({
       command: "github",
       result: {
         ok: false,
         error: "Missing --confirm-write for GitHub pull request creation",
       },
     });
+    expect(result.output).toContain("Vivarium GitHub Pull Request");
+    expect(result.output).toContain("Status: blocked");
+    expect(result.output).toContain("--confirm-write");
+    expect(result.output).not.toContain("Generated artifact");
+    expect(result.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes GitHub workflow run checks without credentials", async () => {
-    await expect(
-      dispatchCliCommand([
-        "github",
-        "workflow-runs",
-        "--owner",
-        "owner",
-        "--repo",
-        "world",
-        "--token-env",
-        "VIVARIUM_MISSING_GITHUB_TOKEN",
-        "--branch",
-        "main",
-        "--limit",
-        "2",
-      ]),
-    ).resolves.toMatchObject({
+    const result = await dispatchCliCommand([
+      "github",
+      "workflow-runs",
+      "--owner",
+      "owner",
+      "--repo",
+      "world",
+      "--token-env",
+      "VIVARIUM_MISSING_GITHUB_TOKEN",
+      "--branch",
+      "main",
+      "--limit",
+      "2",
+    ]);
+
+    expect(result).toMatchObject({
       command: "github",
       result: {
         ok: false,
         error: "Missing GitHub token environment variable: VIVARIUM_MISSING_GITHUB_TOKEN",
       },
     });
+    expect(result.output).toContain("Vivarium GitHub Workflows");
+    expect(result.output).toContain("Status: blocked");
+    expect(result.output).toContain("owner/world");
+    expect(result.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes daemon smoke checks", async () => {
-    await expect(
-      dispatchCliCommand(["daemon", "smoke", "--status-url", "http://127.0.0.1:9/status"]),
-    ).resolves.toMatchObject({
+    const result = await dispatchCliCommand([
+      "daemon",
+      "smoke",
+      "--status-url",
+      "http://127.0.0.1:9/status",
+    ]);
+
+    expect(result).toMatchObject({
       command: "daemon",
       result: {
         ok: false,
       },
     });
+    expect(result.output).toContain("Vivarium Daemon Smoke");
+    expect(result.output).toContain("Status: blocked");
+    expect(result.output).toContain("http://127.0.0.1:9/status");
+    expect(result.output.trim().startsWith("{")).toBe(false);
   });
 
   test("returns a usage error for unsupported commands", async () => {

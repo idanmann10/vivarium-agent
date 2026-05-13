@@ -1,8 +1,11 @@
 import type { InitCommandResult } from "./init.js";
 import { renderVivariumGlobe } from "./branding.js";
 import { runInitCommand } from "./init.js";
+import { renderLaunchSequence } from "./launch-sequence.js";
 import type { LiveSetupCommandResult } from "./live.js";
 import { liveSetupCommand } from "./live.js";
+
+const defaultLiveEnvFilePath = "live-readiness.local.env";
 
 export interface SetupCommandOptions {
   readonly primaryDomain: string;
@@ -34,7 +37,7 @@ function commandWithFlags(
     }
     return value === true ? [`--${name}`] : [`--${name}`, shellQuote(value)];
   });
-  return ["bun", "apps/cli/src/main.ts", command, ...args].join(" ");
+  return ["vivarium", command, ...args].join(" ");
 }
 
 function setupNextCommands(
@@ -48,13 +51,13 @@ function setupNextCommands(
     "state-path": local.statePath,
     ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
   });
-  const doctorCommand =
-    options.envFilePath === undefined
-      ? "bun apps/cli/src/main.ts doctor --live"
-      : commandWithFlags("doctor", { live: true, "env-file": options.envFilePath });
+  const liveEnvFilePath = options.envFilePath ?? defaultLiveEnvFilePath;
+  const modelCommand = commandWithFlags("model", { "env-file": liveEnvFilePath });
+  const evidenceCommand = commandWithFlags("live evidence-init", { path: "v1-evidence.json" });
+  const doctorCommand = commandWithFlags("doctor", { live: true, "env-file": liveEnvFilePath });
 
   if (options.envFilePath !== undefined && live?.ok === true) {
-    return [runCommand, doctorCommand];
+    return [runCommand, modelCommand, evidenceCommand, doctorCommand];
   }
 
   if (
@@ -71,20 +74,45 @@ function setupNextCommands(
         "state-path": local.statePath,
         "confirm-write": true,
       }),
+      modelCommand,
+      evidenceCommand,
+      doctorCommand,
+    ];
+  }
+
+  if (options.envFilePath !== undefined && live?.ok === false) {
+    return [
+      runCommand,
+      commandWithFlags("setup", {
+        "env-file": options.envFilePath,
+        domain: options.primaryDomain,
+        ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
+        "state-path": local.statePath,
+      }),
+      modelCommand,
+      evidenceCommand,
       doctorCommand,
     ];
   }
 
   return [
     runCommand,
-    "cp docs/live-readiness.env.example live-readiness.local.env",
-    "chmod 600 live-readiness.local.env",
+    commandWithFlags("live env-init", { path: defaultLiveEnvFilePath }),
     commandWithFlags("setup", {
-      "env-file": "live-readiness.local.env",
+      "env-file": defaultLiveEnvFilePath,
       domain: options.primaryDomain,
       ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
       "state-path": local.statePath,
     }),
+    commandWithFlags("setup", {
+      "env-file": defaultLiveEnvFilePath,
+      domain: options.primaryDomain,
+      ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
+      "state-path": local.statePath,
+      "confirm-write": true,
+    }),
+    modelCommand,
+    evidenceCommand,
     doctorCommand,
   ];
 }
@@ -150,8 +178,7 @@ export function renderSetupCommandResult(result: SetupCommandResult): string {
     `Starter traces: ${result.local.starterTraces.length}`,
     ...renderLiveSummary(result.live),
     "",
-    "Next commands:",
-    ...result.nextCommands.map((command) => `  ${command}`),
+    ...renderLaunchSequence(result.nextCommands, { heading: "Next commands:" }),
     "",
   ];
   return `${lines.join("\n")}\n`;

@@ -28,7 +28,7 @@ describe("install.sh", () => {
 
     expect(result.exitCode).toBe(0);
     expect(stdout).toContain("Vivarium Agent Installer");
-    expect(stdout).toContain('.-""""-.');
+    expect(stdout).toContain("VIVARIUM // local memory // world culture");
     expect(stdout).toContain("Install directory: /tmp/vivarium-agent-install");
     expect(stdout).toContain("Command path: /tmp/vivarium-bin/vivarium");
     expect(stdout).toContain("Repository: https://github.com/example/vivarium-agent.git");
@@ -41,11 +41,75 @@ describe("install.sh", () => {
       `Would run: bun apps/cli/src/main.ts setup --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
     );
     expect(stdout).toContain("After installation:");
+    expect(stdout).toContain("[1] Prove the local loop");
+    expect(stdout).toContain("[2] Prepare live readiness");
+    expect(stdout).toContain("[3] Inspect configured models");
+    expect(stdout).toContain("[4] Prepare live evidence");
+    expect(stdout).toContain("[5] Run the readiness gate");
+    expect(stdout).toContain("[6] Keep moving");
+    expect(stdout).toContain("vivarium run --goal");
+    expect(stdout).toContain(
+      'vivarium run --goal "validate local setup" --state-path .vivarium/research.db',
+    );
+    expect(stdout).toContain("vivarium live env-init --path live-readiness.local.env");
+    expect(stdout).toContain(
+      `vivarium setup --env-file live-readiness.local.env --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
+    );
+    expect(stdout).toContain(
+      `vivarium setup --env-file live-readiness.local.env --domain research --world-root ${worldRoot} --state-path .vivarium/research.db --confirm-write`,
+    );
+    expect(stdout).toContain("vivarium model --env-file live-readiness.local.env");
+    expect(stdout).toContain("vivarium live evidence-init --path v1-evidence.json");
+    expect(stdout).toContain("vivarium doctor --live --env-file live-readiness.local.env");
     expect(stdout).toContain("vivarium status");
     expect(stdout).toContain("vivarium help");
-    expect(stdout).toContain("vivarium doctor");
     expect(stdout).toContain("vivarium update");
+    expect(stdout).toContain(
+      '/tmp/vivarium-bin/vivarium run --goal "validate local setup" --state-path .vivarium/research.db',
+    );
+    expect(stdout).toContain(
+      "/tmp/vivarium-bin/vivarium live env-init --path live-readiness.local.env",
+    );
+    expect(stdout).toContain(
+      `/tmp/vivarium-bin/vivarium setup --env-file live-readiness.local.env --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
+    );
+    expect(stdout).toContain(
+      `/tmp/vivarium-bin/vivarium setup --env-file live-readiness.local.env --domain research --world-root ${worldRoot} --state-path .vivarium/research.db --confirm-write`,
+    );
+    expect(stdout).toContain(
+      "/tmp/vivarium-bin/vivarium model --env-file live-readiness.local.env",
+    );
+    expect(stdout).toContain(
+      "/tmp/vivarium-bin/vivarium live evidence-init --path v1-evidence.json",
+    );
+    expect(stdout).toContain(
+      "/tmp/vivarium-bin/vivarium doctor --live --env-file live-readiness.local.env",
+    );
+    expect(stdout).toContain("/tmp/vivarium-bin/vivarium help");
+    expect(stdout).toContain("/tmp/vivarium-bin/vivarium update");
     expect(stdout).toContain("If 'vivarium' is not found, add /tmp/vivarium-bin to PATH");
+  });
+
+  test("prints a branded ANSI installer when color is forced", () => {
+    const forced = runInstallerDryRun({ FORCE_COLOR: "1" }).stdout.toString();
+    const matrix = runInstallerDryRun({
+      FORCE_COLOR: "1",
+      VIVARIUM_THEME: "matrix",
+    }).stdout.toString();
+    const amber = runInstallerDryRun({
+      FORCE_COLOR: "1",
+      VIVARIUM_THEME: "amber",
+    }).stdout.toString();
+    const disabled = runInstallerDryRun({
+      FORCE_COLOR: "1",
+      VIVARIUM_COLOR: "never",
+    }).stdout.toString();
+
+    expect(forced).toContain("\u001b[");
+    expect(forced).toContain("\u001b[1;36mVivarium Agent Installer\u001b[0m");
+    expect(matrix).toContain("\u001b[32m __      __");
+    expect(amber).toContain("\u001b[33m __      __");
+    expect(disabled).not.toContain("\u001b[");
   });
 
   test("documents strict shell behavior and dependency checks", () => {
@@ -57,6 +121,7 @@ describe("install.sh", () => {
     expect(source).toContain("VIVARIUM_REPO_URL");
     expect(source).toContain("VIVARIUM_INSTALL_DIR");
     expect(source).toContain("VIVARIUM_BIN_DIR");
+    expect(source).toContain("VIVARIUM_THEME");
     expect(source).toContain('bun apps/cli/src/main.ts "$@"');
   });
 });

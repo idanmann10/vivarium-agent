@@ -1,6 +1,8 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { renderVivariumGlobe } from "./branding.js";
 import { addCredentialCommand } from "./credentials.js";
+import { renderLaunchSequence } from "./launch-sequence.js";
 import { configureProviderProfileCommand } from "./providers.js";
 
 export interface LiveSetupCommandOptions {
@@ -39,6 +41,37 @@ export interface LiveEvidenceInitCommandOptions {
   readonly path: string;
   readonly overwrite?: boolean;
 }
+
+export interface LiveEnvInitCommandOptions {
+  readonly path: string;
+  readonly overwrite?: boolean;
+  readonly templatePath?: string;
+  readonly prefill?: LiveEnvPrefillOptions;
+}
+
+export interface LiveEnvPrefillOptions {
+  readonly githubOwner?: string;
+  readonly agentRepo?: string;
+  readonly worldRepo?: string;
+  readonly canonicalWorldRef?: string;
+  readonly privateWorldRef?: string;
+}
+
+export type LiveEnvInitCommandResult =
+  | {
+      readonly ok: true;
+      readonly written: true;
+      readonly path: string;
+      readonly mode: "0600";
+      readonly templatePath: string;
+      readonly prefilled: readonly string[];
+    }
+  | {
+      readonly ok: false;
+      readonly written: false;
+      readonly path: string;
+      readonly error: string;
+    };
 
 export type LiveEvidenceInitCommandResult =
   | {
@@ -89,6 +122,10 @@ const httpUrlEnvNames = [
   "VIVARIUM_INTERNAL_API_HEALTH_URL",
 ] as const;
 
+function shellQuote(value: string): string {
+  return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
+}
+
 type RequiredEnvName = (typeof requiredEnvNames)[number];
 type IntegerEnvName = (typeof integerEnvNames)[number];
 type HttpUrlEnvName = (typeof httpUrlEnvNames)[number];
@@ -106,6 +143,46 @@ const v1EvidenceSections = [
   "curationStats",
   "twoWeekImprovement",
 ] as const;
+
+const defaultLiveEnvTemplatePath = "docs/live-readiness.env.example";
+
+const liveEnvPrefillMap = {
+  githubOwner: "VIVARIUM_GITHUB_OWNER",
+  agentRepo: "VIVARIUM_AGENT_REPO_NAME",
+  worldRepo: "VIVARIUM_WORLD_REPO_NAME",
+  canonicalWorldRef: "VIVARIUM_CANONICAL_WORLD_REF",
+  privateWorldRef: "VIVARIUM_PRIVATE_WORLD_REF",
+} as const;
+
+type LiveEnvPrefillKey = keyof typeof liveEnvPrefillMap;
+
+function shellEnvLiteral(value: string): string {
+  return `'${value.replaceAll("'", "'\\''")}'`;
+}
+
+function applyLiveEnvPrefill(
+  template: string,
+  prefill: LiveEnvPrefillOptions | undefined,
+): { readonly body: string; readonly prefilled: readonly string[] } {
+  let body = template;
+  const prefilled: string[] = [];
+
+  for (const key of Object.keys(liveEnvPrefillMap) as LiveEnvPrefillKey[]) {
+    const value = prefill?.[key]?.trim();
+    if (value === undefined || value.length === 0) {
+      continue;
+    }
+
+    const envName = liveEnvPrefillMap[key];
+    body = body.replace(
+      new RegExp(`^export ${envName}=.*$`, "m"),
+      `export ${envName}=${shellEnvLiteral(value)}`,
+    );
+    prefilled.push(envName);
+  }
+
+  return { body, prefilled };
+}
 
 function v1EvidenceSkeleton(): Readonly<Record<string, unknown>> {
   return {
@@ -357,6 +434,162 @@ export function liveSetupCommand(options: LiveSetupCommandOptions): LiveSetupCom
     credentialName,
     paths,
   };
+}
+
+export function liveEnvInitCommand(options: LiveEnvInitCommandOptions): LiveEnvInitCommandResult {
+  const templatePath = options.templatePath ?? defaultLiveEnvTemplatePath;
+  const { body, prefilled } = applyLiveEnvPrefill(
+    readFileSync(templatePath, "utf8"),
+    options.prefill,
+  );
+  mkdirSync(dirname(options.path), { recursive: true });
+
+  try {
+    writeFileSync(options.path, body, {
+      encoding: "utf8",
+      flag: options.overwrite === true ? "w" : "wx",
+      mode: 0o600,
+    });
+    chmodSync(options.path, 0o600);
+  } catch (error) {
+    if (
+      options.overwrite !== true &&
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { readonly code?: unknown }).code === "EEXIST"
+    ) {
+      return {
+        ok: false,
+        written: false,
+        path: options.path,
+        error: "Live readiness env already exists. Pass --overwrite to replace it.",
+      };
+    }
+    throw error;
+  }
+
+  return {
+    ok: true,
+    written: true,
+    path: options.path,
+    mode: "0600",
+    templatePath,
+    prefilled,
+  };
+}
+
+export function renderLiveEnvInitCommandResult(result: LiveEnvInitCommandResult): string {
+  const envFilePath = shellQuote(result.path);
+  const nextCommands = [
+    `vivarium setup --env-file ${envFilePath} --domain coding --world-root ../the-world --state-path .vivarium/state.db`,
+    `vivarium setup --env-file ${envFilePath} --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write`,
+    `vivarium model --env-file ${envFilePath}`,
+    "vivarium live evidence-init --path v1-evidence.json",
+    `vivarium doctor --live --env-file ${envFilePath}`,
+  ];
+
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Live Env",
+    "-----------------",
+    `Status: ${result.ok ? "written" : "blocked"}`,
+    `Env file: ${result.path}`,
+    ...(result.ok
+      ? [
+          `Template: ${result.templatePath}`,
+          `Permissions: ${result.mode}`,
+          ...(result.prefilled.length === 0
+            ? []
+            : [`Prefilled: ${result.prefilled.join(", ")}`]),
+          "",
+          "Next commands:",
+          "  [1] Fill live settings",
+          `      Edit ${result.path} locally. Keep it out of git.`,
+          ...renderLaunchSequence(nextCommands, { startAt: 2 }),
+        ]
+      : [`Error: ${result.error}`]),
+    "",
+  ].join("\n");
+}
+
+export function renderLiveEvidenceInitCommandResult(result: LiveEvidenceInitCommandResult): string {
+  const nextCommands = ["vivarium doctor --live --env-file live-readiness.local.env"];
+
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Live Evidence",
+    "----------------------",
+    `Status: ${result.ok ? "written" : "blocked"}`,
+    `Evidence file: ${result.path}`,
+    ...(result.ok
+      ? [
+          `Sections: ${result.sections.length}`,
+          "",
+          "Next commands:",
+          "  [1] Fill evidence manifest",
+          `      Add real artifact links to ${result.path}.`,
+          ...renderLaunchSequence(nextCommands, { startAt: 2 }),
+        ]
+      : [`Error: ${result.error}`]),
+    "",
+  ].join("\n");
+}
+
+function renderList(label: string, values: readonly string[] | undefined): readonly string[] {
+  return values === undefined || values.length === 0 ? [] : [label, ...values.map((value) => `  ${value}`)];
+}
+
+export function renderLiveSetupCommandResult(
+  result: LiveSetupCommandResult,
+  options: { readonly envFilePath?: string } = {},
+): string {
+  const status = result.ok ? "written" : result.requiresConfirmation === true ? "dry run" : "blocked";
+  const envFilePath = shellQuote(options.envFilePath ?? "live-readiness.local.env");
+  const postWriteCommands = [
+    `vivarium model --env-file ${envFilePath}`,
+    `vivarium doctor --live --env-file ${envFilePath}`,
+  ];
+
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Live Setup",
+    "-------------------",
+    `Status: ${status}`,
+    ...(result.ok || result.requiresConfirmation === true
+      ? [
+          `Provider profiles: ${result.providerProfiles?.join(", ") ?? "none"}`,
+          `Credential: ${result.credentialName ?? "none"}`,
+          `Profiles path: ${result.paths?.providerProfilesPath ?? "not set"}`,
+          `Credentials path: ${result.paths?.credentialsPath ?? "not set"}`,
+        ]
+      : [
+          ...renderList("Missing:", result.missing),
+          ...renderList("Placeholders:", result.placeholders),
+          ...renderList("Invalid:", result.invalid),
+        ]),
+    "",
+    ...(result.ok
+      ? [
+          "Next commands:",
+          ...renderLaunchSequence(postWriteCommands),
+        ]
+      : result.requiresConfirmation === true
+        ? [
+            "Next commands:",
+            "  [1] Confirm live writes",
+            `      vivarium live setup --env-file ${envFilePath} --confirm-write`,
+          ]
+        : [
+            "Next commands:",
+            "  [1] Fill live settings",
+            `      Fill ${envFilePath}, then re-run live setup.`,
+          ]),
+    "",
+  ].join("\n");
 }
 
 export function liveEvidenceInitCommand(options: LiveEvidenceInitCommandOptions): LiveEvidenceInitCommandResult {

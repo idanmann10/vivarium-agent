@@ -1,3 +1,5 @@
+import { renderVivariumGlobe } from "./branding.js";
+
 export type DaemonSmokeFetch = (url: string, init: RequestInit) => Promise<Response>;
 
 export interface DaemonSmokeCommandOptions {
@@ -51,4 +53,31 @@ export async function daemonSmokeCommand(options: DaemonSmokeCommandOptions = {}
     const message = error instanceof Error ? error.message : String(error);
     return { ok: false, statusUrl, error: message };
   }
+}
+
+export function renderDaemonSmokeCommandResult(result: DaemonSmokeCommandResult): string {
+  return [
+    renderVivariumGlobe(),
+    "",
+    "Vivarium Daemon Smoke",
+    "---------------------",
+    `Status: ${result.ok ? "ok" : "blocked"}`,
+    `Status URL: ${result.statusUrl}`,
+    ...(result.ok
+      ? [
+          `Daemon: ${result.daemonStatus}`,
+          `Runs: ${result.runs}`,
+          `Confidence buckets: ${result.confidenceBuckets}`,
+          "",
+          "Next command:",
+          "  vivarium doctor --live --env-file live-readiness.local.env",
+        ]
+      : [
+          `Error: ${result.error}`,
+          "",
+          "Next command:",
+          "  Start the daemon, then rerun daemon smoke.",
+        ]),
+    "",
+  ].join("\n");
 }

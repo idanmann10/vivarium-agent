@@ -31,7 +31,7 @@ describe("updateCommand", () => {
 
     const output = renderUpdateCommandResult(result);
     expect(output).toContain("Vivarium Update");
-    expect(output).toContain('.-""""-.');
+    expect(output).toContain("VIVARIUM // local memory // world culture");
     expect(output).toContain("Status: updated");
     expect(output).toContain("Agent root: /tmp/vivarium-agent");
     expect(output).toContain("[ok] git pull");

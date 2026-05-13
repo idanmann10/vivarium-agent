@@ -147,6 +147,17 @@ const conceptDocs = {
   world: ["canonical", "private", "skills", "traces", "runs", "subscriptions"],
 } as const;
 
+function readAfterInstallationBlock(path: string): string {
+  const body = readFileSync(path, "utf8");
+  const marker = "After installation, reload your shell if needed and run:\n\n```bash\n";
+  const start = body.indexOf(marker);
+  expect(start, `${path} should document the after-install command block`).not.toBe(-1);
+  const blockStart = start + marker.length;
+  const blockEnd = body.indexOf("\n```", blockStart);
+  expect(blockEnd, `${path} should close the after-install command block`).not.toBe(-1);
+  return body.slice(blockStart, blockEnd);
+}
+
 const guideDocs = {
   "add-a-primitive": [
     "packages/runtime/src/primitives/<name>/",
@@ -203,6 +214,9 @@ const guideDocs = {
     "bun run knip",
     "VIVARIUM_INSTALL_DIR",
     "VIVARIUM_BIN_DIR",
+    "vivarium run --goal",
+    "--state-path .vivarium/state.db",
+    "vivarium live env-init --path live-readiness.local.env",
     "vivarium help",
     "vivarium status",
     "vivarium update",
@@ -214,7 +228,7 @@ const guideDocs = {
   "live-readiness": [
     "doctor --live",
     "--env-file live-readiness.local.env",
-    "chmod 600 live-readiness.local.env",
+    "live env-init --path live-readiness.local.env",
     "liveEnvFile.permissions:insecure",
     "source live-readiness.local.env",
     "VIVARIUM_CREDENTIALS_MASTER_KEY",
@@ -336,6 +350,16 @@ const topLevelDocs = {
   ],
 } as const;
 
+const installedCliDocs = [
+  "README.md",
+  "docs/guides/add-credentials.md",
+  "docs/guides/configure-providers.md",
+  "docs/guides/deploy-local-compose.md",
+  "docs/guides/fork-the-world-privately.md",
+  "docs/guides/install.md",
+  "docs/guides/live-readiness.md",
+] as const;
+
 const agentRootDocs = {
   "README.md": [
     "Vivarium Agent",
@@ -349,6 +373,12 @@ const agentRootDocs = {
     "brain",
     "hands",
     "session log",
+    "Install in one command",
+    "Terminal-first setup",
+    "What grows over time",
+    "Release boundary",
+    "vivarium live evidence-init --path v1-evidence.json",
+    "flowchart LR",
     "managed-agent-model.md",
     "Quick Start",
     "bun run knip",
@@ -553,6 +583,97 @@ describe("reference docs", () => {
     }
   });
 
+  test("keeps public operator docs on installed CLI commands", () => {
+    for (const path of installedCliDocs) {
+      const body = readFileSync(path, "utf8");
+      expect(body).not.toContain("bun apps/cli/src/main.ts");
+      expect(body).toContain("vivarium ");
+    }
+  });
+
+  test("keeps install docs on the installed live setup sequence", () => {
+    for (const path of ["README.md", join("docs", "guides", "install.md")]) {
+      const block = readAfterInstallationBlock(path);
+      for (const stage of [
+        "# [1] Prove the local loop",
+        "# [2] Prepare live readiness",
+        "# [3] Inspect configured models",
+        "# [4] Prepare live evidence",
+        "# [5] Run the readiness gate",
+        "# [6] Keep moving",
+      ]) {
+        expect(block).toContain(stage);
+      }
+      for (const command of [
+        'vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
+        "vivarium live env-init --path live-readiness.local.env",
+        "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
+        "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write",
+        "vivarium model --env-file live-readiness.local.env",
+        "vivarium live evidence-init --path v1-evidence.json",
+        "vivarium doctor --live --env-file live-readiness.local.env",
+        "vivarium status",
+        "vivarium help",
+        "vivarium update",
+      ]) {
+        expect(block).toContain(command);
+      }
+      expect(block).not.toContain("\nvivarium model\n");
+      expect(block).not.toContain("\nvivarium doctor\n");
+      expect(block).not.toContain("\nvivarium setup\n");
+    }
+  });
+
+  test("documents installed CLI terminal color controls", () => {
+    for (const path of ["README.md", join("docs", "guides", "install.md")]) {
+      const body = readFileSync(path, "utf8");
+      for (const term of [
+        "VIVARIUM_COLOR=always",
+        "VIVARIUM_COLOR=never",
+        "VIVARIUM_THEME=matrix",
+        "VIVARIUM_THEME=amber",
+        "NO_COLOR",
+        "FORCE_COLOR",
+      ]) {
+        expect(body).toContain(term);
+      }
+    }
+  });
+
+  test("documents live env init public prefill flags", () => {
+    for (const path of ["README.md", join("docs", "guides", "install.md")]) {
+      const body = readFileSync(path, "utf8");
+      for (const term of [
+        "--github-owner",
+        "--agent-repo",
+        "--world-repo",
+        "--canonical-world-ref",
+        "--private-world-ref",
+      ]) {
+        expect(body).toContain(term);
+      }
+    }
+  });
+
+  test("documents the launch security branch protection terminal workflow", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+
+    for (const term of [
+      "Launch Security Audit",
+      "bun run launch:security-audit",
+      "branches/main/protection",
+      "required_status_checks",
+      "VIVARIUM_AGENT_REPO_NAME",
+      "VIVARIUM_WORLD_REPO_NAME",
+      "Require pull request reviews",
+      "Require status checks to pass",
+      "Block force pushes",
+      "Block deletions",
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
+
   test("keeps guide pages free of placeholder wording", () => {
     for (const doc of Object.keys(guideDocs)) {
       const body = readFileSync(join("docs", "guides", `${doc}.md`), "utf8");
@@ -566,10 +687,13 @@ describe("reference docs", () => {
     const body = existsSync(path) ? readFileSync(path, "utf8") : "";
     expect(body).toContain("doctor --live");
     expect(body).toContain("--env-file live-readiness.local.env");
-    expect(body).toContain("chmod 600 live-readiness.local.env");
+    expect(body).toContain("live env-init --path live-readiness.local.env");
     expect(body).toContain("source live-readiness.local.env");
     expect(body).toContain("Do not commit");
     expect(body).toContain("live-readiness.local.env");
+    expect(body).toContain("vivarium live env-init --path live-readiness.local.env");
+    expect(body).toContain("vivarium doctor --live");
+    expect(body).not.toContain("bun apps/cli/src/main.ts");
     for (const envVar of liveReadinessEnvVars) {
       expect(body).toContain(`export ${envVar}=`);
     }

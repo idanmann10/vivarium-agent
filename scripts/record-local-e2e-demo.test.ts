@@ -34,11 +34,14 @@ describe("local e2e demo recorder", () => {
     expect(JSON.parse(headerLine ?? "")).toMatchObject({ version: 2, width: 120, height: 36, timestamp: 0 });
 
     const text = eventLines.map((line) => JSON.parse(line)[2]).join("");
-    expect(text).toContain("$ bun apps/cli/src/main.ts init");
-    expect(text).toContain("$ bun apps/cli/src/main.ts run");
-    expect(text).toContain("$ bun apps/cli/src/main.ts world transmission-smoke");
+    expect(text).toContain("$ vivarium init");
+    expect(text).toContain("$ vivarium run");
+    expect(text).toContain("$ vivarium world transmission-smoke");
     expect(text).toContain("$ bun run verify:sqlite-stack");
-    expect(text).toContain('"ok": true');
+    expect(text).not.toContain("bun apps/cli/src/main.ts");
+    expect(text).toContain("Vivarium World Transmission");
+    expect(text).toContain("Status: ok");
+    expect(text).toContain('"ok":true');
     expect(text).toContain('"engine":"better-sqlite3"');
     expect(text).toContain("<demo-state.db>");
     expect(text).toContain("<demo-world-second-install>");

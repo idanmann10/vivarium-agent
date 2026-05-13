@@ -1,4 +1,4 @@
-import { mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
@@ -7,6 +7,15 @@ import { agentId, episodeId, runId, skillId } from "../../core/src/index.js";
 import { SQLiteStateRepository } from "./sqlite-repository.js";
 
 describe("SQLiteStateRepository", () => {
+  test("creates parent directories for state database files", () => {
+    const dbPath = join(mkdtempSync(join(tmpdir(), "agent-state-parent-")), "nested", "state.db");
+
+    const state = new SQLiteStateRepository(dbPath);
+    state.close();
+
+    expect(existsSync(dbPath)).toBe(true);
+  });
+
   test("persists all local state across repository instances", () => {
     const dbPath = join(mkdtempSync(join(tmpdir(), "agent-state-")), "state.db");
     const run = runId("run-sqlite");

@@ -30,6 +30,14 @@ export interface LaunchSecurityAudit {
   readonly ok: boolean;
   readonly blockers: readonly string[];
   readonly manualDecisions: readonly string[];
+  readonly nextActions: readonly LaunchSecurityNextAction[];
+}
+
+export interface LaunchSecurityNextAction {
+  readonly check: string;
+  readonly summary: string;
+  readonly guide: string;
+  readonly command: string;
 }
 
 interface GhApiOk {
@@ -244,9 +252,10 @@ function pushAlertBlocker(
 
 function analyzeRepository(
   repo: RepositorySecurityEvidence,
-): Pick<LaunchSecurityAudit, "blockers" | "manualDecisions"> {
+): Pick<LaunchSecurityAudit, "blockers" | "manualDecisions" | "nextActions"> {
   const blockers: string[] = [];
   const manualDecisions: string[] = [];
+  const nextActions: LaunchSecurityNextAction[] = [];
 
   if (repo.private || repo.visibility !== "public") {
     blockers.push(`${repo.name}.visibility:${repo.visibility}`);
@@ -277,10 +286,18 @@ function analyzeRepository(
   pushAlertBlocker(blockers, repo, "codeScanningAlerts");
 
   if (repo.branchProtection !== "enabled" && repo.rulesets === 0) {
-    manualDecisions.push(`${repo.name}.branchProtectionOrRulesets:decision-required`);
+    const check = `${repo.name}.branchProtectionOrRulesets:decision-required`;
+    manualDecisions.push(check);
+    nextActions.push({
+      check,
+      summary:
+        "Get owner approval, then enable main branch protection or a repository ruleset for this public repo.",
+      guide: "docs/guides/live-readiness.md#launch-security-audit",
+      command: `gh api --method PUT "repos/$VIVARIUM_GITHUB_OWNER/${repo.name}/branches/main/protection" --input <branch-protection.json`,
+    });
   }
 
-  return { blockers, manualDecisions };
+  return { blockers, manualDecisions, nextActions };
 }
 
 export function analyzeLaunchSecurity(evidence: LaunchSecurityEvidence): LaunchSecurityAudit {
@@ -288,11 +305,13 @@ export function analyzeLaunchSecurity(evidence: LaunchSecurityEvidence): LaunchS
   const world = analyzeRepository(evidence.world);
   const blockers = [...agent.blockers, ...world.blockers];
   const manualDecisions = [...agent.manualDecisions, ...world.manualDecisions];
+  const nextActions = [...agent.nextActions, ...world.nextActions];
 
   return {
     ok: blockers.length === 0 && manualDecisions.length === 0,
     blockers,
     manualDecisions,
+    nextActions,
   };
 }
 
