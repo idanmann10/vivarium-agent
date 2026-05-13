@@ -17,6 +17,10 @@ export function helpCommand(): HelpCommandResult {
       { command: "vivarium doctor", description: "Run offline readiness checks." },
       { command: "vivarium model", description: "Show configured provider profiles." },
       {
+        command: "vivarium live env-init --path live-readiness.local.env",
+        description: "Create a private live setup env file.",
+      },
+      {
         command: "vivarium update",
         description: "Pull the latest agent and refresh dependencies.",
       },
@@ -31,7 +35,8 @@ export function helpCommand(): HelpCommandResult {
 }
 
 export function renderHelpCommandResult(result: HelpCommandResult): string {
-  const rows = result.commands.map((item) => `  ${item.command.padEnd(52)} ${item.description}`);
+  const commandWidth = Math.max(52, ...result.commands.map((item) => item.command.length)) + 2;
+  const rows = result.commands.map((item) => `  ${item.command.padEnd(commandWidth)}${item.description}`);
 
   return [
     renderVivariumGlobe(),
@@ -41,6 +46,7 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
     "",
     "First run",
     "  vivarium setup                                      Initialize the agent.",
+    "  vivarium live env-init --path live-readiness.local.env",
     "  vivarium doctor                                     Check readiness.",
     "  vivarium model                                      Show provider setup.",
     "",
