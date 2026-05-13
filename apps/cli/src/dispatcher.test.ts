@@ -73,6 +73,16 @@ describe("dispatchCliCommand", () => {
     }
   });
 
+  test("routes command-level help flags to the safe command guide", async () => {
+    const result = await dispatchCliCommand(["run", "--help"]);
+
+    expect(result.command).toBe("help");
+    expect(result.output).toContain("Vivarium Agent");
+    expect(result.output).toContain("Commands");
+    expect(result.output).toContain("vivarium setup");
+    expect(result.output).toContain("vivarium run --goal");
+  });
+
   test("routes update through the installed checkout updater", async () => {
     const calls: string[] = [];
     const result = await dispatchCliCommand(["update", "--agent-root", "/tmp/vivarium-agent"], {

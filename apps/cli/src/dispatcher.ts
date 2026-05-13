@@ -243,6 +243,10 @@ export async function dispatchCliCommand(
 
   const commandArgs = (subcommand?.startsWith("--") ?? true) ? argv.slice(1) : rest;
   const { flags } = parseFlags(commandArgs);
+  if (flags.has("help") || flags.has("h")) {
+    const result = helpCommand();
+    return { command: "help", result, output: renderHelpCommandResult(result) };
+  }
 
   switch (command) {
     case "help": {
