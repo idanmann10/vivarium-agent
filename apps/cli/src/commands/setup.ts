@@ -1,4 +1,5 @@
 import type { InitCommandResult } from "./init.js";
+import { renderVivariumGlobe } from "./branding.js";
 import { runInitCommand } from "./init.js";
 import type { LiveSetupCommandResult } from "./live.js";
 import { liveSetupCommand } from "./live.js";
@@ -23,7 +24,10 @@ function shellQuote(value: string): string {
   return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
 }
 
-function commandWithFlags(command: string, flags: Readonly<Record<string, string | boolean | undefined>>): string {
+function commandWithFlags(
+  command: string,
+  flags: Readonly<Record<string, string | boolean | undefined>>,
+): string {
   const args = Object.entries(flags).flatMap(([name, value]) => {
     if (value === undefined || value === false) {
       return [];
@@ -33,7 +37,11 @@ function commandWithFlags(command: string, flags: Readonly<Record<string, string
   return ["bun", "apps/cli/src/main.ts", command, ...args].join(" ");
 }
 
-function setupNextCommands(options: SetupCommandOptions, local: InitCommandResult, live: LiveSetupCommandResult | undefined): readonly string[] {
+function setupNextCommands(
+  options: SetupCommandOptions,
+  local: InitCommandResult,
+  live: LiveSetupCommandResult | undefined,
+): readonly string[] {
   const runCommand = commandWithFlags("run", {
     goal: "validate local setup",
     domain: options.primaryDomain,
@@ -49,7 +57,11 @@ function setupNextCommands(options: SetupCommandOptions, local: InitCommandResul
     return [runCommand, doctorCommand];
   }
 
-  if (options.envFilePath !== undefined && live?.ok === false && live.requiresConfirmation === true) {
+  if (
+    options.envFilePath !== undefined &&
+    live?.ok === false &&
+    live.requiresConfirmation === true
+  ) {
     return [
       runCommand,
       commandWithFlags("setup", {
@@ -96,18 +108,6 @@ export function setupCommand(options: SetupCommandOptions): SetupCommandResult {
   };
 }
 
-function renderGlobe(): string {
-  return [
-    "          .-\"\"\"\"-.",
-    "       .-'  .--.  '-.",
-    "      /   .' VI '.   \\",
-    "     |    | VAR |    |",
-    "      \\   '.IUM.'   /",
-    "       '-.  '--'  .-'",
-    "          '-.__.-'",
-  ].join("\n");
-}
-
 function renderLiveSummary(live: LiveSetupCommandResult | undefined): readonly string[] {
   if (live === undefined) {
     return ["Live setup: env file not provided"];
@@ -140,7 +140,7 @@ function renderLiveSummary(live: LiveSetupCommandResult | undefined): readonly s
 
 export function renderSetupCommandResult(result: SetupCommandResult): string {
   const lines = [
-    renderGlobe(),
+    renderVivariumGlobe(),
     "",
     "Vivarium Setup",
     "--------------",

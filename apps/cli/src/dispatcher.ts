@@ -43,7 +43,7 @@ import {
 import { runCommand, type RunProviderKind } from "./commands/run.js";
 import { renderSetupCommandResult, setupCommand } from "./commands/setup.js";
 import { listSkillsCommand } from "./commands/skills.js";
-import { statusCommand } from "./commands/status.js";
+import { renderStatusCommandResult, statusCommand } from "./commands/status.js";
 import { updateCommand, type UpdateCommandRunner } from "./commands/update.js";
 import {
   listWorldSubscriptionsCommand,
@@ -697,8 +697,10 @@ export async function dispatchCliCommand(
 
       usage('Unknown live subcommand. Use "setup" or "evidence-init".');
     }
-    case "status":
-      return output(command, statusCommand());
+    case "status": {
+      const result = statusCommand();
+      return { command, result, output: renderStatusCommandResult(result) };
+    }
     case "update": {
       return output(
         command,

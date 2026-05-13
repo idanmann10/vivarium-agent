@@ -220,7 +220,13 @@ describe("dispatchCliCommand", () => {
     await expect(dispatchCliCommand(["status"])).resolves.toMatchObject({
       command: "status",
       result: { repo: "the-agent", runtime: "offline-local" },
+      output: expect.stringContaining("Vivarium Status"),
     });
+    const status = await dispatchCliCommand(["status"]);
+    expect(status.output).toContain('.-""""-.');
+    expect(status.output).toContain("Repository: the-agent");
+    expect(status.output).toContain("vivarium doctor");
+
     await expect(dispatchCliCommand(["doctor"])).resolves.toMatchObject({
       command: "doctor",
       result: { ok: true },

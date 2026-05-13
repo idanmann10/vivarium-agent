@@ -1,3 +1,5 @@
+import { renderVivariumGlobe } from "./branding.js";
+
 export interface HelpCommandItem {
   readonly command: string;
   readonly description: string;
@@ -31,13 +33,7 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
   const rows = result.commands.map((item) => `  ${item.command.padEnd(52)} ${item.description}`);
 
   return [
-    '          .-""""-.',
-    "       .-'  .--.  '-.",
-    "      /   .' VI '.   \\",
-    "     |    | VAR |    |",
-    "      \\   '.IUM.'   /",
-    "       '-.  '--'  .-'",
-    "          '-.__.-'",
+    renderVivariumGlobe(),
     "",
     "Vivarium Agent",
     "--------------",
