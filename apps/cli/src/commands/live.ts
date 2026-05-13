@@ -492,6 +492,10 @@ export function renderLiveSetupCommandResult(
 ): string {
   const status = result.ok ? "written" : result.requiresConfirmation === true ? "dry run" : "blocked";
   const envFilePath = shellQuote(options.envFilePath ?? "live-readiness.local.env");
+  const postWriteCommands = [
+    `vivarium model --env-file ${envFilePath}`,
+    `vivarium doctor --live --env-file ${envFilePath}`,
+  ];
 
   return [
     renderVivariumGlobe(),
@@ -515,17 +519,18 @@ export function renderLiveSetupCommandResult(
     ...(result.ok
       ? [
           "Next commands:",
-          `  vivarium model --env-file ${envFilePath}`,
-          `  vivarium doctor --live --env-file ${envFilePath}`,
+          ...renderLaunchSequence(postWriteCommands),
         ]
       : result.requiresConfirmation === true
         ? [
-            "Next command:",
-            `  vivarium live setup --env-file ${envFilePath} --confirm-write`,
+            "Next commands:",
+            "  [1] Confirm live writes",
+            `      vivarium live setup --env-file ${envFilePath} --confirm-write`,
           ]
         : [
-            "Next command:",
-            `  Fill ${envFilePath}, then re-run live setup.`,
+            "Next commands:",
+            "  [1] Fill live settings",
+            `      Fill ${envFilePath}, then re-run live setup.`,
           ]),
     "",
   ].join("\n");

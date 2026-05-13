@@ -1489,6 +1489,7 @@ describe("dispatchCliCommand", () => {
     expect(dryRun.output).toContain("Status: dry run");
     expect(dryRun.output).toContain("anthropic-main");
     expect(dryRun.output).toContain("--confirm-write");
+    expect(dryRun.output).toContain("[1] Confirm live writes");
     expect(dryRun.output).toContain(`vivarium live setup --env-file ${envPath} --confirm-write`);
     expect(dryRun.output).not.toContain("anthropic-secret");
     expect(dryRun.output.trim().startsWith("{")).toBe(false);
@@ -1537,6 +1538,7 @@ describe("dispatchCliCommand", () => {
       },
     });
     expect(result.output).toContain(`Fill ${envPath}, then re-run live setup.`);
+    expect(result.output).toContain("[1] Fill live settings");
     expect(result.output).not.toContain("Fill live-readiness.local.env");
     expect(existsSync(profilesPath)).toBe(false);
     expect(existsSync(credentialsPath)).toBe(false);
