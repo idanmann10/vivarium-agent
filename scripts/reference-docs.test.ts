@@ -630,6 +630,8 @@ describe("reference docs", () => {
       for (const term of [
         "VIVARIUM_COLOR=always",
         "VIVARIUM_COLOR=never",
+        "VIVARIUM_THEME=matrix",
+        "VIVARIUM_THEME=amber",
         "NO_COLOR",
         "FORCE_COLOR",
       ]) {

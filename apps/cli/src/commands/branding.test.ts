@@ -3,6 +3,16 @@ import { describe, expect, test } from "bun:test";
 import { applyVivariumTerminalTheme, renderVivariumGlobe } from "./branding.js";
 
 describe("Vivarium terminal branding", () => {
+  test("renders a dense ASCII art terminal wordmark", () => {
+    const mark = renderVivariumGlobe();
+
+    expect(mark).toContain("__      __");
+    expect(mark).toContain("VIVARIUM // local memory // world culture");
+    expect(
+      [...mark].every((character) => character === "\n" || character.charCodeAt(0) <= 126),
+    ).toBe(true);
+  });
+
   test("keeps redirected output plain by default", () => {
     const output = `${renderVivariumGlobe()}\n\nVivarium Agent\n--------------\n`;
 
@@ -35,6 +45,21 @@ describe("Vivarium terminal branding", () => {
     expect(themed).toContain(
       '\u001b[36m      vivarium run --goal "validate local setup"\u001b[0m',
     );
+  });
+
+  test("supports amber and matrix ASCII art palettes", () => {
+    const output = `${renderVivariumGlobe()}\n\nVivarium Setup\n--------------\n`;
+
+    expect(
+      applyVivariumTerminalTheme(output, {
+        env: { VIVARIUM_COLOR: "always", VIVARIUM_THEME: "amber" },
+      }),
+    ).toContain("\u001b[33m __      __");
+    expect(
+      applyVivariumTerminalTheme(output, {
+        env: { VIVARIUM_COLOR: "always", VIVARIUM_THEME: "matrix" },
+      }),
+    ).toContain("\u001b[32m __      __");
   });
 
   test("honors NO_COLOR and FORCE_COLOR overrides", () => {

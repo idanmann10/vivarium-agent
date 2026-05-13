@@ -7,18 +7,17 @@
 ![Local first](https://img.shields.io/badge/local--first-memory-2f855a)
 ![Live gate](https://img.shields.io/badge/live%20gate-doctor--live-805ad5)
 
-Hermes-shaped local agent runtime: memory, tools, providers, Dream consolidation, world retrieval, and a terminal setup path that tells operators exactly what to do next.
+Hermes-shaped local-first agent runtime: memory, tools, providers, Dream consolidation, world retrieval, and a terminal setup path that tells operators exactly what to do next.
 
 Vivarium Agent is the per-user runtime for the Vivarium system. It runs goals through typed primitives, records episodes in local state, retrieves skills and traces from subscribed worlds, consolidates experience through Dream, and exposes local operations through CLI, daemon, and MCP-style surfaces.
 
 ```text
-          .-""""-.
-       .-'  .--.  '-.
-      /   .' VI '.   \
-     |    | VAR |    |    vivarium setup
-      \   '.IUM.'   /     terminal-first, local-first
-       '-.  '--'  .-'
-          '-.__.-'
+ __      __ _____ __      __    _     ____  ___  _   _  __  __
+ \ \    / /|_   _|\ \    / /   / \   |  _ \|_ _|| | | ||  \/  |
+  \ \  / /   | |   \ \  / /   / _ \  | |_) || | | | | || |\/| |
+   \ \/ /    | |    \ \/ /   / ___ \ |  _ < | | | |_| || |  | |
+    \__/    |____|   \__/   /_/   \_\|_| \_\___| \___/ |_|  |_|
+            VIVARIUM // local memory // world culture
 ```
 
 ## Quick Start: Install in one command
@@ -31,7 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scri
 
 Use `VIVARIUM_INSTALL_DIR`, `VIVARIUM_WORLD_ROOT`, `VIVARIUM_DOMAIN`, and `VIVARIUM_STATE_PATH` to override the default install layout. Use `VIVARIUM_BIN_DIR` to choose where the `vivarium` command is written.
 
-Interactive terminals use the branded ANSI theme automatically. Set `VIVARIUM_COLOR=always` to force it, `VIVARIUM_COLOR=never` or `NO_COLOR` to disable it, or `FORCE_COLOR=1` when a wrapper strips TTY detection.
+Interactive terminals use the branded ANSI theme automatically. Set `VIVARIUM_COLOR=always` to force it, `VIVARIUM_COLOR=never` or `NO_COLOR` to disable it, or `FORCE_COLOR=1` when a wrapper strips TTY detection. Set `VIVARIUM_THEME=matrix` or `VIVARIUM_THEME=amber` for alternate ASCII-art palettes.
 
 ## Terminal-first setup
 

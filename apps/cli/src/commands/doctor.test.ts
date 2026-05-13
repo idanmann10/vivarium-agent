@@ -577,7 +577,7 @@ describe("doctorCommand", () => {
     const output = renderDoctorCommandResult(doctorCommand());
 
     expect(output).toContain("Vivarium Doctor");
-    expect(output).toContain('.-""""-.');
+    expect(output).toContain("VIVARIUM // local memory // world culture");
     expect(output).toContain("Readiness: ready");
     expect(output).toContain("Checks: 3 passing, 0 blocked");
     expect(output).toContain("[ok] state:in-memory");

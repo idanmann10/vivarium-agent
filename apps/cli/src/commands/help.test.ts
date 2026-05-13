@@ -25,7 +25,7 @@ describe("helpCommand", () => {
       ]),
     );
     expect(output).toContain("Vivarium Agent");
-    expect(output).toContain('.-""""-.');
+    expect(output).toContain("VIVARIUM // local memory // world culture");
     expect(output).toContain("First run");
     expect(output).toContain("vivarium setup");
     expect(output).toContain('vivarium run --goal "validate local setup"');

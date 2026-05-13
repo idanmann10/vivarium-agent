@@ -9,7 +9,7 @@ describe("statusCommand", () => {
 
     expect(result).toEqual({ repo: "the-agent", runtime: "offline-local" });
     expect(output).toContain("Vivarium Status");
-    expect(output).toContain('.-""""-.');
+    expect(output).toContain("VIVARIUM // local memory // world culture");
     expect(output).toContain("Repository: the-agent");
     expect(output).toContain("Runtime: offline-local");
     expect(output).toContain("vivarium setup");

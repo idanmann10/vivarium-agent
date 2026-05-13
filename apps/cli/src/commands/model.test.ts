@@ -41,7 +41,7 @@ describe("modelCommand", () => {
       ],
     });
     expect(output).toContain("Vivarium Model");
-    expect(output).toContain('.-""""-.');
+    expect(output).toContain("VIVARIUM // local memory // world culture");
     expect(output).toContain("Status: configured");
     expect(output).toContain("Profiles path:");
     expect(output).toContain("[ok] openrouter");

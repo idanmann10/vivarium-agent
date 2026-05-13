@@ -105,7 +105,7 @@ describe("CLI entrypoint boundary", () => {
     expect(result.exitCode).toBe(1);
     expect(result.stdout.toString()).toBe("");
     expect(stderr).toContain("Vivarium Error");
-    expect(stderr).toContain('.-""""-.');
+    expect(stderr).toContain("VIVARIUM // local memory // world culture");
     expect(stderr).toContain("Message: Missing required --goal");
     expect(stderr).toContain("Next command:");
     expect(stderr).toContain("vivarium help");

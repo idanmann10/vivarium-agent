@@ -1,12 +1,11 @@
 export function renderVivariumGlobe(): string {
   return [
-    '          .-""""-.',
-    "       .-'  .--.  '-.",
-    "      /   .' VI '.   \\",
-    "     |    | VAR |    |",
-    "      \\   '.IUM.'   /",
-    "       '-.  '--'  .-'",
-    "          '-.__.-'",
+    " __      __ _____ __      __    _     ____  ___  _   _  __  __",
+    " \\ \\    / /|_   _|\\ \\    / /   / \\   |  _ \\|_ _|| | | ||  \\/  |",
+    "  \\ \\  / /   | |   \\ \\  / /   / _ \\  | |_) || | | | | || |\\/| |",
+    "   \\ \\/ /    | |    \\ \\/ /   / ___ \\ |  _ < | | | |_| || |  | |",
+    "    \\__/    |____|   \\__/   /_/   \\_\\|_| \\_\\___| \\___/ |_|  |_|",
+    "            VIVARIUM // local memory // world culture",
   ].join("\n");
 }
 
@@ -48,15 +47,13 @@ const ansi = {
   yellow: "\u001b[33m",
 } as const;
 
-const globePalette = [
-  ansi.cyan,
-  ansi.cyan,
-  ansi.blue,
-  ansi.magenta,
-  ansi.blue,
-  ansi.cyan,
-  ansi.gold,
-] as const;
+type VivariumTerminalThemeName = "vivarium" | "amber" | "matrix";
+
+const globePalettes: Record<VivariumTerminalThemeName, readonly string[]> = {
+  vivarium: [ansi.cyan, ansi.cyan, ansi.blue, ansi.magenta, ansi.blue, ansi.gold],
+  amber: [ansi.gold, ansi.gold, ansi.yellow, ansi.gold, ansi.yellow, ansi.gold],
+  matrix: [ansi.green, ansi.green, ansi.green, ansi.green, ansi.green, ansi.green],
+} as const;
 
 function paint(text: string, style: string): string {
   return `${style}${text}${ansi.reset}`;
@@ -81,6 +78,11 @@ function shouldUseTerminalColor(options: VivariumTerminalThemeOptions): boolean 
   return options.isTty === true;
 }
 
+function terminalThemeName(env: Readonly<Record<string, string | undefined>>): VivariumTerminalThemeName {
+  const theme = env.VIVARIUM_THEME?.toLowerCase();
+  return theme === "amber" || theme === "matrix" ? theme : "vivarium";
+}
+
 export function applyVivariumTerminalTheme(
   output: string,
   options: VivariumTerminalThemeOptions = {},
@@ -90,6 +92,7 @@ export function applyVivariumTerminalTheme(
   }
 
   const globeLines = renderVivariumGlobe().split("\n");
+  const globePalette = globePalettes[terminalThemeName(options.env ?? {})];
   return output
     .split("\n")
     .map((line) => {

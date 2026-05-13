@@ -19,6 +19,7 @@ Environment:
   VIVARIUM_DOMAIN             Initial setup domain.
   VIVARIUM_STATE_PATH         State database path relative to the agent checkout.
   VIVARIUM_COLOR              Set to always or never to control ANSI output.
+  VIVARIUM_THEME              Set to matrix or amber for alternate ASCII palettes.
 
 Example:
   curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash
@@ -110,14 +111,42 @@ paint_line() {
   printf '%s\n' "$text"
 }
 
+theme_line_style() {
+  local index="$1"
+
+  case "${VIVARIUM_THEME:-vivarium}" in
+    matrix)
+      printf '32'
+      ;;
+    amber)
+      printf '33'
+      ;;
+    *)
+      case "$index" in
+        1 | 2)
+          printf '36'
+          ;;
+        3 | 5)
+          printf '34'
+          ;;
+        4)
+          printf '35'
+          ;;
+        *)
+          printf '33'
+          ;;
+      esac
+      ;;
+  esac
+}
+
 banner() {
-  paint_line 36 '          .-""""-.'
-  paint_line 36 "       .-'  .--.  '-."
-  paint_line 34 "      /   .' VI '.   \\"
-  paint_line 35 "     |    | VAR |    |"
-  paint_line 34 "      \\   '.IUM.'   /"
-  paint_line 36 "       '-.  '--'  .-'"
-  paint_line 33 "          '-.__.-'"
+  paint_line "$(theme_line_style 1)" ' __      __ _____ __      __    _     ____  ___  _   _  __  __'
+  paint_line "$(theme_line_style 2)" ' \ \    / /|_   _|\ \    / /   / \   |  _ \|_ _|| | | ||  \/  |'
+  paint_line "$(theme_line_style 3)" '  \ \  / /   | |   \ \  / /   / _ \  | |_) || | | | | || |\/| |'
+  paint_line "$(theme_line_style 4)" '   \ \/ /    | |    \ \/ /   / ___ \ |  _ < | | | |_| || |  | |'
+  paint_line "$(theme_line_style 5)" '    \__/    |____|   \__/   /_/   \_\|_| \_\___| \___/ |_|  |_|'
+  paint_line "$(theme_line_style 6)" '            VIVARIUM // local memory // world culture'
   echo
   paint_line "1;36" "Vivarium Agent Installer"
   echo "------------------------"

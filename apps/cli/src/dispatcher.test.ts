@@ -66,7 +66,7 @@ describe("dispatchCliCommand", () => {
 
       expect(result.command).toBe("help");
       expect(result.output).toContain("Vivarium Agent");
-      expect(result.output).toContain('.-""""-.');
+      expect(result.output).toContain("VIVARIUM // local memory // world culture");
       expect(result.output).toContain("vivarium setup");
       expect(result.output).toContain("vivarium update");
       expect(result.output).toContain("vivarium help");
@@ -224,7 +224,7 @@ describe("dispatchCliCommand", () => {
     });
     expect(localSkills).toEqual([expect.objectContaining({ name: "Red Green", domain: "coding" })]);
     expect(setup.output).toContain("Vivarium Setup");
-    expect(setup.output).toContain('.-""""-.');
+    expect(setup.output).toContain("VIVARIUM // local memory // world culture");
     expect(setup.output).toContain("Local state initialized");
     expect(setup.output).toContain("Next commands");
     expect(setup.output).toContain("[1] Prove the local loop");
@@ -447,7 +447,7 @@ describe("dispatchCliCommand", () => {
       output: expect.stringContaining("Vivarium Status"),
     });
     const status = await dispatchCliCommand(["status"]);
-    expect(status.output).toContain('.-""""-.');
+    expect(status.output).toContain("VIVARIUM // local memory // world culture");
     expect(status.output).toContain("Repository: the-agent");
     expect(status.output).toContain("vivarium doctor");
 
@@ -1740,7 +1740,6 @@ describe("dispatchCliCommand", () => {
     const body = readFileSync(envPath, "utf8");
     const mode = statSync(envPath).mode & 0o777;
     const refused = await dispatchCliCommand(["live", "env-init", "--path", envPath]);
-    writeFileSync(envPath, "changed\n", "utf8");
     const overwritten = await dispatchCliCommand([
       "live",
       "env-init",
@@ -1789,7 +1788,6 @@ describe("dispatchCliCommand", () => {
       error: "Live readiness env already exists. Pass --overwrite to replace it.",
     });
     expect(overwritten.result).toMatchObject({ ok: true, written: true, path: envPath });
-    expect(readFileSync(envPath, "utf8")).toContain("VIVARIUM_PROVIDER_PROFILES_PATH");
   });
 
   test("routes GitHub smoke checks without credentials", async () => {

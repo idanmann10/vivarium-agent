@@ -28,7 +28,7 @@ describe("install.sh", () => {
 
     expect(result.exitCode).toBe(0);
     expect(stdout).toContain("Vivarium Agent Installer");
-    expect(stdout).toContain('.-""""-.');
+    expect(stdout).toContain("VIVARIUM // local memory // world culture");
     expect(stdout).toContain("Install directory: /tmp/vivarium-agent-install");
     expect(stdout).toContain("Command path: /tmp/vivarium-bin/vivarium");
     expect(stdout).toContain("Repository: https://github.com/example/vivarium-agent.git");
@@ -92,6 +92,14 @@ describe("install.sh", () => {
 
   test("prints a branded ANSI installer when color is forced", () => {
     const forced = runInstallerDryRun({ FORCE_COLOR: "1" }).stdout.toString();
+    const matrix = runInstallerDryRun({
+      FORCE_COLOR: "1",
+      VIVARIUM_THEME: "matrix",
+    }).stdout.toString();
+    const amber = runInstallerDryRun({
+      FORCE_COLOR: "1",
+      VIVARIUM_THEME: "amber",
+    }).stdout.toString();
     const disabled = runInstallerDryRun({
       FORCE_COLOR: "1",
       VIVARIUM_COLOR: "never",
@@ -99,6 +107,8 @@ describe("install.sh", () => {
 
     expect(forced).toContain("\u001b[");
     expect(forced).toContain("\u001b[1;36mVivarium Agent Installer\u001b[0m");
+    expect(matrix).toContain("\u001b[32m __      __");
+    expect(amber).toContain("\u001b[33m __      __");
     expect(disabled).not.toContain("\u001b[");
   });
 
@@ -111,6 +121,7 @@ describe("install.sh", () => {
     expect(source).toContain("VIVARIUM_REPO_URL");
     expect(source).toContain("VIVARIUM_INSTALL_DIR");
     expect(source).toContain("VIVARIUM_BIN_DIR");
+    expect(source).toContain("VIVARIUM_THEME");
     expect(source).toContain('bun apps/cli/src/main.ts "$@"');
   });
 });
