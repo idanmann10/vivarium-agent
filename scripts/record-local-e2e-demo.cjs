@@ -41,59 +41,56 @@ function sanitize(text) {
   );
 }
 
+function localCliStep(args) {
+  return {
+    command: "bun",
+    args: ["apps/cli/src/main.ts", ...args],
+    displayCommand: "vivarium",
+    displayArgs: args,
+  };
+}
+
 const steps = [
-  {
-    command: "bun",
-    args: [
-      "apps/cli/src/main.ts",
-      "init",
-      "--domain",
-      "coding",
-      "--world-root",
-      worldRoot,
-      "--state-path",
-      statePath,
-      "--provider",
-      "anthropic:claude",
-      "--credential",
-      "internal-api",
-    ],
-  },
-  {
-    command: "bun",
-    args: [
-      "apps/cli/src/main.ts",
-      "run",
-      "--goal",
-      "validate local cultural transmission",
-      "--domain",
-      "coding",
-      "--world-root",
-      worldRoot,
-      "--state-path",
-      statePath,
-    ],
-  },
-  {
-    command: "bun",
-    args: [
-      "apps/cli/src/main.ts",
-      "world",
-      "transmission-smoke",
-      "--remote",
-      worldRoot,
-      "--destination",
-      pullDestination,
-      "--ref",
-      "main",
-      "--domain",
-      "coding",
-      "--query",
-      "test before implementation",
-      "--limit",
-      "2",
-    ],
-  },
+  localCliStep([
+    "init",
+    "--domain",
+    "coding",
+    "--world-root",
+    worldRoot,
+    "--state-path",
+    statePath,
+    "--provider",
+    "anthropic:claude",
+    "--credential",
+    "internal-api",
+  ]),
+  localCliStep([
+    "run",
+    "--goal",
+    "validate local cultural transmission",
+    "--domain",
+    "coding",
+    "--world-root",
+    worldRoot,
+    "--state-path",
+    statePath,
+  ]),
+  localCliStep([
+    "world",
+    "transmission-smoke",
+    "--remote",
+    worldRoot,
+    "--destination",
+    pullDestination,
+    "--ref",
+    "main",
+    "--domain",
+    "coding",
+    "--query",
+    "test before implementation",
+    "--limit",
+    "2",
+  ]),
   {
     command: "bun",
     args: ["run", "verify:sqlite-stack"],
@@ -112,7 +109,9 @@ const lines = [
 
 let time = 0;
 for (const step of steps) {
-  lines.push(event(time, sanitize(`$ ${commandText(step.command, step.args)}\n`)));
+  lines.push(
+    event(time, sanitize(`$ ${commandText(step.displayCommand ?? step.command, step.displayArgs ?? step.args)}\n`)),
+  );
   time += 0.08;
 
   const result = spawnSync(step.command, step.args, { cwd: repoRoot, encoding: "utf8" });
