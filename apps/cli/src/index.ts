@@ -118,6 +118,10 @@ export {
   githubPullRequestCommand,
   githubSmokeCommand,
   githubWorkflowRunsCommand,
+  renderGitHubDiscussionCommandResult,
+  renderGitHubPullRequestCommandResult,
+  renderGitHubSmokeCommandResult,
+  renderGitHubWorkflowRunsCommandResult,
 } from "./commands/github.js";
 export type {
   GitHubDiscussionCommandOptions,

@@ -41,6 +41,10 @@ describe("CLI public API", () => {
     expect(typeof exports.renderAddCredentialCommandResult).toBe("function");
     expect(typeof exports.renderListCredentialsCommandResult).toBe("function");
     expect(typeof exports.renderCredentialSmokeCommandResult).toBe("function");
+    expect(typeof exports.renderGitHubSmokeCommandResult).toBe("function");
+    expect(typeof exports.renderGitHubDiscussionCommandResult).toBe("function");
+    expect(typeof exports.renderGitHubPullRequestCommandResult).toBe("function");
+    expect(typeof exports.renderGitHubWorkflowRunsCommandResult).toBe("function");
   });
 });
 

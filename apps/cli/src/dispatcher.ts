@@ -31,6 +31,10 @@ import {
   githubPullRequestCommand,
   githubSmokeCommand,
   githubWorkflowRunsCommand,
+  renderGitHubDiscussionCommandResult,
+  renderGitHubPullRequestCommandResult,
+  renderGitHubSmokeCommandResult,
+  renderGitHubWorkflowRunsCommandResult,
 } from "./commands/github.js";
 import { helpCommand, renderHelpCommandResult } from "./commands/help.js";
 import {
@@ -624,61 +628,53 @@ export async function dispatchCliCommand(
     }
     case "github": {
       if (subcommand === "smoke") {
-        return output(
-          command,
-          await githubSmokeCommand({
-            owner: required(flags, "owner"),
-            repo: required(flags, "repo"),
-            tokenEnv: required(flags, "token-env"),
-          }),
-        );
+        const result = await githubSmokeCommand({
+          owner: required(flags, "owner"),
+          repo: required(flags, "repo"),
+          tokenEnv: required(flags, "token-env"),
+        });
+        return { command, result, output: renderGitHubSmokeCommandResult(result) };
       }
 
       if (subcommand === "discussion") {
-        return output(
-          command,
-          await githubDiscussionCommand({
-            owner: required(flags, "owner"),
-            repo: required(flags, "repo"),
-            tokenEnv: required(flags, "token-env"),
-            repositoryId: required(flags, "repository-id"),
-            categoryId: required(flags, "category-id"),
-            title: required(flags, "title"),
-            body: required(flags, "body"),
-            confirmWrite: booleanFlag(flags, "confirm-write"),
-          }),
-        );
+        const result = await githubDiscussionCommand({
+          owner: required(flags, "owner"),
+          repo: required(flags, "repo"),
+          tokenEnv: required(flags, "token-env"),
+          repositoryId: required(flags, "repository-id"),
+          categoryId: required(flags, "category-id"),
+          title: required(flags, "title"),
+          body: required(flags, "body"),
+          confirmWrite: booleanFlag(flags, "confirm-write"),
+        });
+        return { command, result, output: renderGitHubDiscussionCommandResult(result) };
       }
 
       if (subcommand === "pull-request") {
-        return output(
-          command,
-          await githubPullRequestCommand({
-            owner: required(flags, "owner"),
-            repo: required(flags, "repo"),
-            tokenEnv: required(flags, "token-env"),
-            title: required(flags, "title"),
-            body: required(flags, "body"),
-            head: required(flags, "head"),
-            base: required(flags, "base"),
-            confirmWrite: booleanFlag(flags, "confirm-write"),
-          }),
-        );
+        const result = await githubPullRequestCommand({
+          owner: required(flags, "owner"),
+          repo: required(flags, "repo"),
+          tokenEnv: required(flags, "token-env"),
+          title: required(flags, "title"),
+          body: required(flags, "body"),
+          head: required(flags, "head"),
+          base: required(flags, "base"),
+          confirmWrite: booleanFlag(flags, "confirm-write"),
+        });
+        return { command, result, output: renderGitHubPullRequestCommandResult(result) };
       }
 
       if (subcommand === "workflow-runs") {
         const branch = value(flags, "branch");
         const limit = integerFlag(flags, "limit");
-        return output(
-          command,
-          await githubWorkflowRunsCommand({
-            owner: required(flags, "owner"),
-            repo: required(flags, "repo"),
-            tokenEnv: required(flags, "token-env"),
-            ...(branch === undefined ? {} : { branch }),
-            ...(limit === undefined ? {} : { limit }),
-          }),
-        );
+        const result = await githubWorkflowRunsCommand({
+          owner: required(flags, "owner"),
+          repo: required(flags, "repo"),
+          tokenEnv: required(flags, "token-env"),
+          ...(branch === undefined ? {} : { branch }),
+          ...(limit === undefined ? {} : { limit }),
+        });
+        return { command, result, output: renderGitHubWorkflowRunsCommandResult(result) };
       }
 
       usage(

@@ -1549,107 +1549,125 @@ describe("dispatchCliCommand", () => {
   });
 
   test("routes GitHub smoke checks without credentials", async () => {
-    await expect(
-      dispatchCliCommand([
-        "github",
-        "smoke",
-        "--owner",
-        "owner",
-        "--repo",
-        "world",
-        "--token-env",
-        "VIVARIUM_MISSING_GITHUB_TOKEN",
-      ]),
-    ).resolves.toMatchObject({
+    const result = await dispatchCliCommand([
+      "github",
+      "smoke",
+      "--owner",
+      "owner",
+      "--repo",
+      "world",
+      "--token-env",
+      "VIVARIUM_MISSING_GITHUB_TOKEN",
+    ]);
+
+    expect(result).toMatchObject({
       command: "github",
       result: {
         ok: false,
         error: "Missing GitHub token environment variable: VIVARIUM_MISSING_GITHUB_TOKEN",
       },
     });
+    expect(result.output).toContain("Vivarium GitHub Smoke");
+    expect(result.output).toContain("Status: blocked");
+    expect(result.output).toContain("owner/world");
+    expect(result.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes guarded GitHub discussion creation", async () => {
-    await expect(
-      dispatchCliCommand([
-        "github",
-        "discussion",
-        "--owner",
-        "owner",
-        "--repo",
-        "world",
-        "--token-env",
-        "GITHUB_TOKEN",
-        "--repository-id",
-        "R_1",
-        "--category-id",
-        "C_1",
-        "--title",
-        "Phase 0 RFC",
-        "--body",
-        "Bootstrap discussion",
-      ]),
-    ).resolves.toMatchObject({
+    const result = await dispatchCliCommand([
+      "github",
+      "discussion",
+      "--owner",
+      "owner",
+      "--repo",
+      "world",
+      "--token-env",
+      "GITHUB_TOKEN",
+      "--repository-id",
+      "R_1",
+      "--category-id",
+      "C_1",
+      "--title",
+      "Phase 0 RFC",
+      "--body",
+      "Bootstrap discussion",
+    ]);
+
+    expect(result).toMatchObject({
       command: "github",
       result: {
         ok: false,
         error: "Missing --confirm-write for GitHub discussion creation",
       },
     });
+    expect(result.output).toContain("Vivarium GitHub Discussion");
+    expect(result.output).toContain("Status: blocked");
+    expect(result.output).toContain("--confirm-write");
+    expect(result.output).not.toContain("Bootstrap discussion");
+    expect(result.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes guarded GitHub pull request creation", async () => {
-    await expect(
-      dispatchCliCommand([
-        "github",
-        "pull-request",
-        "--owner",
-        "owner",
-        "--repo",
-        "world",
-        "--token-env",
-        "GITHUB_TOKEN",
-        "--title",
-        "Add generated skill",
-        "--body",
-        "Generated artifact",
-        "--head",
-        "agent:add-generated-skill",
-        "--base",
-        "main",
-      ]),
-    ).resolves.toMatchObject({
+    const result = await dispatchCliCommand([
+      "github",
+      "pull-request",
+      "--owner",
+      "owner",
+      "--repo",
+      "world",
+      "--token-env",
+      "GITHUB_TOKEN",
+      "--title",
+      "Add generated skill",
+      "--body",
+      "Generated artifact",
+      "--head",
+      "agent:add-generated-skill",
+      "--base",
+      "main",
+    ]);
+
+    expect(result).toMatchObject({
       command: "github",
       result: {
         ok: false,
         error: "Missing --confirm-write for GitHub pull request creation",
       },
     });
+    expect(result.output).toContain("Vivarium GitHub Pull Request");
+    expect(result.output).toContain("Status: blocked");
+    expect(result.output).toContain("--confirm-write");
+    expect(result.output).not.toContain("Generated artifact");
+    expect(result.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes GitHub workflow run checks without credentials", async () => {
-    await expect(
-      dispatchCliCommand([
-        "github",
-        "workflow-runs",
-        "--owner",
-        "owner",
-        "--repo",
-        "world",
-        "--token-env",
-        "VIVARIUM_MISSING_GITHUB_TOKEN",
-        "--branch",
-        "main",
-        "--limit",
-        "2",
-      ]),
-    ).resolves.toMatchObject({
+    const result = await dispatchCliCommand([
+      "github",
+      "workflow-runs",
+      "--owner",
+      "owner",
+      "--repo",
+      "world",
+      "--token-env",
+      "VIVARIUM_MISSING_GITHUB_TOKEN",
+      "--branch",
+      "main",
+      "--limit",
+      "2",
+    ]);
+
+    expect(result).toMatchObject({
       command: "github",
       result: {
         ok: false,
         error: "Missing GitHub token environment variable: VIVARIUM_MISSING_GITHUB_TOKEN",
       },
     });
+    expect(result.output).toContain("Vivarium GitHub Workflows");
+    expect(result.output).toContain("Status: blocked");
+    expect(result.output).toContain("owner/world");
+    expect(result.output.trim().startsWith("{")).toBe(false);
   });
 
   test("routes daemon smoke checks", async () => {
