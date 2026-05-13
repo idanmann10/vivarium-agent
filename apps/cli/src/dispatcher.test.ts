@@ -339,6 +339,72 @@ describe("dispatchCliCommand", () => {
     expect(confirmed.output).not.toContain("cp docs/live-readiness.env.example");
   });
 
+  test("keeps custom env files in blocked setup next commands", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-setup-live-blocked-"));
+    const worldRoot = createWorldFixture();
+    const statePath = join(root, "state.db");
+    const envPath = join(root, "operator-live.env");
+    const profilesPath = join(root, "provider-profiles.json");
+    const credentialsPath = join(root, "credentials.enc");
+    write(
+      envPath,
+      [
+        `export VIVARIUM_PROVIDER_PROFILES_PATH="${profilesPath}"`,
+        'export ANTHROPIC_API_KEY="anthropic-secret"',
+        'export VIVARIUM_ANTHROPIC_PROVIDER_PROFILE="anthropic-live"',
+        'export VIVARIUM_ANTHROPIC_MODEL="claude-test"',
+        'export VIVARIUM_ANTHROPIC_CONTEXT_WINDOW="200000"',
+        'export OPENROUTER_API_KEY="openrouter-secret"',
+        'export VIVARIUM_OPENROUTER_PROVIDER_PROFILE="openrouter-live"',
+        'export VIVARIUM_OPENROUTER_MODEL="openrouter/test"',
+        'export VIVARIUM_OPENROUTER_BASE_URL="https://openrouter.example/v1"',
+        'export VIVARIUM_OPENROUTER_CONTEXT_WINDOW="128000"',
+        'export VIVARIUM_OAI_COMPAT_API_KEY="compat-secret"',
+        'export VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE="private-live"',
+        'export VIVARIUM_OAI_COMPAT_MODEL="private/test"',
+        'export VIVARIUM_OAI_COMPAT_BASE_URL="https://private.example/v1"',
+        'export VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW="64000"',
+        `export VIVARIUM_CREDENTIALS_PATH="${credentialsPath}"`,
+        'export VIVARIUM_CREDENTIALS_MASTER_KEY="master-secret"',
+        'export VIVARIUM_INTERNAL_API_CREDENTIAL_NAME="internal-api"',
+        'export VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE="internal-secret"',
+      ].join("\n"),
+    );
+
+    const setup = await dispatchCliCommand([
+      "setup",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+      "--env-file",
+      envPath,
+    ]);
+
+    expect(setup.result).toMatchObject({
+      ok: false,
+      live: {
+        ok: false,
+        written: false,
+        missing: ["VIVARIUM_INTERNAL_API_HEALTH_URL"],
+      },
+      nextCommands: expect.arrayContaining([
+        expect.stringContaining(`setup --env-file ${envPath}`),
+        expect.stringContaining(`model --env-file ${envPath}`),
+        expect.stringContaining(`doctor --live --env-file ${envPath}`),
+      ]),
+    });
+    expect(setup.output).toContain(`vivarium setup --env-file ${envPath}`);
+    expect(setup.output).toContain(`vivarium model --env-file ${envPath}`);
+    expect(setup.output).toContain(`vivarium doctor --live --env-file ${envPath}`);
+    expect(setup.output).not.toContain("live env-init --path live-readiness.local.env");
+    expect(setup.output).not.toContain("setup --env-file live-readiness.local.env");
+    expect(existsSync(profilesPath)).toBe(false);
+    expect(existsSync(credentialsPath)).toBe(false);
+  });
+
   test("routes status and doctor commands", async () => {
     await expect(dispatchCliCommand(["status"])).resolves.toMatchObject({
       command: "status",

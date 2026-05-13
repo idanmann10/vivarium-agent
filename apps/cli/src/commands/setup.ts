@@ -77,6 +77,20 @@ function setupNextCommands(
     ];
   }
 
+  if (options.envFilePath !== undefined && live?.ok === false) {
+    return [
+      runCommand,
+      commandWithFlags("setup", {
+        "env-file": options.envFilePath,
+        domain: options.primaryDomain,
+        ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
+        "state-path": local.statePath,
+      }),
+      modelCommand,
+      doctorCommand,
+    ];
+  }
+
   return [
     runCommand,
     commandWithFlags("live env-init", { path: defaultLiveEnvFilePath }),
