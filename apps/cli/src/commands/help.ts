@@ -1,4 +1,5 @@
 import { renderVivariumGlobe } from "./branding.js";
+import { renderLaunchSequence } from "./launch-sequence.js";
 
 export interface HelpCommandItem {
   readonly command: string;
@@ -50,6 +51,15 @@ export function helpCommand(): HelpCommandResult {
 export function renderHelpCommandResult(result: HelpCommandResult): string {
   const commandWidth = Math.max(52, ...result.commands.map((item) => item.command.length)) + 2;
   const rows = result.commands.map((item) => `  ${item.command.padEnd(commandWidth)}${item.description}`);
+  const firstRunCommands = [
+    "vivarium setup --domain coding --world-root ../the-world --state-path .vivarium/state.db",
+    'vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
+    "vivarium live env-init --path live-readiness.local.env",
+    "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
+    "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write",
+    "vivarium model --env-file live-readiness.local.env",
+    "vivarium doctor --live --env-file live-readiness.local.env",
+  ];
 
   return [
     renderVivariumGlobe(),
@@ -58,13 +68,7 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
     "--------------",
     "",
     "First run",
-    "  vivarium setup --domain coding --world-root ../the-world --state-path .vivarium/state.db",
-    '  vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
-    "  vivarium live env-init --path live-readiness.local.env",
-    "  vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
-    "  vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write",
-    "  vivarium model --env-file live-readiness.local.env",
-    "  vivarium doctor --live --env-file live-readiness.local.env",
+    ...renderLaunchSequence(firstRunCommands),
     "",
     "Commands",
     ...rows,

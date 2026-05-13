@@ -38,6 +38,11 @@ describe("helpCommand", () => {
     expect(firstRunBlock).toContain(
       "vivarium run --goal \"validate local setup\" --state-path .vivarium/state.db",
     );
+    expect(firstRunBlock).toContain("[1] Initialize local memory");
+    expect(firstRunBlock).toContain("[2] Prove the local loop");
+    expect(firstRunBlock).toContain("[3] Prepare live readiness");
+    expect(firstRunBlock).toContain("[4] Inspect configured models");
+    expect(firstRunBlock).toContain("[5] Run the readiness gate");
     expect(firstRunBlock).toContain(
       "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
     );
