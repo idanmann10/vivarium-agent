@@ -10,6 +10,7 @@ describe("helpCommand", () => {
     expect(result.commands).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ command: "vivarium setup" }),
+        expect.objectContaining({ command: 'vivarium run --goal "validate local setup"' }),
         expect.objectContaining({ command: "vivarium status" }),
         expect.objectContaining({ command: "vivarium doctor" }),
         expect.objectContaining({ command: "vivarium model" }),
@@ -22,6 +23,7 @@ describe("helpCommand", () => {
     expect(output).toContain('.-""""-.');
     expect(output).toContain("First run");
     expect(output).toContain("vivarium setup");
+    expect(output).toContain('vivarium run --goal "validate local setup"');
     expect(output).toContain("vivarium live env-init");
     expect(output).toContain("vivarium live evidence-init");
     expect(output).toContain("vivarium model");

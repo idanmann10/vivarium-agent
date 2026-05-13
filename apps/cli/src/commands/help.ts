@@ -13,6 +13,7 @@ export function helpCommand(): HelpCommandResult {
   return {
     commands: [
       { command: "vivarium setup", description: "Initialize local state and guided live setup." },
+      { command: 'vivarium run --goal "validate local setup"', description: "Validate the local setup." },
       { command: "vivarium status", description: "Print the local runtime status." },
       { command: "vivarium doctor", description: "Run offline readiness checks." },
       { command: "vivarium model", description: "Show configured provider profiles." },
@@ -50,6 +51,7 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
     "",
     "First run",
     "  vivarium setup                                      Initialize the agent.",
+    '  vivarium run --goal "validate local setup"          Validate the local setup.',
     "  vivarium live env-init --path live-readiness.local.env",
     "  vivarium doctor                                     Check readiness.",
     "  vivarium model                                      Show provider setup.",
