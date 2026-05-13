@@ -34,7 +34,7 @@ function commandWithFlags(
     }
     return value === true ? [`--${name}`] : [`--${name}`, shellQuote(value)];
   });
-  return ["bun", "apps/cli/src/main.ts", command, ...args].join(" ");
+  return ["vivarium", command, ...args].join(" ");
 }
 
 function setupNextCommands(
@@ -50,7 +50,7 @@ function setupNextCommands(
   });
   const doctorCommand =
     options.envFilePath === undefined
-      ? "bun apps/cli/src/main.ts doctor --live"
+      ? "vivarium doctor --live"
       : commandWithFlags("doctor", { live: true, "env-file": options.envFilePath });
 
   if (options.envFilePath !== undefined && live?.ok === true) {

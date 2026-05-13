@@ -190,7 +190,9 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).toContain('.-""""-.');
     expect(setup.output).toContain("Local state initialized");
     expect(setup.output).toContain("Next commands");
+    expect(setup.output).toContain("vivarium run --goal");
     expect(setup.output).toContain("live env-init --path live-readiness.local.env");
+    expect(setup.output).not.toContain("bun apps/cli/src/main.ts");
     expect(setup.output).not.toContain("cp docs/live-readiness.env.example");
     expect(setup.output).not.toContain("chmod 600 live-readiness.local.env");
   });
@@ -257,6 +259,8 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).toContain("Live setup dry run");
     expect(setup.output).toContain("anthropic-live");
     expect(setup.output).toContain("--confirm-write");
+    expect(setup.output).toContain("vivarium setup --env-file");
+    expect(setup.output).not.toContain("bun apps/cli/src/main.ts");
 
     const confirmed = await dispatchCliCommand([
       "setup",

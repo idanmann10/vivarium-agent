@@ -22,6 +22,8 @@ with `VIVARIUM_INSTALL_DIR`, `VIVARIUM_BIN_DIR`, `VIVARIUM_WORLD_ROOT`,
 After installation, reload your shell if needed and run:
 
 ```bash
+vivarium run --goal "validate local setup"
+vivarium live env-init --path live-readiness.local.env
 vivarium status
 vivarium help
 vivarium model
@@ -57,7 +59,8 @@ bun apps/cli/src/main.ts setup \
 
 `setup` initializes the same local state as `init`, renders a terminal-friendly
 summary, and prints the next commands for a first run, live setup, and
-`doctor --live`. Use `init` directly only when you need the raw JSON result.
+`doctor --live`. Use `init` directly only when you need local initialization
+without the aggregate setup checklist.
 Use `live env-init --path live-readiness.local.env` when you need to create the
 private live-readiness env file from the terminal.
 

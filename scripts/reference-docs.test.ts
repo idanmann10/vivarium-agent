@@ -203,6 +203,8 @@ const guideDocs = {
     "bun run knip",
     "VIVARIUM_INSTALL_DIR",
     "VIVARIUM_BIN_DIR",
+    "vivarium run --goal",
+    "vivarium live env-init --path live-readiness.local.env",
     "vivarium help",
     "vivarium status",
     "vivarium update",

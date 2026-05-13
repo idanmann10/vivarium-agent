@@ -175,6 +175,8 @@ run bun apps/cli/src/main.ts setup --domain "$domain" --world-root "$world_root"
 
 echo
 echo "After installation:"
+echo "  vivarium run --goal \"validate local setup\""
+echo "  vivarium live env-init --path live-readiness.local.env"
 echo "  vivarium status"
 echo "  vivarium help"
 echo "  vivarium model"

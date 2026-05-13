@@ -60,6 +60,8 @@ Use `VIVARIUM_INSTALL_DIR`, `VIVARIUM_WORLD_ROOT`, `VIVARIUM_DOMAIN`, and
 After installation, reload your shell if needed and run:
 
 ```bash
+vivarium run --goal "validate local setup"
+vivarium live env-init --path live-readiness.local.env
 vivarium status
 vivarium help
 vivarium model
