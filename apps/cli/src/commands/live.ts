@@ -2,6 +2,7 @@ import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { renderVivariumGlobe } from "./branding.js";
 import { addCredentialCommand } from "./credentials.js";
+import { renderLaunchSequence } from "./launch-sequence.js";
 import { configureProviderProfileCommand } from "./providers.js";
 
 export interface LiveSetupCommandOptions {
@@ -428,6 +429,12 @@ export function liveEnvInitCommand(options: LiveEnvInitCommandOptions): LiveEnvI
 
 export function renderLiveEnvInitCommandResult(result: LiveEnvInitCommandResult): string {
   const envFilePath = shellQuote(result.path);
+  const nextCommands = [
+    `vivarium setup --env-file ${envFilePath} --domain coding --world-root ../the-world --state-path .vivarium/state.db`,
+    `vivarium setup --env-file ${envFilePath} --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write`,
+    `vivarium model --env-file ${envFilePath}`,
+    `vivarium doctor --live --env-file ${envFilePath}`,
+  ];
 
   return [
     renderVivariumGlobe(),
@@ -442,11 +449,9 @@ export function renderLiveEnvInitCommandResult(result: LiveEnvInitCommandResult)
           `Permissions: ${result.mode}`,
           "",
           "Next commands:",
-          "  Fill the env file locally.",
-          `  vivarium setup --env-file ${envFilePath} --domain coding --world-root ../the-world --state-path .vivarium/state.db`,
-          `  vivarium setup --env-file ${envFilePath} --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write`,
-          `  vivarium model --env-file ${envFilePath}`,
-          `  vivarium doctor --live --env-file ${envFilePath}`,
+          "  [1] Fill live settings",
+          `      Edit ${result.path} locally. Keep it out of git.`,
+          ...renderLaunchSequence(nextCommands, { startAt: 2 }),
         ]
       : [`Error: ${result.error}`]),
     "",

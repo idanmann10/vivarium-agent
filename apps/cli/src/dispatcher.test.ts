@@ -1726,6 +1726,10 @@ describe("dispatchCliCommand", () => {
     expect(createdOutput).toContain(envPath);
     expect(createdOutput).toContain("Permissions: 0600");
     expect(createdOutput).toContain("Next commands");
+    expect(createdOutput).toContain("[1] Fill live settings");
+    expect(createdOutput).toContain("[2] Prepare live readiness");
+    expect(createdOutput).toContain("[3] Inspect configured models");
+    expect(createdOutput).toContain("[4] Run the readiness gate");
     expect(createdOutput).toContain(
       `vivarium setup --env-file ${envPath} --domain coding --world-root ../the-world --state-path .vivarium/state.db`,
     );

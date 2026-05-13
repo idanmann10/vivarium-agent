@@ -5,6 +5,7 @@ interface LaunchCommandStage {
 
 export interface RenderLaunchSequenceOptions {
   readonly heading?: string;
+  readonly startAt?: number;
 }
 
 const launchCommandStages: readonly LaunchCommandStage[] = [
@@ -38,7 +39,7 @@ export function renderLaunchSequence(
 ): readonly string[] {
   const remaining = [...commands];
   const lines = options.heading === undefined ? [] : [options.heading];
-  let stageNumber = 1;
+  let stageNumber = options.startAt ?? 1;
 
   for (const stage of launchCommandStages) {
     const stageCommands = remaining.filter(stage.matches);
