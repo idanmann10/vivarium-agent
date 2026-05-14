@@ -14,15 +14,64 @@ curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scri
 
 The installer checks for `git` and `bun`, clones or updates the agent checkout,
 clones or updates the canonical world beside it, installs dependencies, and then
-runs the guided `setup` command. It also writes a `vivarium` command to
+runs the guided `setup --quick` command. It also writes a `vivarium` command to
 `~/.local/bin` so future commands can run from any directory. Override the layout
 with `VIVARIUM_INSTALL_DIR`, `VIVARIUM_BIN_DIR`, `VIVARIUM_WORLD_ROOT`,
-`VIVARIUM_DOMAIN`, or `VIVARIUM_STATE_PATH`.
+`VIVARIUM_DOMAIN`, or `VIVARIUM_STATE_PATH`. Set `VIVARIUM_AGENT_REF` to pin
+the checkout to a branch, tag, or commit before dependency installation. The
+installer infers the non-secret GitHub owner, agent repo, world repo, and
+canonical world ref from the GitHub repository URLs while it runs
+`setup --quick`; set `VIVARIUM_GITHUB_OWNER`,
+`VIVARIUM_AGENT_REPO_NAME`, `VIVARIUM_WORLD_REPO_NAME`,
+`VIVARIUM_CANONICAL_WORLD_REF`, and `VIVARIUM_PRIVATE_WORLD_REF` when you need
+explicit overrides or a private world ref.
+
+On macOS, install and start the local daemon as a LaunchAgent in the same pass:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | VIVARIUM_DAEMON=launchd bash
+```
+
+The LaunchAgent mode writes
+`~/Library/LaunchAgents/com.vivarium.agent.daemon.plist`, starts it with
+`launchctl`, and prints a daemon smoke command for
+`http://127.0.0.1:8787/status`. Override the label with
+`VIVARIUM_DAEMON_LABEL`, the bind host with `VIVARIUM_DAEMON_HOST`, the port
+with `VIVARIUM_DAEMON_PORT`, or the Bun executable with `VIVARIUM_BUN_PATH`.
 Interactive terminals use the branded ANSI theme automatically. Set
 `VIVARIUM_COLOR=always` to force it, `VIVARIUM_COLOR=never` or `NO_COLOR` to
 disable it, or `FORCE_COLOR=1` when a wrapper strips TTY detection. Set
 `VIVARIUM_THEME=matrix` or `VIVARIUM_THEME=amber` for alternate ASCII-art
 palettes.
+
+## Pre-main Mac install
+
+Before a branch, tag, or release commit is available on `main`, fetch a
+verified installer script by commit or tag and pass the desired checkout ref
+into the install step:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/<installer-commit-or-tag>/scripts/install.sh | \
+  VIVARIUM_AGENT_REF=<branch-or-tag-or-commit> \
+  VIVARIUM_DAEMON=launchd \
+  bash
+```
+
+This keeps the downloaded installer stable while the installed checkout follows
+the explicit ref you selected. The default Mac layout is:
+
+- Agent checkout: `~/.vivarium/vivarium-agent`
+- Canonical world checkout: `~/.vivarium/the-world`
+- CLI command: `~/.local/bin/vivarium`
+- LaunchAgent: `~/Library/LaunchAgents/com.vivarium.agent.daemon.plist`
+- Local live-readiness env file: `live-readiness.local.env`
+
+After a pre-main install, verify both the daemon and a local run:
+
+```bash
+vivarium daemon smoke --status-url http://127.0.0.1:8787/status
+vivarium run --goal "validate local setup" --state-path .vivarium/state.db
+```
 
 After installation, reload your shell if needed and run:
 
@@ -31,9 +80,16 @@ After installation, reload your shell if needed and run:
 vivarium run --goal "validate local setup" --state-path .vivarium/state.db
 
 # [2] Prepare live readiness
-vivarium live env-init --path live-readiness.local.env
+# Edit live-readiness.local.env locally. Keep it out of git.
 vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db
 vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write
+
+# The env file has three kinds of values:
+# - safe metadata: repo names, GitHub node IDs, model names, base URLs, context windows
+# - secrets: provider API keys, GitHub token, credential master key, internal API token
+# - evidence paths: provider profiles, encrypted credential store, v1 evidence manifest
+# `setup` and `doctor --live` keep these separate so local setup works before
+# the production-only secrets and evidence are available.
 
 # [3] Inspect configured models
 vivarium model --env-file live-readiness.local.env
@@ -44,7 +100,13 @@ vivarium live evidence-init --path v1-evidence.json
 # [5] Run the readiness gate
 vivarium doctor --live --env-file live-readiness.local.env
 
-# [6] Keep moving
+# [6] Verify the Mac daemon, when installed with VIVARIUM_DAEMON=launchd
+vivarium daemon smoke --status-url http://127.0.0.1:8787/status
+
+# [7] Review launch handoff
+vivarium launch handoff
+
+# [8] Keep moving
 vivarium status
 vivarium help
 vivarium update
@@ -70,17 +132,19 @@ Run setup with the coding starter pack from a sibling world checkout:
 
 ```bash
 vivarium setup \
+  --quick \
   --domain coding \
   --world-root ../the-world \
   --state-path .vivarium/state.db
 ```
 
-`setup` initializes the same local state as `init`, renders a terminal-friendly
-summary, and prints the next commands for a first run, live setup, and
-`doctor --live`. Use `init` directly only when you need local initialization
-without the aggregate setup checklist.
-Use `live env-init --path live-readiness.local.env` when you need to create the
-private live-readiness env file from the terminal.
+`setup --quick` initializes the same local state as `init`, creates the private
+live-readiness env file from the template when it is missing, renders a
+terminal-friendly summary, and prints the next commands for a first run, live
+setup, and `doctor --live`. Use `init` directly only when you need local
+initialization without the aggregate setup checklist. Use
+`vivarium live env-init --path live-readiness.local.env` when you only need to
+create the private live-readiness env file.
 When repository names are known, add `--github-owner`, `--agent-repo`,
 `--world-repo`, `--canonical-world-ref`, and `--private-world-ref` to prefill
 the non-secret public GitHub and world values.

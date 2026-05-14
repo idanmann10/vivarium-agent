@@ -8,6 +8,7 @@ export const cliCommands = [
   "providers",
   "github",
   "daemon",
+  "launch",
   "live",
   "credentials",
   "identity",
@@ -32,6 +33,8 @@ export { dreamCommand, renderDreamCommandResult } from "./commands/dream.js";
 export type { DreamCommandOptions } from "./commands/dream.js";
 export { helpCommand, renderHelpCommandResult } from "./commands/help.js";
 export type { HelpCommandItem, HelpCommandResult } from "./commands/help.js";
+export { launchHandoffCommand, renderLaunchHandoffCommandResult } from "./commands/launch.js";
+export type { LaunchHandoffCommandOptions, LaunchHandoffCommandResult } from "./commands/launch.js";
 export { modelCommand, renderModelCommandResult } from "./commands/model.js";
 export type {
   ModelCommandOptions,

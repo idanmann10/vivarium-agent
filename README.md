@@ -28,13 +28,22 @@ Install into `~/.vivarium`, clone the canonical world beside the agent, install 
 curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash
 ```
 
-Use `VIVARIUM_INSTALL_DIR`, `VIVARIUM_WORLD_ROOT`, `VIVARIUM_DOMAIN`, and `VIVARIUM_STATE_PATH` to override the default install layout. Use `VIVARIUM_BIN_DIR` to choose where the `vivarium` command is written.
+Use `VIVARIUM_INSTALL_DIR`, `VIVARIUM_WORLD_ROOT`, `VIVARIUM_DOMAIN`, and `VIVARIUM_STATE_PATH` to override the default install layout. Use `VIVARIUM_BIN_DIR` to choose where the `vivarium` command is written. Set `VIVARIUM_AGENT_REF` to pin the checkout to a branch, tag, or commit. The installer infers the non-secret GitHub owner, agent repo, world repo, and canonical world ref from the GitHub repository URLs; set `VIVARIUM_GITHUB_OWNER`, `VIVARIUM_AGENT_REPO_NAME`, `VIVARIUM_WORLD_REPO_NAME`, `VIVARIUM_CANONICAL_WORLD_REF`, and `VIVARIUM_PRIVATE_WORLD_REF` when you need explicit overrides or a private world ref.
+
+On macOS, add the opt-in LaunchAgent deployment when you want the local daemon
+installed and started in the same setup pass:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | VIVARIUM_DAEMON=launchd bash
+```
+
+This writes `~/Library/LaunchAgents/com.vivarium.agent.daemon.plist`, starts the daemon with `launchctl`, and prints a `vivarium daemon smoke` command for `http://127.0.0.1:8787/status`.
 
 Interactive terminals use the branded ANSI theme automatically. Set `VIVARIUM_COLOR=always` to force it, `VIVARIUM_COLOR=never` or `NO_COLOR` to disable it, or `FORCE_COLOR=1` when a wrapper strips TTY detection. Set `VIVARIUM_THEME=matrix` or `VIVARIUM_THEME=amber` for alternate ASCII-art palettes.
 
 ## Terminal-first setup
 
-`vivarium setup` initializes local state, installs the starter pack, and prints the next terminal commands as a numbered launch sequence:
+`vivarium setup --quick` initializes local state, installs the starter pack, creates `live-readiness.local.env` from the template when it is missing, and prints the next terminal commands as a numbered launch sequence:
 
 After installation, reload your shell if needed and run:
 
@@ -43,7 +52,7 @@ After installation, reload your shell if needed and run:
 vivarium run --goal "validate local setup" --state-path .vivarium/state.db
 
 # [2] Prepare live readiness
-vivarium live env-init --path live-readiness.local.env
+# Edit live-readiness.local.env locally. Keep it out of git.
 vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db
 vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write
 
@@ -56,7 +65,13 @@ vivarium live evidence-init --path v1-evidence.json
 # [5] Run the readiness gate
 vivarium doctor --live --env-file live-readiness.local.env
 
-# [6] Keep moving
+# [6] Verify the Mac daemon, when installed with VIVARIUM_DAEMON=launchd
+vivarium daemon smoke --status-url http://127.0.0.1:8787/status
+
+# [7] Review launch handoff
+vivarium launch handoff
+
+# [8] Keep moving
 vivarium status
 vivarium help
 vivarium update
@@ -66,7 +81,7 @@ For a source checkout, run the same setup directly:
 
 ```bash
 bun install
-vivarium setup --domain coding --world-root ../the-world --state-path .vivarium/state.db
+vivarium setup --quick --domain coding --world-root ../the-world --state-path .vivarium/state.db
 ```
 
 Filled `live-readiness.local.env` files are ignored by git. Do not commit API keys, credential values, provider secrets, or evidence files that contain private paths or private customer data.
@@ -74,8 +89,12 @@ Filled `live-readiness.local.env` files are ignored by git. Do not commit API ke
 When the public repository names are already settled, prefill the non-secret GitHub and world values while creating the env file:
 
 ```bash
-vivarium live env-init \
-  --path live-readiness.local.env \
+vivarium setup \
+  --quick \
+  --live-env-path live-readiness.local.env \
+  --domain coding \
+  --world-root ../the-world \
+  --state-path .vivarium/state.db \
   --github-owner idanmann10 \
   --agent-repo vivarium-agent \
   --world-repo vivarium-world \

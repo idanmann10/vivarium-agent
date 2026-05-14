@@ -28,6 +28,8 @@ describe("CLI public API", () => {
     expect(typeof exports.renderVerifyWorldTransmissionCommandResult).toBe("function");
     expect(typeof exports.helpCommand).toBe("function");
     expect(typeof exports.renderHelpCommandResult).toBe("function");
+    expect(typeof exports.launchHandoffCommand).toBe("function");
+    expect(typeof exports.renderLaunchHandoffCommandResult).toBe("function");
     expect(typeof exports.modelCommand).toBe("function");
     expect(typeof exports.renderModelCommandResult).toBe("function");
     expect(typeof exports.liveEnvInitCommand).toBe("function");

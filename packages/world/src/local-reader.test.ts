@@ -9,7 +9,26 @@ import { publishRun } from "./runs.js";
 
 describe("local world reader", () => {
   test("retrieves seeded skills, anti-patterns, and traces by domain and query", () => {
-    const world = createLocalWorldReader({ root: "../the-world" });
+    const root = mkdtempSync(join(tmpdir(), "world-reader-seeded-"));
+    const skillDirectory = join(root, "domains", "coding", "skills", "red-green-refactor");
+    const antiPatternDirectory = join(root, "domains", "coding", "anti-patterns", "editing-before-reading");
+    const traceDirectory = join(root, "domains", "coding", "traces", "test-first-trace");
+    mkdirSync(skillDirectory, { recursive: true });
+    mkdirSync(antiPatternDirectory, { recursive: true });
+    mkdirSync(traceDirectory, { recursive: true });
+    writeFileSync(
+      join(skillDirectory, "SKILL.md"),
+      "---\nname: Red Green Refactor\ndescription: test before implementation\n---\n\n# Red Green Refactor\n\nWrite a failing test before implementation.\n",
+    );
+    writeFileSync(
+      join(antiPatternDirectory, "ANTI-PATTERN.md"),
+      "---\nname: Editing Before Reading\ndescription: editing before reading\n---\n\n# Editing Before Reading\n\nInspect before implementation.\n",
+    );
+    writeFileSync(
+      join(traceDirectory, "TRACE.md"),
+      "---\ntitle: Test First Trace\ndescription: trace for test before implementation\n---\n\n# Test First Trace\n\nA trace that starts with a test.\n",
+    );
+    const world = createLocalWorldReader({ root });
 
     const results = world.search({ domain: "coding", query: "test before implementation" });
 

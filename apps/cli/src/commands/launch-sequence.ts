@@ -36,6 +36,14 @@ const launchCommandStages: readonly LaunchCommandStage[] = [
     matches: (command) => command.startsWith("vivarium doctor"),
   },
   {
+    label: "Verify the Mac daemon",
+    matches: (command) => command.startsWith("vivarium daemon smoke"),
+  },
+  {
+    label: "Review launch handoff",
+    matches: (command) => command === "vivarium launch handoff",
+  },
+  {
     label: "Keep moving",
     matches: (command) =>
       command === "vivarium status" || command === "vivarium help" || command === "vivarium update",

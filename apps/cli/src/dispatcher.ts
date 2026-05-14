@@ -48,6 +48,7 @@ import {
   renderIdentitySummaryCommandResult,
 } from "./commands/identity.js";
 import { renderInitCommandResult, runInitCommand } from "./commands/init.js";
+import { launchHandoffCommand, renderLaunchHandoffCommandResult } from "./commands/launch.js";
 import {
   liveEnvInitCommand,
   liveEvidenceInitCommand,
@@ -273,6 +274,20 @@ export async function dispatchCliCommand(
       const result = helpCommand();
       return { command, result, output: renderHelpCommandResult(result) };
     }
+    case "launch": {
+      if (subcommand !== "handoff") {
+        usage('Unknown launch subcommand. Use "handoff".');
+      }
+      const owner = value(flags, "owner");
+      const repo = value(flags, "repo");
+      const ref = value(flags, "ref");
+      const result = launchHandoffCommand({
+        ...(owner === undefined ? {} : { owner }),
+        ...(repo === undefined ? {} : { repo }),
+        ...(ref === undefined ? {} : { ref }),
+      });
+      return { command, result, output: renderLaunchHandoffCommandResult(result) };
+    }
     case "init": {
       const worldRoot = value(flags, "world-root");
       const statePath = value(flags, "state-path");
@@ -290,10 +305,25 @@ export async function dispatchCliCommand(
       const worldRoot = value(flags, "world-root");
       const statePath = value(flags, "state-path");
       const envFile = value(flags, "env-file");
+      const liveEnvPath = value(flags, "live-env-path");
+      const githubOwner = value(flags, "github-owner");
+      const agentRepo = value(flags, "agent-repo");
+      const worldRepo = value(flags, "world-repo");
+      const canonicalWorldRef = value(flags, "canonical-world-ref");
+      const privateWorldRef = value(flags, "private-world-ref");
       const result = setupCommand({
         primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? "coding",
         ...(worldRoot === undefined ? {} : { worldRoot }),
         ...(statePath === undefined ? {} : { statePath }),
+        ...(booleanFlag(flags, "quick") ? { quick: true } : {}),
+        ...(liveEnvPath === undefined ? {} : { liveEnvPath }),
+        prefill: {
+          ...(githubOwner === undefined ? {} : { githubOwner }),
+          ...(agentRepo === undefined ? {} : { agentRepo }),
+          ...(worldRepo === undefined ? {} : { worldRepo }),
+          ...(canonicalWorldRef === undefined ? {} : { canonicalWorldRef }),
+          ...(privateWorldRef === undefined ? {} : { privateWorldRef }),
+        },
         ...(envFile === undefined
           ? {}
           : {

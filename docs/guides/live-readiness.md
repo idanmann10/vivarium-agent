@@ -44,6 +44,34 @@ The setup commands below use shell variables from that same file. Before running
 source live-readiness.local.env
 ```
 
+## Current Production Blocker Map
+
+As of the current Mac install, doctor --live reports `31 passing, 22 blocked`
+until these operator-owned inputs are real and verified:
+
+| Area | Needed to clear it |
+| --- | --- |
+| Model providers | Saved Anthropic/OpenRouter profile metadata is configured; real Anthropic/OpenRouter API keys, a private OpenAI-compatible key/base/model/context/profile, and successful provider smoke calls are still required. |
+| Internal credential smoke | A local encrypted credential store, master key, internal API credential value, health URL, and a successful `credentials smoke` result. |
+| GitHub live checks | The local env has a keychain-backed `GITHUB_TOKEN`, repository IDs, a visible RFC Discussion, and successful latest `main` CI checks for both repos; v1 public contribution evidence is still tracked in the v1 evidence manifest. |
+| V1 evidence manifest | Real multi-day goal evidence, provider and credential smoke transcripts, Dream artifacts, public contribution evidence, published canonical-world artifacts, curation stats, and the required two-week follow-up evidence. |
+| Non-author PR review | PRs into protected `main` need the configured status checks plus a review from someone other than the PR author; do not lower this gate without an explicit owner decision. |
+
+## Operator Unlock Key Map
+
+The live env file keeps secret, machine-local, and evidence-path values out of
+the public installer. Fill the groups in this order when clearing
+`doctor --live`:
+
+| Group | Keys | What they unlock |
+| --- | --- | --- |
+| Provider keys/models | `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, `VIVARIUM_OAI_COMPAT_API_KEY`, `VIVARIUM_ANTHROPIC_MODEL`, `VIVARIUM_OPENROUTER_MODEL`, `VIVARIUM_OPENROUTER_BASE_URL`, `VIVARIUM_OAI_COMPAT_BASE_URL`, and context-window vars | Real LLM calls and provider smoke tests. |
+| Provider profiles | `VIVARIUM_PROVIDER_PROFILES_PATH`, `VIVARIUM_ANTHROPIC_PROVIDER_PROFILE`, `VIVARIUM_OPENROUTER_PROVIDER_PROFILE`, `VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE` | Saved profile names and paths that let runs reuse the same checked provider setup. |
+| Encrypted credentials/internal API | `VIVARIUM_CREDENTIALS_PATH`, `VIVARIUM_CREDENTIALS_MASTER_KEY`, `VIVARIUM_INTERNAL_API_CREDENTIAL_NAME`, `VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE`, `VIVARIUM_INTERNAL_API_HEALTH_URL` | A local encrypted credential store and a health check that proves secret injection works without printing the secret. |
+| GitHub/public release | `GITHUB_TOKEN`, `GH_TOKEN`, `VIVARIUM_GITHUB_OWNER`, `VIVARIUM_AGENT_REPO_NAME`, `VIVARIUM_WORLD_REPO_NAME`, `VIVARIUM_GITHUB_REPOSITORY_ID`, `VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID` | GitHub auth, Discussions, PRs, workflow checks, and protected public release evidence. |
+| World subscriptions | `VIVARIUM_WORLD_SUBSCRIPTIONS_PATH`, `VIVARIUM_CANONICAL_WORLD_REF`, `VIVARIUM_PRIVATE_WORLD_REF` | Retrieval from the canonical world and private fork, including second-install pull checks. |
+| V1 evidence manifest | `VIVARIUM_V1_EVIDENCE_PATH` | The inspectable manifest that links real goals, smokes, Dream artifacts, public contribution evidence, curation stats, and the two-week improvement evidence. |
+
 ## Naming Gate
 
 `goal.md` still treats `the-agent` and `the-world` as temporary names. Choose final names before

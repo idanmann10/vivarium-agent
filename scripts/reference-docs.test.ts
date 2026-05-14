@@ -214,8 +214,12 @@ const guideDocs = {
     "bun run knip",
     "VIVARIUM_INSTALL_DIR",
     "VIVARIUM_BIN_DIR",
+    "VIVARIUM_DAEMON=launchd",
+    "LaunchAgent",
+    "vivarium daemon smoke",
     "vivarium run --goal",
     "--state-path .vivarium/state.db",
+    "setup --quick",
     "vivarium live env-init --path live-readiness.local.env",
     "vivarium help",
     "vivarium status",
@@ -600,18 +604,22 @@ describe("reference docs", () => {
         "# [3] Inspect configured models",
         "# [4] Prepare live evidence",
         "# [5] Run the readiness gate",
-        "# [6] Keep moving",
+        "# [6] Verify the Mac daemon",
+        "# [7] Review launch handoff",
+        "# [8] Keep moving",
       ]) {
         expect(block).toContain(stage);
       }
       for (const command of [
         'vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
-        "vivarium live env-init --path live-readiness.local.env",
+        "Edit live-readiness.local.env locally. Keep it out of git.",
         "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
         "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write",
         "vivarium model --env-file live-readiness.local.env",
         "vivarium live evidence-init --path v1-evidence.json",
         "vivarium doctor --live --env-file live-readiness.local.env",
+        "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
+        "vivarium launch handoff",
         "vivarium status",
         "vivarium help",
         "vivarium update",
@@ -652,6 +660,24 @@ describe("reference docs", () => {
       ]) {
         expect(body).toContain(term);
       }
+    }
+  });
+
+  test("documents a safe pre-main Mac handoff command", () => {
+    const body = readFileSync(join("docs", "guides", "install.md"), "utf8");
+
+    for (const term of [
+      "Pre-main Mac install",
+      "VIVARIUM_AGENT_REF=<branch-or-tag-or-commit>",
+      "VIVARIUM_DAEMON=launchd",
+      "~/.vivarium/vivarium-agent",
+      "~/.vivarium/the-world",
+      "~/.local/bin/vivarium",
+      "live-readiness.local.env",
+      "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
+      'vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
+    ]) {
+      expect(body).toContain(term);
     }
   });
 
@@ -748,6 +774,52 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents the current production blocker map", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    for (const term of [
+      "## Current Production Blocker Map",
+      "Model providers",
+      "Internal credential smoke",
+      "GitHub live checks",
+      "V1 evidence manifest",
+      "Non-author PR review",
+      "doctor --live reports `31 passing, 22 blocked`",
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
+
+  test("documents live unlock keys by operator purpose", () => {
+    const guide = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    const example = readFileSync(join("docs", "live-readiness.env.example"), "utf8");
+    for (const term of [
+      "## Operator Unlock Key Map",
+      "Provider keys/models",
+      "`ANTHROPIC_API_KEY`",
+      "`VIVARIUM_OPENROUTER_BASE_URL`",
+      "Provider profiles",
+      "`VIVARIUM_PROVIDER_PROFILES_PATH`",
+      "Encrypted credentials/internal API",
+      "`VIVARIUM_CREDENTIALS_MASTER_KEY`",
+      "`VIVARIUM_INTERNAL_API_HEALTH_URL`",
+      "GitHub/public release",
+      "`GITHUB_TOKEN`",
+      "V1 evidence manifest",
+      "`VIVARIUM_V1_EVIDENCE_PATH`",
+    ]) {
+      expect(guide).toContain(term);
+    }
+    for (const term of [
+      "# Provider keys/models",
+      "# Provider profiles",
+      "# Encrypted credential store and internal API smoke target",
+      "# GitHub/public release",
+      "# Live v1 evidence manifest",
+    ]) {
+      expect(example).toContain(term);
+    }
+  });
+
   test("documents the operator v1 completion boundary in the live-readiness guide", () => {
     const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
     for (const term of [
@@ -808,6 +880,63 @@ describe("reference docs", () => {
       "v1.publicContribution:configured",
       "v1.twoWeekImprovement:configured",
       "at least fourteen days after the last real goal",
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
+
+  test("documents current launch security audit evidence", () => {
+    const body = readFileSync(
+      join("docs", "superpowers", "audits", "2026-05-10-github-live-setup.md"),
+      "utf8",
+    );
+    for (const term of [
+      "Launch security audit",
+      "`bun run launch:security-audit`",
+      "vivarium-agent`, public",
+      "vivarium-world`, public",
+      "secretScanning",
+      "pushProtection",
+      "branchProtection",
+      "zero open Dependabot, secret scanning, and code scanning alerts",
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
+
+  test("documents the current Mac install handoff audit", () => {
+    const path = join("docs", "superpowers", "audits", "2026-05-14-mac-install-handoff.md");
+    expect(existsSync(path), `${path} should exist`).toBe(true);
+    const body = existsSync(path) ? readFileSync(path, "utf8") : "";
+    for (const term of [
+      "curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/c6c6778f1024f19294d24219b02c7778566e5b04/scripts/install.sh",
+      "VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup",
+      "VIVARIUM_DAEMON=launchd",
+      "installed checkout",
+      "installed branch",
+      "codex/hermes-style-quick-setup",
+      "clean status",
+      "Fresh installs prefill safe public metadata",
+      "origin` set to `https://github.com/idanmann10/vivarium-agent.git",
+      "vivarium update",
+      "Status: ok",
+      "`404 pass, 0 fail`",
+      "`REVIEW_REQUIRED`",
+      "`31 passing, 22 blocked`",
+      "non-author review",
+      "Only configured collaborator",
+      "no teams",
+      "Reviewer Handoff",
+      "Review Can not approve your own pull request",
+      "gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/<github-username> -f permission=push",
+      "gh pr edit 22 --repo idanmann10/vivarium-agent --add-reviewer <github-username>",
+      "gh pr merge 22 --repo idanmann10/vivarium-agent --squash --admin --delete-branch=false",
+      "Please review https://github.com/idanmann10/vivarium-agent/pull/22",
+      'vivarium run --goal "validate local setup"',
+      "approve PR #22",
+      "Do not lower branch protection",
+      "provider keys",
+      "two-week improvement evidence",
     ]) {
       expect(body).toContain(term);
     }

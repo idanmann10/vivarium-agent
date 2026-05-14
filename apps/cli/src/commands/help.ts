@@ -14,6 +14,10 @@ export function helpCommand(): HelpCommandResult {
   return {
     commands: [
       { command: "vivarium setup", description: "Initialize local state and guided live setup." },
+      {
+        command: "vivarium setup --quick",
+        description: "Initialize local state and create the live env template.",
+      },
       { command: 'vivarium run --goal "validate local setup"', description: "Validate the local setup." },
       { command: "vivarium status", description: "Print the local runtime status." },
       { command: "vivarium doctor", description: "Run offline readiness checks." },
@@ -35,6 +39,14 @@ export function helpCommand(): HelpCommandResult {
         description: "Create a live evidence manifest skeleton.",
       },
       {
+        command: "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
+        description: "Verify the Mac LaunchAgent daemon.",
+      },
+      {
+        command: "vivarium launch handoff",
+        description: "Show the Mac install command and production boundary.",
+      },
+      {
         command: "vivarium update",
         description: "Pull the latest agent and refresh dependencies.",
       },
@@ -52,14 +64,15 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
   const commandWidth = Math.max(52, ...result.commands.map((item) => item.command.length)) + 2;
   const rows = result.commands.map((item) => `  ${item.command.padEnd(commandWidth)}${item.description}`);
   const firstRunCommands = [
-    "vivarium setup --domain coding --world-root ../the-world --state-path .vivarium/state.db",
+    "vivarium setup --quick --domain coding --world-root ../the-world --state-path .vivarium/state.db",
     'vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
-    "vivarium live env-init --path live-readiness.local.env",
     "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
     "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write",
     "vivarium model --env-file live-readiness.local.env",
     "vivarium live evidence-init --path v1-evidence.json",
     "vivarium doctor --live --env-file live-readiness.local.env",
+    "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
+    "vivarium launch handoff",
     "vivarium status",
     "vivarium help",
     "vivarium update",

@@ -249,6 +249,107 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).not.toContain("chmod 600 live-readiness.local.env");
   });
 
+  test("routes quick setup through local init and live env bootstrap", async () => {
+    const worldRoot = createWorldFixture();
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-setup-quick-"));
+    const statePath = join(root, ".vivarium", "state.db");
+    const envPath = join(root, "live-readiness.local.env");
+
+    const setup = await dispatchCliCommand([
+      "setup",
+      "--quick",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+      "--live-env-path",
+      envPath,
+      "--github-owner",
+      "idanmann10",
+      "--agent-repo",
+      "vivarium-agent",
+      "--world-repo",
+      "vivarium-world",
+      "--canonical-world-ref",
+      "https://github.com/idanmann10/vivarium-world.git",
+      "--private-world-ref",
+      "git@github.com:idanmann10/vivarium-world-private.git",
+    ]);
+    const body = readFileSync(envPath, "utf8");
+
+    expect(setup.command).toBe("setup");
+    expect(setup.result).toMatchObject({
+      ok: true,
+      local: { statePath },
+      quickEnv: {
+        ok: true,
+        written: true,
+        path: envPath,
+        mode: "0600",
+        prefilled: [
+          "VIVARIUM_GITHUB_OWNER",
+          "VIVARIUM_AGENT_REPO_NAME",
+          "VIVARIUM_WORLD_REPO_NAME",
+          "VIVARIUM_CANONICAL_WORLD_REF",
+          "VIVARIUM_PRIVATE_WORLD_REF",
+        ],
+      },
+      nextCommands: expect.arrayContaining([
+        expect.stringContaining(`setup --env-file ${envPath}`),
+        expect.stringContaining(`model --env-file ${envPath}`),
+        expect.stringContaining(`doctor --live --env-file ${envPath}`),
+      ]),
+    });
+    expect(statSync(envPath).mode & 0o777).toBe(0o600);
+    expect(body).toContain("export VIVARIUM_GITHUB_OWNER='idanmann10'");
+    expect(body).toContain("export VIVARIUM_AGENT_REPO_NAME='vivarium-agent'");
+    expect(body).toContain("export VIVARIUM_WORLD_REPO_NAME='vivarium-world'");
+    expect(body).toContain(
+      "export VIVARIUM_CANONICAL_WORLD_REF='https://github.com/idanmann10/vivarium-world.git'",
+    );
+    expect(body).toContain(
+      "export VIVARIUM_PRIVATE_WORLD_REF='git@github.com:idanmann10/vivarium-world-private.git'",
+    );
+    expect(setup.output).toContain("Live env quick start: written");
+    expect(setup.output).toContain(`Env file: ${envPath}`);
+    expect(setup.output).toContain("Fill live settings");
+    expect(setup.output).toContain(`vivarium setup --env-file ${envPath}`);
+    expect(setup.output).toContain(`vivarium model --env-file ${envPath}`);
+    expect(setup.output).not.toContain("live env-init");
+
+    const repeated = await dispatchCliCommand([
+      "setup",
+      "--quick",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+      "--live-env-path",
+      envPath,
+    ]);
+
+    expect(repeated.result).toMatchObject({
+      ok: true,
+      quickEnv: {
+        ok: false,
+        written: false,
+        path: envPath,
+        error: "Live readiness env already exists. Pass --overwrite to replace it.",
+      },
+      nextCommands: expect.arrayContaining([
+        expect.stringContaining(`setup --env-file ${envPath}`),
+        expect.stringContaining(`doctor --live --env-file ${envPath}`),
+      ]),
+    });
+    expect(repeated.output).toContain("Live env quick start: already exists");
+    expect(repeated.output).toContain(`Env file: ${envPath}`);
+    expect(repeated.output).not.toContain("live env-init");
+  });
+
   test("routes setup through missing local state parent directories", async () => {
     const worldRoot = createWorldFixture();
     const statePath = join(
@@ -431,6 +532,9 @@ describe("dispatchCliCommand", () => {
         expect.stringContaining(`doctor --live --env-file ${envPath}`),
       ]),
     });
+    expect(setup.output).toContain("Live setup blocked");
+    expect(setup.output).toContain(`Fill live settings: edit ${envPath} locally. Keep it out of git.`);
+    expect(setup.output).toContain("Production unlock needs provider keys/models");
     expect(setup.output).toContain(`vivarium setup --env-file ${envPath}`);
     expect(setup.output).toContain(`vivarium model --env-file ${envPath}`);
     expect(setup.output).toContain(`vivarium doctor --live --env-file ${envPath}`);
@@ -438,6 +542,63 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).not.toContain("setup --env-file live-readiness.local.env");
     expect(existsSync(profilesPath)).toBe(false);
     expect(existsSync(credentialsPath)).toBe(false);
+  });
+
+  test("groups blocked setup placeholders by unlock area", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-setup-live-placeholders-"));
+    const worldRoot = createWorldFixture();
+    const statePath = join(root, "state.db");
+    const envPath = join(root, "operator-live.env");
+    write(
+      envPath,
+      [
+        'export ANTHROPIC_API_KEY="<anthropic-api-key>"',
+        'export VIVARIUM_ANTHROPIC_MODEL="<anthropic-model>"',
+        'export VIVARIUM_CREDENTIALS_MASTER_KEY="<credentials-master-key>"',
+        'export VIVARIUM_INTERNAL_API_HEALTH_URL="<internal-health-url>"',
+      ].join("\n"),
+    );
+
+    const setup = await dispatchCliCommand([
+      "setup",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+      "--env-file",
+      envPath,
+    ]);
+
+    expect(setup.result).toMatchObject({
+      ok: false,
+      live: {
+        ok: false,
+        written: false,
+        placeholders: expect.arrayContaining([
+          "ANTHROPIC_API_KEY",
+          "VIVARIUM_ANTHROPIC_MODEL",
+          "VIVARIUM_CREDENTIALS_MASTER_KEY",
+          "VIVARIUM_INTERNAL_API_HEALTH_URL",
+        ]),
+      },
+    });
+    expect(setup.output).toContain("Placeholder keys by unlock area:");
+    expect(setup.output).toContain("Guide: docs/guides/live-readiness.md#operator-unlock-key-map");
+    expect(setup.output).toContain("Unlock key types:");
+    expect(setup.output).toContain("  Safe metadata: repo names, GitHub node IDs, model names, base URLs, context windows");
+    expect(setup.output).toContain("  Secrets: provider API keys, GitHub token, credential master key, internal API token");
+    expect(setup.output).toContain(
+      "  Evidence paths: provider profiles, encrypted credential store, v1 evidence manifest",
+    );
+    expect(setup.output).toContain("  Provider keys/models:");
+    expect(setup.output).toContain("    ANTHROPIC_API_KEY");
+    expect(setup.output).toContain("    VIVARIUM_ANTHROPIC_MODEL");
+    expect(setup.output).toContain("  Encrypted credentials/internal API:");
+    expect(setup.output).toContain("    VIVARIUM_CREDENTIALS_MASTER_KEY");
+    expect(setup.output).toContain("    VIVARIUM_INTERNAL_API_HEALTH_URL");
+    expect(setup.output).not.toContain("Placeholders: ANTHROPIC_API_KEY");
   });
 
   test("routes status and doctor commands", async () => {
@@ -489,6 +650,20 @@ describe("dispatchCliCommand", () => {
     );
     expect(liveDoctor.output).toContain("Readiness: needs attention");
     expect(liveDoctor.output).toContain("[fix] agent.name:missing");
+  });
+
+  test("routes launch handoff with the Mac install walkthrough", async () => {
+    const result = await dispatchCliCommand(["launch", "handoff"]);
+
+    expect(result.command).toBe("launch");
+    expect(result.output).toContain("Vivarium Launch Handoff");
+    expect(result.output).toContain(
+      "https://raw.githubusercontent.com/idanmann10/vivarium-agent/c6c6778f1024f19294d24219b02c7778566e5b04/scripts/install.sh",
+    );
+    expect(result.output).toContain("VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup");
+    expect(result.output).toContain("VIVARIUM_DAEMON=launchd");
+    expect(result.output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
+    expect(result.output).toContain("non-author reviewer with write or admin access");
   });
 
   test("routes live doctor checks through injected probes", async () => {

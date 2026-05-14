@@ -6,6 +6,9 @@ coverage/
 .DS_Store
 .worktrees/
 
+# Local runtime state created by setup and run commands.
+.vivarium/
+
 # Filled live-readiness env files may contain provider keys, GitHub tokens, and internal API metadata.
 live-readiness.local.env
 docs/live-readiness.local.env

@@ -71,7 +71,15 @@ describe("root toolchain wiring", () => {
     expect(installer).toContain("VIVARIUM_INSTALL_DIR");
     expect(installer).toContain("VIVARIUM_BIN_DIR");
     expect(installer).toContain("Command path:");
-    expect(installer).toContain("bun apps/cli/src/main.ts setup");
+    expect(installer).toContain("setup_args=(apps/cli/src/main.ts setup");
+    expect(installer).toContain("--github-owner");
+    expect(installer).toContain("--canonical-world-ref");
+  });
+
+  test("keeps local runtime state untracked", () => {
+    const gitignore = readFileSync(".gitignore", "utf8");
+
+    expect(gitignore).toContain(".vivarium/");
   });
 
   test("exposes a launch security audit", () => {
