@@ -28,6 +28,7 @@ export interface SetupCommandResult {
   readonly local: InitCommandResult;
   readonly live?: LiveSetupCommandResult;
   readonly quickEnv?: LiveEnvInitCommandResult;
+  readonly liveEnvFilePath: string;
   readonly nextCommands: readonly string[];
 }
 
@@ -170,6 +171,7 @@ export function setupCommand(options: SetupCommandOptions): SetupCommandResult {
     options.env === undefined
       ? undefined
       : liveSetupCommand({ env: options.env, confirmWrite: options.confirmWrite ?? false });
+  const liveEnvFilePath = options.envFilePath ?? quickEnv?.path ?? defaultLiveEnvFilePath;
   return {
     ok:
       live === undefined
@@ -178,6 +180,7 @@ export function setupCommand(options: SetupCommandOptions): SetupCommandResult {
     local,
     ...(live === undefined ? {} : { live }),
     ...(quickEnv === undefined ? {} : { quickEnv }),
+    liveEnvFilePath,
     nextCommands: setupNextCommands(options, local, live, quickEnv),
   };
 }
@@ -212,7 +215,10 @@ function renderQuickEnvSummary(quickEnv: LiveEnvInitCommandResult | undefined): 
   ];
 }
 
-function renderLiveSummary(live: LiveSetupCommandResult | undefined): readonly string[] {
+function renderLiveSummary(
+  live: LiveSetupCommandResult | undefined,
+  envFilePath: string,
+): readonly string[] {
   if (live === undefined) {
     return ["Live setup: env file not provided"];
   }
@@ -236,6 +242,8 @@ function renderLiveSummary(live: LiveSetupCommandResult | undefined): readonly s
 
   return [
     "Live setup blocked",
+    `Fill live settings: edit ${envFilePath} locally. Keep it out of git.`,
+    "Production unlock needs provider keys/models, provider profiles, encrypted credentials, and an internal health URL.",
     ...(live.missing === undefined ? [] : [`Missing: ${live.missing.join(", ")}`]),
     ...(live.placeholders === undefined ? [] : [`Placeholders: ${live.placeholders.join(", ")}`]),
     ...(live.invalid === undefined ? [] : [`Invalid: ${live.invalid.join(", ")}`]),
@@ -253,7 +261,7 @@ export function renderSetupCommandResult(result: SetupCommandResult): string {
     `Starter skills: ${result.local.starterSkills.length}`,
     `Starter traces: ${result.local.starterTraces.length}`,
     ...(result.quickEnv === undefined
-      ? renderLiveSummary(result.live)
+      ? renderLiveSummary(result.live, result.liveEnvFilePath)
       : renderQuickEnvSummary(result.quickEnv)),
     "",
     ...renderLaunchSequence(result.nextCommands, { heading: "Next commands:" }),

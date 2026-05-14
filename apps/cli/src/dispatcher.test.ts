@@ -532,6 +532,9 @@ describe("dispatchCliCommand", () => {
         expect.stringContaining(`doctor --live --env-file ${envPath}`),
       ]),
     });
+    expect(setup.output).toContain("Live setup blocked");
+    expect(setup.output).toContain(`Fill live settings: edit ${envPath} locally. Keep it out of git.`);
+    expect(setup.output).toContain("Production unlock needs provider keys/models");
     expect(setup.output).toContain(`vivarium setup --env-file ${envPath}`);
     expect(setup.output).toContain(`vivarium model --env-file ${envPath}`);
     expect(setup.output).toContain(`vivarium doctor --live --env-file ${envPath}`);
