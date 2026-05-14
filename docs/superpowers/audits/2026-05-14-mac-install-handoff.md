@@ -40,7 +40,7 @@ canonical world checkout at `~/.vivarium/the-world`, the CLI command at
 
 Do not claim full v1 production readiness yet. A fresh installed
 `vivarium doctor --live --env-file live-readiness.local.env` still reports
-`21 passing, 32 blocked`.
+`26 passing, 27 blocked`.
 
 The remaining blockers require:
 
@@ -50,10 +50,11 @@ The remaining blockers require:
   provider.
 - An encrypted internal credential store and successful internal credential
   smoke.
-- Valid GitHub token/write evidence for live Discussions, PRs, and main-branch
-  CI checks.
 - Real v1 evidence for public contribution, published artifacts, curation stats,
   and the required two-week improvement evidence.
+
+The local GitHub env/auth, RFC Discussion, and latest `main` CI checks are now
+configured; public contribution proof remains part of the v1 evidence manifest.
 
 ## Review Unblock
 

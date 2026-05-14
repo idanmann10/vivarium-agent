@@ -778,10 +778,10 @@ describe("reference docs", () => {
       "## Current Production Blocker Map",
       "Model providers",
       "Internal credential smoke",
-      "GitHub writes and main-branch CI",
+      "GitHub live checks",
       "V1 evidence manifest",
       "Non-author PR review",
-      "doctor --live reports `21 passing, 32 blocked`",
+      "doctor --live reports `26 passing, 27 blocked`",
     ]) {
       expect(body).toContain(term);
     }
@@ -920,7 +920,7 @@ describe("reference docs", () => {
       "Status: ok",
       "`401 pass, 0 fail`",
       "`REVIEW_REQUIRED`",
-      "`21 passing, 32 blocked`",
+      "`26 passing, 27 blocked`",
       "non-author review",
       "Only configured collaborator",
       "no teams",
