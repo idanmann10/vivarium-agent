@@ -787,6 +787,37 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents live unlock keys by operator purpose", () => {
+    const guide = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    const example = readFileSync(join("docs", "live-readiness.env.example"), "utf8");
+    for (const term of [
+      "## Operator Unlock Key Map",
+      "Provider keys/models",
+      "`ANTHROPIC_API_KEY`",
+      "`VIVARIUM_OPENROUTER_BASE_URL`",
+      "Provider profiles",
+      "`VIVARIUM_PROVIDER_PROFILES_PATH`",
+      "Encrypted credentials/internal API",
+      "`VIVARIUM_CREDENTIALS_MASTER_KEY`",
+      "`VIVARIUM_INTERNAL_API_HEALTH_URL`",
+      "GitHub/public release",
+      "`GITHUB_TOKEN`",
+      "V1 evidence manifest",
+      "`VIVARIUM_V1_EVIDENCE_PATH`",
+    ]) {
+      expect(guide).toContain(term);
+    }
+    for (const term of [
+      "# Provider keys/models",
+      "# Provider profiles",
+      "# Encrypted credential store and internal API smoke target",
+      "# GitHub/public release",
+      "# Live v1 evidence manifest",
+    ]) {
+      expect(example).toContain(term);
+    }
+  });
+
   test("documents the operator v1 completion boundary in the live-readiness guide", () => {
     const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
     for (const term of [
