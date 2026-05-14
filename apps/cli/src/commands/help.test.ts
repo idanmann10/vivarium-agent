@@ -24,6 +24,7 @@ describe("helpCommand", () => {
         expect.objectContaining({
           command: "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
         }),
+        expect.objectContaining({ command: "vivarium launch handoff" }),
         expect.objectContaining({ command: "vivarium update" }),
       ]),
     );
@@ -48,7 +49,8 @@ describe("helpCommand", () => {
     expect(firstRunBlock).toContain("[5] Prepare live evidence");
     expect(firstRunBlock).toContain("[6] Run the readiness gate");
     expect(firstRunBlock).toContain("[7] Verify the Mac daemon");
-    expect(firstRunBlock).toContain("[8] Keep moving");
+    expect(firstRunBlock).toContain("[8] Review launch handoff");
+    expect(firstRunBlock).toContain("[9] Keep moving");
     expect(firstRunBlock).toContain(
       "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
     );
@@ -59,10 +61,12 @@ describe("helpCommand", () => {
     expect(firstRunBlock).toContain("vivarium live evidence-init --path v1-evidence.json");
     expect(firstRunBlock).toContain("vivarium doctor --live --env-file live-readiness.local.env");
     expect(firstRunBlock).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
+    expect(firstRunBlock).toContain("vivarium launch handoff");
     expect(firstRunBlock).toContain("vivarium status");
     expect(firstRunBlock).toContain("vivarium help");
     expect(firstRunBlock).toContain("vivarium update");
     expect(firstRunBlock).not.toContain("[7] Continue");
+    expect(firstRunBlock).not.toContain("[8] Continue");
     expect(firstRunBlock).not.toContain("  vivarium doctor                                     Check readiness.");
     expect(firstRunBlock).not.toContain("  vivarium model                                      Show provider setup.");
     const liveEnvInitRow = output

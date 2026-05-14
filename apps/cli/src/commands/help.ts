@@ -43,6 +43,10 @@ export function helpCommand(): HelpCommandResult {
         description: "Verify the Mac LaunchAgent daemon.",
       },
       {
+        command: "vivarium launch handoff",
+        description: "Show the Mac install command and production boundary.",
+      },
+      {
         command: "vivarium update",
         description: "Pull the latest agent and refresh dependencies.",
       },
@@ -68,6 +72,7 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
     "vivarium live evidence-init --path v1-evidence.json",
     "vivarium doctor --live --env-file live-readiness.local.env",
     "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
+    "vivarium launch handoff",
     "vivarium status",
     "vivarium help",
     "vivarium update",

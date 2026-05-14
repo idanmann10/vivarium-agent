@@ -605,7 +605,8 @@ describe("reference docs", () => {
         "# [4] Prepare live evidence",
         "# [5] Run the readiness gate",
         "# [6] Verify the Mac daemon",
-        "# [7] Keep moving",
+        "# [7] Review launch handoff",
+        "# [8] Keep moving",
       ]) {
         expect(block).toContain(stage);
       }
@@ -618,6 +619,7 @@ describe("reference docs", () => {
         "vivarium live evidence-init --path v1-evidence.json",
         "vivarium doctor --live --env-file live-readiness.local.env",
         "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
+        "vivarium launch handoff",
         "vivarium status",
         "vivarium help",
         "vivarium update",

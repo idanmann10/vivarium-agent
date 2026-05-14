@@ -652,6 +652,19 @@ describe("dispatchCliCommand", () => {
     expect(liveDoctor.output).toContain("[fix] agent.name:missing");
   });
 
+  test("routes launch handoff with the Mac install walkthrough", async () => {
+    const result = await dispatchCliCommand(["launch", "handoff"]);
+
+    expect(result.command).toBe("launch");
+    expect(result.output).toContain("Vivarium Launch Handoff");
+    expect(result.output).toContain(
+      "https://raw.githubusercontent.com/idanmann10/vivarium-agent/codex/hermes-style-quick-setup/scripts/install.sh",
+    );
+    expect(result.output).toContain("VIVARIUM_DAEMON=launchd");
+    expect(result.output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
+    expect(result.output).toContain("eligible non-author reviewer");
+  });
+
   test("routes live doctor checks through injected probes", async () => {
     await expect(
       dispatchCliCommand(["doctor", "--live", "--agent-root", "/agent", "--world-root", "/world"], {

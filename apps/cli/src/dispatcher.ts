@@ -48,6 +48,7 @@ import {
   renderIdentitySummaryCommandResult,
 } from "./commands/identity.js";
 import { renderInitCommandResult, runInitCommand } from "./commands/init.js";
+import { launchHandoffCommand, renderLaunchHandoffCommandResult } from "./commands/launch.js";
 import {
   liveEnvInitCommand,
   liveEvidenceInitCommand,
@@ -272,6 +273,20 @@ export async function dispatchCliCommand(
     case "help": {
       const result = helpCommand();
       return { command, result, output: renderHelpCommandResult(result) };
+    }
+    case "launch": {
+      if (subcommand !== "handoff") {
+        usage('Unknown launch subcommand. Use "handoff".');
+      }
+      const owner = value(flags, "owner");
+      const repo = value(flags, "repo");
+      const ref = value(flags, "ref");
+      const result = launchHandoffCommand({
+        ...(owner === undefined ? {} : { owner }),
+        ...(repo === undefined ? {} : { repo }),
+        ...(ref === undefined ? {} : { ref }),
+      });
+      return { command, result, output: renderLaunchHandoffCommandResult(result) };
     }
     case "init": {
       const worldRoot = value(flags, "world-root");

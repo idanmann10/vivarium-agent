@@ -102,7 +102,10 @@ vivarium doctor --live --env-file live-readiness.local.env
 # [6] Verify the Mac daemon, when installed with VIVARIUM_DAEMON=launchd
 vivarium daemon smoke --status-url http://127.0.0.1:8787/status
 
-# [7] Keep moving
+# [7] Review launch handoff
+vivarium launch handoff
+
+# [8] Keep moving
 vivarium status
 vivarium help
 vivarium update
