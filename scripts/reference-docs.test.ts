@@ -871,6 +871,28 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents the current Mac install handoff audit", () => {
+    const path = join("docs", "superpowers", "audits", "2026-05-14-mac-install-handoff.md");
+    expect(existsSync(path), `${path} should exist`).toBe(true);
+    const body = existsSync(path) ? readFileSync(path, "utf8") : "";
+    for (const term of [
+      "curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/codex/hermes-style-quick-setup/scripts/install.sh",
+      "VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup",
+      "VIVARIUM_DAEMON=launchd",
+      "installed checkout",
+      "`9cafcce`",
+      "Status: ok",
+      "`396 pass, 0 fail`",
+      "`REVIEW_REQUIRED`",
+      "`21 passing, 32 blocked`",
+      "non-author review",
+      "provider keys",
+      "two-week improvement evidence",
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
+
   test("documents open-source production readiness at the repo root", () => {
     for (const [path, terms] of Object.entries(agentRootDocs)) {
       expect(existsSync(path), `${path} should exist`).toBe(true);
