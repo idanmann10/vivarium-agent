@@ -18,8 +18,8 @@ export interface LaunchHandoffCommandResult {
 
 const defaultOwner = "idanmann10";
 const defaultRepo = "vivarium-agent";
-const defaultRef = "codex/hermes-style-quick-setup";
-const defaultScriptRef = "c6c6778f1024f19294d24219b02c7778566e5b04";
+const defaultRef = "main";
+const defaultScriptRef = "main";
 
 function installCommand(owner: string, repo: string, ref: string, scriptRef: string): string {
   const scriptUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${scriptRef}/scripts/install.sh`;
@@ -52,7 +52,6 @@ export function launchHandoffCommand(
       "vivarium doctor --live --env-file live-readiness.local.env",
     ],
     requiredUnblocks: [
-      "non-author reviewer with write or admin access for PR #22",
       "real provider keys/smokes for Anthropic, OpenRouter, and the private OpenAI-compatible provider",
       "encrypted internal credential smoke",
       "v1 evidence manifest with public contribution, published artifacts, curation stats, and two-week improvement evidence",
@@ -64,14 +63,9 @@ export function launchHandoffCommand(
       "GitHub IDs point checks at the public repos and Discussion category; they are not secrets.",
     ],
     ownerNextActions: [
-      "Ask a non-author reviewer with write or admin access to approve PR #22.",
-      "GitHub rejects author self-approval: Review Can not approve your own pull request.",
-      "Add a reviewer with: gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/<github-username> -f permission=push",
-      "Request that reviewer with: gh pr edit 22 --repo idanmann10/vivarium-agent --add-reviewer <github-username>",
-      "Explicit owner admin bypass, if chosen: gh pr merge 22 --repo idanmann10/vivarium-agent --squash --admin --delete-branch=false",
-      "Do not lower branch protection to merge this PR.",
+      "Run the stable main install command above for local Mac setup.",
       "After secrets and evidence are available, rerun vivarium doctor --live --env-file live-readiness.local.env.",
-      "After PR #22 merges, switch the install command to the main branch.",
+      "Do not claim full v1 live readiness until doctor --live reports ready.",
     ],
   };
 }
