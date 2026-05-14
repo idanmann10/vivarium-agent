@@ -69,6 +69,36 @@ Safe owner action:
 Do not lower branch protection just to merge this PR unless the repository owner
 explicitly decides to change the safety policy.
 
+### Reviewer Handoff
+
+Send this to an eligible non-author reviewer:
+
+```text
+Please review https://github.com/idanmann10/vivarium-agent/pull/22.
+
+The PR installs Vivarium locally on macOS, starts the LaunchAgent daemon, and
+prints the setup walkthrough. To smoke-test it on a Mac:
+
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/codex/hermes-style-quick-setup/scripts/install.sh | \
+  VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup \
+  VIVARIUM_DAEMON=launchd \
+  bash
+
+Then run:
+
+vivarium run --goal "validate local setup" --state-path .vivarium/state.db
+vivarium daemon smoke --status-url http://127.0.0.1:8787/status
+vivarium setup --env-file live-readiness.local.env --domain coding --world-root ~/.vivarium/the-world --state-path .vivarium/state.db
+
+Expected local result: the run succeeds, daemon smoke reports Status: ok, and
+blocked live setup points at live-readiness.local.env plus the production input
+groups still needed. Full v1 live readiness is intentionally not claimed until
+doctor --live returns ok:true.
+
+If this looks good, approve PR #22. Do not lower branch protection to merge it.
+Auto-merge is already enabled.
+```
+
 ## Post-Merge Command
 
 After PR #22 has a non-author review and merges to `main`, the stable public
