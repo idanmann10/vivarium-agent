@@ -65,6 +65,9 @@ export function launchHandoffCommand(
     ],
     ownerNextActions: [
       "Ask a non-author reviewer with write or admin access to approve PR #22.",
+      "GitHub rejects author self-approval: Review Can not approve your own pull request.",
+      "Add a reviewer with: gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/<github-username> -f permission=push",
+      "Request that reviewer with: gh pr edit 22 --repo idanmann10/vivarium-agent --add-reviewer <github-username>",
       "Do not lower branch protection to merge this PR.",
       "After secrets and evidence are available, rerun vivarium doctor --live --env-file live-readiness.local.env.",
       "After PR #22 merges, switch the install command to the main branch.",

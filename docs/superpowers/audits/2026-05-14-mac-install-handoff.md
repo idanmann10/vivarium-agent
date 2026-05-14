@@ -76,6 +76,16 @@ Safe owner action:
    approve PR #22.
 2. Let the existing auto-merge request merge the PR after review and checks pass.
 
+GitHub rejects author self-approval with `Review Can not approve your own pull request`,
+so the `idanmann10` session cannot satisfy this requirement.
+
+Owner command path:
+
+```bash
+gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/<github-username> -f permission=push
+gh pr edit 22 --repo idanmann10/vivarium-agent --add-reviewer <github-username>
+```
+
 Do not lower branch protection just to merge this PR unless the repository owner
 explicitly decides to change the safety policy.
 
