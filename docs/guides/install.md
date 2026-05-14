@@ -42,6 +42,34 @@ disable it, or `FORCE_COLOR=1` when a wrapper strips TTY detection. Set
 `VIVARIUM_THEME=matrix` or `VIVARIUM_THEME=amber` for alternate ASCII-art
 palettes.
 
+## Branch-pinned Mac install
+
+Before a branch, tag, or release commit is available on `main`, fetch the
+installer from that ref and pass the same ref into the checkout step:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/<branch-or-tag>/scripts/install.sh | \
+  VIVARIUM_AGENT_REF=<branch-or-tag> \
+  VIVARIUM_DAEMON=launchd \
+  bash
+```
+
+This keeps the downloaded installer and the installed checkout on the same
+version. The default Mac layout is:
+
+- Agent checkout: `~/.vivarium/vivarium-agent`
+- Canonical world checkout: `~/.vivarium/the-world`
+- CLI command: `~/.local/bin/vivarium`
+- LaunchAgent: `~/Library/LaunchAgents/com.vivarium.agent.daemon.plist`
+- Local live-readiness env file: `live-readiness.local.env`
+
+After a branch-pinned install, verify both the daemon and a local run:
+
+```bash
+vivarium daemon smoke --status-url http://127.0.0.1:8787/status
+vivarium run --goal "validate local setup" --state-path .vivarium/state.db
+```
+
 After installation, reload your shell if needed and run:
 
 ```bash

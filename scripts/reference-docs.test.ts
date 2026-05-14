@@ -661,6 +661,24 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents a safe branch-pinned Mac handoff command", () => {
+    const body = readFileSync(join("docs", "guides", "install.md"), "utf8");
+
+    for (const term of [
+      "Branch-pinned Mac install",
+      "VIVARIUM_AGENT_REF=<branch-or-tag>",
+      "VIVARIUM_DAEMON=launchd",
+      "~/.vivarium/vivarium-agent",
+      "~/.vivarium/the-world",
+      "~/.local/bin/vivarium",
+      "live-readiness.local.env",
+      "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
+      'vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
+
   test("documents the launch security branch protection terminal workflow", () => {
     const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
 
