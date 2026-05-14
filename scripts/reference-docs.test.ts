@@ -663,12 +663,12 @@ describe("reference docs", () => {
     }
   });
 
-  test("documents a safe branch-pinned Mac handoff command", () => {
+  test("documents a safe pre-main Mac handoff command", () => {
     const body = readFileSync(join("docs", "guides", "install.md"), "utf8");
 
     for (const term of [
-      "Branch-pinned Mac install",
-      "VIVARIUM_AGENT_REF=<branch-or-tag>",
+      "Pre-main Mac install",
+      "VIVARIUM_AGENT_REF=<branch-or-tag-or-commit>",
       "VIVARIUM_DAEMON=launchd",
       "~/.vivarium/vivarium-agent",
       "~/.vivarium/the-world",
@@ -909,7 +909,7 @@ describe("reference docs", () => {
     expect(existsSync(path), `${path} should exist`).toBe(true);
     const body = existsSync(path) ? readFileSync(path, "utf8") : "";
     for (const term of [
-      "curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/codex/hermes-style-quick-setup/scripts/install.sh",
+      "curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/340f7340e5937da79872dfb30d975300f7b2e89a/scripts/install.sh",
       "VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup",
       "VIVARIUM_DAEMON=launchd",
       "installed checkout",
@@ -920,7 +920,7 @@ describe("reference docs", () => {
       "origin` set to `https://github.com/idanmann10/vivarium-agent.git",
       "vivarium update",
       "Status: ok",
-      "`401 pass, 0 fail`",
+      "`404 pass, 0 fail`",
       "`REVIEW_REQUIRED`",
       "`31 passing, 22 blocked`",
       "non-author review",

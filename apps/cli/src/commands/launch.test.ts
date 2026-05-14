@@ -3,12 +3,12 @@ import { describe, expect, test } from "bun:test";
 import { launchHandoffCommand, renderLaunchHandoffCommandResult } from "./launch.js";
 
 describe("launchHandoffCommand", () => {
-  test("renders the branch-pinned Mac install handoff and production boundary", () => {
+  test("renders the commit-pinned Mac install script and branch-pinned checkout handoff", () => {
     const result = launchHandoffCommand();
     const output = renderLaunchHandoffCommandResult(result);
 
     expect(result.installCommand).toContain(
-      "https://raw.githubusercontent.com/idanmann10/vivarium-agent/codex/hermes-style-quick-setup/scripts/install.sh",
+      "https://raw.githubusercontent.com/idanmann10/vivarium-agent/340f7340e5937da79872dfb30d975300f7b2e89a/scripts/install.sh",
     );
     expect(result.installCommand).toContain("VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup");
     expect(result.installCommand).toContain("VIVARIUM_DAEMON=launchd");

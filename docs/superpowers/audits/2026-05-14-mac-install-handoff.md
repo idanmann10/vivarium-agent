@@ -8,10 +8,12 @@ honest production-readiness boundary.
 
 ## Install Command
 
-Use the branch-pinned installer until PR #22 is reviewed and merged:
+Use the commit-pinned installer until PR #22 is reviewed and merged. The
+downloaded installer script is pinned to verified commit `340f734`, while the
+installed checkout is still pinned to the handoff branch:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/codex/hermes-style-quick-setup/scripts/install.sh | \
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/340f7340e5937da79872dfb30d975300f7b2e89a/scripts/install.sh | \
   VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup \
   VIVARIUM_DAEMON=launchd \
   bash
@@ -26,15 +28,15 @@ canonical world checkout at `~/.vivarium/the-world`, the CLI command at
 
 | Requirement | Evidence | Status |
 | --- | --- | --- |
-| Branch installer can pin the checkout | `scripts/install.test.ts` covers `VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup`, and the real Mac branch-pinned raw GitHub command completed against the handoff branch | Complete |
+| Commit-pinned installer can pin the checkout | `scripts/install.test.ts` covers `VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup`, and the real Mac commit-pinned raw GitHub command completed against the handoff branch | Complete |
 | Fresh installs prefill safe public metadata | `scripts/install.test.ts` covers GitHub URL inference for `--github-owner`, `--agent-repo`, `--world-repo`, and `--canonical-world-ref`; installed `bash scripts/install.sh --dry-run` shows those inferred arguments for the public repos | Complete |
 | Existing installs keep updating from GitHub | `scripts/install.test.ts` covers existing checkout remote normalization; the real installed checkout has `origin` set to `https://github.com/idanmann10/vivarium-agent.git`, and `vivarium update` completed `git pull --ff-only` plus `bun install --frozen-lockfile` | Complete |
 | Real Mac installed checkout is current | Installed checkout `~/.vivarium/vivarium-agent` is synced to the latest pushed head of the installed branch `codex/hermes-style-quick-setup` with a clean status after the latest handoff update | Complete |
-| Exact copy-paste install command works | The current branch-pinned `curl -fsSL ... | VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup VIVARIUM_DAEMON=launchd bash` command fetched the raw GitHub installer, updated the checkout, ran `bun install --frozen-lockfile`, ran `setup --quick`, and deployed the LaunchAgent | Complete |
+| Exact copy-paste install command works | The current commit-pinned `curl -fsSL ... | VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup VIVARIUM_DAEMON=launchd bash` command fetched the raw GitHub installer, updated the checkout, ran `bun install --frozen-lockfile`, ran `setup --quick`, printed `vivarium launch handoff`, and deployed the LaunchAgent | Complete |
 | CLI walkthrough explains the Mac daemon step | Installed `vivarium help` shows `Verify the Mac daemon` and `vivarium daemon smoke --status-url http://127.0.0.1:8787/status` | Complete |
 | Daemon is running | `vivarium daemon smoke --status-url http://127.0.0.1:8787/status` returned `Status: ok` | Complete |
 | Local loop runs after install | Installed `/Users/idanmann/.local/bin/vivarium run --goal "validate local setup" --state-path .vivarium/state.db --world-root /Users/idanmann/.vivarium/the-world` returned `Status: success` with run ID `run-1778794705226-985` | Complete |
-| Local code gates pass | `bun run lint`, `bun run typecheck`, `bun run build`, `bun run knip`, `bun run public-release:scan`, `bun run format:check`, `git diff --check`, and `bun test` passed; the full test suite reported `401 pass, 0 fail` | Complete |
+| Local code gates pass | `bun run lint`, `bun run typecheck`, `bun run build`, `bun run knip`, `bun run public-release:scan`, `bun run format:check`, `git diff --check`, and `bun test` passed; the full test suite reported `404 pass, 0 fail` | Complete |
 | PR checks pass | PR #22 on branch `codex/hermes-style-quick-setup` has successful `verify`, `changeset`, `Analyze JavaScript and TypeScript`, and CodeQL scanning checks before handoff | Complete |
 | Launch security posture is verified | `bun run launch:security-audit` returned `ok:true` for public agent/world repos, enabled branch protection, enabled secret scanning and push protection, and zero open Dependabot, secret scanning, or code scanning alerts | Complete |
 
@@ -84,7 +86,7 @@ Please review https://github.com/idanmann10/vivarium-agent/pull/22.
 The PR installs Vivarium locally on macOS, starts the LaunchAgent daemon, and
 prints the setup walkthrough. To smoke-test it on a Mac:
 
-curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/codex/hermes-style-quick-setup/scripts/install.sh | \
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/340f7340e5937da79872dfb30d975300f7b2e89a/scripts/install.sh | \
   VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup \
   VIVARIUM_DAEMON=launchd \
   bash

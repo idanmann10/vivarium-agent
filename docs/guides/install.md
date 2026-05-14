@@ -44,20 +44,21 @@ disable it, or `FORCE_COLOR=1` when a wrapper strips TTY detection. Set
 `VIVARIUM_THEME=matrix` or `VIVARIUM_THEME=amber` for alternate ASCII-art
 palettes.
 
-## Branch-pinned Mac install
+## Pre-main Mac install
 
-Before a branch, tag, or release commit is available on `main`, fetch the
-installer from that ref and pass the same ref into the checkout step:
+Before a branch, tag, or release commit is available on `main`, fetch a
+verified installer script by commit or tag and pass the desired checkout ref
+into the install step:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/<branch-or-tag>/scripts/install.sh | \
-  VIVARIUM_AGENT_REF=<branch-or-tag> \
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/<installer-commit-or-tag>/scripts/install.sh | \
+  VIVARIUM_AGENT_REF=<branch-or-tag-or-commit> \
   VIVARIUM_DAEMON=launchd \
   bash
 ```
 
-This keeps the downloaded installer and the installed checkout on the same
-version. The default Mac layout is:
+This keeps the downloaded installer stable while the installed checkout follows
+the explicit ref you selected. The default Mac layout is:
 
 - Agent checkout: `~/.vivarium/vivarium-agent`
 - Canonical world checkout: `~/.vivarium/the-world`
@@ -65,7 +66,7 @@ version. The default Mac layout is:
 - LaunchAgent: `~/Library/LaunchAgents/com.vivarium.agent.daemon.plist`
 - Local live-readiness env file: `live-readiness.local.env`
 
-After a branch-pinned install, verify both the daemon and a local run:
+After a pre-main install, verify both the daemon and a local run:
 
 ```bash
 vivarium daemon smoke --status-url http://127.0.0.1:8787/status
