@@ -930,6 +930,7 @@ describe("reference docs", () => {
       "Review Can not approve your own pull request",
       "gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/<github-username> -f permission=push",
       "gh pr edit 22 --repo idanmann10/vivarium-agent --add-reviewer <github-username>",
+      "gh pr merge 22 --repo idanmann10/vivarium-agent --squash --admin --delete-branch=false",
       "Please review https://github.com/idanmann10/vivarium-agent/pull/22",
       'vivarium run --goal "validate local setup"',
       "approve PR #22",

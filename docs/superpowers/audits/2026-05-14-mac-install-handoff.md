@@ -86,6 +86,13 @@ gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/<github-username> -f
 gh pr edit 22 --repo idanmann10/vivarium-agent --add-reviewer <github-username>
 ```
 
+If the repository owner explicitly chooses admin bypass instead of waiting for
+the review gate, the merge command is:
+
+```bash
+gh pr merge 22 --repo idanmann10/vivarium-agent --squash --admin --delete-branch=false
+```
+
 Do not lower branch protection just to merge this PR unless the repository owner
 explicitly decides to change the safety policy.
 

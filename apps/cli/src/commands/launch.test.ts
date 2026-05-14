@@ -35,6 +35,9 @@ describe("launchHandoffCommand", () => {
       "gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/<github-username> -f permission=push",
     );
     expect(output).toContain("gh pr edit 22 --repo idanmann10/vivarium-agent --add-reviewer <github-username>");
+    expect(output).toContain(
+      "Explicit owner admin bypass, if chosen: gh pr merge 22 --repo idanmann10/vivarium-agent --squash --admin --delete-branch=false",
+    );
     expect(output).toContain("Do not lower branch protection to merge this PR.");
     expect(output).toContain("After PR #22 merges, switch the install command to the main branch.");
   });
