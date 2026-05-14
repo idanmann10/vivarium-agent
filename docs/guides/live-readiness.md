@@ -55,7 +55,11 @@ until these operator-owned inputs are real and verified:
 | Internal credential smoke | A local encrypted credential store, master key, internal API credential value, health URL, and a successful `credentials smoke` result. |
 | GitHub live checks | The local env has a keychain-backed `GITHUB_TOKEN`, repository IDs, a visible RFC Discussion, and successful latest `main` CI checks for both repos; v1 public contribution evidence is still tracked in the v1 evidence manifest. |
 | V1 evidence manifest | Real multi-day goal evidence, provider and credential smoke transcripts, Dream artifacts, public contribution evidence, published canonical-world artifacts, curation stats, and the required two-week follow-up evidence. |
-| Non-author PR review | PRs into protected `main` need the configured status checks plus a review from someone other than the PR author; do not lower this gate without an explicit owner decision. |
+
+The Mac installer and handoff PRs have already merged through protected `main`
+with required status checks and non-author review. Future PRs should keep using
+that branch-protection path; it is not one of the current `doctor --live`
+blockers.
 
 ## Operator Unlock Key Map
 
