@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, test } from "bun:test";
@@ -11,7 +11,7 @@ function write(path: string, content: string): void {
 }
 
 function createWorldFixture(): string {
-  const root = join(tmpdir(), `setup-disk-space-world-${Date.now()}-${Math.random()}`);
+  const root = mkdtempSync(join(tmpdir(), "setup-disk-space-world-"));
   write(join(root, "domains", "coding", "curriculum.md"), "# Coding Curriculum\n");
   write(
     join(root, "domains", "coding", "skills", "red-green", "SKILL.md"),
@@ -22,7 +22,7 @@ function createWorldFixture(): string {
 
 describe("setupCommand", () => {
   test("reports low disk space before initializing local SQLite state", () => {
-    const root = join(tmpdir(), `setup-disk-space-${Date.now()}-${Math.random()}`);
+    const root = mkdtempSync(join(tmpdir(), "setup-disk-space-"));
     const statePath = join(root, ".vivarium", "state.db");
 
     expect(() =>
