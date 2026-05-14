@@ -16,6 +16,9 @@ Environment:
   VIVARIUM_BIN_DIR            Directory for the vivarium command.
   VIVARIUM_WORLD_REPO_URL     World repository URL.
   VIVARIUM_WORLD_ROOT         World checkout directory.
+  VIVARIUM_DAEMON             Set to launchd to install and start the macOS daemon.
+  VIVARIUM_DAEMON_LABEL       macOS LaunchAgent label.
+  VIVARIUM_DAEMON_PORT        Local daemon port.
   VIVARIUM_DOMAIN             Initial setup domain.
   VIVARIUM_STATE_PATH         State database path relative to the agent checkout.
   VIVARIUM_COLOR              Set to always or never to control ANSI output.
@@ -75,6 +78,14 @@ command_path="$bin_dir/vivarium"
 world_repo_url="${VIVARIUM_WORLD_REPO_URL:-https://github.com/idanmann10/vivarium-world.git}"
 default_world_root="$(dirname "$install_dir")/the-world"
 world_root="$(absolute_path "${VIVARIUM_WORLD_ROOT:-$default_world_root}")"
+daemon_mode="${VIVARIUM_DAEMON:-none}"
+daemon_label="${VIVARIUM_DAEMON_LABEL:-com.vivarium.agent.daemon}"
+daemon_host="${VIVARIUM_DAEMON_HOST:-127.0.0.1}"
+daemon_port="${VIVARIUM_DAEMON_PORT:-8787}"
+launch_agents_dir="$home_dir/Library/LaunchAgents"
+daemon_plist_path="$launch_agents_dir/$daemon_label.plist"
+daemon_log_dir="$home_dir/.vivarium/logs"
+bun_command="${VIVARIUM_BUN_PATH:-bun}"
 domain="${VIVARIUM_DOMAIN:-coding}"
 state_path="${VIVARIUM_STATE_PATH:-.vivarium/state.db}"
 
@@ -188,6 +199,27 @@ checkout_or_update() {
   run git clone "$repo" "$destination"
 }
 
+display_home_path() {
+  case "$1" in
+    "$home_dir"/*)
+      printf '~/%s\n' "${1#"$home_dir"/}"
+      ;;
+    *)
+      printf '%s\n' "$1"
+      ;;
+  esac
+}
+
+xml_escape() {
+  local value="$1"
+  value="${value//&/&amp;}"
+  value="${value//</&lt;}"
+  value="${value//>/&gt;}"
+  value="${value//\"/&quot;}"
+  value="${value//\'/&apos;}"
+  printf '%s' "$value"
+}
+
 write_vivarium_command() {
   if [ "$dry_run" -eq 1 ]; then
     echo "Would write vivarium command: $command_path"
@@ -203,12 +235,87 @@ write_vivarium_command() {
   chmod +x "$command_path"
 }
 
+write_launch_agent() {
+  if [ "$daemon_mode" = "none" ]; then
+    return 0
+  fi
+
+  if [ "$daemon_mode" != "launchd" ]; then
+    echo "Invalid VIVARIUM_DAEMON: $daemon_mode" >&2
+    echo "Supported values: none, launchd" >&2
+    exit 2
+  fi
+
+  if [ "$dry_run" -eq 0 ] && [ "$(uname -s)" != "Darwin" ]; then
+    echo "VIVARIUM_DAEMON=launchd requires macOS." >&2
+    exit 1
+  fi
+
+  local display_plist
+  display_plist="$(display_home_path "$daemon_plist_path")"
+
+  if [ "$dry_run" -eq 1 ]; then
+    echo "Daemon deployment: launchd"
+    echo "Would write macOS LaunchAgent: $display_plist"
+    echo "Would run: launchctl bootout gui/\$UID $display_plist"
+    echo "Would run: launchctl bootstrap gui/\$UID $display_plist"
+    echo "Would run: launchctl kickstart -k gui/\$UID/$daemon_label"
+    return 0
+  fi
+
+  run mkdir -p "$launch_agents_dir"
+  run mkdir -p "$daemon_log_dir"
+
+  cat >"$daemon_plist_path" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>$(xml_escape "$daemon_label")</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>$(xml_escape "$bun_command")</string>
+    <string>apps/daemon/src/main.ts</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>$(xml_escape "$install_dir")</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>VIVARIUM_DAEMON_HOST</key>
+    <string>$(xml_escape "$daemon_host")</string>
+    <key>VIVARIUM_DAEMON_PORT</key>
+    <string>$(xml_escape "$daemon_port")</string>
+    <key>VIVARIUM_WORLD_ROOT</key>
+    <string>$(xml_escape "$world_root")</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>$(xml_escape "$daemon_log_dir/daemon.out.log")</string>
+  <key>StandardErrorPath</key>
+  <string>$(xml_escape "$daemon_log_dir/daemon.err.log")</string>
+</dict>
+</plist>
+EOF
+
+  launchctl bootout "gui/$(id -u)" "$daemon_plist_path" >/dev/null 2>&1 || true
+  run launchctl bootstrap "gui/$(id -u)" "$daemon_plist_path"
+  run launchctl kickstart -k "gui/$(id -u)/$daemon_label"
+  echo "Daemon deployment: launchd"
+  echo "LaunchAgent: $daemon_plist_path"
+  echo "Status URL: http://$daemon_host:$daemon_port/status"
+}
+
 stage_label() {
   paint_line 33 "  [$1] $2"
 }
 
 print_launch_sequence() {
   local command="$1"
+  local keep_moving_stage=6
 
   stage_label 1 "Prove the local loop"
   printf '      %q run --goal "validate local setup" --state-path %q\n' "$command" "$state_path"
@@ -222,7 +329,12 @@ print_launch_sequence() {
   printf '      %q live evidence-init --path v1-evidence.json\n' "$command"
   stage_label 5 "Run the readiness gate"
   printf '      %q doctor --live --env-file live-readiness.local.env\n' "$command"
-  stage_label 6 "Keep moving"
+  if [ "$daemon_mode" = "launchd" ]; then
+    stage_label 6 "Verify the Mac daemon"
+    printf '      %q daemon smoke --status-url %q\n' "$command" "http://$daemon_host:$daemon_port/status"
+    keep_moving_stage=7
+  fi
+  stage_label "$keep_moving_stage" "Keep moving"
   printf '      %q status\n' "$command"
   printf '      %q help\n' "$command"
   printf '      %q update\n' "$command"
@@ -241,6 +353,7 @@ echo
 if [ "$dry_run" -eq 0 ]; then
   need_command git
   need_command bun
+  bun_command="${VIVARIUM_BUN_PATH:-$(command -v bun)}"
 fi
 
 run mkdir -p "$(dirname "$install_dir")"
@@ -258,6 +371,7 @@ run mkdir -p "$bin_dir"
 write_vivarium_command
 run mkdir -p "$(dirname "$state_path")"
 run bun apps/cli/src/main.ts setup --quick --domain "$domain" --world-root "$world_root" --state-path "$state_path"
+write_launch_agent
 
 echo
 echo "After installation:"

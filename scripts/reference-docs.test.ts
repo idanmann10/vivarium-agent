@@ -214,6 +214,9 @@ const guideDocs = {
     "bun run knip",
     "VIVARIUM_INSTALL_DIR",
     "VIVARIUM_BIN_DIR",
+    "VIVARIUM_DAEMON=launchd",
+    "LaunchAgent",
+    "vivarium daemon smoke",
     "vivarium run --goal",
     "--state-path .vivarium/state.db",
     "setup --quick",
@@ -601,7 +604,8 @@ describe("reference docs", () => {
         "# [3] Inspect configured models",
         "# [4] Prepare live evidence",
         "# [5] Run the readiness gate",
-        "# [6] Keep moving",
+        "# [6] Verify the Mac daemon",
+        "# [7] Keep moving",
       ]) {
         expect(block).toContain(stage);
       }
@@ -613,6 +617,7 @@ describe("reference docs", () => {
         "vivarium model --env-file live-readiness.local.env",
         "vivarium live evidence-init --path v1-evidence.json",
         "vivarium doctor --live --env-file live-readiness.local.env",
+        "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
         "vivarium status",
         "vivarium help",
         "vivarium update",

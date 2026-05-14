@@ -113,6 +113,34 @@ describe("install.sh", () => {
     expect(disabled).not.toContain("\u001b[");
   });
 
+  test("can dry-run an opt-in macOS LaunchAgent deployment", () => {
+    const result = runInstallerDryRun({
+      VIVARIUM_BIN_DIR: "/tmp/vivarium-bin",
+      VIVARIUM_DAEMON: "launchd",
+      VIVARIUM_DAEMON_LABEL: "com.example.vivarium.daemon",
+      VIVARIUM_DAEMON_PORT: "9898",
+      VIVARIUM_INSTALL_DIR: "/tmp/vivarium-agent-install",
+      VIVARIUM_WORLD_ROOT: "/tmp/vivarium-world",
+    });
+    const stdout = result.stdout.toString();
+
+    expect(result.exitCode).toBe(0);
+    expect(stdout).toContain("Daemon deployment: launchd");
+    expect(stdout).toContain(
+      "Would write macOS LaunchAgent: ~/Library/LaunchAgents/com.example.vivarium.daemon.plist",
+    );
+    expect(stdout).toContain(
+      "Would run: launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.example.vivarium.daemon.plist",
+    );
+    expect(stdout).toContain(
+      "Would run: launchctl kickstart -k gui/$UID/com.example.vivarium.daemon",
+    );
+    expect(stdout).toContain("vivarium daemon smoke --status-url http://127.0.0.1:9898/status");
+    expect(stdout).toContain(
+      "/tmp/vivarium-bin/vivarium daemon smoke --status-url http://127.0.0.1:9898/status",
+    );
+  });
+
   test("documents strict shell behavior and dependency checks", () => {
     const source = readFileSync("scripts/install.sh", "utf8");
 
@@ -122,6 +150,7 @@ describe("install.sh", () => {
     expect(source).toContain("VIVARIUM_REPO_URL");
     expect(source).toContain("VIVARIUM_INSTALL_DIR");
     expect(source).toContain("VIVARIUM_BIN_DIR");
+    expect(source).toContain("VIVARIUM_DAEMON");
     expect(source).toContain("VIVARIUM_THEME");
     expect(source).toContain('bun apps/cli/src/main.ts "$@"');
   });

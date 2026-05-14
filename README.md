@@ -30,6 +30,15 @@ curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scri
 
 Use `VIVARIUM_INSTALL_DIR`, `VIVARIUM_WORLD_ROOT`, `VIVARIUM_DOMAIN`, and `VIVARIUM_STATE_PATH` to override the default install layout. Use `VIVARIUM_BIN_DIR` to choose where the `vivarium` command is written.
 
+On macOS, add the opt-in LaunchAgent deployment when you want the local daemon
+installed and started in the same setup pass:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | VIVARIUM_DAEMON=launchd bash
+```
+
+This writes `~/Library/LaunchAgents/com.vivarium.agent.daemon.plist`, starts the daemon with `launchctl`, and prints a `vivarium daemon smoke` command for `http://127.0.0.1:8787/status`.
+
 Interactive terminals use the branded ANSI theme automatically. Set `VIVARIUM_COLOR=always` to force it, `VIVARIUM_COLOR=never` or `NO_COLOR` to disable it, or `FORCE_COLOR=1` when a wrapper strips TTY detection. Set `VIVARIUM_THEME=matrix` or `VIVARIUM_THEME=amber` for alternate ASCII-art palettes.
 
 ## Terminal-first setup
@@ -56,7 +65,10 @@ vivarium live evidence-init --path v1-evidence.json
 # [5] Run the readiness gate
 vivarium doctor --live --env-file live-readiness.local.env
 
-# [6] Keep moving
+# [6] Verify the Mac daemon, when installed with VIVARIUM_DAEMON=launchd
+vivarium daemon smoke --status-url http://127.0.0.1:8787/status
+
+# [7] Keep moving
 vivarium status
 vivarium help
 vivarium update
