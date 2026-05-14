@@ -441,6 +441,9 @@ print_launch_sequence() {
     printf '      %q daemon smoke --status-url %q\n' "$command" "http://$daemon_host:$daemon_port/status"
     keep_moving_stage=7
   fi
+  stage_label "$keep_moving_stage" "Review launch handoff"
+  printf '      %q launch handoff\n' "$command"
+  keep_moving_stage=$((keep_moving_stage + 1))
   stage_label "$keep_moving_stage" "Keep moving"
   printf '      %q status\n' "$command"
   printf '      %q help\n' "$command"

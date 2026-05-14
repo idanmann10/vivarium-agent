@@ -47,7 +47,8 @@ describe("install.sh", () => {
     expect(stdout).toContain("[3] Inspect configured models");
     expect(stdout).toContain("[4] Prepare live evidence");
     expect(stdout).toContain("[5] Run the readiness gate");
-    expect(stdout).toContain("[6] Keep moving");
+    expect(stdout).toContain("[6] Review launch handoff");
+    expect(stdout).toContain("[7] Keep moving");
     expect(stdout).toContain("vivarium run --goal");
     expect(stdout).toContain(
       'vivarium run --goal "validate local setup" --state-path .vivarium/research.db',
@@ -63,6 +64,7 @@ describe("install.sh", () => {
     expect(stdout).toContain("vivarium model --env-file live-readiness.local.env");
     expect(stdout).toContain("vivarium live evidence-init --path v1-evidence.json");
     expect(stdout).toContain("vivarium doctor --live --env-file live-readiness.local.env");
+    expect(stdout).toContain("vivarium launch handoff");
     expect(stdout).toContain("vivarium status");
     expect(stdout).toContain("vivarium help");
     expect(stdout).toContain("vivarium update");
@@ -87,6 +89,7 @@ describe("install.sh", () => {
     expect(stdout).toContain(
       "/tmp/vivarium-bin/vivarium doctor --live --env-file live-readiness.local.env",
     );
+    expect(stdout).toContain("/tmp/vivarium-bin/vivarium launch handoff");
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium help");
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium update");
     expect(stdout).toContain("If 'vivarium' is not found, add /tmp/vivarium-bin to PATH");
