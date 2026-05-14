@@ -64,7 +64,7 @@ export function launchHandoffCommand(
       "GitHub IDs point checks at the public repos and Discussion category; they are not secrets.",
     ],
     ownerNextActions: [
-      "Ask an eligible non-author reviewer to approve PR #22.",
+      "Ask a non-author reviewer with write or admin access to approve PR #22.",
       "Do not lower branch protection to merge this PR.",
       "After secrets and evidence are available, rerun vivarium doctor --live --env-file live-readiness.local.env.",
       "After PR #22 merges, switch the install command to the main branch.",

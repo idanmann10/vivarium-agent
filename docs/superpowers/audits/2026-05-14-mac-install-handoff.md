@@ -48,7 +48,8 @@ Do not claim full v1 production readiness yet. A fresh installed
 
 The remaining blockers require:
 
-- A non-author review for PR #22; GitHub reports `REVIEW_REQUIRED`.
+- A non-author review from someone with write or admin access for PR #22;
+  GitHub reports `REVIEW_REQUIRED`.
 - Real provider keys for Anthropic/OpenRouter, the private OpenAI-compatible provider
   key/base/model/context/profile, and smoke transcripts for all three provider
   paths.
@@ -66,11 +67,13 @@ are also configured; only the secret keys and live smoke evidence remain.
 
 Only configured collaborator: `idanmann10`. The repository currently has no teams
 and no pending eligible review request. Because PR #22 is authored by
-`idanmann10`, that account cannot satisfy the required non-author review.
+`idanmann10`, that account cannot satisfy the required non-author write/admin
+review.
 
 Safe owner action:
 
-1. Add or request one eligible reviewer who can approve PR #22.
+1. Add or request one non-author reviewer with write or admin access who can
+   approve PR #22.
 2. Let the existing auto-merge request merge the PR after review and checks pass.
 
 Do not lower branch protection just to merge this PR unless the repository owner
@@ -78,7 +81,7 @@ explicitly decides to change the safety policy.
 
 ### Reviewer Handoff
 
-Send this to an eligible non-author reviewer:
+Send this to an eligible non-author reviewer with write or admin access:
 
 ```text
 Please review https://github.com/idanmann10/vivarium-agent/pull/22.
