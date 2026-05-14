@@ -141,6 +141,30 @@ describe("install.sh", () => {
     );
   });
 
+  test("passes safe live metadata into quick setup when configured", () => {
+    const result = runInstallerDryRun({
+      VIVARIUM_AGENT_REPO_NAME: "vivarium-agent",
+      VIVARIUM_CANONICAL_WORLD_REF: "https://github.com/idanmann10/vivarium-world.git",
+      VIVARIUM_GITHUB_OWNER: "idanmann10",
+      VIVARIUM_INSTALL_DIR: "/tmp/vivarium-agent-install",
+      VIVARIUM_PRIVATE_WORLD_REF: "https://github.com/idanmann10/vivarium-world-private.git",
+      VIVARIUM_WORLD_REPO_NAME: "vivarium-world",
+      VIVARIUM_WORLD_ROOT: "/tmp/vivarium-world",
+    });
+    const stdout = result.stdout.toString();
+
+    expect(result.exitCode).toBe(0);
+    expect(stdout).toContain("--github-owner idanmann10");
+    expect(stdout).toContain("--agent-repo vivarium-agent");
+    expect(stdout).toContain("--world-repo vivarium-world");
+    expect(stdout).toContain(
+      "--canonical-world-ref https://github.com/idanmann10/vivarium-world.git",
+    );
+    expect(stdout).toContain(
+      "--private-world-ref https://github.com/idanmann10/vivarium-world-private.git",
+    );
+  });
+
   test("documents strict shell behavior and dependency checks", () => {
     const source = readFileSync("scripts/install.sh", "utf8");
 

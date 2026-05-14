@@ -17,7 +17,11 @@ clones or updates the canonical world beside it, installs dependencies, and then
 runs the guided `setup --quick` command. It also writes a `vivarium` command to
 `~/.local/bin` so future commands can run from any directory. Override the layout
 with `VIVARIUM_INSTALL_DIR`, `VIVARIUM_BIN_DIR`, `VIVARIUM_WORLD_ROOT`,
-`VIVARIUM_DOMAIN`, or `VIVARIUM_STATE_PATH`.
+`VIVARIUM_DOMAIN`, or `VIVARIUM_STATE_PATH`. Set
+`VIVARIUM_GITHUB_OWNER`, `VIVARIUM_AGENT_REPO_NAME`,
+`VIVARIUM_WORLD_REPO_NAME`, `VIVARIUM_CANONICAL_WORLD_REF`, and
+`VIVARIUM_PRIVATE_WORLD_REF` to prefill the non-secret live-readiness repo
+metadata while the installer runs `setup --quick`.
 
 On macOS, install and start the local daemon as a LaunchAgent in the same pass:
 

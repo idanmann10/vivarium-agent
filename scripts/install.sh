@@ -21,6 +21,11 @@ Environment:
   VIVARIUM_DAEMON_PORT        Local daemon port.
   VIVARIUM_DOMAIN             Initial setup domain.
   VIVARIUM_STATE_PATH         State database path relative to the agent checkout.
+  VIVARIUM_GITHUB_OWNER       Prefill non-secret live env GitHub owner.
+  VIVARIUM_AGENT_REPO_NAME    Prefill non-secret live env agent repository name.
+  VIVARIUM_WORLD_REPO_NAME    Prefill non-secret live env world repository name.
+  VIVARIUM_CANONICAL_WORLD_REF Prefill non-secret canonical world remote URL.
+  VIVARIUM_PRIVATE_WORLD_REF  Prefill non-secret private world remote URL.
   VIVARIUM_COLOR              Set to always or never to control ANSI output.
   VIVARIUM_THEME              Set to matrix or amber for alternate ASCII palettes.
 
@@ -88,6 +93,11 @@ daemon_log_dir="$home_dir/.vivarium/logs"
 bun_command="${VIVARIUM_BUN_PATH:-bun}"
 domain="${VIVARIUM_DOMAIN:-coding}"
 state_path="${VIVARIUM_STATE_PATH:-.vivarium/state.db}"
+github_owner="${VIVARIUM_GITHUB_OWNER:-}"
+agent_repo_name="${VIVARIUM_AGENT_REPO_NAME:-}"
+world_repo_name="${VIVARIUM_WORLD_REPO_NAME:-}"
+canonical_world_ref="${VIVARIUM_CANONICAL_WORLD_REF:-}"
+private_world_ref="${VIVARIUM_PRIVATE_WORLD_REF:-}"
 
 use_color() {
   case "${VIVARIUM_COLOR:-}" in
@@ -370,7 +380,23 @@ run bun install --frozen-lockfile
 run mkdir -p "$bin_dir"
 write_vivarium_command
 run mkdir -p "$(dirname "$state_path")"
-run bun apps/cli/src/main.ts setup --quick --domain "$domain" --world-root "$world_root" --state-path "$state_path"
+setup_args=(apps/cli/src/main.ts setup --quick --domain "$domain" --world-root "$world_root" --state-path "$state_path")
+if [ "$github_owner" != "" ]; then
+  setup_args+=(--github-owner "$github_owner")
+fi
+if [ "$agent_repo_name" != "" ]; then
+  setup_args+=(--agent-repo "$agent_repo_name")
+fi
+if [ "$world_repo_name" != "" ]; then
+  setup_args+=(--world-repo "$world_repo_name")
+fi
+if [ "$canonical_world_ref" != "" ]; then
+  setup_args+=(--canonical-world-ref "$canonical_world_ref")
+fi
+if [ "$private_world_ref" != "" ]; then
+  setup_args+=(--private-world-ref "$private_world_ref")
+fi
+run bun "${setup_args[@]}"
 write_launch_agent
 
 echo
