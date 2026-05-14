@@ -40,14 +40,14 @@ canonical world checkout at `~/.vivarium/the-world`, the CLI command at
 
 Do not claim full v1 production readiness yet. A fresh installed
 `vivarium doctor --live --env-file live-readiness.local.env` still reports
-`26 passing, 27 blocked`.
+`31 passing, 22 blocked`.
 
 The remaining blockers require:
 
 - A non-author review for PR #22; GitHub reports `REVIEW_REQUIRED`.
-- Real provider keys, model names, context windows, saved profiles, and smoke
-  transcripts for Anthropic, OpenRouter, and the private OpenAI-compatible
-  provider.
+- Real provider keys for Anthropic/OpenRouter, the private OpenAI-compatible provider
+  key/base/model/context/profile, and smoke transcripts for all three provider
+  paths.
 - An encrypted internal credential store and successful internal credential
   smoke.
 - Real v1 evidence for public contribution, published artifacts, curation stats,
@@ -55,6 +55,8 @@ The remaining blockers require:
 
 The local GitHub env/auth, RFC Discussion, and latest `main` CI checks are now
 configured; public contribution proof remains part of the v1 evidence manifest.
+Anthropic/OpenRouter model, base URL, context-window, and saved-profile metadata
+are also configured; only the secret keys and live smoke evidence remain.
 
 ## Review Unblock
 

@@ -46,12 +46,12 @@ source live-readiness.local.env
 
 ## Current Production Blocker Map
 
-As of the current Mac install, doctor --live reports `26 passing, 27 blocked`
+As of the current Mac install, doctor --live reports `31 passing, 22 blocked`
 until these operator-owned inputs are real and verified:
 
 | Area | Needed to clear it |
 | --- | --- |
-| Model providers | Real Anthropic, OpenRouter, and private OpenAI-compatible keys, model names, context windows, saved provider profiles, and successful provider smoke calls. |
+| Model providers | Saved Anthropic/OpenRouter profile metadata is configured; real Anthropic/OpenRouter API keys, a private OpenAI-compatible key/base/model/context/profile, and successful provider smoke calls are still required. |
 | Internal credential smoke | A local encrypted credential store, master key, internal API credential value, health URL, and a successful `credentials smoke` result. |
 | GitHub live checks | The local env has a keychain-backed `GITHUB_TOKEN`, repository IDs, a visible RFC Discussion, and successful latest `main` CI checks for both repos; v1 public contribution evidence is still tracked in the v1 evidence manifest. |
 | V1 evidence manifest | Real multi-day goal evidence, provider and credential smoke transcripts, Dream artifacts, public contribution evidence, published canonical-world artifacts, curation stats, and the required two-week follow-up evidence. |

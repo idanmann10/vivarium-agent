@@ -781,7 +781,7 @@ describe("reference docs", () => {
       "GitHub live checks",
       "V1 evidence manifest",
       "Non-author PR review",
-      "doctor --live reports `26 passing, 27 blocked`",
+      "doctor --live reports `31 passing, 22 blocked`",
     ]) {
       expect(body).toContain(term);
     }
@@ -920,7 +920,7 @@ describe("reference docs", () => {
       "Status: ok",
       "`401 pass, 0 fail`",
       "`REVIEW_REQUIRED`",
-      "`26 passing, 27 blocked`",
+      "`31 passing, 22 blocked`",
       "non-author review",
       "Only configured collaborator",
       "no teams",
