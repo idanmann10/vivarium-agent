@@ -215,6 +215,84 @@ function renderQuickEnvSummary(quickEnv: LiveEnvInitCommandResult | undefined): 
   ];
 }
 
+const liveUnlockGroups = [
+  {
+    label: "Provider profiles",
+    keys: new Set([
+      "VIVARIUM_PROVIDER_PROFILES_PATH",
+      "VIVARIUM_ANTHROPIC_PROVIDER_PROFILE",
+      "VIVARIUM_OPENROUTER_PROVIDER_PROFILE",
+      "VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE",
+    ]),
+  },
+  {
+    label: "Provider keys/models",
+    keys: new Set([
+      "ANTHROPIC_API_KEY",
+      "VIVARIUM_ANTHROPIC_MODEL",
+      "VIVARIUM_ANTHROPIC_CONTEXT_WINDOW",
+      "OPENROUTER_API_KEY",
+      "VIVARIUM_OPENROUTER_MODEL",
+      "VIVARIUM_OPENROUTER_BASE_URL",
+      "VIVARIUM_OPENROUTER_CONTEXT_WINDOW",
+      "VIVARIUM_OAI_COMPAT_API_KEY",
+      "VIVARIUM_OAI_COMPAT_MODEL",
+      "VIVARIUM_OAI_COMPAT_BASE_URL",
+      "VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW",
+    ]),
+  },
+  {
+    label: "Encrypted credentials/internal API",
+    keys: new Set([
+      "VIVARIUM_CREDENTIALS_PATH",
+      "VIVARIUM_CREDENTIALS_MASTER_KEY",
+      "VIVARIUM_INTERNAL_API_CREDENTIAL_NAME",
+      "VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE",
+      "VIVARIUM_INTERNAL_API_HEALTH_URL",
+    ]),
+  },
+  {
+    label: "GitHub/public release",
+    keys: new Set([
+      "GITHUB_TOKEN",
+      "GH_TOKEN",
+      "VIVARIUM_GITHUB_OWNER",
+      "VIVARIUM_AGENT_REPO_NAME",
+      "VIVARIUM_WORLD_REPO_NAME",
+      "VIVARIUM_CANONICAL_WORLD_REF",
+      "VIVARIUM_PRIVATE_WORLD_REF",
+      "VIVARIUM_GITHUB_REPOSITORY_ID",
+      "VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID",
+    ]),
+  },
+] as const;
+
+function renderLiveUnlockValues(
+  heading: string,
+  values: readonly string[] | undefined,
+): readonly string[] {
+  if (values === undefined || values.length === 0) {
+    return [];
+  }
+
+  const grouped = liveUnlockGroups.flatMap(({ label, keys }) => {
+    const groupValues = values.filter((value) => keys.has(value));
+    return groupValues.length === 0
+      ? []
+      : [`  ${label}:`, ...groupValues.map((value) => `    ${value}`)];
+  });
+  const knownKeys = new Set(liveUnlockGroups.flatMap(({ keys }) => [...keys]));
+  const otherValues = values.filter((value) => !knownKeys.has(value));
+
+  return [
+    heading,
+    ...grouped,
+    ...(otherValues.length === 0
+      ? []
+      : ["  Other:", ...otherValues.map((value) => `    ${value}`)]),
+  ];
+}
+
 function renderLiveSummary(
   live: LiveSetupCommandResult | undefined,
   envFilePath: string,
@@ -244,9 +322,9 @@ function renderLiveSummary(
     "Live setup blocked",
     `Fill live settings: edit ${envFilePath} locally. Keep it out of git.`,
     "Production unlock needs provider keys/models, provider profiles, encrypted credentials, and an internal health URL.",
-    ...(live.missing === undefined ? [] : [`Missing: ${live.missing.join(", ")}`]),
-    ...(live.placeholders === undefined ? [] : [`Placeholders: ${live.placeholders.join(", ")}`]),
-    ...(live.invalid === undefined ? [] : [`Invalid: ${live.invalid.join(", ")}`]),
+    ...renderLiveUnlockValues("Missing keys by unlock area:", live.missing),
+    ...renderLiveUnlockValues("Placeholder keys by unlock area:", live.placeholders),
+    ...renderLiveUnlockValues("Invalid keys by unlock area:", live.invalid),
   ];
 }
 

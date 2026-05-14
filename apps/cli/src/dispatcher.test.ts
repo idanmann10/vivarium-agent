@@ -544,6 +544,56 @@ describe("dispatchCliCommand", () => {
     expect(existsSync(credentialsPath)).toBe(false);
   });
 
+  test("groups blocked setup placeholders by unlock area", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-setup-live-placeholders-"));
+    const worldRoot = createWorldFixture();
+    const statePath = join(root, "state.db");
+    const envPath = join(root, "operator-live.env");
+    write(
+      envPath,
+      [
+        'export ANTHROPIC_API_KEY="<anthropic-api-key>"',
+        'export VIVARIUM_ANTHROPIC_MODEL="<anthropic-model>"',
+        'export VIVARIUM_CREDENTIALS_MASTER_KEY="<credentials-master-key>"',
+        'export VIVARIUM_INTERNAL_API_HEALTH_URL="<internal-health-url>"',
+      ].join("\n"),
+    );
+
+    const setup = await dispatchCliCommand([
+      "setup",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+      "--env-file",
+      envPath,
+    ]);
+
+    expect(setup.result).toMatchObject({
+      ok: false,
+      live: {
+        ok: false,
+        written: false,
+        placeholders: expect.arrayContaining([
+          "ANTHROPIC_API_KEY",
+          "VIVARIUM_ANTHROPIC_MODEL",
+          "VIVARIUM_CREDENTIALS_MASTER_KEY",
+          "VIVARIUM_INTERNAL_API_HEALTH_URL",
+        ]),
+      },
+    });
+    expect(setup.output).toContain("Placeholder keys by unlock area:");
+    expect(setup.output).toContain("  Provider keys/models:");
+    expect(setup.output).toContain("    ANTHROPIC_API_KEY");
+    expect(setup.output).toContain("    VIVARIUM_ANTHROPIC_MODEL");
+    expect(setup.output).toContain("  Encrypted credentials/internal API:");
+    expect(setup.output).toContain("    VIVARIUM_CREDENTIALS_MASTER_KEY");
+    expect(setup.output).toContain("    VIVARIUM_INTERNAL_API_HEALTH_URL");
+    expect(setup.output).not.toContain("Placeholders: ANTHROPIC_API_KEY");
+  });
+
   test("routes status and doctor commands", async () => {
     await expect(dispatchCliCommand(["status"])).resolves.toMatchObject({
       command: "status",
