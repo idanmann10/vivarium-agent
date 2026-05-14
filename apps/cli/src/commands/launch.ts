@@ -12,6 +12,7 @@ export interface LaunchHandoffCommandResult {
   readonly installCommand: string;
   readonly postInstallCommands: readonly string[];
   readonly requiredUnblocks: readonly string[];
+  readonly keyExplanations: readonly string[];
 }
 
 const defaultOwner = "idanmann10";
@@ -55,6 +56,12 @@ export function launchHandoffCommand(
       "encrypted internal credential smoke",
       "v1 evidence manifest with public contribution, published artifacts, curation stats, and two-week improvement evidence",
     ],
+    keyExplanations: [
+      "Provider keys prove real Anthropic, OpenRouter, and private model calls.",
+      "Credential keys prove the encrypted internal API smoke path.",
+      "Evidence refs prove the real v1 behavior loop instead of local-only demos.",
+      "GitHub IDs point checks at the public repos and Discussion category; they are not secrets.",
+    ],
   };
 }
 
@@ -76,6 +83,9 @@ export function renderLaunchHandoffCommandResult(result: LaunchHandoffCommandRes
     "",
     "Required unblock:",
     ...result.requiredUnblocks.map((item) => `  - ${item}`),
+    "",
+    "Why those keys exist:",
+    ...result.keyExplanations.map((item) => `  - ${item}`),
     "",
   ].join("\n");
 }

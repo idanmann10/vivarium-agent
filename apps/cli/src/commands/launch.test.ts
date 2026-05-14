@@ -24,6 +24,10 @@ describe("launchHandoffCommand", () => {
     expect(output).toContain("eligible non-author reviewer");
     expect(output).toContain("real provider keys/smokes");
     expect(output).toContain("two-week improvement evidence");
+    expect(output).toContain("Why those keys exist:");
+    expect(output).toContain("Provider keys prove real Anthropic, OpenRouter, and private model calls.");
+    expect(output).toContain("Credential keys prove the encrypted internal API smoke path.");
+    expect(output).toContain("Evidence refs prove the real v1 behavior loop instead of local-only demos.");
   });
 
   test("renders the stable main install command without a branch ref override", () => {
