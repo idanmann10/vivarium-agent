@@ -585,6 +585,7 @@ describe("dispatchCliCommand", () => {
       },
     });
     expect(setup.output).toContain("Placeholder keys by unlock area:");
+    expect(setup.output).toContain("Guide: docs/guides/live-readiness.md#operator-unlock-key-map");
     expect(setup.output).toContain("  Provider keys/models:");
     expect(setup.output).toContain("    ANTHROPIC_API_KEY");
     expect(setup.output).toContain("    VIVARIUM_ANTHROPIC_MODEL");

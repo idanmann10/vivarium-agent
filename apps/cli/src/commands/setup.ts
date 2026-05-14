@@ -322,6 +322,7 @@ function renderLiveSummary(
     "Live setup blocked",
     `Fill live settings: edit ${envFilePath} locally. Keep it out of git.`,
     "Production unlock needs provider keys/models, provider profiles, encrypted credentials, and an internal health URL.",
+    "Guide: docs/guides/live-readiness.md#operator-unlock-key-map",
     ...renderLiveUnlockValues("Missing keys by unlock area:", live.missing),
     ...renderLiveUnlockValues("Placeholder keys by unlock area:", live.placeholders),
     ...renderLiveUnlockValues("Invalid keys by unlock area:", live.invalid),
