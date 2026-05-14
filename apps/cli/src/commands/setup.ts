@@ -1,3 +1,6 @@
+import { existsSync, statfsSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import type { InitCommandResult } from "./init.js";
 import { renderVivariumGlobe } from "./branding.js";
 import { runInitCommand } from "./init.js";
@@ -10,6 +13,15 @@ import type {
 import { liveEnvInitCommand, liveSetupCommand } from "./live.js";
 
 const defaultLiveEnvFilePath = "live-readiness.local.env";
+const minimumSetupDiskBytes = 256 * 1024 * 1024;
+
+export interface SetupDiskSpace {
+  readonly path: string;
+  readonly availableBytes: number;
+  readonly minimumBytes: number;
+}
+
+export type SetupDiskSpaceProbe = (path: string) => SetupDiskSpace;
 
 export interface SetupCommandOptions {
   readonly primaryDomain: string;
@@ -21,6 +33,7 @@ export interface SetupCommandOptions {
   readonly quick?: boolean;
   readonly liveEnvPath?: string;
   readonly prefill?: LiveEnvPrefillOptions;
+  readonly diskSpaceProbe?: SetupDiskSpaceProbe;
 }
 
 export interface SetupCommandResult {
@@ -153,7 +166,58 @@ function isExistingLiveEnv(result: LiveEnvInitCommandResult): boolean {
   return result.ok === false && result.error.includes("already exists");
 }
 
+function bytes(value: number): string {
+  if (value < 1024 * 1024) {
+    return `${Math.max(0, Math.floor(value / 1024))} KiB`;
+  }
+  return `${Math.max(0, Math.floor(value / (1024 * 1024)))} MiB`;
+}
+
+function defaultStatePath(): string {
+  return join(homedir(), ".the-agent", "state.db");
+}
+
+function existingProbePath(path: string): string {
+  let current = resolve(path);
+  while (!existsSync(current)) {
+    const parent = dirname(current);
+    if (parent === current) {
+      return process.cwd();
+    }
+    current = parent;
+  }
+  return current;
+}
+
+function defaultDiskSpaceProbe(path: string): SetupDiskSpace {
+  const probePath = existingProbePath(path);
+  const stats = statfsSync(probePath);
+  return {
+    path: probePath,
+    availableBytes: Number(stats.bavail) * Number(stats.bsize),
+    minimumBytes: minimumSetupDiskBytes,
+  };
+}
+
+function assertSetupDiskSpace(options: SetupCommandOptions): void {
+  const statePath = options.statePath ?? defaultStatePath();
+  const probePath = dirname(statePath);
+  const disk = (options.diskSpaceProbe ?? defaultDiskSpaceProbe)(probePath);
+  if (disk.availableBytes >= disk.minimumBytes) {
+    return;
+  }
+
+  throw new Error(
+    [
+      `Not enough free disk space for Vivarium setup at ${disk.path}.`,
+      `${bytes(disk.availableBytes)} available; ${bytes(disk.minimumBytes)} required.`,
+      "Free disk space or choose a --state-path on a volume with more space.",
+    ].join(" "),
+  );
+}
+
 export function setupCommand(options: SetupCommandOptions): SetupCommandResult {
+  assertSetupDiskSpace(options);
   const local = runInitCommand({
     primaryDomain: options.primaryDomain,
     bindGithubIdentity: false,
