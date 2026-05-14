@@ -782,7 +782,8 @@ describe("reference docs", () => {
       "Internal credential smoke",
       "GitHub live checks",
       "V1 evidence manifest",
-      "Non-author PR review",
+      "Mac installer and handoff PRs have already merged",
+      "it is not one of the current `doctor --live`",
       "doctor --live reports `31 passing, 22 blocked`",
     ]) {
       expect(body).toContain(term);
