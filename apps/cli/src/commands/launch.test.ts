@@ -21,7 +21,7 @@ describe("launchHandoffCommand", () => {
     expect(output).toContain("Local Mac install/deploy is ready for reviewer/operator use.");
     expect(output).toContain("Full v1 live production readiness is still blocked");
     expect(output).toContain("Required unblock:");
-    expect(output).toContain("eligible non-author reviewer");
+    expect(output).toContain("non-author reviewer with write or admin access for PR #22");
     expect(output).toContain("real provider keys/smokes");
     expect(output).toContain("two-week improvement evidence");
     expect(output).toContain("Why those keys exist:");

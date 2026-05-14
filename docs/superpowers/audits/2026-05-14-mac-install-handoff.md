@@ -81,7 +81,7 @@ explicitly decides to change the safety policy.
 
 ### Reviewer Handoff
 
-Send this to an eligible non-author reviewer with write or admin access:
+Send this to a non-author reviewer with write or admin access:
 
 ```text
 Please review https://github.com/idanmann10/vivarium-agent/pull/22.

@@ -663,7 +663,7 @@ describe("dispatchCliCommand", () => {
     expect(result.output).toContain("VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup");
     expect(result.output).toContain("VIVARIUM_DAEMON=launchd");
     expect(result.output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
-    expect(result.output).toContain("eligible non-author reviewer");
+    expect(result.output).toContain("non-author reviewer with write or admin access");
   });
 
   test("routes live doctor checks through injected probes", async () => {

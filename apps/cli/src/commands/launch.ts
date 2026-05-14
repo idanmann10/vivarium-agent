@@ -52,7 +52,7 @@ export function launchHandoffCommand(
       "vivarium doctor --live --env-file live-readiness.local.env",
     ],
     requiredUnblocks: [
-      "eligible non-author reviewer for PR #22",
+      "non-author reviewer with write or admin access for PR #22",
       "real provider keys/smokes for Anthropic, OpenRouter, and the private OpenAI-compatible provider",
       "encrypted internal credential smoke",
       "v1 evidence manifest with public contribution, published artifacts, curation stats, and two-week improvement evidence",
