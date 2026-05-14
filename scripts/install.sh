@@ -257,6 +257,55 @@ run() {
   "$@"
 }
 
+remote_default_branch() {
+  local destination="$1"
+  local head
+  local branch
+
+  git -C "$destination" remote set-head origin --auto >/dev/null 2>&1 || true
+  head="$(git -C "$destination" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true)"
+  branch="${head#origin/}"
+
+  if [ "$branch" != "" ] && git -C "$destination" show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+    printf '%s\n' "$branch"
+    return 0
+  fi
+
+  if git -C "$destination" show-ref --verify --quiet refs/remotes/origin/main; then
+    printf 'main\n'
+    return 0
+  fi
+
+  if git -C "$destination" show-ref --verify --quiet refs/remotes/origin/master; then
+    printf 'master\n'
+    return 0
+  fi
+
+  return 1
+}
+
+checkout_default_branch() {
+  local destination="$1"
+  local branch
+  local upstream
+
+  branch="$(remote_default_branch "$destination")" || {
+    echo "Unable to determine remote default branch for $destination" >&2
+    exit 1
+  }
+
+  if git -C "$destination" show-ref --verify --quiet "refs/heads/$branch"; then
+    run git -C "$destination" checkout "$branch"
+  else
+    run git -C "$destination" checkout -B "$branch" "origin/$branch"
+  fi
+
+  upstream="$(git -C "$destination" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
+  if [ "$upstream" = "" ]; then
+    run git -C "$destination" branch --set-upstream-to "origin/$branch" "$branch"
+  fi
+}
+
 checkout_or_update() {
   local repo="$1"
   local destination="$2"
@@ -284,6 +333,15 @@ checkout_or_update() {
       return 0
     fi
 
+    if [ "$dry_run" -eq 1 ]; then
+      echo "Would run: git -C $destination fetch --all --prune"
+      echo "Would run: git -C $destination checkout default branch"
+      echo "Would run: git -C $destination pull --ff-only"
+      return 0
+    fi
+
+    run git -C "$destination" fetch --all --prune
+    checkout_default_branch "$destination"
     run git -C "$destination" pull --ff-only
     return 0
   fi

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -12,6 +12,63 @@ function runInstallerDryRun(env: Readonly<Record<string, string>> = {}) {
     stdout: "pipe",
     stderr: "pipe",
   });
+}
+
+function run(command: string[], cwd: string, env: Readonly<Record<string, string>> = {}) {
+  const result = Bun.spawnSync(command, {
+    cwd,
+    env: { ...process.env, ...env },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  if (result.exitCode !== 0) {
+    throw new Error(
+      [
+        `Command failed: ${command.join(" ")}`,
+        `stdout:\n${result.stdout.toString()}`,
+        `stderr:\n${result.stderr.toString()}`,
+      ].join("\n"),
+    );
+  }
+  return result;
+}
+
+function createGitRemote(root: string, name: string): string {
+  const remote = join(root, `${name}.git`);
+  const work = join(root, `${name}-work`);
+
+  run(["git", "init", "--bare", remote], root);
+  run(["git", "init", work], root);
+  run(["git", "config", "user.email", "test@example.com"], work);
+  run(["git", "config", "user.name", "Vivarium Test"], work);
+  writeFileSync(join(work, "README.md"), `# ${name}\n`, "utf8");
+  run(["git", "add", "README.md"], work);
+  run(["git", "commit", "-m", "initial"], work);
+  run(["git", "branch", "-M", "main"], work);
+  run(["git", "remote", "add", "origin", remote], work);
+  run(["git", "push", "-u", "origin", "main"], work);
+
+  return remote;
+}
+
+function writeFakeBun(path: string): void {
+  writeFileSync(
+    path,
+    [
+      "#!/usr/bin/env bash",
+      "set -euo pipefail",
+      'if [ "${1:-}" = "install" ]; then exit 0; fi',
+      'if [ "${1:-}" = "apps/cli/src/main.ts" ] && [ "${2:-}" = "launch" ] && [ "${3:-}" = "handoff" ]; then',
+      '  echo "fake launch handoff"',
+      "  exit 0",
+      "fi",
+      'if [ "${1:-}" = "apps/cli/src/main.ts" ]; then exit 0; fi',
+      'echo "unexpected fake bun args: $*" >&2',
+      "exit 1",
+      "",
+    ].join("\n"),
+    { encoding: "utf8", mode: 0o755 },
+  );
 }
 
 describe("install.sh", () => {
@@ -192,6 +249,55 @@ describe("install.sh", () => {
       );
       expect(stdout).toContain(`Would run: git -C ${agentDir} pull --ff-only`);
       expect(stdout).toContain(`Would run: git -C ${worldDir} pull --ff-only`);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("returns branch-pinned installs to the default branch when reinstalling without a ref", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-install-main-"));
+    const remote = createGitRemote(root, "agent");
+    const worldRemote = createGitRemote(root, "world");
+    const installDir = join(root, "install");
+    const worldDir = join(root, "world-checkout");
+    const binDir = join(root, "bin");
+    const fakeBun = join(root, "bun");
+
+    try {
+      writeFakeBun(fakeBun);
+      run(["git", "clone", remote, installDir], root);
+      run(["git", "checkout", "-b", "codex/hermes-style-quick-setup"], installDir);
+      run(["git", "config", "branch.codex/hermes-style-quick-setup.remote", "origin"], installDir);
+      run(
+        [
+          "git",
+          "config",
+          "branch.codex/hermes-style-quick-setup.merge",
+          "refs/heads/codex/hermes-style-quick-setup",
+        ],
+        installDir,
+      );
+
+      const result = Bun.spawnSync(["bash", "scripts/install.sh"], {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          PATH: `${root}:${process.env.PATH ?? ""}`,
+          VIVARIUM_BIN_DIR: binDir,
+          VIVARIUM_BUN_PATH: fakeBun,
+          VIVARIUM_INSTALL_DIR: installDir,
+          VIVARIUM_REPO_URL: remote,
+          VIVARIUM_WORLD_REPO_URL: worldRemote,
+          VIVARIUM_WORLD_ROOT: worldDir,
+        },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+
+      expect(result.exitCode).toBe(0);
+      expect(run(["git", "branch", "--show-current"], installDir).stdout.toString().trim()).toBe(
+        "main",
+      );
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
