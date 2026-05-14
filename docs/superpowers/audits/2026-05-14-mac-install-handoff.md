@@ -26,10 +26,10 @@ canonical world checkout at `~/.vivarium/the-world`, the CLI command at
 
 | Requirement | Evidence | Status |
 | --- | --- | --- |
-| Branch installer can pin the checkout | `scripts/install.test.ts` covers `VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup`, and the real Mac branch-pinned raw GitHub command completed against the current branch head | Complete |
+| Branch installer can pin the checkout | `scripts/install.test.ts` covers `VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup`, and the real Mac branch-pinned raw GitHub command completed against the handoff branch | Complete |
 | Fresh installs prefill safe public metadata | `scripts/install.test.ts` covers GitHub URL inference for `--github-owner`, `--agent-repo`, `--world-repo`, and `--canonical-world-ref`; installed `bash scripts/install.sh --dry-run` shows those inferred arguments for the public repos | Complete |
 | Existing installs keep updating from GitHub | `scripts/install.test.ts` covers existing checkout remote normalization; the real installed checkout has `origin` set to `https://github.com/idanmann10/vivarium-agent.git`, and `vivarium update` completed `git pull --ff-only` plus `bun install --frozen-lockfile` | Complete |
-| Real Mac installed checkout is current | Installed checkout `~/.vivarium/vivarium-agent` is synced to `87e4e14` on the installed branch `codex/hermes-style-quick-setup` with a clean status after the latest handoff update | Complete |
+| Real Mac installed checkout is current | Installed checkout `~/.vivarium/vivarium-agent` is synced to the latest pushed head of the installed branch `codex/hermes-style-quick-setup` with a clean status after the latest handoff update | Complete |
 | Exact copy-paste install command works | The current branch-pinned `curl -fsSL ... | VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup VIVARIUM_DAEMON=launchd bash` command fetched the raw GitHub installer, updated the checkout, ran `bun install --frozen-lockfile`, ran `setup --quick`, and deployed the LaunchAgent | Complete |
 | CLI walkthrough explains the Mac daemon step | Installed `vivarium help` shows `Verify the Mac daemon` and `vivarium daemon smoke --status-url http://127.0.0.1:8787/status` | Complete |
 | Daemon is running | `vivarium daemon smoke --status-url http://127.0.0.1:8787/status` returned `Status: ok` | Complete |
