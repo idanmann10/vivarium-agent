@@ -141,6 +141,25 @@ describe("install.sh", () => {
     );
   });
 
+  test("can pin the agent checkout to an explicit git ref", () => {
+    const result = runInstallerDryRun({
+      VIVARIUM_AGENT_REF: "codex/hermes-style-quick-setup",
+      VIVARIUM_INSTALL_DIR: "/tmp/vivarium-agent-install",
+      VIVARIUM_WORLD_ROOT: "/tmp/vivarium-world",
+    });
+    const stdout = result.stdout.toString();
+
+    expect(result.exitCode).toBe(0);
+    expect(stdout).toContain("Agent ref: codex/hermes-style-quick-setup");
+    expect(stdout).toContain(
+      "Would run: git clone https://github.com/idanmann10/vivarium-agent.git /tmp/vivarium-agent-install",
+    );
+    expect(stdout).toContain("Would run: git -C /tmp/vivarium-agent-install fetch --all --prune");
+    expect(stdout).toContain(
+      "Would run: git -C /tmp/vivarium-agent-install checkout codex/hermes-style-quick-setup",
+    );
+  });
+
   test("passes safe live metadata into quick setup when configured", () => {
     const result = runInstallerDryRun({
       VIVARIUM_AGENT_REPO_NAME: "vivarium-agent",

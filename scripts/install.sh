@@ -12,6 +12,7 @@ Usage:
 
 Environment:
   VIVARIUM_REPO_URL           Agent repository URL.
+  VIVARIUM_AGENT_REF          Agent git branch, tag, or commit to checkout.
   VIVARIUM_INSTALL_DIR        Agent checkout directory.
   VIVARIUM_BIN_DIR            Directory for the vivarium command.
   VIVARIUM_WORLD_REPO_URL     World repository URL.
@@ -77,6 +78,7 @@ absolute_path() {
 
 home_dir="${HOME:?HOME must be set}"
 repo_url="${VIVARIUM_REPO_URL:-https://github.com/idanmann10/vivarium-agent.git}"
+agent_ref="${VIVARIUM_AGENT_REF:-}"
 install_dir="$(absolute_path "${VIVARIUM_INSTALL_DIR:-$home_dir/.vivarium/vivarium-agent}")"
 bin_dir="$(absolute_path "${VIVARIUM_BIN_DIR:-$home_dir/.local/bin}")"
 command_path="$bin_dir/vivarium"
@@ -195,8 +197,22 @@ run() {
 checkout_or_update() {
   local repo="$1"
   local destination="$2"
+  local ref="${3:-}"
+  local upstream
 
   if [ -d "$destination/.git" ]; then
+    if [ "$ref" != "" ]; then
+      run git -C "$destination" fetch --all --prune
+      run git -C "$destination" checkout "$ref"
+      if [ "$dry_run" -eq 0 ]; then
+        upstream="$(git -C "$destination" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
+        if [ "$upstream" != "" ]; then
+          run git -C "$destination" pull --ff-only
+        fi
+      fi
+      return 0
+    fi
+
     run git -C "$destination" pull --ff-only
     return 0
   fi
@@ -207,6 +223,16 @@ checkout_or_update() {
   fi
 
   run git clone "$repo" "$destination"
+  if [ "$ref" != "" ]; then
+    run git -C "$destination" fetch --all --prune
+    run git -C "$destination" checkout "$ref"
+    if [ "$dry_run" -eq 0 ]; then
+      upstream="$(git -C "$destination" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
+      if [ "$upstream" != "" ]; then
+        run git -C "$destination" pull --ff-only
+      fi
+    fi
+  fi
 }
 
 display_home_path() {
@@ -354,6 +380,9 @@ banner
 echo "Install directory: $install_dir"
 echo "Command path: $command_path"
 echo "Repository: $repo_url"
+if [ "$agent_ref" != "" ]; then
+  echo "Agent ref: $agent_ref"
+fi
 echo "World directory: $world_root"
 echo "World repository: $world_repo_url"
 echo "Domain: $domain"
@@ -367,7 +396,7 @@ if [ "$dry_run" -eq 0 ]; then
 fi
 
 run mkdir -p "$(dirname "$install_dir")"
-checkout_or_update "$repo_url" "$install_dir"
+checkout_or_update "$repo_url" "$install_dir" "$agent_ref"
 
 run mkdir -p "$(dirname "$world_root")"
 checkout_or_update "$world_repo_url" "$world_root"
