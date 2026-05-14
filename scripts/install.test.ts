@@ -192,6 +192,22 @@ describe("install.sh", () => {
     }
   });
 
+  test("infers safe live metadata from GitHub repository URLs", () => {
+    const result = runInstallerDryRun({
+      VIVARIUM_INSTALL_DIR: "/tmp/vivarium-agent-install",
+      VIVARIUM_REPO_URL: "git@github.com:example/vivarium-agent.git",
+      VIVARIUM_WORLD_REPO_URL: "https://github.com/example/vivarium-world.git",
+      VIVARIUM_WORLD_ROOT: "/tmp/vivarium-world",
+    });
+    const stdout = result.stdout.toString();
+
+    expect(result.exitCode).toBe(0);
+    expect(stdout).toContain("--github-owner example");
+    expect(stdout).toContain("--agent-repo vivarium-agent");
+    expect(stdout).toContain("--world-repo vivarium-world");
+    expect(stdout).toContain("--canonical-world-ref https://github.com/example/vivarium-world.git");
+  });
+
   test("passes safe live metadata into quick setup when configured", () => {
     const result = runInstallerDryRun({
       VIVARIUM_AGENT_REPO_NAME: "vivarium-agent",

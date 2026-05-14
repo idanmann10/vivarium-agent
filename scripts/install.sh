@@ -76,6 +76,56 @@ absolute_path() {
   printf '%s\n' "$path"
 }
 
+github_path_from_url() {
+  local url="$1"
+  local path
+
+  case "$url" in
+    https://github.com/*)
+      path="${url#https://github.com/}"
+      ;;
+    http://github.com/*)
+      path="${url#http://github.com/}"
+      ;;
+    git@github.com:*)
+      path="${url#git@github.com:}"
+      ;;
+    ssh://git@github.com/*)
+      path="${url#ssh://git@github.com/}"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  path="${path%%\?*}"
+  path="${path%%#*}"
+  path="${path%.git}"
+
+  case "$path" in
+    */*)
+      printf '%s\n' "$path"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+github_owner_from_url() {
+  local path
+  path="$(github_path_from_url "$1")" || return 1
+  printf '%s\n' "${path%%/*}"
+}
+
+github_repo_from_url() {
+  local path
+  local repo
+  path="$(github_path_from_url "$1")" || return 1
+  repo="${path#*/}"
+  printf '%s\n' "${repo%%/*}"
+}
+
 home_dir="${HOME:?HOME must be set}"
 repo_url="${VIVARIUM_REPO_URL:-https://github.com/idanmann10/vivarium-agent.git}"
 agent_ref="${VIVARIUM_AGENT_REF:-}"
@@ -100,6 +150,19 @@ agent_repo_name="${VIVARIUM_AGENT_REPO_NAME:-}"
 world_repo_name="${VIVARIUM_WORLD_REPO_NAME:-}"
 canonical_world_ref="${VIVARIUM_CANONICAL_WORLD_REF:-}"
 private_world_ref="${VIVARIUM_PRIVATE_WORLD_REF:-}"
+
+if [ "$github_owner" = "" ]; then
+  github_owner="$(github_owner_from_url "$repo_url" || true)"
+fi
+if [ "$agent_repo_name" = "" ]; then
+  agent_repo_name="$(github_repo_from_url "$repo_url" || true)"
+fi
+if [ "$world_repo_name" = "" ]; then
+  world_repo_name="$(github_repo_from_url "$world_repo_url" || true)"
+fi
+if [ "$canonical_world_ref" = "" ]; then
+  canonical_world_ref="$world_repo_url"
+fi
 
 use_color() {
   case "${VIVARIUM_COLOR:-}" in

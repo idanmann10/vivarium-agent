@@ -28,7 +28,7 @@ Install into `~/.vivarium`, clone the canonical world beside the agent, install 
 curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash
 ```
 
-Use `VIVARIUM_INSTALL_DIR`, `VIVARIUM_WORLD_ROOT`, `VIVARIUM_DOMAIN`, and `VIVARIUM_STATE_PATH` to override the default install layout. Use `VIVARIUM_BIN_DIR` to choose where the `vivarium` command is written. Set `VIVARIUM_AGENT_REF` to pin the checkout to a branch, tag, or commit. Set `VIVARIUM_GITHUB_OWNER`, `VIVARIUM_AGENT_REPO_NAME`, `VIVARIUM_WORLD_REPO_NAME`, `VIVARIUM_CANONICAL_WORLD_REF`, and `VIVARIUM_PRIVATE_WORLD_REF` to prefill the non-secret live-readiness repo metadata during install.
+Use `VIVARIUM_INSTALL_DIR`, `VIVARIUM_WORLD_ROOT`, `VIVARIUM_DOMAIN`, and `VIVARIUM_STATE_PATH` to override the default install layout. Use `VIVARIUM_BIN_DIR` to choose where the `vivarium` command is written. Set `VIVARIUM_AGENT_REF` to pin the checkout to a branch, tag, or commit. The installer infers the non-secret GitHub owner, agent repo, world repo, and canonical world ref from the GitHub repository URLs; set `VIVARIUM_GITHUB_OWNER`, `VIVARIUM_AGENT_REPO_NAME`, `VIVARIUM_WORLD_REPO_NAME`, `VIVARIUM_CANONICAL_WORLD_REF`, and `VIVARIUM_PRIVATE_WORLD_REF` when you need explicit overrides or a private world ref.
 
 On macOS, add the opt-in LaunchAgent deployment when you want the local daemon
 installed and started in the same setup pass:
