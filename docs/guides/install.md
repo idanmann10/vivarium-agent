@@ -83,6 +83,13 @@ vivarium run --goal "validate local setup" --state-path .vivarium/state.db
 vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db
 vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write
 
+# The env file has three kinds of values:
+# - safe metadata: repo names, GitHub node IDs, model names, base URLs, context windows
+# - secrets: provider API keys, GitHub token, credential master key, internal API token
+# - evidence paths: provider profiles, encrypted credential store, v1 evidence manifest
+# `setup` and `doctor --live` keep these separate so local setup works before
+# the production-only secrets and evidence are available.
+
 # [3] Inspect configured models
 vivarium model --env-file live-readiness.local.env
 
