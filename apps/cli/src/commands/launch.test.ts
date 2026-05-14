@@ -28,6 +28,10 @@ describe("launchHandoffCommand", () => {
     expect(output).toContain("Provider keys prove real Anthropic, OpenRouter, and private model calls.");
     expect(output).toContain("Credential keys prove the encrypted internal API smoke path.");
     expect(output).toContain("Evidence refs prove the real v1 behavior loop instead of local-only demos.");
+    expect(output).toContain("Owner next action:");
+    expect(output).toContain("Ask an eligible non-author reviewer to approve PR #22.");
+    expect(output).toContain("Do not lower branch protection to merge this PR.");
+    expect(output).toContain("After PR #22 merges, switch the install command to the main branch.");
   });
 
   test("renders the stable main install command without a branch ref override", () => {

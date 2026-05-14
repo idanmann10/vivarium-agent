@@ -13,6 +13,7 @@ export interface LaunchHandoffCommandResult {
   readonly postInstallCommands: readonly string[];
   readonly requiredUnblocks: readonly string[];
   readonly keyExplanations: readonly string[];
+  readonly ownerNextActions: readonly string[];
 }
 
 const defaultOwner = "idanmann10";
@@ -62,6 +63,12 @@ export function launchHandoffCommand(
       "Evidence refs prove the real v1 behavior loop instead of local-only demos.",
       "GitHub IDs point checks at the public repos and Discussion category; they are not secrets.",
     ],
+    ownerNextActions: [
+      "Ask an eligible non-author reviewer to approve PR #22.",
+      "Do not lower branch protection to merge this PR.",
+      "After secrets and evidence are available, rerun vivarium doctor --live --env-file live-readiness.local.env.",
+      "After PR #22 merges, switch the install command to the main branch.",
+    ],
   };
 }
 
@@ -86,6 +93,9 @@ export function renderLaunchHandoffCommandResult(result: LaunchHandoffCommandRes
     "",
     "Why those keys exist:",
     ...result.keyExplanations.map((item) => `  - ${item}`),
+    "",
+    "Owner next action:",
+    ...result.ownerNextActions.map((item) => `  - ${item}`),
     "",
   ].join("\n");
 }
