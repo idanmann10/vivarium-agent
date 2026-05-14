@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
 function runInstallerDryRun(env: Readonly<Record<string, string>> = {}) {
   return Bun.spawnSync(["bash", "scripts/install.sh", "--dry-run"], {
@@ -158,6 +159,37 @@ describe("install.sh", () => {
     expect(stdout).toContain(
       "Would run: git -C /tmp/vivarium-agent-install checkout codex/hermes-style-quick-setup",
     );
+  });
+
+  test("normalizes origin remotes for existing checkouts before updating", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-install-"));
+    const agentDir = join(root, "agent");
+    const worldDir = join(root, "world");
+
+    mkdirSync(join(agentDir, ".git"), { recursive: true });
+    mkdirSync(join(worldDir, ".git"), { recursive: true });
+
+    try {
+      const result = runInstallerDryRun({
+        VIVARIUM_INSTALL_DIR: agentDir,
+        VIVARIUM_REPO_URL: "https://github.com/example/vivarium-agent.git",
+        VIVARIUM_WORLD_REPO_URL: "https://github.com/example/vivarium-world.git",
+        VIVARIUM_WORLD_ROOT: worldDir,
+      });
+      const stdout = result.stdout.toString();
+
+      expect(result.exitCode).toBe(0);
+      expect(stdout).toContain(
+        `Would ensure git origin for ${agentDir}: https://github.com/example/vivarium-agent.git`,
+      );
+      expect(stdout).toContain(
+        `Would ensure git origin for ${worldDir}: https://github.com/example/vivarium-world.git`,
+      );
+      expect(stdout).toContain(`Would run: git -C ${agentDir} pull --ff-only`);
+      expect(stdout).toContain(`Would run: git -C ${worldDir} pull --ff-only`);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   test("passes safe live metadata into quick setup when configured", () => {

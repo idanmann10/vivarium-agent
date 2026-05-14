@@ -201,6 +201,14 @@ checkout_or_update() {
   local upstream
 
   if [ -d "$destination/.git" ]; then
+    if [ "$dry_run" -eq 1 ]; then
+      echo "Would ensure git origin for $destination: $repo"
+    elif git -C "$destination" remote get-url origin >/dev/null 2>&1; then
+      run git -C "$destination" remote set-url origin "$repo"
+    else
+      run git -C "$destination" remote add origin "$repo"
+    fi
+
     if [ "$ref" != "" ]; then
       run git -C "$destination" fetch --all --prune
       run git -C "$destination" checkout "$ref"
