@@ -887,7 +887,7 @@ describe("reference docs", () => {
       "origin` set to `https://github.com/idanmann10/vivarium-agent.git",
       "vivarium update",
       "Status: ok",
-      "`399 pass, 0 fail`",
+      "`400 pass, 0 fail`",
       "`REVIEW_REQUIRED`",
       "`21 passing, 32 blocked`",
       "non-author review",
