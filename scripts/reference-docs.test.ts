@@ -772,6 +772,21 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents the current production blocker map", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    for (const term of [
+      "## Current Production Blocker Map",
+      "Model providers",
+      "Internal credential smoke",
+      "GitHub writes and main-branch CI",
+      "V1 evidence manifest",
+      "Non-author PR review",
+      "doctor --live reports `21 passing, 32 blocked`",
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
+
   test("documents the operator v1 completion boundary in the live-readiness guide", () => {
     const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
     for (const term of [

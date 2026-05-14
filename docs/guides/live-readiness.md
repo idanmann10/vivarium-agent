@@ -44,6 +44,19 @@ The setup commands below use shell variables from that same file. Before running
 source live-readiness.local.env
 ```
 
+## Current Production Blocker Map
+
+As of the current Mac install, doctor --live reports `21 passing, 32 blocked`
+until these operator-owned inputs are real and verified:
+
+| Area | Needed to clear it |
+| --- | --- |
+| Model providers | Real Anthropic, OpenRouter, and private OpenAI-compatible keys, model names, context windows, saved provider profiles, and successful provider smoke calls. |
+| Internal credential smoke | A local encrypted credential store, master key, internal API credential value, health URL, and a successful `credentials smoke` result. |
+| GitHub writes and main-branch CI | A valid `GITHUB_TOKEN` or refreshed `gh auth`, a visible Phase 0 RFC Discussion, and successful latest `main` CI runs for both agent and world repos. |
+| V1 evidence manifest | Real multi-day goal evidence, provider and credential smoke transcripts, Dream artifacts, public contribution evidence, published canonical-world artifacts, curation stats, and the required two-week follow-up evidence. |
+| Non-author PR review | PRs into protected `main` need the configured status checks plus a review from someone other than the PR author; do not lower this gate without an explicit owner decision. |
+
 ## Naming Gate
 
 `goal.md` still treats `the-agent` and `the-world` as temporary names. Choose final names before
