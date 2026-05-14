@@ -27,11 +27,12 @@ canonical world checkout at `~/.vivarium/the-world`, the CLI command at
 | Requirement | Evidence | Status |
 | --- | --- | --- |
 | Branch installer can pin the checkout | `scripts/install.test.ts` covers `VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup`, and a real `/private/tmp` install from the raw GitHub branch checked out the matching branch | Complete |
-| Real Mac installed checkout is current | Installed checkout `~/.vivarium/vivarium-agent` is synced to the installed branch `codex/hermes-style-quick-setup` with a clean status after each pushed handoff update | Complete |
+| Existing installs keep updating from GitHub | `scripts/install.test.ts` covers existing checkout remote normalization; the real installed checkout has `origin` set to `https://github.com/idanmann10/vivarium-agent.git`, and `vivarium update` completed `git pull --ff-only` plus `bun install --frozen-lockfile` | Complete |
+| Real Mac installed checkout is current | Installed checkout `~/.vivarium/vivarium-agent` is synced to `7838d2a` on the installed branch `codex/hermes-style-quick-setup` with a clean status after the latest pushed handoff update | Complete |
 | CLI walkthrough explains the Mac daemon step | Installed `vivarium help` shows `Verify the Mac daemon` and `vivarium daemon smoke --status-url http://127.0.0.1:8787/status` | Complete |
 | Daemon is running | `vivarium daemon smoke --status-url http://127.0.0.1:8787/status` returned `Status: ok` | Complete |
-| Local code gates pass | `bun run lint`, `bun run typecheck`, `bun run build`, `bun run knip`, `bun run public-release:scan`, `bun run format:check`, `git diff --check`, and `bun test` passed; the full test suite reported `396 pass, 0 fail` | Complete |
-| PR checks pass | PR #22 on branch `codex/hermes-style-quick-setup` has successful `verify`, `changeset`, `Analyze JavaScript and TypeScript`, and CodeQL scanning checks before handoff | Complete |
+| Local code gates pass | `bun run lint`, `bun run typecheck`, `bun run build`, `bun run knip`, `bun run public-release:scan`, `bun run format:check`, `git diff --check`, and `bun test` passed; the full test suite reported `398 pass, 0 fail` | Complete |
+| PR checks pass | PR #22 at `7838d2a` on branch `codex/hermes-style-quick-setup` has successful `verify`, `changeset`, `Analyze JavaScript and TypeScript`, and CodeQL scanning checks before handoff | Complete |
 | Launch security posture is verified | `bun run launch:security-audit` returned `ok:true` for public agent/world repos, enabled branch protection, enabled secret scanning and push protection, and zero open Dependabot, secret scanning, or code scanning alerts | Complete |
 
 ## Remaining Blockers
