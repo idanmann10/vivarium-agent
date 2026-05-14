@@ -76,6 +76,12 @@ describe("root toolchain wiring", () => {
     expect(installer).toContain("--canonical-world-ref");
   });
 
+  test("keeps local runtime state untracked", () => {
+    const gitignore = readFileSync(".gitignore", "utf8");
+
+    expect(gitignore).toContain(".vivarium/");
+  });
+
   test("exposes a launch security audit", () => {
     const scripts = rootPackage().scripts;
 
