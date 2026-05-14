@@ -14,7 +14,7 @@ Continue `goal.md` toward v1 by clearing the externally actionable GitHub setup 
 
 | Requirement | Evidence | Status |
 | --- | --- | --- |
-| Agent repository exists with a real name | `https://github.com/idanmann10/vivarium-agent`, private, default branch `main` | Complete |
+| Agent repository exists with a real name | `https://github.com/idanmann10/vivarium-agent`, public, default branch `main`; repo name `vivarium-agent`, public | Complete |
 | Canonical world repository exists with a real name | `https://github.com/idanmann10/vivarium-world`, public, default branch `main` | Complete |
 | Private world fork/mirror exists | `https://github.com/idanmann10/vivarium-world-private`, private, default branch `main` | Complete |
 | Local remotes are configured | `the-agent` `origin` points to `vivarium-agent`; `the-world` `origin` points to `vivarium-world`; `the-world` `private` points to `vivarium-world-private` | Complete |
@@ -30,6 +30,7 @@ Continue `goal.md` toward v1 by clearing the externally actionable GitHub setup 
 | Agent CI has a regression guard for its sibling world dependency | `scripts/workflows.test.ts` requires `.github/workflows/ci.yml` to clone `vivarium-world` to `../the-world` before tests | Complete |
 | Local verification for the latest agent readiness change | `bun run lint`, `bun run typecheck`, `bun run build`, `git diff --check`, and `bun run test` passed in `the-agent` before pushing `ce950ff` | Complete |
 | Live readiness GitHub checks | Elevated `doctor --live --env-file live-readiness.local.env` reports `github.env:configured`, `github.owner:configured`, `github.repositoryId:configured`, `github.discussionCategoryId:configured`, `github.auth:ok`, `github.discussion:configured`, `github.agentCi:ok`, and `github.worldCi:ok` | Complete |
+| Launch security audit | `bun run launch:security-audit` reports `ok:true`; `vivarium-agent`, public; `vivarium-world`, public; `secretScanning`, `pushProtection`, and `branchProtection` enabled; zero open Dependabot, secret scanning, and code scanning alerts | Complete |
 
 ## Remaining Blockers
 

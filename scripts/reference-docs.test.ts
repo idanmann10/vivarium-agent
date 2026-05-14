@@ -852,6 +852,25 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents current launch security audit evidence", () => {
+    const body = readFileSync(
+      join("docs", "superpowers", "audits", "2026-05-10-github-live-setup.md"),
+      "utf8",
+    );
+    for (const term of [
+      "Launch security audit",
+      "`bun run launch:security-audit`",
+      "vivarium-agent`, public",
+      "vivarium-world`, public",
+      "secretScanning",
+      "pushProtection",
+      "branchProtection",
+      "zero open Dependabot, secret scanning, and code scanning alerts",
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
+
   test("documents open-source production readiness at the repo root", () => {
     for (const [path, terms] of Object.entries(agentRootDocs)) {
       expect(existsSync(path), `${path} should exist`).toBe(true);
