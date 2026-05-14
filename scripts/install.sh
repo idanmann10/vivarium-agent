@@ -509,4 +509,7 @@ echo
 echo "Command path fallback:"
 print_launch_sequence "$command_path"
 echo
+echo "Launch handoff summary:"
+run "$command_path" launch handoff
+echo
 echo "If 'vivarium' is not found, add $bin_dir to PATH or run a command path above."

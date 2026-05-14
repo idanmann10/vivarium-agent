@@ -92,6 +92,8 @@ describe("install.sh", () => {
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium launch handoff");
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium help");
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium update");
+    expect(stdout).toContain("Launch handoff summary:");
+    expect(stdout).toContain("Would run: /tmp/vivarium-bin/vivarium launch handoff");
     expect(stdout).toContain("If 'vivarium' is not found, add /tmp/vivarium-bin to PATH");
   });
 
