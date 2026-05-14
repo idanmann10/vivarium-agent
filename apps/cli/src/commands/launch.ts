@@ -19,7 +19,7 @@ export interface LaunchHandoffCommandResult {
 const defaultOwner = "idanmann10";
 const defaultRepo = "vivarium-agent";
 const defaultRef = "codex/hermes-style-quick-setup";
-const defaultScriptRef = "340f7340e5937da79872dfb30d975300f7b2e89a";
+const defaultScriptRef = "c6c6778f1024f19294d24219b02c7778566e5b04";
 
 function installCommand(owner: string, repo: string, ref: string, scriptRef: string): string {
   const scriptUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${scriptRef}/scripts/install.sh`;

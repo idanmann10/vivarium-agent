@@ -909,7 +909,7 @@ describe("reference docs", () => {
     expect(existsSync(path), `${path} should exist`).toBe(true);
     const body = existsSync(path) ? readFileSync(path, "utf8") : "";
     for (const term of [
-      "curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/340f7340e5937da79872dfb30d975300f7b2e89a/scripts/install.sh",
+      "curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/c6c6778f1024f19294d24219b02c7778566e5b04/scripts/install.sh",
       "VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup",
       "VIVARIUM_DAEMON=launchd",
       "installed checkout",

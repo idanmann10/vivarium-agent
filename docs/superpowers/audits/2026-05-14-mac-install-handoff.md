@@ -9,11 +9,11 @@ honest production-readiness boundary.
 ## Install Command
 
 Use the commit-pinned installer until PR #22 is reviewed and merged. The
-downloaded installer script is pinned to verified commit `340f734`, while the
+downloaded installer script is pinned to verified commit `c6c6778`, while the
 installed checkout is still pinned to the handoff branch:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/340f7340e5937da79872dfb30d975300f7b2e89a/scripts/install.sh | \
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/c6c6778f1024f19294d24219b02c7778566e5b04/scripts/install.sh | \
   VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup \
   VIVARIUM_DAEMON=launchd \
   bash
@@ -86,7 +86,7 @@ Please review https://github.com/idanmann10/vivarium-agent/pull/22.
 The PR installs Vivarium locally on macOS, starts the LaunchAgent daemon, and
 prints the setup walkthrough. To smoke-test it on a Mac:
 
-curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/340f7340e5937da79872dfb30d975300f7b2e89a/scripts/install.sh | \
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/c6c6778f1024f19294d24219b02c7778566e5b04/scripts/install.sh | \
   VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup \
   VIVARIUM_DAEMON=launchd \
   bash

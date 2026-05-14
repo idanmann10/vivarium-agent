@@ -658,7 +658,7 @@ describe("dispatchCliCommand", () => {
     expect(result.command).toBe("launch");
     expect(result.output).toContain("Vivarium Launch Handoff");
     expect(result.output).toContain(
-      "https://raw.githubusercontent.com/idanmann10/vivarium-agent/340f7340e5937da79872dfb30d975300f7b2e89a/scripts/install.sh",
+      "https://raw.githubusercontent.com/idanmann10/vivarium-agent/c6c6778f1024f19294d24219b02c7778566e5b04/scripts/install.sh",
     );
     expect(result.output).toContain("VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup");
     expect(result.output).toContain("VIVARIUM_DAEMON=launchd");
