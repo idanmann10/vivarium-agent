@@ -15,8 +15,12 @@ function readFlag(name) {
   return value;
 }
 
+function displayArg(arg) {
+  return /^[A-Za-z0-9_./:=@-]+$/.test(arg) ? arg : JSON.stringify(arg);
+}
+
 function commandText(command, args) {
-  return [command, ...args].join(" ");
+  return [command, ...args.map(displayArg)].join(" ");
 }
 
 function event(time, text) {
@@ -52,22 +56,19 @@ function localCliStep(args) {
 
 const steps = [
   localCliStep([
-    "init",
+    "local",
     "--domain",
     "coding",
     "--world-root",
     worldRoot,
     "--state-path",
     statePath,
-    "--provider",
-    "anthropic:claude",
-    "--credential",
-    "internal-api",
   ]),
   localCliStep([
+    "local",
     "run",
     "--goal",
-    "validate local cultural transmission",
+    "build a tiny local agent",
     "--domain",
     "coding",
     "--world-root",

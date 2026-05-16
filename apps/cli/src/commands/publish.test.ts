@@ -18,6 +18,14 @@ describe("publish commands", () => {
     expect(output.trim().startsWith("{")).toBe(false);
   });
 
+  test("points empty publish queues at the local run shorthand", () => {
+    const output = renderPublishListCommandResult({ publishables: [] });
+
+    expect(output).toContain("Publishables: 0");
+    expect(output).toContain("vivarium local run --goal <goal> --domain coding");
+    expect(output).not.toContain("vivarium run --goal");
+  });
+
   test("renders published run and trace results as terminal output", () => {
     const run = renderPublishRunCommandResult({
       target: { label: "canonical", root: "/tmp/world", priority: 1 },

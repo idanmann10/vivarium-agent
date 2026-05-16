@@ -3,9 +3,26 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { addCredentialCommand, credentialSmokeCommand, listCredentialsCommand } from "./credentials.js";
+import {
+  addCredentialCommand,
+  credentialSmokeCommand,
+  listCredentialsCommand,
+  renderListCredentialsCommandResult,
+} from "./credentials.js";
 
 describe("credential commands", () => {
+  test("points empty credential guidance at connect setup", () => {
+    const credentialsPath = join(mkdtempSync(join(tmpdir(), "cli-credentials-empty-")), "credentials.enc");
+    const output = renderListCredentialsCommandResult(
+      listCredentialsCommand({ credentialsPath, masterKey: "cli-test-key" }),
+    );
+
+    expect(output).toContain("Credentials: 0");
+    expect(output).toContain("vivarium connect fill");
+    expect(output).toContain("vivarium connect setup --confirm-write");
+    expect(output).not.toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");
+  });
+
   test("adds and lists encrypted credentials without returning secret values", () => {
     const credentialsPath = join(mkdtempSync(join(tmpdir(), "cli-credentials-")), "credentials.enc");
     const store = { credentialsPath, masterKey: "cli-test-key" };

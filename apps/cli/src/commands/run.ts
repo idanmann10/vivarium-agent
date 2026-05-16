@@ -19,6 +19,7 @@ export type RunProviderKind = "local" | "anthropic" | "openai" | "openai-compat"
 
 export interface RunCommandOptions {
   readonly goal: string;
+  readonly agentName?: string;
   readonly domain?: string;
   readonly worldRoot?: string;
   readonly worldSubscriptionsPath?: string;
@@ -42,6 +43,7 @@ export function describeRunCommand(options: RunCommandOptions): string {
 
 export interface RunCommandResult {
   readonly success: boolean;
+  readonly agentName: string;
   readonly runId: string | null;
   readonly provider: {
     readonly kind: string;
@@ -104,6 +106,7 @@ function localProvider(): ConfiguredRunProvider {
 function providerConfigError(kind: string, id: string, model: string | null | undefined, error: string): RunCommandResult {
   return {
     success: false,
+    agentName: "local-agent",
     runId: null,
     provider: { kind, id, model: model ?? null },
     episodeKinds: [],
@@ -281,9 +284,10 @@ function createRunWorldReader(options: RunCommandOptions): LocalWorldReader {
 }
 
 export async function runCommand(options: RunCommandOptions): Promise<RunCommandResult> {
+  const agentName = options.agentName ?? "local-agent";
   const selectedProvider = configuredProvider(options);
   if ("success" in selectedProvider) {
-    return selectedProvider;
+    return { ...selectedProvider, agentName };
   }
 
   const state: StateRepository = options.statePath === undefined ? new InMemoryStateRepository() : new SQLiteStateRepository(options.statePath);
@@ -294,7 +298,7 @@ export async function runCommand(options: RunCommandOptions): Promise<RunCommand
   const request = {
     goal: options.goal,
     domain: options.domain ?? "coding",
-    agentName: "local-cli-agent",
+    agentName,
     provider: selectedProvider.provider,
     tools,
     availableToolsets: options.availableToolsets ?? [],
@@ -312,6 +316,7 @@ export async function runCommand(options: RunCommandOptions): Promise<RunCommand
 
   return {
     success: result.success,
+    agentName,
     runId: String(result.runId),
     provider: selectedProvider.summary,
     episodeKinds,
@@ -345,10 +350,20 @@ function renderPredictionSummary(prediction: Prediction | null): readonly string
 function renderRunGuidance(result: RunCommandResult): readonly string[] {
   if (result.success) {
     return [
-      "Next command:",
-      result.runId === null
-        ? "  vivarium doctor"
-        : `  vivarium publish run --run-id ${result.runId} --visibility public --contributor <agent-id>`,
+      "Next commands:",
+      "  vivarium local run --goal \"try another small coding task\"",
+      "  vivarium status",
+      "  vivarium model",
+    ];
+  }
+
+  if (isProviderSetupError(result.error)) {
+    return [
+      "Next commands:",
+      "  vivarium connect fill",
+      "  vivarium connect setup --confirm-write",
+      "  vivarium connect smoke",
+      "  vivarium local run",
     ];
   }
 
@@ -358,6 +373,21 @@ function renderRunGuidance(result: RunCommandResult): readonly string[] {
   ];
 }
 
+function isProviderSetupError(error: string | undefined): boolean {
+  return (
+    error?.startsWith("Missing --provider-") === true ||
+    error?.startsWith("Missing provider environment variable:") === true ||
+    error?.startsWith("Missing --provider-profiles-path") === true ||
+    error?.startsWith("Provider profile not found:") === true
+  );
+}
+
+function renderRunError(error: string): string {
+  return isProviderSetupError(error)
+    ? "Provider credentials are not connected for this run."
+    : error;
+}
+
 export function renderRunCommandResult(result: RunCommandResult): string {
   return [
     renderVivariumGlobe(),
@@ -365,6 +395,7 @@ export function renderRunCommandResult(result: RunCommandResult): string {
     "Vivarium Run",
     "------------",
     `Status: ${result.success ? "success" : "blocked"}`,
+    `Agent: ${result.agentName}`,
     `Run ID: ${result.runId ?? "not started"}`,
     `Provider: ${renderProviderSummary(result.provider)}`,
     `Episodes: ${result.episodeKinds.length === 0 ? "none" : result.episodeKinds.join(", ")}`,
@@ -373,7 +404,7 @@ export function renderRunCommandResult(result: RunCommandResult): string {
     renderValidationSummary(result.transparency.validation),
     ...renderPredictionSummary(result.transparency.prediction),
     `High surprises: ${result.transparency.highSurprises.length}`,
-    ...(result.error === undefined ? [] : ["", `Error: ${result.error}`]),
+    ...(result.error === undefined ? [] : ["", `Reason: ${renderRunError(result.error)}`]),
     "",
     ...renderRunGuidance(result),
     "",

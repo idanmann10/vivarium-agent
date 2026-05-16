@@ -70,7 +70,7 @@ export function renderDaemonSmokeCommandResult(result: DaemonSmokeCommandResult)
           `Confidence buckets: ${result.confidenceBuckets}`,
           "",
           "Next command:",
-          "  vivarium doctor --live --env-file live-readiness.local.env",
+          "  vivarium doctor --live",
         ]
       : [
           `Error: ${result.error}`,

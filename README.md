@@ -28,7 +28,10 @@ Install into `~/.vivarium`, clone the canonical world beside the agent, install 
 curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash
 ```
 
-Use `VIVARIUM_INSTALL_DIR`, `VIVARIUM_WORLD_ROOT`, `VIVARIUM_DOMAIN`, and `VIVARIUM_STATE_PATH` to override the default install layout. Use `VIVARIUM_BIN_DIR` to choose where the `vivarium` command is written. Set `VIVARIUM_AGENT_REF` to pin the checkout to a branch, tag, or commit. The installer infers the non-secret GitHub owner, agent repo, world repo, and canonical world ref from the GitHub repository URLs; set `VIVARIUM_GITHUB_OWNER`, `VIVARIUM_AGENT_REPO_NAME`, `VIVARIUM_WORLD_REPO_NAME`, `VIVARIUM_CANONICAL_WORLD_REF`, and `VIVARIUM_PRIVATE_WORLD_REF` when you need explicit overrides or a private world ref.
+Most users do not need to set environment variables before the first run. The
+installer infers public repo metadata, creates local state, and prints the next
+agent commands. Advanced install overrides live in
+[docs/guides/install.md](docs/guides/install.md).
 
 On macOS, add the opt-in LaunchAgent deployment when you want the local daemon
 installed and started in the same setup pass:
@@ -43,55 +46,117 @@ Interactive terminals use the branded ANSI theme automatically. Set `VIVARIUM_CO
 
 ## Terminal-first setup
 
-`vivarium setup --quick` initializes local state, installs the starter pack, creates `live-readiness.local.env` from the template when it is missing, and prints the next terminal commands as a numbered launch sequence:
+`vivarium local` creates a named `local-agent`, initializes SQLite state under
+`~/.vivarium`, installs the coding starter pack, stages
+`~/.vivarium/live/live-readiness.local.env` for later, and prints a local-first
+numbered launch sequence. The installer runs the same quick setup
+automatically.
 
 After installation, reload your shell if needed and run:
 
 ```bash
-# [1] Prove the local loop
-vivarium run --goal "validate local setup" --state-path .vivarium/state.db
+# [1] Initialize local memory
+vivarium local
 
-# [2] Prepare live readiness
-# Edit live-readiness.local.env locally. Keep it out of git.
-vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db
-vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write
+# [2] Run the local agent
+vivarium local run --goal "build a tiny local agent"
 
-# [3] Inspect configured models
-vivarium model --env-file live-readiness.local.env
-
-# [4] Prepare live evidence
-vivarium live evidence-init --path v1-evidence.json
-
-# [5] Run the readiness gate
-vivarium doctor --live --env-file live-readiness.local.env
-
-# [6] Verify the Mac daemon, when installed with VIVARIUM_DAEMON=launchd
-vivarium daemon smoke --status-url http://127.0.0.1:8787/status
-
-# [7] Review launch handoff
+# [3] Review launch handoff
 vivarium launch handoff
 
-# [8] Keep moving
+# [4] Keep moving
 vivarium status
 vivarium help
 vivarium update
 ```
 
-For a source checkout, run the same setup directly:
+That first run is fully offline. It uses the built-in local provider, records
+the run in local memory, and reports the skills, traces, prediction,
+validation, and next local commands. Connect Anthropic, OpenRouter, or a private
+OpenAI-compatible endpoint only when you want real model calls.
+
+When installed with the LaunchAgent option, verify the local daemon separately:
+
+```bash
+vivarium daemon smoke --status-url http://127.0.0.1:8787/status
+```
+
+Use `vivarium launch handoff` when you are ready for production evidence. That
+command explains provider keys, live smoke tests, and the v1 evidence gate
+without blocking the local agent loop.
+
+Use `vivarium setup live` when you are ready to create provider keys with the
+default private directories. It creates `~/.vivarium/secrets` for local secret
+files and `~/.vivarium/live` for generated provider, credential, and evidence
+artifacts, then runs the guided live setup flow. `vivarium onboard live` remains
+available as the same live setup wizard.
+
+`vivarium connect signup` reopens model provider, GitHub/public release, and internal credential handoff guidance without showing raw env-key wiring. It also shows a local value map for generated files such as `~/.vivarium/secrets/anthropic.key` and `~/.vivarium/secrets/internal-health-url.txt`, so setup stays in paste-once local files instead of shell exports.
+
+Live setup path:
+
+```bash
+vivarium setup live
+vivarium connect signup
+# Paste requested values into ~/.vivarium/secrets, then:
+vivarium setup live
+vivarium connect
+vivarium connect setup --confirm-write
+vivarium connect smoke
+vivarium proof init
+vivarium proof
+vivarium doctor --live
+```
+
+`vivarium connect` turns the setup file into a plain-language names/world,
+GitHub/public release, provider, internal credential, and evidence readiness
+dashboard without printing raw env-key wiring unless you pass `--details`. Use
+`vivarium proof` to review the v1 evidence checklist in plain language before
+the stricter live doctor gate.
+New env files include public-provider model defaults for Anthropic and
+OpenRouter, so first-time setup starts with signup keys plus the private/internal
+values.
+
+### Advanced live setup controls
+
+Use `vivarium connect wizard` only when you want to choose those paths yourself. It
+creates or reuses the private `~/.vivarium/live/live-readiness.local.env` setup
+file by default, shows the Anthropic and OpenRouter key pages plus the private
+endpoint handoff, and can write friendly file-backed setup values in the same
+command. Prefer the `--secrets-dir ~/.vivarium/secrets` shortcut so secrets stay
+in local files and do not sit in shell history. Add
+`--setup-dir ~/.vivarium/live` to put generated provider profiles, the encrypted
+credential store, and the evidence manifest in one local directory. Pass
+`--confirm-write` after reviewing those values to save those files without a
+separate setup step.
+
+For a source checkout in the standard sibling layout (`the-agent` beside
+`the-world`), use the one-command local proof path:
 
 ```bash
 bun install
-vivarium setup --quick --domain coding --world-root ../the-world --state-path .vivarium/state.db
+bun run quickstart
 ```
+
+That runs local setup and a deterministic local goal. If you want to run the
+steps separately, use the local shortcuts:
+
+```bash
+bun run local
+bun run local:run
+```
+
+For custom paths, use `bun run vivarium -- local` and pass `--world-root` or
+`--state-path` explicitly.
 
 Filled `live-readiness.local.env` files are ignored by git. Do not commit API keys, credential values, provider secrets, or evidence files that contain private paths or private customer data.
 
-When the public repository names are already settled, prefill the non-secret GitHub and world values while creating the env file:
+When the public repository names are already settled, prefill the non-secret
+GitHub and world values while creating the default private setup file:
 
 ```bash
 vivarium setup \
   --quick \
-  --live-env-path live-readiness.local.env \
   --domain coding \
   --world-root ../the-world \
   --state-path .vivarium/state.db \
@@ -155,7 +220,11 @@ bun run build
 bun run format:check
 ```
 
-Use `doctor --live` for production evidence. A green local test suite is not a substitute for live provider, credential, GitHub, other-agent, or two-week improvement evidence. Full v1 is only ready when a fresh live doctor returns `ok:true`.
+Use `vivarium proof` for the human-readable
+evidence checklist and `doctor --live` for the production gate. A green local
+test suite is not a substitute for live provider, credential, GitHub,
+other-agent, or two-week improvement evidence. Full v1 is only ready when a
+fresh live doctor returns `ok:true`.
 
 ## Repository Layout
 

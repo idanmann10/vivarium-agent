@@ -25,6 +25,7 @@ export type SetupDiskSpaceProbe = (path: string) => SetupDiskSpace;
 
 export interface SetupCommandOptions {
   readonly primaryDomain: string;
+  readonly agentName?: string;
   readonly worldRoot?: string;
   readonly statePath?: string;
   readonly envFilePath?: string;
@@ -68,19 +69,21 @@ function setupNextCommands(
   live: LiveSetupCommandResult | undefined,
   quickEnv: LiveEnvInitCommandResult | undefined,
 ): readonly string[] {
-  const runCommand = commandWithFlags("run", {
-    goal: "validate local setup",
+  const runCommand = commandWithFlags("local run", {
+    goal: "build a tiny local agent",
     domain: options.primaryDomain,
+    "agent-name": options.agentName,
     "state-path": local.statePath,
-    ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
+    "world-root": local.worldRoot,
   });
   const liveEnvFilePath = options.envFilePath ?? quickEnv?.path ?? defaultLiveEnvFilePath;
   const modelCommand = commandWithFlags("model", { "env-file": liveEnvFilePath });
-  const evidenceCommand = commandWithFlags("live evidence-init", { path: "v1-evidence.json" });
+  const smokeCommand = commandWithFlags("connect smoke", { "env-file": liveEnvFilePath });
+  const proofCommand = commandWithFlags("proof", { "env-file": liveEnvFilePath });
   const doctorCommand = commandWithFlags("doctor", { live: true, "env-file": liveEnvFilePath });
 
   if (options.envFilePath !== undefined && live?.ok === true) {
-    return [runCommand, modelCommand, evidenceCommand, doctorCommand];
+    return [runCommand, modelCommand, smokeCommand, proofCommand, doctorCommand];
   }
 
   if (
@@ -98,7 +101,8 @@ function setupNextCommands(
         "confirm-write": true,
       }),
       modelCommand,
-      evidenceCommand,
+      smokeCommand,
+      proofCommand,
       doctorCommand,
     ];
   }
@@ -113,7 +117,8 @@ function setupNextCommands(
         "state-path": local.statePath,
       }),
       modelCommand,
-      evidenceCommand,
+      smokeCommand,
+      proofCommand,
       doctorCommand,
     ];
   }
@@ -121,44 +126,19 @@ function setupNextCommands(
   if (quickEnv !== undefined) {
     return [
       runCommand,
-      commandWithFlags("setup", {
-        "env-file": quickEnv.path,
-        domain: options.primaryDomain,
-        ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
-        "state-path": local.statePath,
-      }),
-      commandWithFlags("setup", {
-        "env-file": quickEnv.path,
-        domain: options.primaryDomain,
-        ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
-        "state-path": local.statePath,
-        "confirm-write": true,
-      }),
-      modelCommand,
-      evidenceCommand,
-      doctorCommand,
+      "vivarium launch handoff",
+      "vivarium status",
+      "vivarium help",
+      "vivarium update",
     ];
   }
 
   return [
     runCommand,
-    commandWithFlags("live env-init", { path: defaultLiveEnvFilePath }),
-    commandWithFlags("setup", {
-      "env-file": defaultLiveEnvFilePath,
-      domain: options.primaryDomain,
-      ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
-      "state-path": local.statePath,
-    }),
-    commandWithFlags("setup", {
-      "env-file": defaultLiveEnvFilePath,
-      domain: options.primaryDomain,
-      ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
-      "state-path": local.statePath,
-      "confirm-write": true,
-    }),
-    modelCommand,
-    evidenceCommand,
-    doctorCommand,
+    "vivarium launch handoff",
+    "vivarium status",
+    "vivarium help",
+    "vivarium update",
   ];
 }
 
@@ -174,7 +154,7 @@ function bytes(value: number): string {
 }
 
 function defaultStatePath(): string {
-  return join(homedir(), ".the-agent", "state.db");
+  return join(process.env.HOME ?? homedir(), ".vivarium", "state.db");
 }
 
 function existingProbePath(path: string): string {
@@ -221,6 +201,7 @@ export function setupCommand(options: SetupCommandOptions): SetupCommandResult {
   const local = runInitCommand({
     primaryDomain: options.primaryDomain,
     bindGithubIdentity: false,
+    ...(options.agentName === undefined ? {} : { agentName: options.agentName }),
     ...(options.worldRoot === undefined ? {} : { worldRoot: options.worldRoot }),
     ...(options.statePath === undefined ? {} : { statePath: options.statePath }),
   });
@@ -256,25 +237,27 @@ function renderQuickEnvSummary(quickEnv: LiveEnvInitCommandResult | undefined): 
 
   if (quickEnv.ok) {
     return [
-      "Live env quick start: written",
-      `Env file: ${quickEnv.path}`,
+      "Local setup is ready now.",
+      "Live readiness: staged for later",
+      `Readiness file: ${quickEnv.path}`,
       `Permissions: ${quickEnv.mode}`,
       ...(quickEnv.prefilled.length === 0 ? [] : [`Prefilled: ${quickEnv.prefilled.join(", ")}`]),
-      `Fill live settings: edit ${quickEnv.path} locally. Keep it out of git.`,
+      "Use vivarium launch handoff when you are ready for provider keys and live evidence.",
     ];
   }
 
   if (isExistingLiveEnv(quickEnv)) {
     return [
-      "Live env quick start: already exists",
-      `Env file: ${quickEnv.path}`,
-      `Fill live settings: edit ${quickEnv.path} locally. Keep it out of git.`,
+      "Local setup is ready now.",
+      "Live readiness: already staged",
+      `Readiness file: ${quickEnv.path}`,
+      "Use vivarium launch handoff when you are ready for provider keys and live evidence.",
     ];
   }
 
   return [
-    "Live env quick start: blocked",
-    `Env file: ${quickEnv.path}`,
+    "Live readiness: blocked",
+    `Readiness file: ${quickEnv.path}`,
     `Error: ${quickEnv.error}`,
   ];
 }
@@ -403,6 +386,7 @@ export function renderSetupCommandResult(result: SetupCommandResult): string {
     "",
     "Vivarium Setup",
     "--------------",
+    `Agent: ${result.local.agentName}`,
     `Local state initialized: ${result.local.statePath}`,
     `Domain: ${result.local.primaryDomain}`,
     `Starter skills: ${result.local.starterSkills.length}`,

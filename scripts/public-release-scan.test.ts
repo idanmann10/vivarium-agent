@@ -1,6 +1,32 @@
 import { describe, expect, test } from "bun:test";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 
 import { scanPublicReleaseFiles } from "./public-release-scan.js";
+
+function run(command: string[], cwd: string) {
+  const result = Bun.spawnSync(command, {
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  if (result.exitCode !== 0) {
+    throw new Error(
+      [
+        `Command failed: ${command.join(" ")}`,
+        `stdout:\n${result.stdout.toString()}`,
+        `stderr:\n${result.stderr.toString()}`,
+      ].join("\n"),
+    );
+  }
+  return result;
+}
+
+function write(path: string, text: string): void {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, text, "utf8");
+}
 
 describe("public release scan", () => {
   test("flags committed local env and encrypted credential files", () => {
@@ -48,5 +74,26 @@ describe("public release scan", () => {
       "docs/openai.md:1: possible OpenAI API key",
       "docs/github.md:1: possible GitHub token",
     ]);
+  });
+
+  test("CLI scans untracked non-ignored files before release", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-public-release-scan-"));
+    const scriptPath = resolve("scripts/public-release-scan.ts");
+
+    run(["git", "init"], root);
+    write(join(root, "README.md"), "# test repo\n");
+    run(["git", "add", "README.md"], root);
+    write(join(root, "live-readiness.local.env"), "ANTHROPIC_API_KEY=placeholder\n");
+
+    const result = Bun.spawnSync(["bun", scriptPath], {
+      cwd: root,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr.toString()).toContain(
+      "live-readiness.local.env: filled live-readiness env files must stay untracked",
+    );
   });
 });

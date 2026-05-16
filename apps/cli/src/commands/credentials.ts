@@ -127,8 +127,9 @@ export function renderListCredentialsCommandResult(result: ListCredentialsComman
     ...(result.credentials.length === 0
       ? [
           "",
-          "Next command:",
-          "  vivarium live setup --env-file live-readiness.local.env --confirm-write",
+          "Next commands:",
+          "  vivarium connect fill",
+          "  vivarium connect setup --confirm-write",
         ]
       : ["", ...result.credentials.flatMap(renderListedCredential)]),
     "",
@@ -192,7 +193,7 @@ export function renderCredentialSmokeCommandResult(result: CredentialSmokeComman
           `Preview: ${result.bodyPreview}`,
           "",
           "Next command:",
-          "  vivarium doctor --live --env-file live-readiness.local.env",
+          "  vivarium doctor --live",
         ]
       : [
           `Error: ${result.error}`,

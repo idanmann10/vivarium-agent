@@ -22,10 +22,14 @@
     "knip": "knip --include dependencies,unlisted,unresolved --no-config-hints",
     "launch:security-audit": "bun run scripts/launch-security-audit.ts",
     "lint": "bun run scripts/lint.ts && oxlint .",
+    "local": "bun apps/cli/src/main.ts local --world-root ../the-world --state-path .vivarium/state.db",
+    "local:run": "bun apps/cli/src/main.ts local run --world-root ../the-world --state-path .vivarium/state.db",
     "public-release:scan": "bun run scripts/public-release-scan.ts",
+    "quickstart": "bun run local && bun run local:run",
     "record:local-e2e-demo": "node scripts/record-local-e2e-demo.cjs",
     "test": "bun test",
     "typecheck": "tsc --noEmit -p tsconfig.base.json",
+    "vivarium": "bun apps/cli/src/main.ts",
     "verify:sqlite-stack": "node scripts/verify-better-sqlite3.cjs"
   },
   "dependencies": {

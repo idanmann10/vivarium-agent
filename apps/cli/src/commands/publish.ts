@@ -97,7 +97,7 @@ export function renderPublishListCommandResult(result: PublishListCommandResult)
       ? [
           "",
           "Next command:",
-          "  vivarium run --goal <goal> --domain coding",
+          "  vivarium local run --goal <goal> --domain coding",
         ]
       : ["", ...result.publishables.flatMap(renderPublishable)]),
     "",

@@ -40,6 +40,7 @@ export class SQLiteStateRepository implements StateRepository {
   constructor(path: string) {
     mkdirSync(dirname(path), { recursive: true });
     this.#db = new Database(path, { create: true });
+    this.#db.run("PRAGMA busy_timeout = 5000");
     this.#db.run("PRAGMA journal_mode = WAL");
     runMigrations(this.#db);
   }

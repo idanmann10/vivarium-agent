@@ -38,6 +38,37 @@ function shellQuote(value: string): string {
   return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
 }
 
+function isDefaultLiveEnvFile(envFilePath: string): boolean {
+  return (
+    envFilePath === "live-readiness.local.env" ||
+    envFilePath.endsWith("/.vivarium/live/live-readiness.local.env")
+  );
+}
+
+function connectCommand(envFilePath: string): string {
+  return isDefaultLiveEnvFile(envFilePath)
+    ? "vivarium connect"
+    : `vivarium connect --env-file ${envFilePath}`;
+}
+
+function connectFillCommand(envFilePath: string): string {
+  return isDefaultLiveEnvFile(envFilePath)
+    ? "vivarium connect fill"
+    : `vivarium connect fill --env-file ${envFilePath}`;
+}
+
+function connectSetupCommand(envFilePath: string): string {
+  return isDefaultLiveEnvFile(envFilePath)
+    ? "vivarium connect setup --confirm-write"
+    : `vivarium connect setup --env-file ${envFilePath} --confirm-write`;
+}
+
+function modelCommandLine(envFilePath: string): string {
+  return isDefaultLiveEnvFile(envFilePath)
+    ? "vivarium model"
+    : `vivarium model --env-file ${envFilePath}`;
+}
+
 function envProfilesPath(env: Readonly<Record<string, string | undefined>>): string | undefined {
   const value = env.VIVARIUM_PROVIDER_PROFILES_PATH?.trim();
   return value === undefined || value.length === 0 ? undefined : value;
@@ -110,13 +141,23 @@ export function modelCommand(options: ModelCommandOptions = {}): ModelCommandRes
   }
 }
 
-function renderModelProfile(profile: ModelProfileSummary): readonly string[] {
+interface RenderModelCommandOptions {
+  readonly envFilePath?: string;
+  readonly showDetails?: boolean;
+}
+
+function renderModelProfile(
+  profile: ModelProfileSummary,
+  options: RenderModelCommandOptions,
+): readonly string[] {
   return [
     `  [ok] ${profile.name}`,
     `       Kind: ${profile.kind}`,
     `       Model: ${profile.model}`,
     ...(profile.baseUrl === undefined ? [] : [`       Base URL: ${profile.baseUrl}`]),
-    `       Env: ${profile.apiKeyEnv}`,
+    options.showDetails === true
+      ? `       Env: ${profile.apiKeyEnv}`
+      : "       Secret: configured by provider profile",
     `       Context: ${profile.contextWindow}`,
     `       Cost: ${profile.costClass}`,
     `       Capabilities: ${profile.capabilities.join(", ")}`,
@@ -125,7 +166,7 @@ function renderModelProfile(profile: ModelProfileSummary): readonly string[] {
 
 function renderModelGuidance(
   result: ModelCommandResult,
-  options: { readonly envFilePath?: string },
+  options: { readonly envFilePath?: string; readonly showDetails?: boolean },
 ): readonly string[] {
   const envFilePath = shellQuote(options.envFilePath ?? "live-readiness.local.env");
 
@@ -142,19 +183,28 @@ function renderModelGuidance(
     return [
       "Next steps:",
       `  No provider profiles found at: ${result.profilesPath}`,
-      `  Fill ${envFilePath}, then write the guarded setup files:`,
-      `  vivarium live setup --env-file ${envFilePath} --confirm-write`,
-      "  Or add one profile with: vivarium providers configure ...",
+      "  Fill common provider values through the setup helper:",
+      `  ${connectFillCommand(envFilePath)}`,
+      "  Then write the guarded setup files:",
+      `  ${connectSetupCommand(envFilePath)}`,
+      ...(options.showDetails === true
+        ? ["  Or add one profile with: vivarium providers configure ..."]
+        : []),
       "  Guide: docs/guides/configure-providers.md",
     ];
   }
 
   return [
     "Next steps:",
-    "  Set VIVARIUM_PROVIDER_PROFILES_PATH, pass --profiles-path <path>,",
-    "  or load a readiness file:",
-    `  vivarium model --env-file ${envFilePath}`,
-    `  vivarium live setup --env-file ${envFilePath} --confirm-write`,
+    "  Start guided live setup:",
+    "  vivarium setup live",
+    "  Review and fill provider values:",
+    `  ${connectCommand(envFilePath)}`,
+    `  ${connectFillCommand(envFilePath)}`,
+    "  Then write the provider profiles:",
+    `  ${connectSetupCommand(envFilePath)}`,
+    `  Then inspect configured models: ${modelCommandLine(envFilePath)}`,
+    "  Manual override: pass --profiles-path <path>.",
     "  Guide: docs/guides/configure-providers.md",
   ];
 }
@@ -175,16 +225,20 @@ function renderMissingProfiles(
     ...result.missingProfiles.map((profile) => `  [fix] ${profile}`),
     "",
     "Next steps:",
-    `  Re-run guarded setup after filling ${envFilePath}:`,
-    `  vivarium live setup --env-file ${envFilePath} --confirm-write`,
-    `  Then inspect again: vivarium model --env-file ${envFilePath}`,
+    "  Fill the missing provider values through the setup helper:",
+    `  ${connectFillCommand(envFilePath)}`,
+    "  Then re-run guarded setup:",
+    `  ${connectSetupCommand(envFilePath)}`,
+    `  Then inspect again: ${modelCommandLine(envFilePath)}`,
   ];
 }
 
 export function renderModelCommandResult(
   result: ModelCommandResult,
-  options: { readonly envFilePath?: string } = {},
+  options: RenderModelCommandOptions = {},
 ): string {
+  const hiddenProfileDetails = result.profiles.length > 0 && options.showDetails !== true;
+  const hiddenSetupDetails = result.profiles.length === 0 && options.showDetails !== true;
   return [
     renderVivariumGlobe(),
     "",
@@ -194,8 +248,21 @@ export function renderModelCommandResult(
     `Profiles path: ${result.profilesPath ?? "not set"}`,
     "",
     ...(result.profiles.length > 0
-      ? ["Profiles:", ...result.profiles.flatMap(renderModelProfile), ...renderMissingProfiles(result, options)]
+      ? [
+          "Profiles:",
+          ...result.profiles.flatMap((profile) => renderModelProfile(profile, options)),
+          ...renderMissingProfiles(result, options),
+        ]
       : renderModelGuidance(result, options)),
+    ...(hiddenProfileDetails || hiddenSetupDetails
+      ? [
+          "",
+          "Details:",
+          hiddenProfileDetails
+            ? "  Re-run with --details to show exact provider secret env names."
+            : "  Re-run with --details to show low-level provider profile commands.",
+        ]
+      : []),
     "",
   ].join("\n");
 }

@@ -22,6 +22,25 @@ describe("githubSmokeCommand", () => {
     });
   });
 
+  test("treats placeholder tokens as missing without calling GitHub", async () => {
+    const result = await githubSmokeCommand({
+      owner: "owner",
+      repo: "world",
+      tokenEnv: "GITHUB_TOKEN",
+      env: { GITHUB_TOKEN: "<redacted-github-token>" },
+      fetch: async () => {
+        throw new Error("fetch should not run with a placeholder token");
+      },
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      owner: "owner",
+      repo: "world",
+      error: "Missing GitHub token environment variable: GITHUB_TOKEN",
+    });
+  });
+
   test("reports read access metadata for a GitHub world repository", async () => {
     const requests: Array<{ readonly url: string; readonly init: RequestInit }> = [];
     const result = await githubSmokeCommand({

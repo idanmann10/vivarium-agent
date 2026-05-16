@@ -21,7 +21,7 @@ Environment:
   VIVARIUM_DAEMON_LABEL       macOS LaunchAgent label.
   VIVARIUM_DAEMON_PORT        Local daemon port.
   VIVARIUM_DOMAIN             Initial setup domain.
-  VIVARIUM_STATE_PATH         State database path relative to the agent checkout.
+  VIVARIUM_STATE_PATH         State database path. Defaults to ~/.vivarium/state.db.
   VIVARIUM_GITHUB_OWNER       Prefill non-secret live env GitHub owner.
   VIVARIUM_AGENT_REPO_NAME    Prefill non-secret live env agent repository name.
   VIVARIUM_WORLD_REPO_NAME    Prefill non-secret live env world repository name.
@@ -144,12 +144,13 @@ daemon_plist_path="$launch_agents_dir/$daemon_label.plist"
 daemon_log_dir="$home_dir/.vivarium/logs"
 bun_command="${VIVARIUM_BUN_PATH:-bun}"
 domain="${VIVARIUM_DOMAIN:-coding}"
-state_path="${VIVARIUM_STATE_PATH:-.vivarium/state.db}"
+state_path="${VIVARIUM_STATE_PATH:-$home_dir/.vivarium/state.db}"
 github_owner="${VIVARIUM_GITHUB_OWNER:-}"
 agent_repo_name="${VIVARIUM_AGENT_REPO_NAME:-}"
 world_repo_name="${VIVARIUM_WORLD_REPO_NAME:-}"
 canonical_world_ref="${VIVARIUM_CANONICAL_WORLD_REF:-}"
 private_world_ref="${VIVARIUM_PRIVATE_WORLD_REF:-}"
+starter_goal="build a tiny local agent"
 
 if [ "$github_owner" = "" ]; then
   github_owner="$(github_owner_from_url "$repo_url" || true)"
@@ -306,6 +307,18 @@ checkout_default_branch() {
   fi
 }
 
+checkout_ref() {
+  local destination="$1"
+  local ref="$2"
+
+  if git -C "$destination" show-ref --verify --quiet "refs/remotes/origin/$ref"; then
+    run git -C "$destination" checkout -B "$ref" "origin/$ref"
+    return 0
+  fi
+
+  run git -C "$destination" checkout "$ref"
+}
+
 checkout_or_update() {
   local repo="$1"
   local destination="$2"
@@ -323,7 +336,7 @@ checkout_or_update() {
 
     if [ "$ref" != "" ]; then
       run git -C "$destination" fetch --all --prune
-      run git -C "$destination" checkout "$ref"
+      checkout_ref "$destination" "$ref"
       if [ "$dry_run" -eq 0 ]; then
         upstream="$(git -C "$destination" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
         if [ "$upstream" != "" ]; then
@@ -354,7 +367,7 @@ checkout_or_update() {
   run git clone "$repo" "$destination"
   if [ "$ref" != "" ]; then
     run git -C "$destination" fetch --all --prune
-    run git -C "$destination" checkout "$ref"
+    checkout_ref "$destination" "$ref"
     if [ "$dry_run" -eq 0 ]; then
       upstream="$(git -C "$destination" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
       if [ "$upstream" != "" ]; then
@@ -480,24 +493,14 @@ stage_label() {
 
 print_launch_sequence() {
   local command="$1"
-  local keep_moving_stage=6
+  local keep_moving_stage=2
 
-  stage_label 1 "Prove the local loop"
-  printf '      %q run --goal "validate local setup" --state-path %q\n' "$command" "$state_path"
-  stage_label 2 "Prepare live readiness"
-  printf '      Edit live-readiness.local.env locally. Keep it out of git.\n'
-  printf '      %q setup --env-file live-readiness.local.env --domain %q --world-root %q --state-path %q\n' "$command" "$domain" "$world_root" "$state_path"
-  printf '      %q setup --env-file live-readiness.local.env --domain %q --world-root %q --state-path %q --confirm-write\n' "$command" "$domain" "$world_root" "$state_path"
-  stage_label 3 "Inspect configured models"
-  printf '      %q model --env-file live-readiness.local.env\n' "$command"
-  stage_label 4 "Prepare live evidence"
-  printf '      %q live evidence-init --path v1-evidence.json\n' "$command"
-  stage_label 5 "Run the readiness gate"
-  printf '      %q doctor --live --env-file live-readiness.local.env\n' "$command"
+  stage_label 1 "Run the local agent"
+  printf '      %q local run --goal "%s" --domain %q --state-path %q --world-root %q\n' "$command" "$starter_goal" "$domain" "$state_path" "$world_root"
   if [ "$daemon_mode" = "launchd" ]; then
-    stage_label 6 "Verify the Mac daemon"
+    stage_label 2 "Verify the Mac daemon"
     printf '      %q daemon smoke --status-url %q\n' "$command" "http://$daemon_host:$daemon_port/status"
-    keep_moving_stage=7
+    keep_moving_stage=3
   fi
   stage_label "$keep_moving_stage" "Review launch handoff"
   printf '      %q launch handoff\n' "$command"
@@ -506,6 +509,23 @@ print_launch_sequence() {
   printf '      %q status\n' "$command"
   printf '      %q help\n' "$command"
   printf '      %q update\n' "$command"
+}
+
+print_live_setup_sequence() {
+  local command="$1"
+
+  stage_label 1 "Generate local setup files"
+  printf '      %q setup live\n' "$command"
+  stage_label 2 "Open account and key handoff"
+  printf '      %q connect signup\n' "$command"
+  stage_label 3 "Review readiness"
+  printf '      %q connect\n' "$command"
+  printf '      %q connect setup --confirm-write\n' "$command"
+  stage_label 4 "Prove live readiness"
+  printf '      %q connect smoke\n' "$command"
+  printf '      %q proof init\n' "$command"
+  printf '      %q proof\n' "$command"
+  printf '      %q doctor --live\n' "$command"
 }
 
 banner
@@ -541,7 +561,7 @@ run bun install --frozen-lockfile
 run mkdir -p "$bin_dir"
 write_vivarium_command
 run mkdir -p "$(dirname "$state_path")"
-setup_args=(apps/cli/src/main.ts setup --quick --domain "$domain" --world-root "$world_root" --state-path "$state_path")
+setup_args=(apps/cli/src/main.ts local --domain "$domain" --world-root "$world_root" --state-path "$state_path")
 if [ "$github_owner" != "" ]; then
   setup_args+=(--github-owner "$github_owner")
 fi
@@ -566,6 +586,12 @@ print_launch_sequence "vivarium"
 echo
 echo "Command path fallback:"
 print_launch_sequence "$command_path"
+echo
+echo "Live setup when ready:"
+print_live_setup_sequence "vivarium"
+echo
+echo "Live setup fallback:"
+print_live_setup_sequence "$command_path"
 echo
 echo "Launch handoff summary:"
 run "$command_path" launch handoff

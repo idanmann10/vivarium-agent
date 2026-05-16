@@ -34,6 +34,13 @@ describe("CLI public API", () => {
     expect(typeof exports.renderModelCommandResult).toBe("function");
     expect(typeof exports.liveEnvInitCommand).toBe("function");
     expect(typeof exports.renderLiveEnvInitCommandResult).toBe("function");
+    expect(typeof exports.renderConnectInitCommandResult).toBe("function");
+    expect(typeof exports.connectSignupCommand).toBe("function");
+    expect(typeof exports.renderConnectSignupCommandResult).toBe("function");
+    expect(typeof exports.proofCommand).toBe("function");
+    expect(typeof exports.proofInitCommand).toBe("function");
+    expect(typeof exports.renderProofCommandResult).toBe("function");
+    expect(typeof exports.renderProofInitCommandResult).toBe("function");
     expect(typeof exports.renderLiveEvidenceInitCommandResult).toBe("function");
     expect(typeof exports.renderLiveSetupCommandResult).toBe("function");
     expect(typeof exports.renderStatusCommandResult).toBe("function");
@@ -132,7 +139,7 @@ describe("CLI entrypoint boundary", () => {
     expect(stderr).toContain("Vivarium Error");
     expect(stderr).toContain(`Message: Missing env file: ${envPath}`);
     expect(stderr).toContain("Next commands:");
-    expect(stderr).toContain(`vivarium live env-init --path ${envPath}`);
+    expect(stderr).toContain(`vivarium connect init --path ${envPath}`);
     expect(stderr).toContain("vivarium help");
     expect(stderr).not.toContain("ENOENT");
   });

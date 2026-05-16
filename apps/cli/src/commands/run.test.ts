@@ -52,6 +52,27 @@ function providerPrompt(init: RequestInit): string {
 }
 
 describe("runCommand", () => {
+  test("runs the named local agent by default and keeps next steps local", async () => {
+    const result = await runCommand({
+      goal: "build a tiny local agent",
+      domain: "coding",
+      worldRoot: createWorldFixture(),
+    });
+    const output = renderRunCommandResult(result);
+
+    expect(result).toMatchObject({
+      success: true,
+      agentName: "local-agent",
+      provider: { kind: "local", id: "local", model: null },
+    });
+    expect(output).toContain("Agent: local-agent");
+    expect(output).toContain("Provider: local");
+    expect(output).toContain("vivarium local run --goal");
+    expect(output).toContain("vivarium status");
+    expect(output).not.toContain("vivarium publish run");
+    expect(output).not.toContain("--contributor <agent-id>");
+  });
+
   test("runs a goal through a configured OpenAI-compatible provider", async () => {
     const requests: { readonly url: string; readonly init: RequestInit }[] = [];
     const result = await runCommand({
@@ -290,6 +311,7 @@ describe("runCommand", () => {
 
     expect(result).toEqual({
       success: false,
+      agentName: "local-agent",
       runId: null,
       provider: { kind: "openai", id: "run-openai", model: "gpt-test" },
       episodeKinds: [],
@@ -320,6 +342,7 @@ describe("runCommand", () => {
 
     expect(result).toEqual({
       success: false,
+      agentName: "local-agent",
       runId: null,
       provider: { kind: "ollama", id: "run-ollama", model: "ollama/test" },
       episodeKinds: [],
@@ -337,6 +360,7 @@ describe("runCommand", () => {
   test("renders successful runs as branded terminal output", () => {
     const output = renderRunCommandResult({
       success: true,
+      agentName: "local-agent",
       runId: "run-demo-000",
       provider: { kind: "local", id: "local", model: null },
       episodeKinds: ["run_start", "plan", "validation", "run_end"],
@@ -366,9 +390,10 @@ describe("runCommand", () => {
     expect(output.trim().startsWith("{")).toBe(false);
   });
 
-  test("renders blocked runs with actionable errors", () => {
+  test("renders blocked provider runs with friendly setup guidance", () => {
     const output = renderRunCommandResult({
       success: false,
+      agentName: "local-agent",
       runId: null,
       provider: { kind: "openai", id: "run-openai", model: "gpt-test" },
       episodeKinds: [],
@@ -387,8 +412,13 @@ describe("runCommand", () => {
     expect(output).toContain("Run ID: not started");
     expect(output).toContain("Provider: openai (gpt-test)");
     expect(output).toContain("Episodes: none");
-    expect(output).toContain("Error: Missing provider environment variable: OPENAI_API_KEY");
-    expect(output).toContain("Next command:");
+    expect(output).toContain("Reason: Provider credentials are not connected for this run.");
+    expect(output).not.toContain("OPENAI_API_KEY");
+    expect(output).toContain("Next commands:");
+    expect(output).toContain("vivarium connect fill");
+    expect(output).toContain("vivarium connect setup --confirm-write");
+    expect(output).toContain("vivarium connect smoke");
+    expect(output).toContain("vivarium local run");
     expect(output.trim().startsWith("{")).toBe(false);
   });
 });

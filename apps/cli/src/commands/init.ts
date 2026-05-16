@@ -11,6 +11,7 @@ import { renderVivariumGlobe } from "./branding.js";
 export interface InitCommandOptions {
   readonly primaryDomain: string;
   readonly bindGithubIdentity: boolean;
+  readonly agentName?: string;
   readonly worldRoot?: string;
   readonly statePath?: string;
   readonly providerProfiles?: readonly string[];
@@ -24,8 +25,10 @@ export interface StarterArtifact {
 }
 
 export interface InitCommandResult {
+  readonly agentName: string;
   readonly primaryDomain: string;
   readonly statePath: string;
+  readonly worldRoot: string;
   readonly starterSkills: readonly StarterArtifact[];
   readonly starterTraces: readonly StarterArtifact[];
   readonly curriculumPath: string | null;
@@ -38,7 +41,7 @@ export function describeInitCommand(options: InitCommandOptions): string {
 }
 
 function defaultStatePath(): string {
-  return join(homedir(), ".the-agent", "state.db");
+  return join(process.env.HOME ?? homedir(), ".vivarium", "state.db");
 }
 
 function artifact(result: LocalWorldSearchResult): StarterArtifact {
@@ -68,6 +71,7 @@ function initPrompts(options: InitCommandOptions): readonly string[] {
 }
 
 export function runInitCommand(options: InitCommandOptions): InitCommandResult {
+  const agentName = options.agentName ?? "local-agent";
   const worldRoot = options.worldRoot ?? "../the-world";
   const statePath = options.statePath ?? defaultStatePath();
   const world = createLocalWorldReader({ root: worldRoot });
@@ -82,8 +86,8 @@ export function runInitCommand(options: InitCommandOptions): InitCommandResult {
   }
   state.advanceCurriculum(options.primaryDomain, 0);
   state.setIdentity({
-    agentId: agentId("local-agent"),
-    name: "local-agent",
+    agentId: agentId(agentName),
+    name: agentName,
     devStages: { [options.primaryDomain]: "newborn" },
     runsCompleted: 0,
     summary: `Newborn local agent initialized for ${options.primaryDomain}.`,
@@ -92,8 +96,10 @@ export function runInitCommand(options: InitCommandOptions): InitCommandResult {
   state.close();
 
   return {
+    agentName,
     primaryDomain: options.primaryDomain,
     statePath,
+    worldRoot,
     starterSkills: starterSkills.map(artifact),
     starterTraces: starterTraces.map(artifact),
     curriculumPath: existsSync(curriculumPath) ? curriculumPath : null,
@@ -120,6 +126,7 @@ export function renderInitCommandResult(result: InitCommandResult): string {
     "",
     "Vivarium Init",
     "-------------",
+    `Agent: ${result.agentName}`,
     `Domain: ${result.primaryDomain}`,
     `State: ${result.statePath}`,
     `Curriculum: ${result.curriculumPath ?? "not found"}`,
@@ -129,7 +136,7 @@ export function renderInitCommandResult(result: InitCommandResult): string {
     ...(result.prompts.length === 0 ? [] : ["", "Prompts:", ...result.prompts.map((prompt) => `  ${prompt}`)]),
     "",
     "Next command:",
-    `  vivarium run --goal ${shellQuote("validate local setup")} --domain ${shellQuote(result.primaryDomain)} --state-path ${shellQuote(result.statePath)}`,
+    `  vivarium local run --goal "build a tiny local agent" --domain ${shellQuote(result.primaryDomain)} --state-path ${shellQuote(result.statePath)} --world-root ${shellQuote(result.worldRoot)}`,
     "",
   ].join("\n");
 }

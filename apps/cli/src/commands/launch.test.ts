@@ -13,9 +13,40 @@ describe("launchHandoffCommand", () => {
     expect(result.installCommand).not.toContain("VIVARIUM_AGENT_REF=");
     expect(output).toContain("Vivarium Launch Handoff");
     expect(output).toContain("Mac install command:");
-    expect(output).toContain("vivarium run --goal \"validate local setup\"");
+    expect(output).toContain("vivarium local run");
+    expect(output).not.toContain("vivarium run --goal \"validate local setup\"");
     expect(output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
-    expect(output).toContain("vivarium setup --env-file live-readiness.local.env");
+    expect(output).toContain("vivarium status");
+    expect(output).toContain("vivarium help");
+    expect(output).toContain("When ready for live verification:");
+    expect(output).toContain("vivarium setup live");
+    expect(output).toContain("vivarium connect signup");
+    expect(output).toContain("vivarium connect");
+    expect(output).toContain(
+      [
+        "      vivarium setup live",
+        "      vivarium connect signup",
+        "      vivarium connect",
+        "      vivarium connect fill",
+        "      vivarium connect setup --confirm-write",
+      ].join("\n"),
+    );
+    expect(output).toContain("vivarium connect setup --confirm-write");
+    expect(output).toContain("vivarium connect smoke");
+    expect(output).toContain(
+      [
+        "  [4] Prepare live evidence",
+        "      vivarium proof init",
+        "      vivarium proof",
+      ].join("\n"),
+    );
+    expect(output).toContain("vivarium proof");
+    expect(output).not.toContain("vivarium live env-init --path live-readiness.local.env");
+    expect(output).not.toContain("vivarium setup --env-file live-readiness.local.env");
+    expect(output).not.toContain("vivarium live evidence-init --path v1-evidence.json");
+    expect(output.slice(output.indexOf("After install:"), output.indexOf("When ready for live verification:"))).not.toContain(
+      "live-readiness.local.env",
+    );
     expect(output).toContain("Production boundary:");
     expect(output).toContain("Local Mac install/deploy is ready for reviewer/operator use.");
     expect(output).toContain("Full v1 live production readiness is still blocked");
@@ -27,7 +58,8 @@ describe("launchHandoffCommand", () => {
     expect(output).toContain("Credential keys prove the encrypted internal API smoke path.");
     expect(output).toContain("Evidence refs prove the real v1 behavior loop instead of local-only demos.");
     expect(output).toContain("Owner next action:");
-    expect(output).toContain("Run the stable main install command above for local Mac setup.");
+    expect(output).toContain("Run the stable main install command above, then run the local agent commands.");
+    expect(output).toContain("Use the live verification commands only after secrets and evidence are available.");
     expect(output).toContain("Do not claim full v1 live readiness until doctor --live reports ready.");
   });
 

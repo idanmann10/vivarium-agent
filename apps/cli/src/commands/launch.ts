@@ -11,6 +11,7 @@ export interface LaunchHandoffCommandOptions {
 export interface LaunchHandoffCommandResult {
   readonly installCommand: string;
   readonly postInstallCommands: readonly string[];
+  readonly liveVerificationCommands: readonly string[];
   readonly requiredUnblocks: readonly string[];
   readonly keyExplanations: readonly string[];
   readonly ownerNextActions: readonly string[];
@@ -46,10 +47,23 @@ export function launchHandoffCommand(
   return {
     installCommand: installCommand(owner, repo, ref, scriptRef),
     postInstallCommands: [
-      'vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
+      'vivarium local run --goal "build a tiny local agent"',
       "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
-      "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ~/.vivarium/the-world --state-path .vivarium/state.db",
-      "vivarium doctor --live --env-file live-readiness.local.env",
+      "vivarium status",
+      "vivarium help",
+      "vivarium update",
+    ],
+    liveVerificationCommands: [
+      "vivarium setup live",
+      "vivarium connect signup",
+      "vivarium connect",
+      "vivarium connect fill",
+      "vivarium connect setup --confirm-write",
+      "vivarium model",
+      "vivarium connect smoke",
+      "vivarium proof init",
+      "vivarium proof",
+      "vivarium doctor --live",
     ],
     requiredUnblocks: [
       "real provider keys/smokes for Anthropic, OpenRouter, and the private OpenAI-compatible provider",
@@ -63,8 +77,8 @@ export function launchHandoffCommand(
       "GitHub IDs point checks at the public repos and Discussion category; they are not secrets.",
     ],
     ownerNextActions: [
-      "Run the stable main install command above for local Mac setup.",
-      "After secrets and evidence are available, rerun vivarium doctor --live --env-file live-readiness.local.env.",
+      "Run the stable main install command above, then run the local agent commands.",
+      "Use the live verification commands only after secrets and evidence are available.",
       "Do not claim full v1 live readiness until doctor --live reports ready.",
     ],
   };
@@ -81,6 +95,9 @@ export function renderLaunchHandoffCommandResult(result: LaunchHandoffCommandRes
     "",
     "After install:",
     ...renderLaunchSequence(result.postInstallCommands),
+    "",
+    "When ready for live verification:",
+    ...renderLaunchSequence(result.liveVerificationCommands),
     "",
     "Production boundary:",
     "  Local Mac install/deploy is ready for reviewer/operator use.",

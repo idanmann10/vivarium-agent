@@ -14,6 +14,13 @@ function runInstallerDryRun(env: Readonly<Record<string, string>> = {}) {
   });
 }
 
+const gitCommitEnv = {
+  GIT_AUTHOR_EMAIL: "test@example.com",
+  GIT_AUTHOR_NAME: "Vivarium Test",
+  GIT_COMMITTER_EMAIL: "test@example.com",
+  GIT_COMMITTER_NAME: "Vivarium Test",
+} as const;
+
 function run(command: string[], cwd: string, env: Readonly<Record<string, string>> = {}) {
   const result = Bun.spawnSync(command, {
     cwd,
@@ -43,7 +50,7 @@ function createGitRemote(root: string, name: string): string {
   run(["git", "config", "user.name", "Vivarium Test"], work);
   writeFileSync(join(work, "README.md"), `# ${name}\n`, "utf8");
   run(["git", "add", "README.md"], work);
-  run(["git", "commit", "-m", "initial"], work);
+  run(["git", "commit", "-m", "initial"], work, gitCommitEnv);
   run(["git", "branch", "-M", "main"], work);
   run(["git", "remote", "add", "origin", remote], work);
   run(["git", "push", "-u", "origin", "main"], work);
@@ -72,7 +79,7 @@ function writeFakeBun(path: string): void {
 }
 
 describe("install.sh", () => {
-  test("prints a one-line installer dry-run plan with setup command", () => {
+  test("prints a one-line installer dry-run plan with local commands", () => {
     const result = runInstallerDryRun({
       VIVARIUM_BIN_DIR: "/tmp/vivarium-bin",
       VIVARIUM_INSTALL_DIR: "/tmp/vivarium-agent-install",
@@ -96,54 +103,60 @@ describe("install.sh", () => {
     expect(stdout).toContain("Would run: bun install --frozen-lockfile");
     expect(stdout).toContain("Would write vivarium command: /tmp/vivarium-bin/vivarium");
     expect(stdout).toContain(
-      `Would run: bun apps/cli/src/main.ts setup --quick --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
+      `Would run: bun apps/cli/src/main.ts local --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
     );
     expect(stdout).toContain("After installation:");
-    expect(stdout).toContain("[1] Prove the local loop");
-    expect(stdout).toContain("[2] Prepare live readiness");
-    expect(stdout).toContain("[3] Inspect configured models");
-    expect(stdout).toContain("[4] Prepare live evidence");
-    expect(stdout).toContain("[5] Run the readiness gate");
-    expect(stdout).toContain("[6] Review launch handoff");
-    expect(stdout).toContain("[7] Keep moving");
-    expect(stdout).toContain("vivarium run --goal");
+    expect(stdout).toContain("[1] Run the local agent");
+    expect(stdout).toContain("[2] Review launch handoff");
+    expect(stdout).toContain("[3] Keep moving");
+    expect(stdout).toContain("Live setup when ready:");
+    expect(stdout).toContain("[1] Generate local setup files");
+    expect(stdout).toContain("[2] Open account and key handoff");
+    expect(stdout).toContain("[3] Review readiness");
+    expect(stdout).toContain("[4] Prove live readiness");
+    expect(stdout).not.toContain("vivarium run --goal");
     expect(stdout).toContain(
-      'vivarium run --goal "validate local setup" --state-path .vivarium/research.db',
+      `vivarium local run --goal "build a tiny local agent" --domain research --state-path .vivarium/research.db --world-root ${worldRoot}`,
     );
-    expect(stdout).toContain("Edit live-readiness.local.env locally. Keep it out of git.");
+    expect(stdout).toContain("vivarium setup live");
+    expect(stdout).toContain("vivarium connect signup");
+    expect(stdout).toContain("vivarium connect setup --confirm-write");
+    expect(stdout).toContain("vivarium connect smoke");
+    expect(stdout).toContain("vivarium proof init");
+    expect(stdout).toContain("\n      vivarium proof\n");
+    expect(stdout).toContain("vivarium doctor --live");
     expect(stdout).not.toContain("vivarium live env-init --path live-readiness.local.env");
-    expect(stdout).toContain(
-      `vivarium setup --env-file live-readiness.local.env --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
-    );
-    expect(stdout).toContain(
-      `vivarium setup --env-file live-readiness.local.env --domain research --world-root ${worldRoot} --state-path .vivarium/research.db --confirm-write`,
-    );
-    expect(stdout).toContain("vivarium model --env-file live-readiness.local.env");
-    expect(stdout).toContain("vivarium live evidence-init --path v1-evidence.json");
-    expect(stdout).toContain("vivarium doctor --live --env-file live-readiness.local.env");
+    expect(stdout).not.toContain("vivarium setup --env-file live-readiness.local.env");
+    expect(stdout).not.toContain("vivarium model --env-file live-readiness.local.env");
+    expect(stdout).not.toContain("vivarium live evidence-init --path v1-evidence.json");
+    expect(stdout).not.toContain("vivarium doctor --live --env-file live-readiness.local.env");
     expect(stdout).toContain("vivarium launch handoff");
     expect(stdout).toContain("vivarium status");
     expect(stdout).toContain("vivarium help");
     expect(stdout).toContain("vivarium update");
     expect(stdout).toContain(
-      '/tmp/vivarium-bin/vivarium run --goal "validate local setup" --state-path .vivarium/research.db',
+      `/tmp/vivarium-bin/vivarium local run --goal "build a tiny local agent" --domain research --state-path .vivarium/research.db --world-root ${worldRoot}`,
     );
+    expect(stdout).toContain("/tmp/vivarium-bin/vivarium setup live");
+    expect(stdout).toContain("/tmp/vivarium-bin/vivarium connect signup");
+    expect(stdout).toContain("/tmp/vivarium-bin/vivarium connect setup --confirm-write");
+    expect(stdout).toContain("/tmp/vivarium-bin/vivarium connect smoke");
+    expect(stdout).toContain("/tmp/vivarium-bin/vivarium proof init");
+    expect(stdout).toContain("\n      /tmp/vivarium-bin/vivarium proof\n");
+    expect(stdout).toContain("/tmp/vivarium-bin/vivarium doctor --live");
     expect(stdout).not.toContain(
       "/tmp/vivarium-bin/vivarium live env-init --path live-readiness.local.env",
     );
-    expect(stdout).toContain(
-      `/tmp/vivarium-bin/vivarium setup --env-file live-readiness.local.env --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
+    expect(stdout).not.toContain(
+      "/tmp/vivarium-bin/vivarium setup --env-file live-readiness.local.env",
     );
-    expect(stdout).toContain(
-      `/tmp/vivarium-bin/vivarium setup --env-file live-readiness.local.env --domain research --world-root ${worldRoot} --state-path .vivarium/research.db --confirm-write`,
-    );
-    expect(stdout).toContain(
+    expect(stdout).not.toContain(
       "/tmp/vivarium-bin/vivarium model --env-file live-readiness.local.env",
     );
-    expect(stdout).toContain(
+    expect(stdout).not.toContain(
       "/tmp/vivarium-bin/vivarium live evidence-init --path v1-evidence.json",
     );
-    expect(stdout).toContain(
+    expect(stdout).not.toContain(
       "/tmp/vivarium-bin/vivarium doctor --live --env-file live-readiness.local.env",
     );
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium launch handoff");
@@ -152,6 +165,27 @@ describe("install.sh", () => {
     expect(stdout).toContain("Launch handoff summary:");
     expect(stdout).toContain("Would run: /tmp/vivarium-bin/vivarium launch handoff");
     expect(stdout).toContain("If 'vivarium' is not found, add /tmp/vivarium-bin to PATH");
+  });
+
+  test("defaults installer state to the shared Vivarium home", () => {
+    const home = mkdtempSync(join(tmpdir(), "vivarium-install-home-"));
+    const result = runInstallerDryRun({
+      HOME: home,
+      VIVARIUM_BIN_DIR: join(home, ".local", "bin"),
+      VIVARIUM_INSTALL_DIR: join(home, ".vivarium", "vivarium-agent"),
+      VIVARIUM_WORLD_ROOT: join(home, ".vivarium", "the-world"),
+    });
+    const stdout = result.stdout.toString();
+    const statePath = join(home, ".vivarium", "state.db");
+
+    expect(result.exitCode).toBe(0);
+    expect(stdout).toContain(`State path: ${statePath}`);
+    expect(stdout).toContain(
+      `Would run: bun apps/cli/src/main.ts local --domain coding --world-root ${join(home, ".vivarium", "the-world")} --state-path ${statePath}`,
+    );
+    expect(stdout).toContain(
+      `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${join(home, ".vivarium", "the-world")}`,
+    );
   });
 
   test("prints a branded ANSI installer when color is forced", () => {
@@ -297,6 +331,55 @@ describe("install.sh", () => {
       expect(result.exitCode).toBe(0);
       expect(run(["git", "branch", "--show-current"], installDir).stdout.toString().trim()).toBe(
         "main",
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("pins an existing checkout to origin ref when another remote has the same branch", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-install-multiremote-"));
+    const remote = createGitRemote(root, "agent");
+    const worldRemote = createGitRemote(root, "world");
+    const branchWork = join(root, "agent-branch-work");
+    const installDir = join(root, "install");
+    const worldDir = join(root, "world-checkout");
+    const binDir = join(root, "bin");
+    const fakeBun = join(root, "bun");
+    const branchName = "codex/local-agent-production-ready";
+
+    try {
+      writeFakeBun(fakeBun);
+      run(["git", "clone", remote, branchWork], root);
+      run(["git", "checkout", "-b", branchName], branchWork);
+      writeFileSync(join(branchWork, "BRANCH.md"), "# branch\n", "utf8");
+      run(["git", "add", "BRANCH.md"], branchWork);
+      run(["git", "commit", "-m", "branch"], branchWork, gitCommitEnv);
+      run(["git", "push", "-u", "origin", branchName], branchWork);
+
+      run(["git", "clone", remote, installDir], root);
+      run(["git", "remote", "add", "github", remote], installDir);
+
+      const result = Bun.spawnSync(["bash", "scripts/install.sh"], {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          PATH: `${root}:${process.env.PATH ?? ""}`,
+          VIVARIUM_AGENT_REF: branchName,
+          VIVARIUM_BIN_DIR: binDir,
+          VIVARIUM_BUN_PATH: fakeBun,
+          VIVARIUM_INSTALL_DIR: installDir,
+          VIVARIUM_REPO_URL: remote,
+          VIVARIUM_WORLD_REPO_URL: worldRemote,
+          VIVARIUM_WORLD_ROOT: worldDir,
+        },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+
+      expect(result.exitCode).toBe(0);
+      expect(run(["git", "branch", "--show-current"], installDir).stdout.toString().trim()).toBe(
+        branchName,
       );
     } finally {
       rmSync(root, { recursive: true, force: true });

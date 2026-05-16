@@ -13,30 +13,53 @@ export interface HelpCommandResult {
 export function helpCommand(): HelpCommandResult {
   return {
     commands: [
-      { command: "vivarium setup", description: "Initialize local state and guided live setup." },
+      { command: "vivarium local", description: "Create the default local agent and starter memory." },
+      { command: "vivarium local run", description: "Run the local agent offline with the built-in provider." },
+      { command: "vivarium onboard", description: "Run local onboarding with the starter pack." },
       {
-        command: "vivarium setup --quick",
-        description: "Initialize local state and create the live env template.",
+        command: "vivarium setup live",
+        description: "Run the full live setup wizard with private default files.",
       },
-      { command: 'vivarium run --goal "validate local setup"', description: "Validate the local setup." },
-      { command: "vivarium status", description: "Print the local runtime status." },
+      {
+        command: "vivarium onboard live",
+        description: "Alias for the live setup wizard.",
+      },
+      { command: "vivarium setup", description: "Initialize local state and starter world." },
+      { command: "vivarium status", description: "Show local and production readiness status." },
       { command: "vivarium doctor", description: "Run offline readiness checks." },
+      { command: "vivarium connect", description: "Show provider signup and live setup guidance." },
       { command: "vivarium model", description: "Show configured provider profiles." },
       {
-        command: "vivarium live env-init --path live-readiness.local.env",
-        description: "Create a private live setup env file.",
+        command: "vivarium connect wizard",
+        description: "Custom-path live setup for advanced operators.",
       },
       {
-        command: "vivarium setup --env-file live-readiness.local.env",
-        description: "Preview live setup writes.",
+        command: "vivarium connect init",
+        description: "Lower-level setup file creation for custom paths.",
       },
       {
-        command: "vivarium setup --env-file live-readiness.local.env --confirm-write",
-        description: "Write live setup files after reviewing the dry run.",
+        command: "vivarium connect signup",
+        description: "Show account links and the local value map.",
       },
       {
-        command: "vivarium live evidence-init --path v1-evidence.json",
-        description: "Create a live evidence manifest skeleton.",
+        command: "vivarium connect fill",
+        description: "Fill common live setup values, paths, and names by friendly labels.",
+      },
+      {
+        command: "vivarium connect setup --confirm-write",
+        description: "Write live setup files after reviewing readiness.",
+      },
+      {
+        command: "vivarium connect smoke",
+        description: "Run guided provider and credential smoke checks.",
+      },
+      {
+        command: "vivarium proof init",
+        description: "Create the v1 evidence manifest from the setup file.",
+      },
+      {
+        command: "vivarium proof",
+        description: "Review the v1 evidence checklist without raw manifest keys.",
       },
       {
         command: "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
@@ -50,7 +73,6 @@ export function helpCommand(): HelpCommandResult {
         command: "vivarium update",
         description: "Pull the latest agent and refresh dependencies.",
       },
-      { command: "vivarium run --goal <goal>", description: "Run a local goal." },
       {
         command: "vivarium world search --domain coding --query <query>",
         description: "Search world knowledge.",
@@ -64,14 +86,8 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
   const commandWidth = Math.max(52, ...result.commands.map((item) => item.command.length)) + 2;
   const rows = result.commands.map((item) => `  ${item.command.padEnd(commandWidth)}${item.description}`);
   const firstRunCommands = [
-    "vivarium setup --quick --domain coding --world-root ../the-world --state-path .vivarium/state.db",
-    'vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
-    "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
-    "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write",
-    "vivarium model --env-file live-readiness.local.env",
-    "vivarium live evidence-init --path v1-evidence.json",
-    "vivarium doctor --live --env-file live-readiness.local.env",
-    "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
+    "vivarium local",
+    'vivarium local run --goal "build a tiny local agent"',
     "vivarium launch handoff",
     "vivarium status",
     "vivarium help",

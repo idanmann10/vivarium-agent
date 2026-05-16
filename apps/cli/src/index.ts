@@ -1,8 +1,12 @@
 export const cliCommands = [
+  "local",
+  "onboard",
   "setup",
   "init",
   "run",
   "dream",
+  "connect",
+  "proof",
   "skills",
   "world",
   "providers",
@@ -31,6 +35,37 @@ export { renderRunCommandResult, runCommand } from "./commands/run.js";
 export type { RunCommandOptions, RunCommandResult, RunProviderKind } from "./commands/run.js";
 export { dreamCommand, renderDreamCommandResult } from "./commands/dream.js";
 export type { DreamCommandOptions } from "./commands/dream.js";
+export {
+  connectCommand,
+  connectSignupCommand,
+  connectSmokeCommand,
+  renderConnectCommandResult,
+  renderConnectInitCommandResult,
+  renderConnectSignupCommandResult,
+  renderConnectSmokeCommandResult,
+} from "./commands/connect.js";
+export type {
+  ConnectCommandOptions,
+  ConnectCommandResult,
+  ConnectProvider,
+  ConnectSignupCommandResult,
+  ConnectSmokeCommandOptions,
+  ConnectSmokeCommandResult,
+} from "./commands/connect.js";
+export {
+  proofCommand,
+  proofInitCommand,
+  renderProofCommandResult,
+  renderProofInitCommandResult,
+} from "./commands/proof.js";
+export type {
+  ProofCheck,
+  ProofCommandOptions,
+  ProofCommandResult,
+  ProofInitCommandOptions,
+  ProofInitCommandResult,
+  ProofManifestStatus,
+} from "./commands/proof.js";
 export { helpCommand, renderHelpCommandResult } from "./commands/help.js";
 export type { HelpCommandItem, HelpCommandResult } from "./commands/help.js";
 export { launchHandoffCommand, renderLaunchHandoffCommandResult } from "./commands/launch.js";

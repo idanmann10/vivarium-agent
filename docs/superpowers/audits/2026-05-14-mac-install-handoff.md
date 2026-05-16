@@ -29,10 +29,10 @@ canonical world checkout at `~/.vivarium/the-world`, the CLI command at
 | Existing installs keep updating from GitHub | `scripts/install.test.ts` covers existing checkout remote normalization; the real installed checkout has `origin` set to `https://github.com/idanmann10/vivarium-agent.git`, and `vivarium update` completed `git pull --ff-only` plus `bun install --frozen-lockfile` | Complete |
 | Real Mac installed checkout is current | Installed checkout `~/.vivarium/vivarium-agent` was moved to branch `main` at merge commit `9d21154` with a clean status after the installer follow-up | Complete |
 | Exact copy-paste install command works | The stable `curl -fsSL .../main/scripts/install.sh \| VIVARIUM_DAEMON=launchd bash` command is the public handoff; the merge-commit-pinned installer for `9d21154` was used once to bridge raw URL propagation and switched the installed checkout to `main` | Complete |
-| CLI walkthrough explains the Mac daemon step | Installed `vivarium help` shows `Verify the Mac daemon` and `vivarium daemon smoke --status-url http://127.0.0.1:8787/status` | Complete |
+| CLI walkthrough explains the Mac daemon step | Installed `vivarium help` keeps the first-run path focused on `vivarium local` and `vivarium local run`, while still exposing `vivarium daemon smoke --status-url http://127.0.0.1:8787/status` for LaunchAgent verification | Complete |
 | Daemon is running | `vivarium daemon smoke --status-url http://127.0.0.1:8787/status` returned `Status: ok` | Complete |
-| Local loop runs after install | Installed `/Users/idanmann/.local/bin/vivarium run --goal "validate local setup" --state-path .vivarium/state.db --world-root /Users/idanmann/.vivarium/the-world` returned `Status: success` | Complete |
-| Local code gates pass | `bun run lint`, `bun run typecheck`, `bun run build`, `bun run knip`, `bun run public-release:scan`, `bun run format:check`, `git diff --check`, and `bun test` passed; the full test suite reported `406 pass, 0 fail` after the installer regression was added | Complete |
+| Local loop runs after install | Installed `/Users/idanmann/.local/bin/vivarium local run` is the current shorthand for the validated local run path and defaults to the `build a tiny local agent` goal with the `local-agent` identity | Complete |
+| Local code gates pass | `bun run lint`, `bun run typecheck`, `bun run build`, `bun run knip`, `bun run public-release:scan`, `bun run format:check`, `git diff --check`, and `bun test` passed; the full test suite reported `504 pass, 0 fail` after the local-agent readiness refresh | Complete |
 | PR checks pass | PR #22 merged as `991b177` and PR #23 merged as `9d21154`; both had successful `verify`, `changeset`, `Analyze JavaScript and TypeScript`, and CodeQL scanning checks | Complete |
 | Launch security posture is verified | `bun run launch:security-audit` returned `ok:true` for public agent/world repos, enabled branch protection, enabled secret scanning and push protection, and zero open Dependabot, secret scanning, or code scanning alerts | Complete |
 
@@ -40,7 +40,7 @@ canonical world checkout at `~/.vivarium/the-world`, the CLI command at
 
 Do not claim full v1 production readiness yet. A fresh installed
 `vivarium doctor --live --env-file live-readiness.local.env` still reports
-`31 passing, 22 blocked`.
+`34 passing, 19 blocked`.
 
 The remaining blockers require:
 
@@ -68,9 +68,9 @@ curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scri
 Then run:
 
 ```bash
-vivarium run --goal "validate local setup" --state-path .vivarium/state.db
+vivarium local run
 vivarium daemon smoke --status-url http://127.0.0.1:8787/status
-vivarium setup --env-file live-readiness.local.env --domain coding --world-root ~/.vivarium/the-world --state-path .vivarium/state.db
+vivarium connect
 vivarium doctor --live --env-file live-readiness.local.env
 ```
 

@@ -23,6 +23,7 @@ describe("modelCommand", () => {
 
     const result = modelCommand({ profilesPath });
     const output = renderModelCommandResult(result);
+    const detailsOutput = renderModelCommandResult(result, { showDetails: true });
 
     expect(result).toEqual({
       ok: true,
@@ -47,7 +48,11 @@ describe("modelCommand", () => {
     expect(output).toContain("[ok] openrouter");
     expect(output).toContain("Base URL: https://openrouter.example");
     expect(output).toContain("openrouter/test-model");
-    expect(output).toContain("OPENROUTER_API_KEY");
+    expect(output).toContain("Secret: configured by provider profile");
+    expect(output).not.toContain("OPENROUTER_API_KEY");
+    expect(output).toContain("Re-run with --details");
+    expect(detailsOutput).toContain("Env: OPENROUTER_API_KEY");
+    expect(detailsOutput).not.toContain("Re-run with --details");
     expect(output).not.toContain("provider-secret");
   });
 
@@ -62,9 +67,18 @@ describe("modelCommand", () => {
     });
     expect(output).toContain("Status: needs setup");
     expect(output).toContain("Profiles path: not set");
-    expect(output).toContain("VIVARIUM_PROVIDER_PROFILES_PATH");
-    expect(output).toContain("vivarium model --env-file live-readiness.local.env");
-    expect(output).toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");
+    expect(output).toContain("Start guided live setup:");
+    expect(output).toContain("vivarium setup live");
+    expect(output).toContain("Review and fill provider values:");
+    expect(output).toContain("vivarium connect");
+    expect(output).toContain("vivarium connect fill");
+    expect(output).toContain("vivarium connect setup --confirm-write");
+    expect(output).toContain("Then inspect configured models: vivarium model");
+    expect(output.indexOf("vivarium connect setup --confirm-write")).toBeLessThan(
+      output.indexOf("Then inspect configured models: vivarium model"),
+    );
+    expect(output).not.toContain("VIVARIUM_PROVIDER_PROFILES_PATH");
+    expect(output).not.toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");
     expect(output).toContain("docs/guides/configure-providers.md");
   });
 
@@ -83,7 +97,32 @@ describe("modelCommand", () => {
     });
     expect(output).toContain("No provider profiles found");
     expect(output).toContain(profilesPath);
-    expect(output).toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");
+    expect(output).toContain("vivarium connect fill");
+    expect(output).toContain("vivarium connect setup --confirm-write");
+    expect(output).toContain("Re-run with --details");
+    expect(output).not.toContain("providers configure");
+    expect(output).not.toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");
+
+    const detailsOutput = renderModelCommandResult(result, { showDetails: true });
+    expect(detailsOutput).toContain("Or add one profile with: vivarium providers configure ...");
+    expect(detailsOutput).not.toContain("Re-run with --details");
+  });
+
+  test("keeps private default model setup guidance on short commands", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-model-private-default-"));
+    const envFilePath = join(root, ".vivarium", "live", "live-readiness.local.env");
+    const profilesPath = join(root, ".vivarium", "live", "provider-profiles.json");
+    const result = modelCommand({
+      env: {
+        VIVARIUM_PROVIDER_PROFILES_PATH: profilesPath,
+      },
+    });
+    const output = renderModelCommandResult(result, { envFilePath });
+
+    expect(output).toContain(`Profiles path: ${profilesPath}`);
+    expect(output).toContain("vivarium connect fill");
+    expect(output).toContain("vivarium connect setup --confirm-write");
+    expect(output).not.toContain(`--env-file ${envFilePath}`);
   });
 
   test("reports expected live profiles that are absent from the profile file", () => {
@@ -119,7 +158,9 @@ describe("modelCommand", () => {
     expect(output).toContain("[ok] anthropic-main");
     expect(output).toContain("[fix] openrouter");
     expect(output).toContain("[fix] private-finetune");
-    expect(output).toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");
+    expect(output).toContain("vivarium connect fill");
+    expect(output).toContain("vivarium connect setup --confirm-write");
+    expect(output).not.toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");
   });
 
   test("renders invalid profile errors without printing secret values", () => {

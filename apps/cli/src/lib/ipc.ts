@@ -4,5 +4,5 @@ export interface DaemonRequest {
 }
 
 export function daemonSocketPath(homeDirectory: string): string {
-  return `${homeDirectory}/.the-agent/daemon.sock`;
+  return `${homeDirectory}/.vivarium/daemon.sock`;
 }
