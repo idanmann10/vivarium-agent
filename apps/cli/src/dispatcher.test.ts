@@ -2844,6 +2844,42 @@ describe("dispatchCliCommand", () => {
     expect(publish.output.trim().startsWith("{")).toBe(false);
   });
 
+  test("routes default init state through the supplied home", async () => {
+    const worldRoot = createWorldFixture();
+    const home = mkdtempSync(join(tmpdir(), "cli-dispatch-init-home-"));
+    const statePath = join(home, ".vivarium", "state.db");
+
+    const init = await dispatchCliCommand(["init", "--domain", "coding", "--world-root", worldRoot], {
+      env: { HOME: home },
+    });
+
+    expect(init.result).toMatchObject({ statePath });
+    expect(init.output).toContain(`State: ${statePath}`);
+  });
+
+  test("routes corrupt default init state to repair guidance", async () => {
+    const worldRoot = createWorldFixture();
+    const home = mkdtempSync(join(tmpdir(), "cli-dispatch-init-corrupt-home-"));
+    const statePath = join(home, ".vivarium", "state.db");
+    write(statePath, "not a sqlite database");
+
+    try {
+      await dispatchCliCommand(["init", "--domain", "coding", "--world-root", worldRoot], {
+        env: { HOME: home },
+      });
+      throw new Error("expected command to fail");
+    } catch (error) {
+      expect(error).toBeInstanceOf(CliUsageError);
+      expect((error as CliUsageError).message).toContain("Local state is invalid");
+      expect((error as CliUsageError).message).toContain(statePath);
+      expect((error as CliUsageError).nextCommands).toEqual([
+        "vivarium doctor",
+        "vivarium local",
+        "vivarium help",
+      ]);
+    }
+  });
+
   test("routes world pull with a local git remote", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-world-pull-"));
     const remote = join(root, "remote.git");

@@ -972,8 +972,9 @@ export async function dispatchCliCommand(
     }
     case "init": {
       const worldRoot = value(flags, "world-root");
-      const statePath = value(flags, "state-path");
+      const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
       const agentName = value(flags, "agent-name");
+      guardLocalSetupState(statePath);
       const result = runInitCommand({
         primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? "coding",
         bindGithubIdentity: booleanFlag(flags, "bind-github"),
@@ -981,7 +982,7 @@ export async function dispatchCliCommand(
         providerProfiles: values(flags, "provider"),
         credentialNames: values(flags, "credential"),
         ...(worldRoot === undefined ? {} : { worldRoot }),
-        ...(statePath === undefined ? {} : { statePath }),
+        statePath,
       });
       return { command, result, output: renderInitCommandResult(result) };
     }
