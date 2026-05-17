@@ -699,6 +699,48 @@ describe("connectCommand", () => {
     expect(output).not.toContain("VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE");
   });
 
+  test("smokes a stored internal credential without requiring the plaintext setup value", async () => {
+    const root = mkdtempSync(join(tmpdir(), "connect-smoke-stored-credential-"));
+    const env = {
+      VIVARIUM_PROVIDER_PROFILES_PATH: join(root, "provider-profiles.json"),
+      ANTHROPIC_API_KEY: "anthropic-key",
+      OPENROUTER_API_KEY: "openrouter-key",
+      VIVARIUM_OAI_COMPAT_API_KEY: "private-key",
+      VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
+      VIVARIUM_ANTHROPIC_MODEL: "claude-sonnet-4-6",
+      VIVARIUM_ANTHROPIC_CONTEXT_WINDOW: "1000000",
+      VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
+      VIVARIUM_OPENROUTER_MODEL: "openrouter/auto",
+      VIVARIUM_OPENROUTER_BASE_URL: "https://openrouter.ai/api/v1",
+      VIVARIUM_OPENROUTER_CONTEXT_WINDOW: "2000000",
+      VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE: "private-finetune",
+      VIVARIUM_OAI_COMPAT_BASE_URL: "https://private.example/v1",
+      VIVARIUM_OAI_COMPAT_MODEL: "private-model",
+      VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW: "128000",
+      VIVARIUM_CREDENTIALS_PATH: join(root, "credentials.enc"),
+      VIVARIUM_CREDENTIALS_MASTER_KEY: "test-master-key",
+      VIVARIUM_INTERNAL_API_CREDENTIAL_NAME: "INTERNAL_API_TOKEN",
+      VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE: "internal-secret",
+      VIVARIUM_INTERNAL_API_HEALTH_URL: "https://internal.example/health",
+    };
+
+    expect(liveSetupCommand({ env, confirmWrite: true }).ok).toBe(true);
+
+    const result = await connectSmokeCommand({
+      env: { ...env, VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE: undefined },
+      providerFetch: async (url) => providerSmokeResponse(url),
+      credentialFetch: async () => Response.json({ ok: true }),
+    });
+    const output = renderConnectSmokeCommandResult(result, {
+      envFilePath: "live-readiness.local.env",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(output).toContain("[ok] Internal credential");
+    expect(output).not.toContain("credential value");
+    expect(output).not.toContain("internal-secret");
+  });
+
   test("runs provider and internal credential smokes from a filled setup file", async () => {
     const root = mkdtempSync(join(tmpdir(), "connect-smoke-"));
     const env = {

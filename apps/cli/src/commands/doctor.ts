@@ -1257,12 +1257,26 @@ function internalApiCredentialValueCheck(
     return "internalApi.credentialValue:configured";
   }
 
-  const credentialsPath = textValue(env[credentialsPathEnv]);
-  if (credentialsPath !== undefined && existsSync(credentialsPath)) {
+  if (storedCredentialSmokeInputsReady(env)) {
     return "internalApi.credentialValue:configured";
   }
 
   return `internalApi.credentialValue:${status}`;
+}
+
+function storedCredentialSmokeInputsReady(
+  env: Readonly<Record<string, string | undefined>>,
+): boolean {
+  const credentialsPath = textValue(env[credentialsPathEnv]);
+  if (credentialsPath === undefined || !existsSync(credentialsPath)) {
+    return false;
+  }
+
+  return (
+    textValue(env[credentialsMasterKeyEnv]) !== undefined &&
+    textValue(env[internalApiCredentialNameEnv]) !== undefined &&
+    isHttpUrlValue(textValue(env[internalApiHealthUrlEnv]) ?? "")
+  );
 }
 
 function credentialSmokeCheck(

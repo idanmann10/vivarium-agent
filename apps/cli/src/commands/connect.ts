@@ -1279,14 +1279,34 @@ function providerSmokeNeeds(
   ]);
 }
 
+function storedCredentialSmokeInputsReady(
+  env: Readonly<Record<string, string | undefined>>,
+  pathExists: (path: string) => boolean,
+): boolean {
+  const credentialsPath = env.VIVARIUM_CREDENTIALS_PATH;
+  if (isPlaceholder(credentialsPath) || !pathExists(credentialsPath ?? "")) {
+    return false;
+  }
+
+  return credentialRequirements
+    .filter((requirement) => !["VIVARIUM_CREDENTIALS_PATH", "VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE"].includes(requirement.key))
+    .every((requirement) => isReadyRequirement(requirement, env));
+}
+
 function credentialSmokeNeeds(
   env: Readonly<Record<string, string | undefined>>,
   pathExists: (path: string) => boolean,
 ): readonly string[] {
   const credentialsPath = env.VIVARIUM_CREDENTIALS_PATH;
+  const storedCredentialReady = storedCredentialSmokeInputsReady(env, pathExists);
   return unique(
     [
       ...credentialRequirements
+        .filter(
+          (requirement) =>
+            requirement.key !== "VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE" ||
+            !storedCredentialReady,
+        )
         .filter((requirement) => !isReadyRequirement(requirement, env))
         .map((requirement) => requirement.label),
       ...(isPlaceholder(credentialsPath)

@@ -3621,6 +3621,32 @@ describe("doctorCommand", () => {
     expect(result.checks).toContain("internalApi.healthUrl:missing");
   });
 
+  test("reports missing internal API credential value while stored credential smoke inputs are incomplete", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-doctor-incomplete-credential-smoke-"));
+    const credentialsPath = join(root, "credentials.enc");
+    writeFileSync(credentialsPath, "", "utf8");
+
+    const result = doctorCommand({
+      mode: "live-readiness",
+      agentRoot: "/agent",
+      worldRoot: "/world",
+      env: {
+        VIVARIUM_CREDENTIALS_PATH: credentialsPath,
+        VIVARIUM_INTERNAL_API_CREDENTIAL_NAME: "INTERNAL_API_TOKEN",
+      },
+      runner: blockedRunner,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.checks).toContain("internalApi.credentialValue:missing");
+    expect(result.nextActions).toContainEqual(
+      expect.objectContaining({
+        check: "internalApi.credentialValue:missing",
+        command: "vivarium connect signup",
+      }),
+    );
+  });
+
   test("reports missing canonical and private world subscription metadata as live readiness blockers", () => {
     const result = doctorCommand({
       mode: "live-readiness",
