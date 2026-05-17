@@ -674,7 +674,9 @@ export function liveEvidenceInitCommand(options: LiveEvidenceInitCommandOptions)
     writeFileSync(options.path, `${JSON.stringify(v1EvidenceSkeleton(), null, 2)}\n`, {
       encoding: "utf8",
       flag: options.overwrite === true ? "w" : "wx",
+      mode: 0o600,
     });
+    chmodSync(options.path, 0o600);
   } catch (error) {
     if (
       options.overwrite !== true &&

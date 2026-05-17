@@ -1,4 +1,4 @@
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
@@ -28,6 +28,7 @@ describe("proofCommand", () => {
       path: evidencePath,
     });
     expect(readFileSync(evidencePath, "utf8")).toContain('"realGoals": []');
+    expect(statSync(evidencePath).mode & 0o777).toBe(0o600);
     expect(output).toContain("Vivarium Proof Init");
     expect(output).toContain("Status: written");
     expect(output).toContain(`Evidence manifest: ${evidencePath}`);
