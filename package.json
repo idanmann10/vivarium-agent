@@ -18,6 +18,7 @@
   "type": "module",
   "scripts": {
     "build": "bun run scripts/build.ts",
+    "dependency:audit": "bun audit",
     "format:check": "oxfmt --check package.json .oxlintrc.jsonc .oxfmtrc.json knip.json turbo.json tsconfig.base.json scripts/tooling.test.ts scripts/workflows.test.ts scripts/reference-docs.test.ts scripts/install.test.ts scripts/public-release-scan.ts scripts/public-release-scan.test.ts scripts/launch-security-audit.ts scripts/launch-security-audit.test.ts",
     "knip": "knip --include dependencies,unlisted,unresolved --no-config-hints",
     "launch:security-audit": "bun run scripts/launch-security-audit.ts",
@@ -47,6 +48,9 @@
     "turbo": "^2.5.8",
     "typescript": "^5.9.3",
     "vitest": "^4.1.6"
+  },
+  "overrides": {
+    "esbuild": "0.25.12"
   },
   "packageManager": "bun@1.3.11"
 }

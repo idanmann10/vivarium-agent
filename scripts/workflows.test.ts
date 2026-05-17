@@ -24,6 +24,7 @@ describe("agent workflows", () => {
     expect(ci).toContain("bun run test");
     expect(ci).toContain("bun run build");
     expect(ci).toContain("bun run format:check");
+    expect(ci).toContain("bun run dependency:audit");
     expect(ci).toContain("bun run public-release:scan");
   });
 
@@ -61,6 +62,7 @@ describe("agent workflows", () => {
     expect(release).toContain("bun run knip");
     expect(release).toContain("bun run public-release:scan");
     expect(release).toContain("bun run format:check");
+    expect(release).toContain("bun run dependency:audit");
     expect(changesetBot).toContain("bunx changeset status");
   });
 

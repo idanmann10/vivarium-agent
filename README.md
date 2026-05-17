@@ -228,6 +228,7 @@ bun run typecheck
 bun run test
 bun run build
 bun run format:check
+bun run dependency:audit
 ```
 
 Use `vivarium proof` for the human-readable

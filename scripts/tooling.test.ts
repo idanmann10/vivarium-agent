@@ -103,6 +103,12 @@ describe("root toolchain wiring", () => {
     expect(scripts?.["format:check"]).toContain("scripts/launch-security-audit.test.ts");
   });
 
+  test("exposes a dependency audit gate", () => {
+    const scripts = rootPackage().scripts;
+
+    expect(scripts?.["dependency:audit"]).toBe("bun audit");
+  });
+
   test("exposes a workspace-aware Knip dependency gate", () => {
     const packageJson = rootPackage();
     const config = knipConfig();
