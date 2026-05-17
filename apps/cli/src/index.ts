@@ -68,9 +68,11 @@ export type {
 } from "./commands/proof.js";
 export {
   helpCommand,
+  launchHandoffHelpCommand,
   localRunHelpCommand,
   localSetupHelpCommand,
   renderHelpCommandResult,
+  renderLaunchHandoffHelpCommandResult,
   renderLocalRunHelpCommandResult,
   renderLocalSetupHelpCommandResult,
   renderStatusHelpCommandResult,
@@ -80,6 +82,7 @@ export type {
   FocusedHelpCommandResult,
   HelpCommandItem,
   HelpCommandResult,
+  LaunchHandoffHelpCommandResult,
   LocalRunHelpCommandResult,
   LocalSetupHelpCommandResult,
   StatusHelpCommandResult,

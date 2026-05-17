@@ -2,9 +2,11 @@ import { describe, expect, test } from "bun:test";
 
 import {
   helpCommand,
+  launchHandoffHelpCommand,
   localRunHelpCommand,
   localSetupHelpCommand,
   renderHelpCommandResult,
+  renderLaunchHandoffHelpCommandResult,
   renderLocalRunHelpCommandResult,
   renderLocalSetupHelpCommandResult,
   renderStatusHelpCommandResult,
@@ -173,6 +175,25 @@ describe("helpCommand", () => {
     expect(output).toContain("--live-env-path <path>");
     expect(output).toContain("vivarium local run");
     expect(output).toContain("vivarium proof");
+    expect(output).toContain("vivarium doctor --live");
+    expect(output).not.toContain("Commands");
+    expect(output).not.toContain("vivarium run --goal");
+  });
+
+  test("renders focused launch handoff help for Mac operators", () => {
+    const result = launchHandoffHelpCommand();
+    const output = renderLaunchHandoffHelpCommandResult(result);
+
+    expect(output).toContain("Vivarium Launch Handoff");
+    expect(output).toContain("Usage: vivarium launch handoff");
+    expect(output).toContain("--ref <branch-or-tag-or-commit>");
+    expect(output).toContain("--script-ref <commit-or-tag>");
+    expect(output).toContain("--daemon-host <host>");
+    expect(output).toContain("--daemon-port <port>");
+    expect(output).toContain("--pr-number <number>");
+    expect(output).toContain("--reviewer <github-username>");
+    expect(output).toContain("vivarium launch handoff --pr-number 26 --reviewer REVIEWER_GITHUB_USERNAME");
+    expect(output).toContain("vivarium local run");
     expect(output).toContain("vivarium doctor --live");
     expect(output).not.toContain("Commands");
     expect(output).not.toContain("vivarium run --goal");

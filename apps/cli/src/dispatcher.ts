@@ -61,9 +61,11 @@ import {
 } from "./commands/github.js";
 import {
   helpCommand,
+  launchHandoffHelpCommand,
   localRunHelpCommand,
   localSetupHelpCommand,
   renderHelpCommandResult,
+  renderLaunchHandoffHelpCommandResult,
   renderLocalRunHelpCommandResult,
   renderLocalSetupHelpCommandResult,
   renderStatusHelpCommandResult,
@@ -983,6 +985,11 @@ export async function dispatchCliCommand(
   if (command === "status" && hasHelpRequest(argv.slice(1))) {
     const result = statusHelpCommand();
     return { command: "help", result, output: renderStatusHelpCommandResult(result) };
+  }
+
+  if (command === "launch" && subcommand === "handoff" && hasHelpRequest(rest)) {
+    const result = launchHandoffHelpCommand();
+    return { command: "help", result, output: renderLaunchHandoffHelpCommandResult(result) };
   }
 
   const commandArgs = (subcommand?.startsWith("--") ?? true) ? argv.slice(1) : rest;

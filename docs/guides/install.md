@@ -56,7 +56,9 @@ the explicit ref you selected. The default Mac layout is:
 
 From an installed or source checkout that is already on a pre-main branch, run
 `vivarium launch handoff` to print the same branch-pinned install command with
-the installer script pinned to the current commit. Pass
+the installer script pinned to the current commit. Run
+`vivarium launch handoff --help` to see the pre-main ref, installer ref,
+daemon host/port, and required-review reviewer flags. Pass
 `vivarium launch handoff --ref main` when you want the stable public install
 command instead.
 

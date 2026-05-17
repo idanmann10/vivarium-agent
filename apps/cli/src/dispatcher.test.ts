@@ -130,6 +130,23 @@ describe("dispatchCliCommand", () => {
     expect(result.output).not.toContain("vivarium run --goal");
   });
 
+  test("routes launch handoff help to the Mac handoff command guide", async () => {
+    const result = await dispatchCliCommand(["launch", "handoff", "--help"]);
+
+    expect(result.command).toBe("help");
+    expect(result.output).toContain("Vivarium Launch Handoff");
+    expect(result.output).toContain("Usage: vivarium launch handoff");
+    expect(result.output).toContain("--ref <branch-or-tag-or-commit>");
+    expect(result.output).toContain("--script-ref <commit-or-tag>");
+    expect(result.output).toContain("--daemon-host <host>");
+    expect(result.output).toContain("--daemon-port <port>");
+    expect(result.output).toContain("--pr-number <number>");
+    expect(result.output).toContain("--reviewer <github-username>");
+    expect(result.output).toContain("vivarium launch handoff --pr-number 26 --reviewer REVIEWER_GITHUB_USERNAME");
+    expect(result.output).not.toContain("Commands");
+    expect(result.output).not.toContain("vivarium run --goal");
+  });
+
   test("routes update through the installed checkout updater", async () => {
     const calls: string[] = [];
     const result = await dispatchCliCommand(["update", "--agent-root", "/tmp/vivarium-agent"], {

@@ -22,6 +22,7 @@ export interface FocusedHelpCommandResult {
 export type LocalRunHelpCommandResult = FocusedHelpCommandResult;
 export type LocalSetupHelpCommandResult = FocusedHelpCommandResult;
 export type StatusHelpCommandResult = FocusedHelpCommandResult;
+export type LaunchHandoffHelpCommandResult = FocusedHelpCommandResult;
 
 export function helpCommand(): HelpCommandResult {
   return {
@@ -210,6 +211,46 @@ export function statusHelpCommand(): StatusHelpCommandResult {
   };
 }
 
+export function launchHandoffHelpCommand(): LaunchHandoffHelpCommandResult {
+  return {
+    title: "Vivarium Launch Handoff",
+    underline: "-----------------------",
+    usage: "vivarium launch handoff",
+    options: [
+      {
+        command: "--ref <branch-or-tag-or-commit>",
+        description: "Agent checkout ref to install. Defaults to main, or the current pre-main branch.",
+      },
+      {
+        command: "--script-ref <commit-or-tag>",
+        description: "Installer script ref to fetch. Defaults to the current checkout commit on pre-main branches.",
+      },
+      {
+        command: "--daemon-host <host>",
+        description: "Mac LaunchAgent host used in the daemon smoke command. Defaults to 127.0.0.1.",
+      },
+      {
+        command: "--daemon-port <port>",
+        description: "Mac LaunchAgent port used in install and smoke commands. Defaults to 8787.",
+      },
+      {
+        command: "--pr-number <number>",
+        description: "PR number to use when rendering exact required-review commands.",
+      },
+      {
+        command: "--reviewer <github-username>",
+        description: "Eligible non-author reviewer username to use in invite and review-request commands.",
+      },
+    ],
+    examples: [
+      "vivarium launch handoff",
+      "vivarium launch handoff --ref main",
+      "vivarium launch handoff --pr-number 26 --reviewer REVIEWER_GITHUB_USERNAME",
+    ],
+    nextCommands: ["vivarium local run", "vivarium daemon smoke", "vivarium proof", "vivarium doctor --live"],
+  };
+}
+
 export function renderHelpCommandResult(result: HelpCommandResult): string {
   const commandWidth = Math.max(52, ...result.commands.map((item) => item.command.length)) + 2;
   const rows = result.commands.map((item) => `  ${item.command.padEnd(commandWidth)}${item.description}`);
@@ -246,6 +287,10 @@ export function renderLocalSetupHelpCommandResult(result: LocalSetupHelpCommandR
 }
 
 export function renderStatusHelpCommandResult(result: StatusHelpCommandResult): string {
+  return renderFocusedHelpCommandResult(result);
+}
+
+export function renderLaunchHandoffHelpCommandResult(result: LaunchHandoffHelpCommandResult): string {
   return renderFocusedHelpCommandResult(result);
 }
 

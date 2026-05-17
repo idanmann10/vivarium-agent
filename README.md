@@ -80,6 +80,8 @@ success state, and score from SQLite before moving on.
 Copy the exact installer-printed `vivarium local run` command when it includes
 `--state-path` and `--live-env-path`, especially after custom-path or
 branch-pinned installs.
+Run `vivarium launch handoff --help` when you need the branch/ref, daemon, or
+reviewer flags for pre-main Mac handoffs.
 If you run `vivarium local run` before `vivarium local`, the command seeds the same starter memory, stages the private live-readiness file, and then runs the local agent against that durable state.
 If the local SQLite state file is invalid, `vivarium local run` stops before writing new run data, names the damaged path, and points you at `vivarium doctor` plus `vivarium local` so you can move the file aside and reseed it.
 
