@@ -65,14 +65,24 @@ import {
   renderGitHubWorkflowRunsCommandResult,
 } from "./commands/github.js";
 import {
+  connectFillHelpCommand,
+  connectSetupHelpCommand,
+  connectSmokeHelpCommand,
+  githubSmokeHelpCommand,
   helpCommand,
   launchHandoffHelpCommand,
   localRunHelpCommand,
   localSetupHelpCommand,
+  proofInitHelpCommand,
+  renderConnectFillHelpCommandResult,
+  renderConnectSetupHelpCommandResult,
+  renderConnectSmokeHelpCommandResult,
+  renderGithubSmokeHelpCommandResult,
   renderHelpCommandResult,
   renderLaunchHandoffHelpCommandResult,
   renderLocalRunHelpCommandResult,
   renderLocalSetupHelpCommandResult,
+  renderProofInitHelpCommandResult,
   renderStatusHelpCommandResult,
   statusHelpCommand,
 } from "./commands/help.js";
@@ -1111,6 +1121,31 @@ export async function dispatchCliCommand(
   if (command === "launch" && subcommand === "handoff" && hasHelpRequest(rest)) {
     const result = launchHandoffHelpCommand();
     return { command: "help", result, output: renderLaunchHandoffHelpCommandResult(result) };
+  }
+
+  if (command === "connect" && subcommand === "fill" && hasHelpRequest(rest)) {
+    const result = connectFillHelpCommand();
+    return { command: "help", result, output: renderConnectFillHelpCommandResult(result) };
+  }
+
+  if (command === "connect" && subcommand === "setup" && hasHelpRequest(rest)) {
+    const result = connectSetupHelpCommand();
+    return { command: "help", result, output: renderConnectSetupHelpCommandResult(result) };
+  }
+
+  if (command === "connect" && subcommand === "smoke" && hasHelpRequest(rest)) {
+    const result = connectSmokeHelpCommand();
+    return { command: "help", result, output: renderConnectSmokeHelpCommandResult(result) };
+  }
+
+  if (command === "proof" && subcommand === "init" && hasHelpRequest(rest)) {
+    const result = proofInitHelpCommand();
+    return { command: "help", result, output: renderProofInitHelpCommandResult(result) };
+  }
+
+  if (command === "github" && subcommand === "smoke" && hasHelpRequest(rest)) {
+    const result = githubSmokeHelpCommand();
+    return { command: "help", result, output: renderGithubSmokeHelpCommandResult(result) };
   }
 
   const commandArgs = (subcommand?.startsWith("--") ?? true) ? argv.slice(1) : rest;

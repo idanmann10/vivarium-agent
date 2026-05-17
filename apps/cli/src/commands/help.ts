@@ -23,6 +23,11 @@ export type LocalRunHelpCommandResult = FocusedHelpCommandResult;
 export type LocalSetupHelpCommandResult = FocusedHelpCommandResult;
 export type StatusHelpCommandResult = FocusedHelpCommandResult;
 export type LaunchHandoffHelpCommandResult = FocusedHelpCommandResult;
+export type ConnectFillHelpCommandResult = FocusedHelpCommandResult;
+export type ConnectSetupHelpCommandResult = FocusedHelpCommandResult;
+export type ConnectSmokeHelpCommandResult = FocusedHelpCommandResult;
+export type ProofInitHelpCommandResult = FocusedHelpCommandResult;
+export type GithubSmokeHelpCommandResult = FocusedHelpCommandResult;
 
 export function helpCommand(): HelpCommandResult {
   return {
@@ -255,6 +260,180 @@ export function launchHandoffHelpCommand(): LaunchHandoffHelpCommandResult {
   };
 }
 
+export function connectFillHelpCommand(): ConnectFillHelpCommandResult {
+  return {
+    title: "Vivarium Connect Fill",
+    underline: "----------------------",
+    usage: "vivarium connect fill",
+    options: [
+      {
+        command: "--env-file <path>",
+        description: "Private live-readiness file to update. Defaults to ~/.vivarium/live/live-readiness.local.env.",
+      },
+      {
+        command: "--secrets-dir <path>",
+        description: "Read generated local setup files from one private directory.",
+      },
+      {
+        command: "--setup-dir <path>",
+        description: "Fill generated provider profile, credential store, and evidence paths.",
+      },
+      {
+        command: "--anthropic-key-file <path>",
+        description: "Read the Anthropic API key from a private local file.",
+      },
+      {
+        command: "--openrouter-key-file <path>",
+        description: "Read the OpenRouter API key from a private local file.",
+      },
+      {
+        command: "--private-base-url-file <path>",
+        description: "Read the private OpenAI-compatible base URL from a local file.",
+      },
+      {
+        command: "--private-model-file <path>",
+        description: "Read the private OpenAI-compatible model name from a local file.",
+      },
+      {
+        command: "--private-context-window-file <path>",
+        description: "Read the private model context window from a local file.",
+      },
+      {
+        command: "--internal-token-file <path>",
+        description: "Read the internal API credential value from a private local file.",
+      },
+      {
+        command: "--internal-health-url-file <path>",
+        description: "Read the internal API health-check URL from a local file.",
+      },
+      {
+        command: "--credential-master-key-file <path>",
+        description: "Read the local credential-store master key from a private file.",
+      },
+    ],
+    examples: [
+      "vivarium connect fill --secrets-dir ~/.vivarium/secrets --setup-dir ~/.vivarium/live",
+      "vivarium connect fill --private-base-url-file ~/.vivarium/secrets/private-base-url.txt --private-model-file ~/.vivarium/secrets/private-model.txt",
+    ],
+    nextCommands: ["vivarium connect", "vivarium connect setup --confirm-write", "vivarium connect smoke"],
+  };
+}
+
+export function connectSetupHelpCommand(): ConnectSetupHelpCommandResult {
+  return {
+    title: "Vivarium Connect Setup",
+    underline: "-----------------------",
+    usage: "vivarium connect setup --confirm-write",
+    options: [
+      {
+        command: "--env-file <path>",
+        description: "Private live-readiness file to read. Defaults to ~/.vivarium/live/live-readiness.local.env.",
+      },
+      {
+        command: "--confirm-write",
+        description: "Write provider profiles, encrypted credentials, and the evidence manifest skeleton.",
+      },
+      {
+        command: "--details",
+        description: "Show exact setup fields and lower-level commands when troubleshooting.",
+      },
+    ],
+    examples: [
+      "vivarium connect setup",
+      "vivarium connect setup --confirm-write",
+      "vivarium connect setup --env-file ~/.vivarium/live/live-readiness.local.env --confirm-write",
+    ],
+    nextCommands: ["vivarium connect smoke", "vivarium proof init", "vivarium doctor --live"],
+  };
+}
+
+export function connectSmokeHelpCommand(): ConnectSmokeHelpCommandResult {
+  return {
+    title: "Vivarium Connect Smoke",
+    underline: "-----------------------",
+    usage: "vivarium connect smoke",
+    options: [
+      {
+        command: "--env-file <path>",
+        description: "Private live-readiness file with saved provider profiles and credential paths.",
+      },
+      {
+        command: "--details",
+        description: "Show exact lower-level provider and credential smoke commands.",
+      },
+    ],
+    examples: [
+      "vivarium connect smoke",
+      "vivarium connect smoke --env-file ~/.vivarium/live/live-readiness.local.env",
+      "vivarium connect smoke --details",
+    ],
+    nextCommands: ["vivarium proof", "vivarium doctor --live", "vivarium model"],
+  };
+}
+
+export function proofInitHelpCommand(): ProofInitHelpCommandResult {
+  return {
+    title: "Vivarium Proof Init",
+    underline: "-------------------",
+    usage: "vivarium proof init",
+    options: [
+      {
+        command: "--env-file <path>",
+        description: "Private live-readiness file that points at the v1 evidence manifest.",
+      },
+      {
+        command: "--overwrite",
+        description: "Replace an existing manifest skeleton after reviewing the current evidence.",
+      },
+      {
+        command: "--details",
+        description: "Show exact evidence path and manifest wiring.",
+      },
+    ],
+    examples: [
+      "vivarium proof init",
+      "vivarium proof init --env-file ~/.vivarium/live/live-readiness.local.env",
+    ],
+    nextCommands: ["vivarium proof", "vivarium doctor --live", "vivarium connect smoke"],
+  };
+}
+
+export function githubSmokeHelpCommand(): GithubSmokeHelpCommandResult {
+  return {
+    title: "Vivarium GitHub Smoke",
+    underline: "---------------------",
+    usage: "vivarium github smoke",
+    options: [
+      {
+        command: "--target <agent|world>",
+        description: "Use saved agent or world repository metadata. Defaults to world.",
+      },
+      {
+        command: "--owner <name>",
+        description: "Override the saved GitHub owner for this smoke.",
+      },
+      {
+        command: "--repo <name>",
+        description: "Override the saved GitHub repository for this smoke.",
+      },
+      {
+        command: "--token-env <name>",
+        description: "Environment variable that contains the GitHub token. Defaults to GITHUB_TOKEN.",
+      },
+    ],
+    examples: [
+      "vivarium github smoke",
+      "vivarium github smoke --target agent",
+      "vivarium github smoke --owner idanmann10 --repo vivarium-world",
+    ],
+    nextCommands: [
+      "vivarium github workflow-runs",
+      "vivarium github discussion --confirm-write",
+      "vivarium doctor --live",
+    ],
+  };
+}
+
 export function renderHelpCommandResult(result: HelpCommandResult): string {
   const commandWidth = Math.max(52, ...result.commands.map((item) => item.command.length)) + 2;
   const rows = result.commands.map((item) => `  ${item.command.padEnd(commandWidth)}${item.description}`);
@@ -295,6 +474,26 @@ export function renderStatusHelpCommandResult(result: StatusHelpCommandResult): 
 }
 
 export function renderLaunchHandoffHelpCommandResult(result: LaunchHandoffHelpCommandResult): string {
+  return renderFocusedHelpCommandResult(result);
+}
+
+export function renderConnectFillHelpCommandResult(result: ConnectFillHelpCommandResult): string {
+  return renderFocusedHelpCommandResult(result);
+}
+
+export function renderConnectSetupHelpCommandResult(result: ConnectSetupHelpCommandResult): string {
+  return renderFocusedHelpCommandResult(result);
+}
+
+export function renderConnectSmokeHelpCommandResult(result: ConnectSmokeHelpCommandResult): string {
+  return renderFocusedHelpCommandResult(result);
+}
+
+export function renderProofInitHelpCommandResult(result: ProofInitHelpCommandResult): string {
+  return renderFocusedHelpCommandResult(result);
+}
+
+export function renderGithubSmokeHelpCommandResult(result: GithubSmokeHelpCommandResult): string {
   return renderFocusedHelpCommandResult(result);
 }
 

@@ -147,6 +147,58 @@ describe("dispatchCliCommand", () => {
     expect(result.output).not.toContain("vivarium run --goal");
   });
 
+  test("routes live setup help to focused operator guides", async () => {
+    const cases = [
+      {
+        argv: ["connect", "fill", "--help"],
+        title: "Vivarium Connect Fill",
+        usage: "Usage: vivarium connect fill",
+        option: "--anthropic-key-file <path>",
+        next: "vivarium connect setup --confirm-write",
+      },
+      {
+        argv: ["connect", "setup", "--help"],
+        title: "Vivarium Connect Setup",
+        usage: "Usage: vivarium connect setup --confirm-write",
+        option: "--confirm-write",
+        next: "vivarium connect smoke",
+      },
+      {
+        argv: ["connect", "smoke", "--help"],
+        title: "Vivarium Connect Smoke",
+        usage: "Usage: vivarium connect smoke",
+        option: "--env-file <path>",
+        next: "vivarium proof",
+      },
+      {
+        argv: ["proof", "init", "--help"],
+        title: "Vivarium Proof Init",
+        usage: "Usage: vivarium proof init",
+        option: "--env-file <path>",
+        next: "vivarium proof",
+      },
+      {
+        argv: ["github", "smoke", "--help"],
+        title: "Vivarium GitHub Smoke",
+        usage: "Usage: vivarium github smoke",
+        option: "--target <agent|world>",
+        next: "vivarium github workflow-runs",
+      },
+    ] as const;
+
+    for (const item of cases) {
+      const result = await dispatchCliCommand(item.argv);
+
+      expect(result.command).toBe("help");
+      expect(result.output).toContain(item.title);
+      expect(result.output).toContain(item.usage);
+      expect(result.output).toContain(item.option);
+      expect(result.output).toContain(item.next);
+      expect(result.output).not.toContain("Commands");
+      expect(result.output).not.toContain("vivarium run --goal");
+    }
+  });
+
   test("routes update through the installed checkout updater", async () => {
     const calls: string[] = [];
     const result = await dispatchCliCommand(["update", "--agent-root", "/tmp/vivarium-agent"], {
