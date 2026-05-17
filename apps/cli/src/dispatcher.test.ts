@@ -88,6 +88,7 @@ describe("dispatchCliCommand", () => {
   test("routes update through the installed checkout updater", async () => {
     const calls: string[] = [];
     const result = await dispatchCliCommand(["update", "--agent-root", "/tmp/vivarium-agent"], {
+      env: { VIVARIUM_BUN_PATH: "/opt/vivarium/bin/bun" },
       updateRunner: (command, args) => {
         calls.push([command, ...args].join(" "));
         return { exitCode: 0, stdout: "ok", stderr: "" };
@@ -101,7 +102,7 @@ describe("dispatchCliCommand", () => {
     expect(result.output).toContain("[ok] git pull");
     expect(calls).toEqual([
       "git -C /tmp/vivarium-agent pull --ff-only",
-      "bun install --frozen-lockfile",
+      "/opt/vivarium/bin/bun install --frozen-lockfile",
     ]);
   });
 

@@ -18,6 +18,7 @@ export type UpdateCommandRunner = (
 
 export interface UpdateCommandOptions {
   readonly agentRoot?: string;
+  readonly bunCommand?: string;
   readonly runner?: UpdateCommandRunner;
 }
 
@@ -72,6 +73,7 @@ function failedStep(
 
 export function updateCommand(options: UpdateCommandOptions = {}): UpdateCommandResult {
   const agentRoot = options.agentRoot ?? process.cwd();
+  const bunCommand = options.bunCommand ?? process.execPath;
   const runner = options.runner ?? defaultRunner;
 
   const gitArgs = ["-C", agentRoot, "pull", "--ff-only"] as const;
@@ -87,8 +89,8 @@ export function updateCommand(options: UpdateCommandOptions = {}): UpdateCommand
   }
 
   const installArgs = ["install", "--frozen-lockfile"] as const;
-  const installCommand = `bun ${installArgs.join(" ")}`;
-  const installResult = runner("bun", installArgs, { cwd: agentRoot });
+  const installCommand = `${bunCommand} ${installArgs.join(" ")}`;
+  const installResult = runner(bunCommand, installArgs, { cwd: agentRoot });
   if (installResult.exitCode !== 0) {
     return {
       ok: false,

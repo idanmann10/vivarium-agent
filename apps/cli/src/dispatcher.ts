@@ -669,6 +669,11 @@ function privateDefaultLiveEnvFile(env: Readonly<Record<string, string | undefin
   return home === undefined ? undefined : join(home, ".vivarium", "live", "live-readiness.local.env");
 }
 
+function defaultBunCommand(env: Readonly<Record<string, string | undefined>> | undefined): string {
+  const configured = env?.VIVARIUM_BUN_PATH ?? process.env.VIVARIUM_BUN_PATH;
+  return configured === undefined || configured.length === 0 ? process.execPath : configured;
+}
+
 function isDefaultLiveEnvFile(path: string): boolean {
   return path === "live-readiness.local.env" || path.endsWith("/.vivarium/live/live-readiness.local.env");
 }
@@ -1758,6 +1763,7 @@ export async function dispatchCliCommand(
     case "update": {
       const result = updateCommand({
         agentRoot: value(flags, "agent-root") ?? process.cwd(),
+        bunCommand: defaultBunCommand(options.env),
         ...(options.updateRunner === undefined ? {} : { runner: options.updateRunner }),
       });
       return { command, result, output: renderUpdateCommandResult(result) };
