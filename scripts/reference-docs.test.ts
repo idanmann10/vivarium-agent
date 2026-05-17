@@ -654,6 +654,9 @@ describe("reference docs", () => {
       expect(normalizedBody).toContain(
         "Copy the exact installer-printed `vivarium local run` command when it includes `--state-path` and `--live-env-path`",
       );
+      expect(normalizedBody).toContain(
+        "`vivarium status --state-path <file> --live-env-path <file>` keeps those explicit paths in its next `vivarium local run` and `vivarium connect` commands",
+      );
       expect(body).toContain(
         "Use `vivarium setup live` when you are ready to create provider keys",
       );
@@ -1388,9 +1391,10 @@ describe("reference docs", () => {
       "/Users/idanmann/.bun/bin/bun install --frozen-lockfile",
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
-      "`543 pass, 0 fail, 4474 expect calls`",
+      "`545 pass, 0 fail, 4480 expect calls`",
       "bun run dependency:audit",
       "No vulnerabilities found",
+      "status next commands preserve explicit `--state-path` and `--live-env-path` values",
       "focused help smokes",
       "vivarium local --help",
       "vivarium status --help",

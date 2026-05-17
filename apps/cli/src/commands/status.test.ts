@@ -207,6 +207,34 @@ describe("statusCommand", () => {
     expect(output).toContain("Run ID: run-status-001");
   });
 
+  test("keeps explicit local paths in the next run command", () => {
+    const root = mkdtempSync(join(tmpdir(), "status-explicit-path-next-run-"));
+    const statePath = join(root, "state.db");
+    const liveEnvPath = join(root, "live-readiness.local.env");
+    seedReadyLocalState(statePath);
+    writeFileSync(liveEnvPath, "# local readiness\n", "utf8");
+
+    const result = statusCommand({ statePath, liveEnvPath });
+    const output = renderStatusCommandResult(result);
+
+    expect(output).toContain(
+      `vivarium local run --state-path ${statePath} --live-env-path ${liveEnvPath}`,
+    );
+  });
+
+  test("keeps explicit live paths in the next setup command", () => {
+    const root = mkdtempSync(join(tmpdir(), "status-explicit-live-next-setup-"));
+    const statePath = join(root, "state.db");
+    const liveEnvPath = join(root, "live-readiness.local.env");
+    seedReadyLocalState(statePath);
+
+    const result = statusCommand({ statePath, liveEnvPath });
+    const output = renderStatusCommandResult(result);
+
+    expect(output).toContain(`vivarium connect init --path ${liveEnvPath}`);
+    expect(output).not.toContain("vivarium setup live");
+  });
+
   test("points missing live setup at guided onboarding", () => {
     const home = mkdtempSync(join(tmpdir(), "status-missing-live-home-"));
     const previousHome = process.env.HOME;

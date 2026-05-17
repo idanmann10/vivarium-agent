@@ -23,6 +23,10 @@ export interface StatusSummary {
     readonly path: string;
     readonly staged: boolean;
   };
+  readonly nextCommands?: {
+    readonly local: string;
+    readonly live: string;
+  };
 }
 
 export interface StatusCommandOptions {
@@ -41,6 +45,20 @@ function latestRun(runs: readonly Run[]): Run | undefined {
     const rightTime = right.endedAt ?? right.startedAt;
     return rightTime.localeCompare(leftTime);
   })[0];
+}
+
+function shellQuote(value: string): string {
+  return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
+}
+
+function commandWithFlags(
+  command: string,
+  flags: Readonly<Record<string, string | undefined>>,
+): string {
+  const args = Object.entries(flags).flatMap(([name, value]) =>
+    value === undefined ? [] : [`--${name}`, shellQuote(value)],
+  );
+  return ["vivarium", command, ...args].join(" ");
 }
 
 function inspectLocalState(
@@ -91,11 +109,28 @@ export function statusCommand(options: StatusCommandOptions = {}): StatusSummary
   const liveEnvPath =
     options.liveEnvPath ?? join(home, ".vivarium", "live", "live-readiness.local.env");
   const pathExists = options.pathExists ?? existsSync;
+  const localState = inspectLocalState(statePath, pathExists);
+  const liveSetup = { path: liveEnvPath, staged: pathExists(liveEnvPath) };
+  const explicitLocalFlags = {
+    "state-path": options.statePath === undefined ? undefined : statePath,
+    "live-env-path": options.liveEnvPath === undefined ? undefined : liveEnvPath,
+  };
   return {
     repo: "vivarium-agent",
     runtime: "offline-local",
-    localState: inspectLocalState(statePath, pathExists),
-    liveSetup: { path: liveEnvPath, staged: pathExists(liveEnvPath) },
+    localState,
+    liveSetup,
+    nextCommands: {
+      local: commandWithFlags(localState.ready ? "local run" : "local", explicitLocalFlags),
+      live:
+        options.liveEnvPath === undefined
+          ? liveSetup.staged
+            ? "vivarium connect"
+            : "vivarium setup live"
+          : liveSetup.staged
+            ? commandWithFlags("connect", { "env-file": liveEnvPath })
+            : commandWithFlags("connect init", { path: liveEnvPath }),
+    },
   };
 }
 
@@ -121,8 +156,12 @@ export function renderStatusCommandResult(result: StatusSummary): string {
     path: "live-readiness.local.env",
     staged: false,
   };
-  const localCommand = localState.ready ? "vivarium local run" : "vivarium local";
-  const liveCommand = liveSetup.staged ? "vivarium connect" : "vivarium setup live";
+  const localCommand =
+    result.nextCommands?.local ?? (localState.ready ? "vivarium local run" : "vivarium local");
+  const liveCommand =
+    result.nextCommands?.live ?? (liveSetup.staged ? "vivarium connect" : "vivarium setup live");
+  const commandLine = (command: string, description: string): string =>
+    `  ${command.padEnd(Math.max(28, command.length + 2))}${description}`;
   return [
     renderVivariumGlobe(),
     "",
@@ -139,8 +178,11 @@ export function renderStatusCommandResult(result: StatusSummary): string {
     `  [gate] Readiness check: vivarium doctor --live`,
     "",
     "Next commands:",
-    `  ${localCommand.padEnd(28)}${localState.ready ? "Run the local agent." : "Create the local agent."}`,
-    `  ${liveCommand.padEnd(28)}${liveSetup.staged ? "Review live setup readiness." : "Start guided live onboarding."}`,
+    commandLine(localCommand, localState.ready ? "Run the local agent." : "Create the local agent."),
+    commandLine(
+      liveCommand,
+      liveSetup.staged ? "Review live setup readiness." : "Start guided live onboarding.",
+    ),
     "  vivarium model               Inspect provider profile readiness.",
     "  vivarium proof               Review the v1 evidence checklist.",
     "  vivarium doctor --live       Run the production readiness gate.",
