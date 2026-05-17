@@ -136,7 +136,7 @@ export function renderInitCommandResult(result: InitCommandResult): string {
     ...(result.prompts.length === 0 ? [] : ["", "Prompts:", ...result.prompts.map((prompt) => `  ${prompt}`)]),
     "",
     "Next command:",
-    `  vivarium local run --goal "build a tiny local agent" --domain ${shellQuote(result.primaryDomain)} --state-path ${shellQuote(result.statePath)} --world-root ${shellQuote(result.worldRoot)}`,
+    `  vivarium local run --goal "build a simple agent end to end" --domain ${shellQuote(result.primaryDomain)} --state-path ${shellQuote(result.statePath)} --world-root ${shellQuote(result.worldRoot)}`,
     "",
   ].join("\n");
 }

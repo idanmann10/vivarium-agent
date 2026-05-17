@@ -1269,7 +1269,7 @@ export async function dispatchCliCommand(
         const availableTools = values(flags, "available-tool");
         bootstrapLocalRunState({ statePath, domain, agentName, worldRoot, liveEnvPath });
         const result = await runCommand({
-          goal: value(flags, "goal") ?? "build a tiny local agent",
+          goal: value(flags, "goal") ?? "build a simple agent end to end",
           ...(agentName === undefined ? {} : { agentName }),
           ...(domain === undefined ? {} : { domain }),
           ...(worldRoot === undefined ? {} : { worldRoot }),

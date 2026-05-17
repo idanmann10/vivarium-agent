@@ -59,7 +59,7 @@ After installation, reload your shell if needed and run:
 vivarium local
 
 # [2] Run the local agent
-vivarium local run --goal "build a tiny local agent"
+vivarium local run --goal "build a simple agent end to end"
 
 # [3] Review launch handoff
 vivarium launch handoff

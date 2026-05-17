@@ -122,7 +122,7 @@ describe("runInitCommand", () => {
     expect(output).toContain("Prompts:");
     expect(output).toContain("Next command:");
     expect(output).toContain(
-      'vivarium local run --goal "build a tiny local agent" --domain coding --state-path /tmp/vivarium-state.db --world-root /tmp/world',
+      'vivarium local run --goal "build a simple agent end to end" --domain coding --state-path /tmp/vivarium-state.db --world-root /tmp/world',
     );
     expect(output).not.toContain("vivarium run --goal");
     expect(output.trim().startsWith("{")).toBe(false);

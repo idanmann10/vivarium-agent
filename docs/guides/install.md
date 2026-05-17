@@ -72,7 +72,7 @@ After a pre-main install, verify both the daemon and a local run:
 
 ```bash
 vivarium daemon smoke --status-url http://127.0.0.1:8787/status
-vivarium local run --goal "build a tiny local agent"
+vivarium local run --goal "build a simple agent end to end"
 ```
 
 After installation, reload your shell if needed and run:
@@ -82,7 +82,7 @@ After installation, reload your shell if needed and run:
 vivarium local
 
 # [2] Run the local agent
-vivarium local run --goal "build a tiny local agent"
+vivarium local run --goal "build a simple agent end to end"
 
 # [3] Review launch handoff
 vivarium launch handoff

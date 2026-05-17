@@ -90,7 +90,7 @@ describe("dispatchCliCommand", () => {
 
     expect(result.command).toBe("help");
     expect(result.output).toContain("Vivarium Local Run");
-    expect(result.output).toContain('Usage: vivarium local run --goal "build a tiny local agent"');
+    expect(result.output).toContain('Usage: vivarium local run --goal "build a simple agent end to end"');
     expect(result.output).toContain("--goal <text>");
     expect(result.output).toContain("--state-path <path>");
     expect(result.output).toContain("--world-root <path>");
@@ -111,7 +111,7 @@ describe("dispatchCliCommand", () => {
     expect(result.output).toContain("--world-root <path>");
     expect(result.output).toContain("--live-env-path <path>");
     expect(result.output).toContain("--github-owner <name>");
-    expect(result.output).toContain('vivarium local run --goal "build a tiny local agent"');
+    expect(result.output).toContain('vivarium local run --goal "build a simple agent end to end"');
     expect(result.output).not.toContain("Commands");
     expect(result.output).not.toContain("vivarium run --goal");
   });
@@ -1558,7 +1558,7 @@ describe("dispatchCliCommand", () => {
       },
     });
     expect(onboardResult.nextCommands).toEqual([
-      `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${worldRoot} --live-env-path ${envPath}`,
+      `vivarium local run --goal "build a simple agent end to end" --domain coding --state-path ${statePath} --world-root ${worldRoot} --live-env-path ${envPath}`,
       "vivarium launch handoff",
       "vivarium status",
       "vivarium help",
@@ -1570,8 +1570,9 @@ describe("dispatchCliCommand", () => {
     expect(onboard.output).toContain("Live readiness: staged for later");
     expect(onboard.output).toContain(`Readiness file: ${envPath}`);
     expect(onboard.output).toContain(
-      `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${worldRoot} --live-env-path ${envPath}`,
+      `vivarium local run --goal "build a simple agent end to end" --domain coding --state-path ${statePath} --world-root ${worldRoot} --live-env-path ${envPath}`,
     );
+    expect(onboard.output).not.toContain("build a tiny local agent");
     expect(onboard.output).not.toContain(`vivarium run --goal "validate local setup" --domain coding --state-path ${statePath}`);
     expect(onboard.output).not.toContain(`vivarium setup --env-file ${envPath}`);
   });
@@ -1853,7 +1854,7 @@ describe("dispatchCliCommand", () => {
         path: envPath,
       },
       nextCommands: expect.arrayContaining([
-        `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${worldRoot} --live-env-path ${envPath}`,
+        `vivarium local run --goal "build a simple agent end to end" --domain coding --state-path ${statePath} --world-root ${worldRoot} --live-env-path ${envPath}`,
         "vivarium launch handoff",
         "vivarium status",
         "vivarium help",
@@ -1864,7 +1865,7 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).toContain("Vivarium Setup");
     expect(setup.output).toContain("Local setup is ready now.");
     expect(setup.output).toContain(
-      `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${worldRoot} --live-env-path ${envPath}`,
+      `vivarium local run --goal "build a simple agent end to end" --domain coding --state-path ${statePath} --world-root ${worldRoot} --live-env-path ${envPath}`,
     );
     expect(setup.output).not.toContain(`vivarium run --goal "validate local setup" --domain coding --state-path ${statePath}`);
 
@@ -1967,9 +1968,10 @@ describe("dispatchCliCommand", () => {
 
       expect(run.result).toMatchObject({ success: true, agentName: "local-agent" });
       expect(runs).toHaveLength(1);
-      expect(runs[0]?.goal).toBe("build a tiny local agent");
+      expect(runs[0]?.goal).toBe("build a simple agent end to end");
       expect(String(runs[0]?.id)).toBe((run.result as { readonly runId: string }).runId);
       expect(run.output).toContain("Agent: local-agent");
+      expect(run.output).not.toContain("build a tiny local agent");
       expect(run.output).toContain("Recorded: vivarium status will show Run ID");
       expect(run.output).not.toContain("vivarium status --state-path");
     } finally {

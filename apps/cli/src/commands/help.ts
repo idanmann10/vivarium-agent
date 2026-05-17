@@ -100,11 +100,11 @@ export function localRunHelpCommand(): LocalRunHelpCommandResult {
   return {
     title: "Vivarium Local Run",
     underline: "------------------",
-    usage: 'vivarium local run --goal "build a tiny local agent"',
+    usage: 'vivarium local run --goal "build a simple agent end to end"',
     options: [
       {
         command: "--goal <text>",
-        description: 'Goal to run. Defaults to "build a tiny local agent".',
+        description: 'Goal to run. Defaults to "build a simple agent end to end".',
       },
       {
         command: "--domain <name>",
@@ -136,7 +136,7 @@ export function localRunHelpCommand(): LocalRunHelpCommandResult {
       },
     ],
     examples: [
-      'vivarium local run --goal "build a tiny local agent"',
+      'vivarium local run --goal "build a simple agent end to end"',
       'vivarium local run --goal "summarize this repo" --state-path ~/.vivarium/state.db --live-env-path ~/.vivarium/live/live-readiness.local.env',
       'vivarium local run --goal "try a live model" --env-file ~/.vivarium/live/live-readiness.local.env --provider-profile openrouter',
     ],
@@ -180,7 +180,7 @@ export function localSetupHelpCommand(): LocalSetupHelpCommandResult {
       "vivarium local --state-path ~/.vivarium/state.db --world-root ~/.vivarium/the-world --live-env-path ~/.vivarium/live/live-readiness.local.env",
     ],
     nextCommands: [
-      'vivarium local run --goal "build a tiny local agent"',
+      'vivarium local run --goal "build a simple agent end to end"',
       "vivarium status",
       "vivarium launch handoff",
     ],
@@ -260,7 +260,7 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
   const rows = result.commands.map((item) => `  ${item.command.padEnd(commandWidth)}${item.description}`);
   const firstRunCommands = [
     "vivarium local",
-    'vivarium local run --goal "build a tiny local agent"',
+    'vivarium local run --goal "build a simple agent end to end"',
     "vivarium launch handoff",
     "vivarium status",
     "vivarium help",

@@ -55,7 +55,7 @@ describe("runCommand", () => {
   test("runs the named local agent by default and keeps next steps local", async () => {
     const statePath = join(mkdtempSync(join(tmpdir(), "cli-run-state-")), "state.db");
     const result = await runCommand({
-      goal: "build a tiny local agent",
+      goal: "build a simple agent end to end",
       domain: "coding",
       worldRoot: createWorldFixture(),
       statePath,
@@ -70,7 +70,10 @@ describe("runCommand", () => {
     expect(output).toContain("Agent: local-agent");
     expect(output).toContain("Provider: local");
     expect(output).toContain(`Memory: ${statePath}`);
-    expect(output).toContain('Outcome: Observation: executed "build a tiny local agent" with local deterministic provider.');
+    expect(output).toContain(
+      'Outcome: Observation: executed "build a simple agent end to end" with local deterministic provider.',
+    );
+    expect(output).not.toContain("build a tiny local agent");
     expect(output).toContain(`Recorded: vivarium status --state-path ${statePath} will show Run ID`);
     expect(output).toContain("vivarium local run --goal");
     expect(output).toContain(`vivarium status --state-path ${statePath}`);

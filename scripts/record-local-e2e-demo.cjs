@@ -84,7 +84,7 @@ const steps = [
     "local",
     "run",
     "--goal",
-    "build a tiny local agent",
+    "build a simple agent end to end",
     "--domain",
     "coding",
     "--world-root",

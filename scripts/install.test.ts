@@ -117,8 +117,9 @@ describe("install.sh", () => {
     expect(stdout).toContain("[4] Prove live readiness");
     expect(stdout).not.toContain("vivarium run --goal");
     expect(stdout).toContain(
-      `vivarium local run --goal "build a tiny local agent" --domain research --state-path .vivarium/research.db --world-root ${worldRoot} --live-env-path .vivarium/research-live.env`,
+      `vivarium local run --goal "build a simple agent end to end" --domain research --state-path .vivarium/research.db --world-root ${worldRoot} --live-env-path .vivarium/research-live.env`,
     );
+    expect(stdout).not.toContain("build a tiny local agent");
     expect(stdout).toContain("vivarium setup live");
     expect(stdout).toContain("vivarium connect signup");
     expect(stdout).toContain("vivarium connect setup --confirm-write");
@@ -136,7 +137,7 @@ describe("install.sh", () => {
     expect(stdout).toContain("vivarium help");
     expect(stdout).toContain("vivarium update");
     expect(stdout).toContain(
-      `/tmp/vivarium-bin/vivarium local run --goal "build a tiny local agent" --domain research --state-path .vivarium/research.db --world-root ${worldRoot} --live-env-path .vivarium/research-live.env`,
+      `/tmp/vivarium-bin/vivarium local run --goal "build a simple agent end to end" --domain research --state-path .vivarium/research.db --world-root ${worldRoot} --live-env-path .vivarium/research-live.env`,
     );
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium setup live");
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium connect signup");
@@ -187,7 +188,7 @@ describe("install.sh", () => {
       `Would run: bun apps/cli/src/main.ts local --domain coding --world-root ${join(home, ".vivarium", "the-world")} --state-path ${statePath} --live-env-path ${liveEnvPath}`,
     );
     expect(stdout).toContain(
-      `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${join(home, ".vivarium", "the-world")} --live-env-path ${liveEnvPath}`,
+      `vivarium local run --goal "build a simple agent end to end" --domain coding --state-path ${statePath} --world-root ${join(home, ".vivarium", "the-world")} --live-env-path ${liveEnvPath}`,
     );
   });
 

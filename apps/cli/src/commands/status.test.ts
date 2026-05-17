@@ -37,7 +37,7 @@ function seedCompletedRun(statePath: string): void {
     id: runId("run-status-001"),
     agentId: agentId("local-agent"),
     domain: "coding",
-    goal: "build a tiny local agent",
+    goal: "build a simple agent end to end",
     startedAt: "2026-05-17T04:00:00.000Z",
     endedAt: "2026-05-17T04:00:03.000Z",
     success: true,
@@ -197,12 +197,13 @@ describe("statusCommand", () => {
 
     expect(result.localState?.lastRun).toEqual({
       id: "run-status-001",
-      goal: "build a tiny local agent",
+      goal: "build a simple agent end to end",
       domain: "coding",
       success: true,
       score: 0.8,
     });
-    expect(output).toContain("Last run: build a tiny local agent");
+    expect(output).toContain("Last run: build a simple agent end to end");
+    expect(output).not.toContain("build a tiny local agent");
     expect(output).toContain("success, score 0.8");
     expect(output).toContain("Run ID: run-status-001");
   });

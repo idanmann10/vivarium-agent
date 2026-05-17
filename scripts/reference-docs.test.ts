@@ -1320,8 +1320,9 @@ describe("reference docs", () => {
     expect(body).toContain(
       "Recorded: vivarium status --state-path <demo-state.db> --live-env-path <demo-live-readiness.local.env> will show Run ID run-demo-000 with success state and score 0.8.",
     );
-    expect(body).toContain('Outcome: Observation: executed \\"build a tiny local agent\\"');
-    expect(body).toContain("Last run: build a tiny local agent");
+    expect(body).toContain('Outcome: Observation: executed \\"build a simple agent end to end\\"');
+    expect(body).toContain("Last run: build a simple agent end to end");
+    expect(body).not.toContain("build a tiny local agent");
     expect(body).toContain("Run ID: run-demo-000");
     expect(body).toContain("Readiness file: <demo-live-readiness.local.env>");
     expect(body).toContain("--world-root <demo-world>");
@@ -1409,7 +1410,7 @@ describe("reference docs", () => {
       "/Users/idanmann/.bun/bin/bun install --frozen-lockfile",
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
-      "`570 pass, 0 fail, 4614 expect calls`",
+      "`570 pass, 0 fail, 4622 expect calls`",
       "build a simple agent end to end on my Mac",
       "run-1779025625380-620",
       "fresh temp install builds a simple agent end to end",

@@ -14,7 +14,7 @@ describe("launchHandoffCommand", () => {
     expect(output).toContain("Vivarium Launch Handoff");
     expect(output).toContain("Mac install command:");
     expect(output).toContain(
-      'vivarium local run --goal "build a tiny local agent" --state-path ~/.vivarium/state.db --world-root ~/.vivarium/the-world --live-env-path ~/.vivarium/live/live-readiness.local.env',
+      'vivarium local run --goal "build a simple agent end to end" --state-path ~/.vivarium/state.db --world-root ~/.vivarium/the-world --live-env-path ~/.vivarium/live/live-readiness.local.env',
     );
     expect(output).not.toContain("vivarium run --goal \"validate local setup\"");
     expect(output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");

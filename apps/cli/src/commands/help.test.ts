@@ -138,14 +138,15 @@ describe("helpCommand", () => {
     const output = renderLocalRunHelpCommandResult(result);
 
     expect(output).toContain("Vivarium Local Run");
-    expect(output).toContain('Usage: vivarium local run --goal "build a tiny local agent"');
+    expect(output).toContain('Usage: vivarium local run --goal "build a simple agent end to end"');
     expect(output).toContain("--goal <text>");
     expect(output).toContain("--state-path <path>");
     expect(output).toContain("--world-root <path>");
     expect(output).toContain("--live-env-path <path>");
     expect(output).toContain("--env-file <path>");
     expect(output).toContain("--provider-profile <name>");
-    expect(output).toContain('vivarium local run --goal "build a tiny local agent"');
+    expect(output).toContain('vivarium local run --goal "build a simple agent end to end"');
+    expect(output).not.toContain("build a tiny local agent");
     expect(output).toContain("vivarium status");
     expect(output).not.toContain("Commands");
     expect(output).not.toContain("vivarium run --goal");
@@ -161,7 +162,8 @@ describe("helpCommand", () => {
     expect(output).toContain("--world-root <path>");
     expect(output).toContain("--live-env-path <path>");
     expect(output).toContain("--github-owner <name>");
-    expect(output).toContain('vivarium local run --goal "build a tiny local agent"');
+    expect(output).toContain('vivarium local run --goal "build a simple agent end to end"');
+    expect(output).not.toContain("build a tiny local agent");
     expect(output).not.toContain("Commands");
     expect(output).not.toContain("vivarium run --goal");
   });

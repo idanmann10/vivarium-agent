@@ -71,7 +71,7 @@ function setupNextCommands(
 ): readonly string[] {
   const liveRunPath = quickEnv?.path ?? options.liveEnvPath ?? options.envFilePath;
   const runCommand = commandWithFlags("local run", {
-    goal: "build a tiny local agent",
+    goal: "build a simple agent end to end",
     domain: options.primaryDomain,
     "agent-name": options.agentName,
     "state-path": local.statePath,

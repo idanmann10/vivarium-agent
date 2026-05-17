@@ -153,7 +153,7 @@ agent_repo_name="${VIVARIUM_AGENT_REPO_NAME:-}"
 world_repo_name="${VIVARIUM_WORLD_REPO_NAME:-}"
 canonical_world_ref="${VIVARIUM_CANONICAL_WORLD_REF:-}"
 private_world_ref="${VIVARIUM_PRIVATE_WORLD_REF:-}"
-starter_goal="build a tiny local agent"
+starter_goal="build a simple agent end to end"
 
 if [ "$github_owner" = "" ]; then
   github_owner="$(github_owner_from_url "$repo_url" || true)"
