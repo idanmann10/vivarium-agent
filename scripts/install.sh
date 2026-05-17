@@ -408,7 +408,7 @@ write_vivarium_command() {
     printf '#!/usr/bin/env bash\n'
     printf 'set -euo pipefail\n'
     printf 'cd %q\n' "$install_dir"
-    printf 'exec bun apps/cli/src/main.ts "$@"\n'
+    printf 'exec %q apps/cli/src/main.ts "$@"\n' "$bun_command"
   } >"$command_path"
   chmod +x "$command_path"
 }
@@ -543,7 +543,7 @@ echo
 
 if [ "$dry_run" -eq 0 ]; then
   need_command git
-  need_command bun
+  need_command "$bun_command"
   bun_command="${VIVARIUM_BUN_PATH:-$(command -v bun)}"
 fi
 
@@ -557,7 +557,7 @@ if [ "$dry_run" -eq 0 ]; then
   cd "$install_dir"
 fi
 
-run bun install --frozen-lockfile
+run "$bun_command" install --frozen-lockfile
 run mkdir -p "$bin_dir"
 write_vivarium_command
 run mkdir -p "$(dirname "$state_path")"
@@ -577,7 +577,7 @@ fi
 if [ "$private_world_ref" != "" ]; then
   setup_args+=(--private-world-ref "$private_world_ref")
 fi
-run bun "${setup_args[@]}"
+run "$bun_command" "${setup_args[@]}"
 write_launch_agent
 
 echo

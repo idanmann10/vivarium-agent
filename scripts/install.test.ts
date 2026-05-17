@@ -238,6 +238,43 @@ describe("install.sh", () => {
     );
   });
 
+  test("uses a custom Bun executable for install and generated commands", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-install-bun-path-"));
+    const remote = createGitRemote(root, "agent");
+    const worldRemote = createGitRemote(root, "world");
+    const installDir = join(root, "install");
+    const worldDir = join(root, "world-checkout");
+    const binDir = join(root, "bin");
+    const fakeBun = join(root, "custom-bun");
+
+    try {
+      writeFakeBun(fakeBun);
+
+      const result = Bun.spawnSync(["bash", "scripts/install.sh"], {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          PATH: "/usr/bin:/bin:/usr/sbin:/sbin",
+          VIVARIUM_BIN_DIR: binDir,
+          VIVARIUM_BUN_PATH: fakeBun,
+          VIVARIUM_INSTALL_DIR: installDir,
+          VIVARIUM_REPO_URL: remote,
+          VIVARIUM_WORLD_REPO_URL: worldRemote,
+          VIVARIUM_WORLD_ROOT: worldDir,
+        },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+
+      expect(result.exitCode).toBe(0);
+      expect(readFileSync(join(binDir, "vivarium"), "utf8")).toContain(
+        `exec ${fakeBun} apps/cli/src/main.ts "$@"`,
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   test("can pin the agent checkout to an explicit git ref", () => {
     const result = runInstallerDryRun({
       VIVARIUM_AGENT_REF: "codex/hermes-style-quick-setup",
@@ -431,12 +468,12 @@ describe("install.sh", () => {
 
     expect(source).toContain("set -euo pipefail");
     expect(source).toContain("need_command git");
-    expect(source).toContain("need_command bun");
+    expect(source).toContain('need_command "$bun_command"');
     expect(source).toContain("VIVARIUM_REPO_URL");
     expect(source).toContain("VIVARIUM_INSTALL_DIR");
     expect(source).toContain("VIVARIUM_BIN_DIR");
     expect(source).toContain("VIVARIUM_DAEMON");
     expect(source).toContain("VIVARIUM_THEME");
-    expect(source).toContain('bun apps/cli/src/main.ts "$@"');
+    expect(source).toContain('exec %q apps/cli/src/main.ts "$@"');
   });
 });
