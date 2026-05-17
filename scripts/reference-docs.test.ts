@@ -1355,7 +1355,9 @@ describe("reference docs", () => {
       "`524 pass, 0 fail`",
       "`36 passing, 17 blocked`",
       "PR #26",
-      "`93d1006`",
+      "`vivarium launch handoff`",
+      "<current-commit>",
+      "current commit-pinned installer URL",
       "branch protection remained intact",
       "Operator Handoff",
       "vivarium local run",
@@ -1364,6 +1366,10 @@ describe("reference docs", () => {
     ]) {
       expect(body).toContain(term);
     }
+    expect(body).not.toMatch(
+      /raw\.githubusercontent\.com\/idanmann10\/vivarium-agent\/[0-9a-f]{7,40}\/scripts\/install\.sh/,
+    );
+    expect(body).not.toMatch(/\bat `[0-9a-f]{7,40}`/);
   });
 
   test("documents open-source production readiness at the repo root", () => {
