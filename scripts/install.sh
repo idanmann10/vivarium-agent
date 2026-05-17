@@ -344,7 +344,7 @@ validate_daemon_port() {
   fi
 
   case "$daemon_port" in
-    "" | *[!0-9]*)
+    "" | *[!0-9]* | 0[0-9]*)
       echo "Invalid VIVARIUM_DAEMON_PORT: $daemon_port" >&2
       echo "VIVARIUM_DAEMON_PORT must be an integer from 1 to 65535." >&2
       exit 2

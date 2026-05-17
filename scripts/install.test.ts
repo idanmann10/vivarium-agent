@@ -260,6 +260,22 @@ describe("install.sh", () => {
     expect(stdout).not.toContain("Would run: git clone");
   });
 
+  test("rejects leading-zero LaunchAgent ports before install work", () => {
+    const result = runInstallerDryRun({
+      VIVARIUM_DAEMON: "launchd",
+      VIVARIUM_DAEMON_PORT: "01",
+      VIVARIUM_INSTALL_DIR: "/tmp/vivarium-agent-install",
+      VIVARIUM_WORLD_ROOT: "/tmp/vivarium-world",
+    });
+    const stdout = result.stdout.toString();
+    const stderr = result.stderr.toString();
+
+    expect(result.exitCode).toBe(2);
+    expect(stderr).toContain("Invalid VIVARIUM_DAEMON_PORT: 01");
+    expect(stderr).toContain("VIVARIUM_DAEMON_PORT must be an integer from 1 to 65535.");
+    expect(stdout).not.toContain("Would run: git clone");
+  });
+
   test("rejects invalid LaunchAgent hosts before install work", () => {
     const result = runInstallerDryRun({
       VIVARIUM_DAEMON: "launchd",
