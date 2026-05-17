@@ -1840,6 +1840,38 @@ describe("dispatchCliCommand", () => {
     }
   });
 
+  test("bootstraps default local memory when local run is the first command", async () => {
+    const worldRoot = createWorldFixture();
+    const home = mkdtempSync(join(tmpdir(), "cli-dispatch-local-run-first-home-"));
+    const statePath = join(home, ".vivarium", "state.db");
+
+    const run = await dispatchCliCommand(["local", "run", "--world-root", worldRoot], {
+      env: { HOME: home },
+    });
+    const doctor = await dispatchCliCommand(["doctor"], { env: { HOME: home } });
+
+    const state = new SQLiteStateRepository(statePath);
+    const localSkills = state.listLocalSkills().filter((skill) => skill.domain === "coding");
+    const runs = state.listRuns();
+    const identity = state.getIdentity();
+    state.close();
+
+    expect(run.command).toBe("local");
+    expect(run.result).toMatchObject({ success: true, agentName: "local-agent" });
+    expect(run.output).toContain(`Memory: ${statePath}`);
+    expect(identity).toMatchObject({
+      name: "local-agent",
+      devStages: { coding: "newborn" },
+    });
+    expect(localSkills).toEqual([expect.objectContaining({ name: "Red Green", domain: "coding" })]);
+    expect(runs).toHaveLength(1);
+    expect(doctor.result).toMatchObject({
+      ok: true,
+      checks: expect.arrayContaining(["state:configured"]),
+    });
+    expect(doctor.output).toContain("Readiness: ready");
+  });
+
   test("routes local run through configured provider flags", async () => {
     const worldRoot = createWorldFixture();
     const run = await dispatchCliCommand([

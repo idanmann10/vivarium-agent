@@ -640,6 +640,9 @@ describe("reference docs", () => {
         "Use `vivarium launch handoff` when you are ready for production evidence.",
       );
       expect(body).toContain(
+        "If you run `vivarium local run` before `vivarium local`, the command seeds the same starter memory first",
+      );
+      expect(body).toContain(
         "Use `vivarium setup live` when you are ready to create provider keys",
       );
       expect(body).toContain(

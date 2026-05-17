@@ -5,6 +5,7 @@ import type {
   Visibility,
 } from "../../../packages/core/src/index.js";
 import type { ProviderFetch } from "../../../packages/providers/src/index.js";
+import { SQLiteStateRepository } from "../../../packages/state/src/index.js";
 import type { ExternalToolAdapters } from "../../../packages/tools/src/index.js";
 import type { HttpMethod } from "../../../packages/tools/src/external/index.js";
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -649,6 +650,49 @@ function existingDefaultLiveEnvFile(env: Readonly<Record<string, string | undefi
   return undefined;
 }
 
+function localStateIsSeeded(statePath: string): boolean {
+  if (!existsSync(statePath)) {
+    return false;
+  }
+
+  let state: SQLiteStateRepository | undefined;
+  try {
+    state = new SQLiteStateRepository(statePath);
+    const identity = state.getIdentity();
+    const hasIdentity = identity !== undefined && identity.name.trim().length > 0;
+    const hasStarterSkill = state.listLocalSkills().some(
+      (skill) =>
+        skill.status === "promoted" &&
+        skill.domain.trim().length > 0 &&
+        skill.body.trim().length > 0,
+    );
+    return hasIdentity && hasStarterSkill;
+  } catch {
+    return true;
+  } finally {
+    state?.close();
+  }
+}
+
+function bootstrapLocalRunState(options: {
+  readonly statePath: string;
+  readonly domain: string | undefined;
+  readonly agentName: string | undefined;
+  readonly worldRoot: string | undefined;
+}): void {
+  if (localStateIsSeeded(options.statePath)) {
+    return;
+  }
+
+  runInitCommand({
+    primaryDomain: options.domain ?? "coding",
+    bindGithubIdentity: false,
+    ...(options.agentName === undefined ? {} : { agentName: options.agentName }),
+    ...(options.worldRoot === undefined ? {} : { worldRoot: options.worldRoot }),
+    statePath: options.statePath,
+  });
+}
+
 function writableDefaultLiveEnvFile(env: Readonly<Record<string, string | undefined>> | undefined): string {
   return existingDefaultLiveEnvFile(env) ?? "live-readiness.local.env";
 }
@@ -959,6 +1003,7 @@ export async function dispatchCliCommand(
         const providerProfile = value(flags, "provider-profile");
         const availableToolsets = values(flags, "available-toolset");
         const availableTools = values(flags, "available-tool");
+        bootstrapLocalRunState({ statePath, domain, agentName, worldRoot });
         const result = await runCommand({
           goal: value(flags, "goal") ?? "build a tiny local agent",
           ...(agentName === undefined ? {} : { agentName }),

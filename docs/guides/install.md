@@ -89,6 +89,7 @@ The first local run is offline and uses the built-in local provider. It records
 the goal in local memory and shows the consulted skills, traces, prediction,
 validation, and next local commands. Provider keys are only needed when you move
 from the local agent loop to live model calls.
+If you run `vivarium local run` before `vivarium local`, the command seeds the same starter memory first, then runs the local agent against that durable state.
 
 When installed with the LaunchAgent option, verify the local daemon separately:
 

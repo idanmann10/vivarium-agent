@@ -75,6 +75,7 @@ the run in local SQLite memory, shows the `~/.vivarium/state.db` memory path,
 and reports the skills, traces, prediction,
 validation, and next local commands. Connect Anthropic, OpenRouter, or a private
 OpenAI-compatible endpoint only when you want real model calls.
+If you run `vivarium local run` before `vivarium local`, the command seeds the same starter memory first, then runs the local agent against that durable state.
 
 When installed with the LaunchAgent option, verify the local daemon separately:
 
