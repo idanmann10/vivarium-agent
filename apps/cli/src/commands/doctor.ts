@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, extname, isAbsolute, join, resolve } from "node:path";
+import { SQLiteStateRepository } from "../../../../packages/state/src/index.js";
 import { renderVivariumGlobe } from "./branding.js";
 
 export interface DoctorResult {
@@ -1807,6 +1808,24 @@ function cliCommand(_context: DoctorNextActionContext, args: string): string {
   return `vivarium ${args}`;
 }
 
+function offlineLocalStateCheck(statePath: string): string {
+  if (!existsSync(statePath)) {
+    return "state:unavailable";
+  }
+
+  try {
+    const state = new SQLiteStateRepository(statePath);
+    try {
+      state.listRuns();
+      return "state:configured";
+    } finally {
+      state.close();
+    }
+  } catch {
+    return "state:invalid";
+  }
+}
+
 function offlineLocalDoctor(options: DoctorCommandOptions): DoctorResult {
   if (options.statePath === undefined) {
     return {
@@ -1815,9 +1834,13 @@ function offlineLocalDoctor(options: DoctorCommandOptions): DoctorResult {
     };
   }
 
-  const stateCheck = existsSync(options.statePath) ? "state:configured" : "state:unavailable";
+  const stateCheck = offlineLocalStateCheck(options.statePath);
   const checks = [stateCheck, "provider:local", "world:filesystem"];
   const ok = stateCheck === "state:configured";
+  const stateAction =
+    stateCheck === "state:invalid"
+      ? "Move the invalid local SQLite state aside, then run vivarium local to create a fresh local memory database."
+      : "Run vivarium local to initialize local SQLite memory, then rerun vivarium doctor.";
   return {
     ok,
     checks,
@@ -1827,7 +1850,7 @@ function offlineLocalDoctor(options: DoctorCommandOptions): DoctorResult {
           nextActions: [
             {
               check: stateCheck,
-              action: "Run vivarium local to initialize local SQLite memory, then rerun vivarium doctor.",
+              action: stateAction,
               command: "vivarium local",
               guide: "docs/guides/install.md",
             },

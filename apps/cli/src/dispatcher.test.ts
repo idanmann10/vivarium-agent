@@ -2332,6 +2332,24 @@ describe("dispatchCliCommand", () => {
     expect(doctor.output).not.toContain("Live unlock checklist:");
   });
 
+  test("routes corrupt default doctor state to repair guidance", async () => {
+    const home = mkdtempSync(join(tmpdir(), "cli-dispatch-doctor-corrupt-state-"));
+    const statePath = join(home, ".vivarium", "state.db");
+    write(statePath, "not a sqlite database");
+
+    const doctor = await dispatchCliCommand(["doctor"], { env: { HOME: home } });
+
+    expect(doctor.command).toBe("doctor");
+    expect(doctor.result).toMatchObject({
+      ok: false,
+      checks: expect.arrayContaining(["state:invalid"]),
+    });
+    expect(doctor.output).toContain("Readiness: needs attention");
+    expect(doctor.output).toContain("[fix] Local state: invalid");
+    expect(doctor.output).toContain("Move the invalid local SQLite state aside, then run vivarium local");
+    expect(doctor.output).not.toContain("Local state: configured");
+  });
+
   test("routes launch handoff with the Mac install walkthrough", async () => {
     const result = await dispatchCliCommand(["launch", "handoff"]);
 
