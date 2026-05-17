@@ -142,7 +142,7 @@ export function localRunHelpCommand(): LocalRunHelpCommandResult {
     ],
     examples: [
       'vivarium local run --goal "build a simple agent end to end"',
-      'vivarium local run --goal "summarize this repo" --state-path ~/.vivarium/state.db --live-env-path ~/.vivarium/live/live-readiness.local.env',
+      'vivarium local run --goal "summarize this repo" --state-path ./vivarium-state.db --live-env-path ./live-readiness.local.env',
       'vivarium local run --goal "try a live model" --env-file ~/.vivarium/live/live-readiness.local.env --provider-profile openrouter',
     ],
     nextCommands: ["vivarium status", "vivarium launch handoff", "vivarium model"],
@@ -182,7 +182,7 @@ export function localSetupHelpCommand(): LocalSetupHelpCommandResult {
     ],
     examples: [
       "vivarium local",
-      "vivarium local --state-path ~/.vivarium/state.db --world-root ~/.vivarium/the-world --live-env-path ~/.vivarium/live/live-readiness.local.env",
+      "vivarium local --domain research",
     ],
     nextCommands: [
       'vivarium local run --goal "build a simple agent end to end"',
@@ -209,7 +209,7 @@ export function statusHelpCommand(): StatusHelpCommandResult {
     ],
     examples: [
       "vivarium status",
-      "vivarium status --state-path ~/.vivarium/state.db --live-env-path ~/.vivarium/live/live-readiness.local.env",
+      "vivarium status --state-path ./vivarium-state.db --live-env-path ./live-readiness.local.env",
     ],
     nextCommands: [
       "vivarium local run",

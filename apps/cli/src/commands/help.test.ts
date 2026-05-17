@@ -146,6 +146,11 @@ describe("helpCommand", () => {
     expect(output).toContain("--env-file <path>");
     expect(output).toContain("--provider-profile <name>");
     expect(output).toContain('vivarium local run --goal "build a simple agent end to end"');
+    expect(output).toContain(
+      'vivarium local run --goal "summarize this repo" --state-path ./vivarium-state.db --live-env-path ./live-readiness.local.env',
+    );
+    expect(output).not.toContain("--state-path ~/.vivarium/state.db");
+    expect(output).not.toContain("--live-env-path ~/.vivarium/live/live-readiness.local.env");
     expect(output).not.toContain("build a tiny local agent");
     expect(output).toContain("vivarium status");
     expect(output).not.toContain("Commands");
@@ -162,6 +167,10 @@ describe("helpCommand", () => {
     expect(output).toContain("--world-root <path>");
     expect(output).toContain("--live-env-path <path>");
     expect(output).toContain("--github-owner <name>");
+    expect(output).toContain("vivarium local --domain research");
+    expect(output).not.toContain("--state-path ~/.vivarium/state.db");
+    expect(output).not.toContain("--world-root ~/.vivarium/the-world");
+    expect(output).not.toContain("--live-env-path ~/.vivarium/live/live-readiness.local.env");
     expect(output).toContain('vivarium local run --goal "build a simple agent end to end"');
     expect(output).not.toContain("build a tiny local agent");
     expect(output).not.toContain("Commands");
@@ -176,6 +185,11 @@ describe("helpCommand", () => {
     expect(output).toContain("Usage: vivarium status");
     expect(output).toContain("--state-path <path>");
     expect(output).toContain("--live-env-path <path>");
+    expect(output).toContain(
+      "vivarium status --state-path ./vivarium-state.db --live-env-path ./live-readiness.local.env",
+    );
+    expect(output).not.toContain("--state-path ~/.vivarium/state.db");
+    expect(output).not.toContain("--live-env-path ~/.vivarium/live/live-readiness.local.env");
     expect(output).toContain("vivarium local run");
     expect(output).toContain("vivarium proof");
     expect(output).toContain("vivarium doctor --live");
