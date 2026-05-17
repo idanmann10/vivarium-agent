@@ -70,6 +70,7 @@ describe("runCommand", () => {
     expect(output).toContain("Agent: local-agent");
     expect(output).toContain("Provider: local");
     expect(output).toContain(`Memory: ${statePath}`);
+    expect(output).toContain('Outcome: Observation: executed "build a tiny local agent" with local deterministic provider.');
     expect(output).toContain("vivarium local run --goal");
     expect(output).toContain("vivarium status");
     expect(output).toContain("vivarium launch handoff");
@@ -321,6 +322,7 @@ describe("runCommand", () => {
       episodeKinds: [],
       transparency: {
         plan: null,
+        outcome: null,
         prediction: null,
         validation: null,
         consulted: { skills: [], traces: [] },
@@ -352,6 +354,7 @@ describe("runCommand", () => {
       episodeKinds: [],
       transparency: {
         plan: null,
+        outcome: null,
         prediction: null,
         validation: null,
         consulted: { skills: [], traces: [] },
@@ -370,6 +373,7 @@ describe("runCommand", () => {
       episodeKinds: ["run_start", "plan", "validation", "run_end"],
       transparency: {
         plan: "Plan: inspect and verify.",
+        outcome: "Observation: rendered local output.",
         prediction: {
           about: "local-provider.execute",
           expected: "Prediction: goal should complete.",
@@ -391,6 +395,7 @@ describe("runCommand", () => {
     expect(output).toContain("Episodes: run_start, plan, validation, run_end");
     expect(output).toContain("Consulted skills: 1");
     expect(output).toContain("Validation: pass (0.8)");
+    expect(output).toContain("Outcome: Observation: rendered local output.");
     expect(output.trim().startsWith("{")).toBe(false);
   });
 
@@ -403,6 +408,7 @@ describe("runCommand", () => {
       episodeKinds: [],
       transparency: {
         plan: null,
+        outcome: null,
         prediction: null,
         validation: null,
         consulted: { skills: [], traces: [] },

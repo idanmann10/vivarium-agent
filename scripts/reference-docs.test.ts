@@ -1292,6 +1292,7 @@ describe("reference docs", () => {
     expect(body).toContain("Status: success");
     expect(body).toContain("Provider: local");
     expect(body).toContain("Memory: <demo-state.db>");
+    expect(body).toContain('Outcome: Observation: executed \\"build a tiny local agent\\"');
     expect(body).toContain("Readiness file: <demo-live-readiness.local.env>");
     expect(body).toContain("--world-root <demo-world>");
     expect(body).toContain("run-demo-000");

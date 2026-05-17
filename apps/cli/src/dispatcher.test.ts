@@ -1942,6 +1942,7 @@ describe("dispatchCliCommand", () => {
       episodeKinds: [],
       transparency: {
         plan: null,
+        outcome: null,
         prediction: null,
         validation: null,
         consulted: { skills: [], traces: [] },
@@ -3314,6 +3315,7 @@ describe("dispatchCliCommand", () => {
       episodeKinds: [],
       transparency: {
         plan: null,
+        outcome: null,
         prediction: null,
         validation: null,
         consulted: { skills: [], traces: [] },
@@ -3442,6 +3444,7 @@ describe("dispatchCliCommand", () => {
       episodeKinds: [],
       transparency: {
         plan: null,
+        outcome: null,
         prediction: null,
         validation: null,
         consulted: { skills: [], traces: [] },

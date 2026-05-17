@@ -73,6 +73,7 @@ export interface RunHighSurpriseSummary {
 
 export interface RunTransparencySummary {
   readonly plan: string | null;
+  readonly outcome: string | null;
   readonly prediction: Prediction | null;
   readonly validation: RunValidationSummary | null;
   readonly consulted: {
@@ -119,6 +120,7 @@ function providerConfigError(kind: string, id: string, model: string | null | un
 function emptyRunTransparency(): RunTransparencySummary {
   return {
     plan: null,
+    outcome: null,
     prediction: null,
     validation: null,
     consulted: { skills: [], traces: [] },
@@ -142,6 +144,7 @@ function findLatestEpisode<Kind extends Episode["kind"]>(
 
 export function summarizeRunEpisodes(episodes: readonly Episode[]): RunTransparencySummary {
   const plan = findLatestEpisode(episodes, "plan");
+  const observation = findLatestEpisode(episodes, "observation");
   const prediction = findLatestEpisode(episodes, "prediction");
   const validation = findLatestEpisode(episodes, "validation");
   const highSurprises = episodes
@@ -158,6 +161,7 @@ export function summarizeRunEpisodes(episodes: readonly Episode[]): RunTranspare
 
   return {
     plan: plan?.plan ?? null,
+    outcome: summarizeOutcome(observation?.content),
     prediction: prediction?.prediction ?? null,
     validation:
       validation === undefined
@@ -173,6 +177,23 @@ export function summarizeRunEpisodes(episodes: readonly Episode[]): RunTranspare
     },
     highSurprises,
   };
+}
+
+function summarizeOutcome(content: unknown): string | null {
+  if (content === undefined || content === null) {
+    return null;
+  }
+
+  const raw = typeof content === "string" ? content : JSON.stringify(content);
+  if (raw === undefined) {
+    return null;
+  }
+  const normalized = raw.replace(/\s+/g, " ").trim();
+  if (normalized.length === 0) {
+    return null;
+  }
+
+  return normalized.length <= 240 ? normalized : `${normalized.slice(0, 237)}...`;
 }
 
 function isRunProviderKind(value: string): value is RunProviderKind {
@@ -349,6 +370,10 @@ function renderPredictionSummary(prediction: Prediction | null): readonly string
   ];
 }
 
+function renderOutcomeSummary(outcome: string | null): readonly string[] {
+  return outcome === null ? [] : [`Outcome: ${outcome}`];
+}
+
 function renderRunGuidance(result: RunCommandResult): readonly string[] {
   if (result.success) {
     return [
@@ -406,6 +431,7 @@ export function renderRunCommandResult(result: RunCommandResult): string {
     `Consulted skills: ${result.transparency.consulted.skills.length}`,
     `Consulted traces: ${result.transparency.consulted.traces.length}`,
     renderValidationSummary(result.transparency.validation),
+    ...renderOutcomeSummary(result.transparency.outcome),
     ...renderPredictionSummary(result.transparency.prediction),
     `High surprises: ${result.transparency.highSurprises.length}`,
     ...(result.error === undefined ? [] : ["", `Reason: ${renderRunError(result.error)}`]),
