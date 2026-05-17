@@ -298,6 +298,18 @@ function configuredProvider(options: RunCommandOptions): ConfiguredRunProvider |
   );
 }
 
+function configuredEnvValue(
+  env: Readonly<Record<string, string | undefined>> | undefined,
+  name: string,
+): string | undefined {
+  const value = env?.[name] ?? process.env[name];
+  return value === undefined || value.length === 0 ? undefined : value;
+}
+
+function configuredWorldRoot(options: RunCommandOptions): string | undefined {
+  return options.worldRoot ?? configuredEnvValue(options.env, "VIVARIUM_WORLD_ROOT");
+}
+
 function createRunWorldReader(options: RunCommandOptions): LocalWorldReader {
   if (options.worldSubscriptionsPath !== undefined) {
     const worlds = listWorldSubscriptionsCommand({ subscriptionsPath: options.worldSubscriptionsPath }).subscriptions;
@@ -308,7 +320,7 @@ function createRunWorldReader(options: RunCommandOptions): LocalWorldReader {
     };
   }
 
-  return createLocalWorldReader({ root: options.worldRoot ?? "../the-world" });
+  return createLocalWorldReader({ root: configuredWorldRoot(options) ?? "../the-world" });
 }
 
 export async function runCommand(options: RunCommandOptions): Promise<RunCommandResult> {
@@ -318,10 +330,13 @@ export async function runCommand(options: RunCommandOptions): Promise<RunCommand
     return { ...selectedProvider, agentName };
   }
 
+  const worldRoot = configuredWorldRoot(options);
   const state: StateRepository = options.statePath === undefined ? new InMemoryStateRepository() : new SQLiteStateRepository(options.statePath);
   const tools = createSelfTools({
     state,
     world: createRunWorldReader(options),
+    ...(worldRoot === undefined ? {} : { worldRoot }),
+    ...(options.worldSubscriptionsPath === undefined ? {} : { worldSubscriptionsPath: options.worldSubscriptionsPath }),
   });
   const request = {
     goal: options.goal,

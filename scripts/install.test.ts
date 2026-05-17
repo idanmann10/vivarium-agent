@@ -394,6 +394,9 @@ describe("install.sh", () => {
     const worldDir = join(root, "world-checkout");
     const binDir = join(root, "bin");
     const fakeBun = join(root, "custom-bun");
+    const home = join(root, "home");
+    const statePath = join(home, ".vivarium", "state.db");
+    const liveEnvPath = join(home, ".vivarium", "live", "live-readiness.local.env");
 
     try {
       writeFakeBun(fakeBun);
@@ -402,6 +405,7 @@ describe("install.sh", () => {
         cwd: process.cwd(),
         env: {
           ...process.env,
+          HOME: home,
           PATH: "/usr/bin:/bin:/usr/sbin:/sbin",
           VIVARIUM_BIN_DIR: binDir,
           VIVARIUM_BUN_PATH: fakeBun,
@@ -415,9 +419,12 @@ describe("install.sh", () => {
       });
 
       expect(result.exitCode).toBe(0);
-      expect(readFileSync(join(binDir, "vivarium"), "utf8")).toContain(
-        `exec ${fakeBun} apps/cli/src/main.ts "$@"`,
-      );
+      const command = readFileSync(join(binDir, "vivarium"), "utf8");
+      expect(command).toContain(`export VIVARIUM_DOMAIN=coding`);
+      expect(command).toContain(`export VIVARIUM_WORLD_ROOT=${worldDir}`);
+      expect(command).toContain(`export VIVARIUM_STATE_PATH=${statePath}`);
+      expect(command).toContain(`export VIVARIUM_LIVE_ENV_PATH=${liveEnvPath}`);
+      expect(command).toContain(`exec ${fakeBun} apps/cli/src/main.ts "$@"`);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

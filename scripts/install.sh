@@ -532,6 +532,10 @@ write_vivarium_command() {
     printf '#!/usr/bin/env bash\n'
     printf 'set -euo pipefail\n'
     printf 'cd %q\n' "$install_dir"
+    printf 'if [ "${VIVARIUM_DOMAIN:-}" = "" ]; then export VIVARIUM_DOMAIN=%q; fi\n' "$domain"
+    printf 'if [ "${VIVARIUM_WORLD_ROOT:-}" = "" ]; then export VIVARIUM_WORLD_ROOT=%q; fi\n' "$world_root"
+    printf 'if [ "${VIVARIUM_STATE_PATH:-}" = "" ]; then export VIVARIUM_STATE_PATH=%q; fi\n' "$state_path"
+    printf 'if [ "${VIVARIUM_LIVE_ENV_PATH:-}" = "" ]; then export VIVARIUM_LIVE_ENV_PATH=%q; fi\n' "$live_env_path"
     printf 'exec %q apps/cli/src/main.ts "$@"\n' "$bun_command"
   } >"$command_path"
   chmod +x "$command_path"

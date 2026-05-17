@@ -1453,6 +1453,46 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).not.toContain("chmod 600 live-readiness.local.env");
   });
 
+  test("routes installed env defaults through local setup and default run", async () => {
+    const worldRoot = mkdtempSync(join(tmpdir(), "cli-dispatch-install-env-world-"));
+    const home = mkdtempSync(join(tmpdir(), "cli-dispatch-install-env-home-"));
+    const statePath = join(home, ".vivarium", "state.db");
+    const liveEnvPath = join(home, ".vivarium", "live", "live-readiness.local.env");
+    write(join(worldRoot, "domains", "coding", "curriculum.md"), "# Coding Curriculum\n");
+    write(
+      join(worldRoot, "domains", "coding", "skills", "installer-env", "SKILL.md"),
+      "# Coding Installer Env Skill\n\nUse the installer-provided world root to build a simple agent end to end.",
+    );
+
+    const env = {
+      HOME: home,
+      VIVARIUM_DOMAIN: "coding",
+      VIVARIUM_WORLD_ROOT: worldRoot,
+      VIVARIUM_STATE_PATH: statePath,
+      VIVARIUM_LIVE_ENV_PATH: liveEnvPath,
+    };
+
+    const setup = await dispatchCliCommand(["local"], { env });
+    const run = await dispatchCliCommand(["local", "run"], { env });
+
+    expect(setup.result).toMatchObject({
+      local: {
+        statePath,
+        worldRoot,
+        starterSkills: [{ title: "Coding Installer Env Skill" }],
+      },
+      liveEnvFilePath: liveEnvPath,
+    });
+    expect(run.result).toMatchObject({
+      memoryPath: statePath,
+      transparency: {
+        consulted: {
+          skills: [expect.stringContaining("installer-env/SKILL.md")],
+        },
+      },
+    });
+  });
+
   test("routes quick setup through local init and live env bootstrap", async () => {
     const worldRoot = createWorldFixture();
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-setup-quick-"));
