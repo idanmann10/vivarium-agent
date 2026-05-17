@@ -33,4 +33,10 @@ describe("readDaemonMainConfig", () => {
       "VIVARIUM_DAEMON_PORT must be an integer from 1 to 65535",
     );
   });
+
+  test("rejects invalid hosts", () => {
+    expect(() => readDaemonMainConfig({ VIVARIUM_DAEMON_HOST: "bad host" })).toThrow(
+      "VIVARIUM_DAEMON_HOST must be a hostname or IPv4 address without a scheme, path, port, or spaces",
+    );
+  });
 });
