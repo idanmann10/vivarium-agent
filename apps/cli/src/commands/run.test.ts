@@ -396,6 +396,9 @@ describe("runCommand", () => {
     expect(output).toContain("Consulted skills: 1");
     expect(output).toContain("Validation: pass (0.8)");
     expect(output).toContain("Outcome: Observation: rendered local output.");
+    expect(output).toContain(
+      "Recorded: vivarium status will show Run ID run-demo-000 with success state and score 0.8.",
+    );
     expect(output.trim().startsWith("{")).toBe(false);
   });
 

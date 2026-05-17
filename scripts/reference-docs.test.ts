@@ -1296,6 +1296,9 @@ describe("reference docs", () => {
     expect(body).toContain("Status: success");
     expect(body).toContain("Provider: local");
     expect(body).toContain("Memory: <demo-state.db>");
+    expect(body).toContain(
+      "Recorded: vivarium status will show Run ID run-demo-000 with success state and score 0.8.",
+    );
     expect(body).toContain('Outcome: Observation: executed \\"build a tiny local agent\\"');
     expect(body).toContain("Last run: build a tiny local agent");
     expect(body).toContain("Run ID: run-demo-000");

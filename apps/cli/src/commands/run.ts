@@ -374,6 +374,16 @@ function renderOutcomeSummary(outcome: string | null): readonly string[] {
   return outcome === null ? [] : [`Outcome: ${outcome}`];
 }
 
+function renderRunReceipt(result: RunCommandResult): readonly string[] {
+  if (!result.success || result.runId === null) {
+    return [];
+  }
+
+  const score = result.transparency.validation?.score;
+  const scoreText = score === undefined ? "." : ` and score ${score}.`;
+  return [`Recorded: vivarium status will show Run ID ${result.runId} with success state${scoreText}`];
+}
+
 function renderRunGuidance(result: RunCommandResult): readonly string[] {
   if (result.success) {
     return [
@@ -434,6 +444,7 @@ export function renderRunCommandResult(result: RunCommandResult): string {
     ...renderOutcomeSummary(result.transparency.outcome),
     ...renderPredictionSummary(result.transparency.prediction),
     `High surprises: ${result.transparency.highSurprises.length}`,
+    ...renderRunReceipt(result),
     ...(result.error === undefined ? [] : ["", `Reason: ${renderRunError(result.error)}`]),
     "",
     ...renderRunGuidance(result),

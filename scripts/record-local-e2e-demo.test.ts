@@ -46,6 +46,9 @@ describe("local e2e demo recorder", () => {
     expect(text).toContain("$ bun run verify:sqlite-stack");
     expect(text).not.toContain("bun apps/cli/src/main.ts");
     expect(text).toContain("Memory: <demo-state.db>");
+    expect(text).toContain(
+      "Recorded: vivarium status will show Run ID run-demo-000 with success state and score 0.8.",
+    );
     expect(text).toContain("Readiness file: <demo-live-readiness.local.env>");
     expect(text).toContain("Vivarium World Transmission");
     expect(text).toContain("Status: ok");
