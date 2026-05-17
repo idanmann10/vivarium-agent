@@ -1742,11 +1742,15 @@ export async function dispatchCliCommand(
       usage('Unknown live subcommand. Use "env-init", "setup", or "evidence-init".');
     }
     case "status": {
-      const statePath = value(flags, "state-path");
-      const liveEnvPath = value(flags, "live-env-path") ?? value(flags, "env-file");
+      const home = defaultVivariumHome(options.env);
+      const statePath = value(flags, "state-path") ?? join(home, ".vivarium", "state.db");
+      const liveEnvPath =
+        value(flags, "live-env-path") ??
+        value(flags, "env-file") ??
+        join(home, ".vivarium", "live", "live-readiness.local.env");
       const result = statusCommand({
-        ...(statePath === undefined ? {} : { statePath }),
-        ...(liveEnvPath === undefined ? {} : { liveEnvPath }),
+        statePath,
+        liveEnvPath,
       });
       return { command, result, output: renderStatusCommandResult(result) };
     }

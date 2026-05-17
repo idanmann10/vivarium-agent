@@ -2305,6 +2305,13 @@ describe("dispatchCliCommand", () => {
     expect(customStatus.output).toContain("Local state: /tmp/vivarium-state.db");
     expect(customStatus.output).toContain("Live setup file: /tmp/live-readiness.local.env");
 
+    const statusHome = mkdtempSync(join(tmpdir(), "cli-dispatch-status-home-"));
+    const statusWithHome = await dispatchCliCommand(["status"], { env: { HOME: statusHome } });
+    expect(statusWithHome.output).toContain(`Local state: ${join(statusHome, ".vivarium", "state.db")}`);
+    expect(statusWithHome.output).toContain(
+      `Live setup file: ${join(statusHome, ".vivarium", "live", "live-readiness.local.env")}`,
+    );
+
     const doctorHome = mkdtempSync(join(tmpdir(), "cli-dispatch-doctor-ready-"));
     const doctorWorldRoot = createWorldFixture();
     const doctorStatePath = join(doctorHome, ".vivarium", "state.db");
