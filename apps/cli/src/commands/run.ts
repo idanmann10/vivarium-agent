@@ -413,6 +413,7 @@ function renderRunGuidance(result: RunCommandResult): readonly string[] {
   if (isProviderSetupError(result.error)) {
     return [
       "Next commands:",
+      "  vivarium connect signup",
       "  vivarium connect fill",
       "  vivarium connect setup --confirm-write",
       "  vivarium connect smoke",

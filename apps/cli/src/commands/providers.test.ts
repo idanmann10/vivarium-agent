@@ -17,8 +17,17 @@ describe("providerSmokeCommand", () => {
     const output = renderProviderProfilesCommandResult(listProviderProfilesCommand({ profilesPath }));
 
     expect(output).toContain("Profiles: 0");
+    expect(output).toContain("vivarium connect signup");
     expect(output).toContain("vivarium connect fill");
     expect(output).toContain("vivarium connect setup --confirm-write");
+    expect(output).toContain(
+      [
+        "Next commands:",
+        "  vivarium connect signup",
+        "  vivarium connect fill",
+        "  vivarium connect setup --confirm-write",
+      ].join("\n"),
+    );
     expect(output).not.toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");
   });
 
@@ -37,9 +46,19 @@ describe("providerSmokeCommand", () => {
     );
 
     expect(output).toContain("Status: blocked");
+    expect(output).toContain("vivarium connect signup");
     expect(output).toContain("vivarium connect fill");
     expect(output).toContain("vivarium connect setup --confirm-write");
     expect(output).toContain("vivarium connect smoke");
+    expect(output).toContain(
+      [
+        "Next commands:",
+        "  vivarium connect signup",
+        "  vivarium connect fill",
+        "  vivarium connect setup --confirm-write",
+        "  vivarium connect smoke",
+      ].join("\n"),
+    );
     expect(output).not.toContain("Export the missing provider value");
     expect(output).not.toContain("OPENROUTER_API_KEY");
   });

@@ -230,6 +230,7 @@ export function renderProviderProfilesCommandResult(result: ProviderProfilesComm
       ? [
           "",
           "Next commands:",
+          "  vivarium connect signup",
           "  vivarium connect fill",
           "  vivarium connect setup --confirm-write",
         ]
@@ -377,6 +378,7 @@ export function renderProviderSmokeCommandResult(result: ProviderSmokeCommandRes
           `Error: ${friendlyProviderSmokeError(result.error)}`,
           "",
           "Next commands:",
+          "  vivarium connect signup",
           "  vivarium connect fill",
           "  vivarium connect setup --confirm-write",
           "  vivarium connect smoke",

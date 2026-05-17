@@ -128,6 +128,7 @@ export function renderListCredentialsCommandResult(result: ListCredentialsComman
       ? [
           "",
           "Next commands:",
+          "  vivarium connect signup",
           "  vivarium connect fill",
           "  vivarium connect setup --confirm-write",
         ]

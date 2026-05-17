@@ -50,6 +50,10 @@ function connectCommand(envFilePath: string): string {
     : `vivarium connect --env-file ${envFilePath}`;
 }
 
+function connectSignupCommand(): string {
+  return "vivarium connect signup";
+}
+
 function connectFillCommand(envFilePath: string): string {
   return isDefaultLiveEnvFile(envFilePath)
     ? "vivarium connect fill"
@@ -225,6 +229,8 @@ function renderModelGuidance(
     return [
       "Next steps:",
       `  No provider profiles found at: ${result.profilesPath}`,
+      "  Open account and key handoff:",
+      `  ${connectSignupCommand()}`,
       "  Fill common provider values through the setup helper:",
       `  ${connectFillCommand(envFilePath)}`,
       "  Then write the guarded setup files:",
@@ -240,8 +246,10 @@ function renderModelGuidance(
     "Next steps:",
     "  Start guided live setup:",
     "  vivarium setup live",
-    "  Review and fill provider values:",
+    "  Review provider readiness and open account/key handoff:",
     `  ${connectCommand(envFilePath)}`,
+    `  ${connectSignupCommand()}`,
+    "  Fill provider values:",
     `  ${connectFillCommand(envFilePath)}`,
     "  Then write the provider profiles:",
     `  ${connectSetupCommand(envFilePath)}`,
@@ -267,6 +275,8 @@ function renderMissingProfiles(
     ...result.missingProfiles.map((profile) => `  [fix] ${profile}`),
     "",
     "Next steps:",
+    "  Open account and key handoff:",
+    `  ${connectSignupCommand()}`,
     "  Fill the missing provider values through the setup helper:",
     `  ${connectFillCommand(envFilePath)}`,
     "  Then re-run guarded setup:",
@@ -291,6 +301,8 @@ function renderMissingProfileSecrets(
     ...result.missingSecretProfiles.map((profile) => `  [fix] ${profile}`),
     "",
     "Next steps:",
+    "  Open account and key handoff:",
+    `  ${connectSignupCommand()}`,
     "  Fill provider keys through the setup helper:",
     `  ${connectFillCommand(envFilePath)}`,
     "  Then re-run guarded setup:",

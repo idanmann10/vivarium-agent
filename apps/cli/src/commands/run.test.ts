@@ -452,9 +452,20 @@ describe("runCommand", () => {
     expect(output).toContain("Reason: Provider credentials are not connected for this run.");
     expect(output).not.toContain("OPENAI_API_KEY");
     expect(output).toContain("Next commands:");
+    expect(output).toContain("vivarium connect signup");
     expect(output).toContain("vivarium connect fill");
     expect(output).toContain("vivarium connect setup --confirm-write");
     expect(output).toContain("vivarium connect smoke");
+    expect(output).toContain(
+      [
+        "Next commands:",
+        "  vivarium connect signup",
+        "  vivarium connect fill",
+        "  vivarium connect setup --confirm-write",
+        "  vivarium connect smoke",
+        "  vivarium local run",
+      ].join("\n"),
+    );
     expect(output).toContain("vivarium local run");
     expect(output.trim().startsWith("{")).toBe(false);
   });

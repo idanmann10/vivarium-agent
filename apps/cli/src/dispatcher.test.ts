@@ -4280,6 +4280,9 @@ describe("dispatchCliCommand", () => {
       } catch (error) {
         expect(error).toBeInstanceOf(CliUsageError);
         expect((error as CliUsageError).nextCommands).toContain(
+          "vivarium connect signup",
+        );
+        expect((error as CliUsageError).nextCommands).toContain(
           "vivarium connect fill",
         );
         expect((error as CliUsageError).nextCommands).toContain(

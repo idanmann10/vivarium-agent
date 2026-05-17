@@ -236,6 +236,7 @@ function currentPreMainCheckoutRef(cwd: string): GitCheckoutRef | undefined {
 }
 
 const connectSetupNextCommands = [
+  "vivarium connect signup",
   "vivarium connect fill",
   "vivarium connect setup --confirm-write",
 ] as const;

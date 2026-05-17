@@ -107,6 +107,7 @@ describe("modelCommand", () => {
     expect(output).toContain("Secret: placeholder provider key");
     expect(output).toContain("Secret: missing provider key");
     expect(output).toContain("Provider secrets need attention:");
+    expect(output).toContain("vivarium connect signup");
     expect(output).toContain("vivarium connect fill");
     expect(output).toContain("vivarium connect setup --confirm-write");
     expect(output).toContain("vivarium connect smoke");
@@ -128,10 +129,13 @@ describe("modelCommand", () => {
     expect(output).toContain("Profiles path: not set");
     expect(output).toContain("Start guided live setup:");
     expect(output).toContain("vivarium setup live");
-    expect(output).toContain("Review and fill provider values:");
+    expect(output).toContain("Review provider readiness and open account/key handoff:");
+    expect(output).toContain("Fill provider values:");
     expect(output).toContain("vivarium connect");
+    expect(output).toContain("vivarium connect signup");
     expect(output).toContain("vivarium connect fill");
     expect(output).toContain("vivarium connect setup --confirm-write");
+    expect(output.indexOf("vivarium connect signup")).toBeLessThan(output.indexOf("vivarium connect fill"));
     expect(output).toContain("Then inspect provider readiness: vivarium model");
     expect(output.indexOf("vivarium connect setup --confirm-write")).toBeLessThan(
       output.indexOf("Then inspect provider readiness: vivarium model"),
@@ -156,6 +160,7 @@ describe("modelCommand", () => {
     });
     expect(output).toContain("No provider profiles found");
     expect(output).toContain(profilesPath);
+    expect(output).toContain("vivarium connect signup");
     expect(output).toContain("vivarium connect fill");
     expect(output).toContain("vivarium connect setup --confirm-write");
     expect(output).toContain("Re-run with --details");
@@ -179,6 +184,7 @@ describe("modelCommand", () => {
     const output = renderModelCommandResult(result, { envFilePath });
 
     expect(output).toContain(`Profiles path: ${profilesPath}`);
+    expect(output).toContain("vivarium connect signup");
     expect(output).toContain("vivarium connect fill");
     expect(output).toContain("vivarium connect setup --confirm-write");
     expect(output).not.toContain(`--env-file ${envFilePath}`);
@@ -218,6 +224,7 @@ describe("modelCommand", () => {
     expect(output).toContain("[ok] anthropic-main");
     expect(output).toContain("[fix] openrouter");
     expect(output).toContain("[fix] private-finetune");
+    expect(output).toContain("vivarium connect signup");
     expect(output).toContain("vivarium connect fill");
     expect(output).toContain("vivarium connect setup --confirm-write");
     expect(output).not.toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");

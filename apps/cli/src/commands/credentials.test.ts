@@ -18,8 +18,17 @@ describe("credential commands", () => {
     );
 
     expect(output).toContain("Credentials: 0");
+    expect(output).toContain("vivarium connect signup");
     expect(output).toContain("vivarium connect fill");
     expect(output).toContain("vivarium connect setup --confirm-write");
+    expect(output).toContain(
+      [
+        "Next commands:",
+        "  vivarium connect signup",
+        "  vivarium connect fill",
+        "  vivarium connect setup --confirm-write",
+      ].join("\n"),
+    );
     expect(output).not.toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");
   });
 
