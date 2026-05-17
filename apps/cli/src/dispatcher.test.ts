@@ -2621,6 +2621,18 @@ describe("dispatchCliCommand", () => {
     expect(result.output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
   });
 
+  test("rejects invalid launch handoff daemon ports", async () => {
+    try {
+      await dispatchCliCommand(["launch", "handoff", "--daemon-port", "not-a-port"]);
+      throw new Error("expected launch handoff to reject invalid daemon port");
+    } catch (error) {
+      expect(error).toBeInstanceOf(CliUsageError);
+      expect((error as CliUsageError).message).toBe(
+        "--daemon-port must be an integer from 1 to 65535",
+      );
+    }
+  });
+
   test("routes launch handoff through a branch-pinned install when running from a pre-main checkout", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-launch-branch-"));
     const previousCwd = process.cwd();

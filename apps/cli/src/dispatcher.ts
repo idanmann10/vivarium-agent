@@ -601,6 +601,24 @@ function integerFlag(flags: FlagMap, name: string): number | undefined {
   return parsed;
 }
 
+function daemonPortFlag(flags: FlagMap): string | undefined {
+  const raw = value(flags, "daemon-port");
+  if (raw === undefined) {
+    return undefined;
+  }
+
+  if (!/^[0-9]+$/.test(raw)) {
+    usage("--daemon-port must be an integer from 1 to 65535");
+  }
+
+  const parsed = Number.parseInt(raw, 10);
+  if (parsed < 1 || parsed > 65535) {
+    usage("--daemon-port must be an integer from 1 to 65535");
+  }
+
+  return raw;
+}
+
 function booleanFlag(flags: FlagMap, name: string): boolean {
   return flags.has(name);
 }
@@ -1013,7 +1031,7 @@ export async function dispatchCliCommand(
       const explicitRef = value(flags, "ref");
       const explicitScriptRef = value(flags, "script-ref");
       const daemonHost = value(flags, "daemon-host");
-      const daemonPort = value(flags, "daemon-port");
+      const daemonPort = daemonPortFlag(flags);
       const reviewPrNumber = value(flags, "pr-number");
       const reviewerUsername = value(flags, "reviewer");
       const detectedRef =
