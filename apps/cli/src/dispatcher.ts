@@ -1814,14 +1814,16 @@ export async function dispatchCliCommand(
     }
     case "status": {
       const home = defaultVivariumHome(options.env);
-      const statePath = value(flags, "state-path") ?? join(home, ".vivarium", "state.db");
+      const explicitStatePath = value(flags, "state-path");
+      const explicitLiveEnvPath = value(flags, "live-env-path") ?? value(flags, "env-file");
+      const statePath = explicitStatePath ?? join(home, ".vivarium", "state.db");
       const liveEnvPath =
-        value(flags, "live-env-path") ??
-        value(flags, "env-file") ??
-        join(home, ".vivarium", "live", "live-readiness.local.env");
+        explicitLiveEnvPath ?? join(home, ".vivarium", "live", "live-readiness.local.env");
       const result = statusCommand({
         statePath,
         liveEnvPath,
+        explicitStatePath: explicitStatePath !== undefined,
+        explicitLiveEnvPath: explicitLiveEnvPath !== undefined,
       });
       return { command, result, output: renderStatusCommandResult(result) };
     }

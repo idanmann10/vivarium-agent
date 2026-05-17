@@ -2423,6 +2423,9 @@ describe("dispatchCliCommand", () => {
     expect(statusWithHome.output).toContain(
       `Live setup file: ${join(statusHome, ".vivarium", "live", "live-readiness.local.env")}`,
     );
+    expect(statusWithHome.output).toContain("vivarium local              Create the local agent.");
+    expect(statusWithHome.output).not.toContain("vivarium local --state-path");
+    expect(statusWithHome.output).not.toContain("vivarium connect init --path");
 
     const doctorHome = mkdtempSync(join(tmpdir(), "cli-dispatch-doctor-ready-"));
     const doctorWorldRoot = createWorldFixture();

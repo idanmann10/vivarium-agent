@@ -1391,7 +1391,7 @@ describe("reference docs", () => {
       "/Users/idanmann/.bun/bin/bun install --frozen-lockfile",
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
-      "`545 pass, 0 fail, 4480 expect calls`",
+      "`545 pass, 0 fail, 4483 expect calls`",
       "bun run dependency:audit",
       "No vulnerabilities found",
       "status next commands preserve explicit `--state-path` and `--live-env-path` values",

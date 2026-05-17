@@ -32,6 +32,8 @@ export interface StatusSummary {
 export interface StatusCommandOptions {
   readonly statePath?: string;
   readonly liveEnvPath?: string;
+  readonly explicitStatePath?: boolean;
+  readonly explicitLiveEnvPath?: boolean;
   readonly pathExists?: (path: string) => boolean;
 }
 
@@ -111,9 +113,11 @@ export function statusCommand(options: StatusCommandOptions = {}): StatusSummary
   const pathExists = options.pathExists ?? existsSync;
   const localState = inspectLocalState(statePath, pathExists);
   const liveSetup = { path: liveEnvPath, staged: pathExists(liveEnvPath) };
+  const explicitStatePath = options.explicitStatePath ?? options.statePath !== undefined;
+  const explicitLiveEnvPath = options.explicitLiveEnvPath ?? options.liveEnvPath !== undefined;
   const explicitLocalFlags = {
-    "state-path": options.statePath === undefined ? undefined : statePath,
-    "live-env-path": options.liveEnvPath === undefined ? undefined : liveEnvPath,
+    "state-path": explicitStatePath ? statePath : undefined,
+    "live-env-path": explicitLiveEnvPath ? liveEnvPath : undefined,
   };
   return {
     repo: "vivarium-agent",
@@ -123,7 +127,7 @@ export function statusCommand(options: StatusCommandOptions = {}): StatusSummary
     nextCommands: {
       local: commandWithFlags(localState.ready ? "local run" : "local", explicitLocalFlags),
       live:
-        options.liveEnvPath === undefined
+        !explicitLiveEnvPath
           ? liveSetup.staged
             ? "vivarium connect"
             : "vivarium setup live"
