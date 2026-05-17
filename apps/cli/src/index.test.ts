@@ -31,8 +31,10 @@ describe("CLI public API", () => {
     expect(typeof exports.localRunHelpCommand).toBe("function");
     expect(typeof exports.statusHelpCommand).toBe("function");
     expect(typeof exports.launchHandoffHelpCommand).toBe("function");
+    expect(typeof exports.daemonSmokeHelpCommand).toBe("function");
     expect(typeof exports.renderHelpCommandResult).toBe("function");
     expect(typeof exports.renderLaunchHandoffHelpCommandResult).toBe("function");
+    expect(typeof exports.renderDaemonSmokeHelpCommandResult).toBe("function");
     expect(typeof exports.launchHandoffCommand).toBe("function");
     expect(typeof exports.renderLaunchHandoffCommandResult).toBe("function");
     expect(typeof exports.modelCommand).toBe("function");

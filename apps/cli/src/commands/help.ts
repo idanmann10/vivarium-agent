@@ -23,6 +23,7 @@ export type LocalRunHelpCommandResult = FocusedHelpCommandResult;
 export type LocalSetupHelpCommandResult = FocusedHelpCommandResult;
 export type StatusHelpCommandResult = FocusedHelpCommandResult;
 export type LaunchHandoffHelpCommandResult = FocusedHelpCommandResult;
+export type DaemonSmokeHelpCommandResult = FocusedHelpCommandResult;
 export type ConnectFillHelpCommandResult = FocusedHelpCommandResult;
 export type ConnectSetupHelpCommandResult = FocusedHelpCommandResult;
 export type ConnectSmokeHelpCommandResult = FocusedHelpCommandResult;
@@ -260,6 +261,25 @@ export function launchHandoffHelpCommand(): LaunchHandoffHelpCommandResult {
   };
 }
 
+export function daemonSmokeHelpCommand(): DaemonSmokeHelpCommandResult {
+  return {
+    title: "Vivarium Daemon Smoke",
+    underline: "---------------------",
+    usage: "vivarium daemon smoke",
+    options: [
+      {
+        command: "--status-url <url>",
+        description: "Daemon status endpoint to verify. Defaults to http://127.0.0.1:8787/status.",
+      },
+    ],
+    examples: [
+      "vivarium daemon smoke",
+      "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
+    ],
+    nextCommands: ["vivarium launch handoff", "vivarium status", "vivarium doctor --live"],
+  };
+}
+
 export function connectFillHelpCommand(): ConnectFillHelpCommandResult {
   return {
     title: "Vivarium Connect Fill",
@@ -474,6 +494,10 @@ export function renderStatusHelpCommandResult(result: StatusHelpCommandResult): 
 }
 
 export function renderLaunchHandoffHelpCommandResult(result: LaunchHandoffHelpCommandResult): string {
+  return renderFocusedHelpCommandResult(result);
+}
+
+export function renderDaemonSmokeHelpCommandResult(result: DaemonSmokeHelpCommandResult): string {
   return renderFocusedHelpCommandResult(result);
 }
 

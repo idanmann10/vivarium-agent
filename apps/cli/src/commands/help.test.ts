@@ -1,10 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  daemonSmokeHelpCommand,
   helpCommand,
   launchHandoffHelpCommand,
   localRunHelpCommand,
   localSetupHelpCommand,
+  renderDaemonSmokeHelpCommandResult,
   renderHelpCommandResult,
   renderLaunchHandoffHelpCommandResult,
   renderLocalRunHelpCommandResult,
@@ -214,5 +216,19 @@ describe("helpCommand", () => {
     expect(output).toContain("vivarium doctor --live");
     expect(output).not.toContain("Commands");
     expect(output).not.toContain("vivarium run --goal");
+  });
+
+  test("renders focused daemon smoke help for Mac operators", () => {
+    const result = daemonSmokeHelpCommand();
+    const output = renderDaemonSmokeHelpCommandResult(result);
+
+    expect(output).toContain("Vivarium Daemon Smoke");
+    expect(output).toContain("Usage: vivarium daemon smoke");
+    expect(output).toContain("--status-url <url>");
+    expect(output).toContain("Defaults to http://127.0.0.1:8787/status.");
+    expect(output).toContain("vivarium daemon smoke");
+    expect(output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
+    expect(output).toContain("vivarium launch handoff");
+    expect(output).not.toContain("Commands");
   });
 });

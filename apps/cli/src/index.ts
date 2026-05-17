@@ -67,10 +67,12 @@ export type {
   ProofManifestStatus,
 } from "./commands/proof.js";
 export {
+  daemonSmokeHelpCommand,
   helpCommand,
   launchHandoffHelpCommand,
   localRunHelpCommand,
   localSetupHelpCommand,
+  renderDaemonSmokeHelpCommandResult,
   renderHelpCommandResult,
   renderLaunchHandoffHelpCommandResult,
   renderLocalRunHelpCommandResult,
@@ -80,6 +82,7 @@ export {
 } from "./commands/help.js";
 export type {
   FocusedHelpCommandResult,
+  DaemonSmokeHelpCommandResult,
   HelpCommandItem,
   HelpCommandResult,
   LaunchHandoffHelpCommandResult,

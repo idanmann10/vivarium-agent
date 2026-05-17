@@ -68,6 +68,7 @@ import {
   connectFillHelpCommand,
   connectSetupHelpCommand,
   connectSmokeHelpCommand,
+  daemonSmokeHelpCommand,
   githubSmokeHelpCommand,
   helpCommand,
   launchHandoffHelpCommand,
@@ -77,6 +78,7 @@ import {
   renderConnectFillHelpCommandResult,
   renderConnectSetupHelpCommandResult,
   renderConnectSmokeHelpCommandResult,
+  renderDaemonSmokeHelpCommandResult,
   renderGithubSmokeHelpCommandResult,
   renderHelpCommandResult,
   renderLaunchHandoffHelpCommandResult,
@@ -1141,6 +1143,11 @@ export async function dispatchCliCommand(
   if (command === "launch" && subcommand === "handoff" && hasHelpRequest(rest)) {
     const result = launchHandoffHelpCommand();
     return { command: "help", result, output: renderLaunchHandoffHelpCommandResult(result) };
+  }
+
+  if (command === "daemon" && subcommand === "smoke" && hasHelpRequest(rest)) {
+    const result = daemonSmokeHelpCommand();
+    return { command: "help", result, output: renderDaemonSmokeHelpCommandResult(result) };
   }
 
   if (command === "connect" && subcommand === "fill" && hasHelpRequest(rest)) {

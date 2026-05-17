@@ -147,6 +147,18 @@ describe("dispatchCliCommand", () => {
     expect(result.output).not.toContain("vivarium run --goal");
   });
 
+  test("routes daemon smoke help to the Mac daemon smoke guide", async () => {
+    const result = await dispatchCliCommand(["daemon", "smoke", "--help"]);
+
+    expect(result.command).toBe("help");
+    expect(result.output).toContain("Vivarium Daemon Smoke");
+    expect(result.output).toContain("Usage: vivarium daemon smoke");
+    expect(result.output).toContain("--status-url <url>");
+    expect(result.output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
+    expect(result.output).toContain("vivarium launch handoff");
+    expect(result.output).not.toContain("Commands");
+  });
+
   test("routes live setup help to focused operator guides", async () => {
     const cases = [
       {
