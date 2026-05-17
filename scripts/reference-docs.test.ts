@@ -603,6 +603,17 @@ describe("reference docs", () => {
     }
   });
 
+  test("keeps default daemon smoke docs on the short command", () => {
+    for (const path of [
+      join("docs", "guides", "deploy-local-compose.md"),
+      join("docs", "guides", "live-readiness.md"),
+    ]) {
+      const body = readFileSync(path, "utf8");
+      expect(body).toContain("vivarium daemon smoke");
+      expect(body).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
+    }
+  });
+
   test("keeps public operator docs on installed CLI commands", () => {
     for (const path of installedCliDocs) {
       const body = readFileSync(path, "utf8");
@@ -1418,7 +1429,7 @@ describe("reference docs", () => {
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
       "Memory: /Users/idanmann/.vivarium/state.db",
-      "`577 pass, 0 fail, 4723 expect calls`",
+      "`578 pass, 0 fail, 4729 expect calls`",
       "build a simple agent end to end on my Mac",
       "run-1779025625380-620",
       "fresh temp install builds a simple agent end to end",
@@ -1434,6 +1445,8 @@ describe("reference docs", () => {
       "focused help smokes",
       "vivarium local --help",
       "vivarium status --help",
+      "default Compose daemon docs",
+      "short smoke command",
       "Invite one eligible non-author reviewer when GitHub reports REVIEW_REQUIRED.",
       "gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/REVIEWER_GITHUB_USERNAME -f permission=push",
       "resolves the current branch PR through GitHub CLI when available",

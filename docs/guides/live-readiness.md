@@ -734,7 +734,7 @@ At least one Compose command must succeed. Then verify the daemon supervisor:
 ```bash
 docker compose -f "$HOME/.vivarium/vivarium-agent/docker-compose.yml" config
 docker compose -f "$HOME/.vivarium/vivarium-agent/docker-compose.yml" up --build vivarium-daemon
-vivarium daemon smoke --status-url http://127.0.0.1:8787/status
+vivarium daemon smoke
 ```
 
 ## V1 Evidence Manifest

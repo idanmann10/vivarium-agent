@@ -17,7 +17,7 @@ Verify the daemon:
 
 ```bash
 docker compose ps
-vivarium daemon smoke --status-url http://127.0.0.1:8787/status
+vivarium daemon smoke
 ```
 
 The Compose service uses `restart: unless-stopped` and a `/status` healthcheck. In sandboxed agent environments, run the smoke command with local-network permission or verify the endpoint with `curl http://127.0.0.1:8787/status`. Cloud deployment remains out of scope for v1.
