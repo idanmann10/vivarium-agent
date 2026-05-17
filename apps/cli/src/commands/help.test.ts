@@ -19,7 +19,10 @@ describe("helpCommand", () => {
         expect.objectContaining({ command: "vivarium status" }),
         expect.objectContaining({ command: "vivarium doctor" }),
         expect.objectContaining({ command: "vivarium connect" }),
-        expect.objectContaining({ command: "vivarium model" }),
+        expect.objectContaining({
+          command: "vivarium model",
+          description: "Show provider profile readiness.",
+        }),
         expect.objectContaining({ command: "vivarium connect init" }),
         expect.objectContaining({
           command: "vivarium connect signup",
@@ -93,6 +96,7 @@ describe("helpCommand", () => {
     expect(firstRunBlock).not.toContain("[8] Continue");
     expect(firstRunBlock).not.toContain("  vivarium doctor                                     Check readiness.");
     expect(firstRunBlock).not.toContain("  vivarium model                                      Show provider setup.");
+    expect(output).not.toContain("Show configured provider profiles.");
     const onboardLiveRow = output
       .split("\n")
       .find((line) => line.includes("Alias for the live setup wizard."));

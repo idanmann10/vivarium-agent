@@ -5,19 +5,17 @@ export type ModelCommandProblem =
   | "missing_profiles_path"
   | "no_profiles"
   | "missing_expected_profiles"
+  | "missing_profile_secrets"
   | "invalid_profiles";
+
+export type ModelSecretStatus = "configured" | "missing" | "placeholder";
 
 export type ModelProfileSummary = Pick<
   ProviderProfile,
-  | "name"
-  | "kind"
-  | "apiKeyEnv"
-  | "model"
-  | "baseUrl"
-  | "capabilities"
-  | "contextWindow"
-  | "costClass"
->;
+  "name" | "kind" | "apiKeyEnv" | "model" | "baseUrl" | "capabilities" | "contextWindow" | "costClass"
+> & {
+  readonly secretStatus: ModelSecretStatus;
+};
 
 export interface ModelCommandOptions {
   readonly profilesPath?: string;
@@ -30,6 +28,7 @@ export interface ModelCommandResult {
   readonly profiles: readonly ModelProfileSummary[];
   readonly expectedProfiles?: readonly string[];
   readonly missingProfiles?: readonly string[];
+  readonly missingSecretProfiles?: readonly string[];
   readonly problem?: ModelCommandProblem;
   readonly error?: string;
 }
@@ -79,6 +78,11 @@ function envProfileName(env: Readonly<Record<string, string | undefined>>, name:
   return value === undefined || value.length === 0 || /^<[^>]+>$/.test(value) ? undefined : value;
 }
 
+function isPlaceholderValue(value: string): boolean {
+  const trimmed = value.trim();
+  return trimmed.length === 0 || /^<[^>]+>$/.test(trimmed) || /^replace[-_ ]me$/i.test(trimmed);
+}
+
 function expectedProfiles(env: Readonly<Record<string, string | undefined>>): readonly string[] {
   return [
     envProfileName(env, "VIVARIUM_ANTHROPIC_PROVIDER_PROFILE"),
@@ -87,11 +91,23 @@ function expectedProfiles(env: Readonly<Record<string, string | undefined>>): re
   ].filter((value): value is string => value !== undefined);
 }
 
-function profileSummary(profile: ProviderProfile): ModelProfileSummary {
+function profileSecretStatus(
+  profile: ProviderProfile,
+  env: Readonly<Record<string, string | undefined>>,
+): ModelSecretStatus {
+  const value = env[profile.apiKeyEnv];
+  if (value === undefined) {
+    return "missing";
+  }
+  return isPlaceholderValue(value) ? "placeholder" : "configured";
+}
+
+function profileSummary(profile: ProviderProfile, env: Readonly<Record<string, string | undefined>>): ModelProfileSummary {
   return {
     name: profile.name,
     kind: profile.kind,
     apiKeyEnv: profile.apiKeyEnv,
+    secretStatus: profileSecretStatus(profile, env),
     model: profile.model,
     ...(profile.baseUrl === undefined ? {} : { baseUrl: profile.baseUrl }),
     capabilities: profile.capabilities,
@@ -109,7 +125,7 @@ export function modelCommand(options: ModelCommandOptions = {}): ModelCommandRes
   }
 
   try {
-    const profiles = listProviderProfilesCommand({ profilesPath }).profiles.map(profileSummary);
+    const profiles = listProviderProfilesCommand({ profilesPath }).profiles.map((profile) => profileSummary(profile, env));
     if (profiles.length === 0) {
       return { ok: false, profilesPath, profiles, problem: "no_profiles" };
     }
@@ -124,6 +140,20 @@ export function modelCommand(options: ModelCommandOptions = {}): ModelCommandRes
         expectedProfiles: expected,
         missingProfiles,
         problem: "missing_expected_profiles",
+      };
+    }
+
+    const missingSecretProfiles = profiles
+      .filter((profile) => profile.secretStatus !== "configured")
+      .map((profile) => profile.name);
+    if (missingSecretProfiles.length > 0) {
+      return {
+        ok: false,
+        profilesPath,
+        profiles,
+        expectedProfiles: expected,
+        missingSecretProfiles,
+        problem: "missing_profile_secrets",
       };
     }
 
@@ -150,18 +180,30 @@ function renderModelProfile(
   profile: ModelProfileSummary,
   options: RenderModelCommandOptions,
 ): readonly string[] {
+  const secretLine =
+    options.showDetails === true
+      ? `       Env: ${profile.apiKeyEnv} (${profile.secretStatus})`
+      : `       Secret: ${renderSecretStatus(profile.secretStatus)}`;
   return [
-    `  [ok] ${profile.name}`,
+    `  [${profile.secretStatus === "configured" ? "ok" : "needs"}] ${profile.name}`,
     `       Kind: ${profile.kind}`,
     `       Model: ${profile.model}`,
     ...(profile.baseUrl === undefined ? [] : [`       Base URL: ${profile.baseUrl}`]),
-    options.showDetails === true
-      ? `       Env: ${profile.apiKeyEnv}`
-      : "       Secret: configured by provider profile",
+    secretLine,
     `       Context: ${profile.contextWindow}`,
     `       Cost: ${profile.costClass}`,
     `       Capabilities: ${profile.capabilities.join(", ")}`,
   ];
+}
+
+function renderSecretStatus(status: ModelSecretStatus): string {
+  if (status === "configured") {
+    return "configured by environment";
+  }
+  if (status === "placeholder") {
+    return "placeholder provider key";
+  }
+  return "missing provider key";
 }
 
 function renderModelGuidance(
@@ -203,7 +245,7 @@ function renderModelGuidance(
     `  ${connectFillCommand(envFilePath)}`,
     "  Then write the provider profiles:",
     `  ${connectSetupCommand(envFilePath)}`,
-    `  Then inspect configured models: ${modelCommandLine(envFilePath)}`,
+    `  Then inspect provider readiness: ${modelCommandLine(envFilePath)}`,
     "  Manual override: pass --profiles-path <path>.",
     "  Guide: docs/guides/configure-providers.md",
   ];
@@ -233,6 +275,32 @@ function renderMissingProfiles(
   ];
 }
 
+function renderMissingProfileSecrets(
+  result: ModelCommandResult,
+  options: { readonly envFilePath?: string; readonly showDetails?: boolean },
+): readonly string[] {
+  const envFilePath = shellQuote(options.envFilePath ?? "live-readiness.local.env");
+
+  if (result.problem !== "missing_profile_secrets" || result.missingSecretProfiles === undefined) {
+    return [];
+  }
+
+  return [
+    "",
+    "Provider secrets need attention:",
+    ...result.missingSecretProfiles.map((profile) => `  [fix] ${profile}`),
+    "",
+    "Next steps:",
+    "  Fill provider keys through the setup helper:",
+    `  ${connectFillCommand(envFilePath)}`,
+    "  Then re-run guarded setup:",
+    `  ${connectSetupCommand(envFilePath)}`,
+    "  Then run live smoke tests:",
+    "  vivarium connect smoke",
+    ...(options.showDetails === true ? ["  Or smoke one profile with: vivarium providers smoke ..."] : []),
+  ];
+}
+
 export function renderModelCommandResult(
   result: ModelCommandResult,
   options: RenderModelCommandOptions = {},
@@ -252,6 +320,7 @@ export function renderModelCommandResult(
           "Profiles:",
           ...result.profiles.flatMap((profile) => renderModelProfile(profile, options)),
           ...renderMissingProfiles(result, options),
+          ...renderMissingProfileSecrets(result, options),
         ]
       : renderModelGuidance(result, options)),
     ...(hiddenProfileDetails || hiddenSetupDetails

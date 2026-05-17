@@ -177,6 +177,8 @@ describe("statusCommand", () => {
     expect(output).toContain("vivarium local run");
     expect(output).toContain("vivarium connect");
     expect(output).toContain("vivarium model");
+    expect(output).toContain("Inspect provider profile readiness.");
+    expect(output).not.toContain("Inspect configured provider profiles.");
     expect(output).toContain("vivarium proof");
     expect(output).toContain("vivarium doctor --live");
     expect(output).not.toContain("ANTHROPIC_API_KEY");

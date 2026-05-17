@@ -141,7 +141,7 @@ export function renderStatusCommandResult(result: StatusSummary): string {
     "Next commands:",
     `  ${localCommand.padEnd(28)}${localState.ready ? "Run the local agent." : "Create the local agent."}`,
     `  ${liveCommand.padEnd(28)}${liveSetup.staged ? "Review live setup readiness." : "Start guided live onboarding."}`,
-    "  vivarium model               Inspect configured provider profiles.",
+    "  vivarium model               Inspect provider profile readiness.",
     "  vivarium proof               Review the v1 evidence checklist.",
     "  vivarium doctor --live       Run the production readiness gate.",
     "  vivarium launch handoff      Review install and production boundaries.",

@@ -28,7 +28,7 @@ export function helpCommand(): HelpCommandResult {
       { command: "vivarium status", description: "Show local and production readiness status." },
       { command: "vivarium doctor", description: "Run offline readiness checks." },
       { command: "vivarium connect", description: "Show provider signup and live setup guidance." },
-      { command: "vivarium model", description: "Show configured provider profiles." },
+      { command: "vivarium model", description: "Show provider profile readiness." },
       {
         command: "vivarium connect wizard",
         description: "Custom-path live setup for advanced operators.",

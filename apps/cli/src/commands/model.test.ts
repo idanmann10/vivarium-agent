@@ -21,7 +21,12 @@ describe("modelCommand", () => {
       costClass: "medium",
     });
 
-    const result = modelCommand({ profilesPath });
+    const result = modelCommand({
+      profilesPath,
+      env: {
+        OPENROUTER_API_KEY: "configured-provider-key",
+      },
+    });
     const output = renderModelCommandResult(result);
     const detailsOutput = renderModelCommandResult(result, { showDetails: true });
 
@@ -33,6 +38,7 @@ describe("modelCommand", () => {
           name: "openrouter",
           kind: "openai-compat",
           apiKeyEnv: "OPENROUTER_API_KEY",
+          secretStatus: "configured",
           model: "openrouter/test-model",
           baseUrl: "https://openrouter.example",
           capabilities: ["chat", "json_mode"],
@@ -48,12 +54,65 @@ describe("modelCommand", () => {
     expect(output).toContain("[ok] openrouter");
     expect(output).toContain("Base URL: https://openrouter.example");
     expect(output).toContain("openrouter/test-model");
-    expect(output).toContain("Secret: configured by provider profile");
+    expect(output).toContain("Secret: configured by environment");
     expect(output).not.toContain("OPENROUTER_API_KEY");
     expect(output).toContain("Re-run with --details");
-    expect(detailsOutput).toContain("Env: OPENROUTER_API_KEY");
+    expect(detailsOutput).toContain("Env: OPENROUTER_API_KEY (configured)");
     expect(detailsOutput).not.toContain("Re-run with --details");
     expect(output).not.toContain("provider-secret");
+  });
+
+  test("reports profiles with missing or placeholder secrets as needing setup", () => {
+    const profilesPath = join(mkdtempSync(join(tmpdir(), "vivarium-model-secrets-")), "profiles.json");
+    configureProviderProfileCommand({
+      profilesPath,
+      name: "anthropic-main",
+      kind: "anthropic",
+      apiKeyEnv: "ANTHROPIC_API_KEY",
+      model: "claude-test",
+      capabilities: ["chat", "tools"],
+      contextWindow: 200000,
+      costClass: "expensive",
+    });
+    configureProviderProfileCommand({
+      profilesPath,
+      name: "openrouter",
+      kind: "openai-compat",
+      apiKeyEnv: "OPENROUTER_API_KEY",
+      model: "openrouter/test-model",
+      baseUrl: "https://openrouter.example",
+      capabilities: ["chat", "json_mode"],
+      contextWindow: 128000,
+      costClass: "medium",
+    });
+
+    const result = modelCommand({
+      profilesPath,
+      env: {
+        ANTHROPIC_API_KEY: "<anthropic-api-key>",
+      },
+    });
+    const output = renderModelCommandResult(result);
+    const detailsOutput = renderModelCommandResult(result, { showDetails: true });
+
+    expect(result).toMatchObject({
+      ok: false,
+      profilesPath,
+      problem: "missing_profile_secrets",
+      missingSecretProfiles: ["anthropic-main", "openrouter"],
+    });
+    expect(output).toContain("Status: needs setup");
+    expect(output).toContain("[needs] anthropic-main");
+    expect(output).toContain("[needs] openrouter");
+    expect(output).toContain("Secret: placeholder provider key");
+    expect(output).toContain("Secret: missing provider key");
+    expect(output).toContain("Provider secrets need attention:");
+    expect(output).toContain("vivarium connect fill");
+    expect(output).toContain("vivarium connect setup --confirm-write");
+    expect(output).toContain("vivarium connect smoke");
+    expect(output).not.toContain("ANTHROPIC_API_KEY");
+    expect(detailsOutput).toContain("Env: ANTHROPIC_API_KEY (placeholder)");
+    expect(detailsOutput).toContain("Env: OPENROUTER_API_KEY (missing)");
   });
 
   test("renders setup guidance when no provider profile path is configured", () => {
@@ -73,9 +132,9 @@ describe("modelCommand", () => {
     expect(output).toContain("vivarium connect");
     expect(output).toContain("vivarium connect fill");
     expect(output).toContain("vivarium connect setup --confirm-write");
-    expect(output).toContain("Then inspect configured models: vivarium model");
+    expect(output).toContain("Then inspect provider readiness: vivarium model");
     expect(output.indexOf("vivarium connect setup --confirm-write")).toBeLessThan(
-      output.indexOf("Then inspect configured models: vivarium model"),
+      output.indexOf("Then inspect provider readiness: vivarium model"),
     );
     expect(output).not.toContain("VIVARIUM_PROVIDER_PROFILES_PATH");
     expect(output).not.toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");
@@ -144,6 +203,7 @@ describe("modelCommand", () => {
         VIVARIUM_ANTHROPIC_PROVIDER_PROFILE: "anthropic-main",
         VIVARIUM_OPENROUTER_PROVIDER_PROFILE: "openrouter",
         VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE: "private-finetune",
+        ANTHROPIC_API_KEY: "configured-provider-key",
       },
     });
     const output = renderModelCommandResult(result);

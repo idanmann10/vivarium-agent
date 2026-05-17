@@ -39,7 +39,7 @@ const launchCommandStages: readonly LaunchCommandStage[] = [
     matches: (command) => command.startsWith("source "),
   },
   {
-    label: "Inspect configured models",
+    label: "Inspect provider readiness",
     matches: (command) => command.startsWith("vivarium model"),
   },
   {

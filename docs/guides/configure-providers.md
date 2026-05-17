@@ -36,8 +36,8 @@ vivarium setup live
 For scripted updates, `vivarium connect fill` remains available with friendly
 labels and file-backed inputs.
 
-Review the dashboard, write the provider profile file, and smoke every saved
-profile:
+Review the dashboard, write the provider profile file, inspect provider
+readiness, and smoke every saved profile:
 
 ```bash
 vivarium connect
@@ -136,7 +136,7 @@ vivarium providers configure \
 unavailable when the matching `VIVARIUM_*_PROVIDER_PROFILE` value is not present
 in that file.
 
-List configured profiles:
+Inspect provider profile and secret readiness:
 
 ```bash
 vivarium model

@@ -126,7 +126,9 @@ describe("dispatchCliCommand", () => {
       })}\n`,
     );
 
-    const result = await dispatchCliCommand(["model", "--profiles-path", profilesPath]);
+    const result = await dispatchCliCommand(["model", "--profiles-path", profilesPath], {
+      env: { OPENROUTER_API_KEY: "configured-provider-key" },
+    });
 
     expect(result.command).toBe("model");
     expect(result.result).toMatchObject({ ok: true, profilesPath });
@@ -135,8 +137,10 @@ describe("dispatchCliCommand", () => {
     expect(result.output).toContain("openrouter/test-model");
     expect(result.output).not.toContain("OPENROUTER_API_KEY");
 
-    const details = await dispatchCliCommand(["model", "--profiles-path", profilesPath, "--details"]);
-    expect(details.output).toContain("Env: OPENROUTER_API_KEY");
+    const details = await dispatchCliCommand(["model", "--profiles-path", profilesPath, "--details"], {
+      env: { OPENROUTER_API_KEY: "configured-provider-key" },
+    });
+    expect(details.output).toContain("Env: OPENROUTER_API_KEY (configured)");
   });
 
   test("routes model through the default private setup file", async () => {
@@ -161,7 +165,10 @@ describe("dispatchCliCommand", () => {
     );
     write(
       join(root, "live-readiness.local.env"),
-      `export VIVARIUM_PROVIDER_PROFILES_PATH="${profilesPath}"\n`,
+      [
+        `export VIVARIUM_PROVIDER_PROFILES_PATH="${profilesPath}"`,
+        'export OPENROUTER_API_KEY="configured-provider-key"',
+      ].join("\n"),
     );
 
     try {
@@ -1202,7 +1209,13 @@ describe("dispatchCliCommand", () => {
         ],
       })}\n`,
     );
-    write(envPath, `export VIVARIUM_PROVIDER_PROFILES_PATH="${profilesPath}"\n`);
+    write(
+      envPath,
+      [
+        `export VIVARIUM_PROVIDER_PROFILES_PATH="${profilesPath}"`,
+        'export ANTHROPIC_API_KEY="configured-provider-key"',
+      ].join("\n"),
+    );
 
     const result = await dispatchCliCommand(["model", "--env-file", envPath], {
       env: {},
