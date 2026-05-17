@@ -45,6 +45,7 @@ export interface RunCommandResult {
   readonly success: boolean;
   readonly agentName: string;
   readonly runId: string | null;
+  readonly memoryPath?: string;
   readonly provider: {
     readonly kind: string;
     readonly id: string;
@@ -318,6 +319,7 @@ export async function runCommand(options: RunCommandOptions): Promise<RunCommand
     success: result.success,
     agentName,
     runId: String(result.runId),
+    ...(options.statePath === undefined ? {} : { memoryPath: options.statePath }),
     provider: selectedProvider.summary,
     episodeKinds,
     transparency,
@@ -398,6 +400,7 @@ export function renderRunCommandResult(result: RunCommandResult): string {
     `Agent: ${result.agentName}`,
     `Run ID: ${result.runId ?? "not started"}`,
     `Provider: ${renderProviderSummary(result.provider)}`,
+    ...(result.memoryPath === undefined ? [] : [`Memory: ${result.memoryPath}`]),
     `Episodes: ${result.episodeKinds.length === 0 ? "none" : result.episodeKinds.join(", ")}`,
     `Consulted skills: ${result.transparency.consulted.skills.length}`,
     `Consulted traces: ${result.transparency.consulted.traces.length}`,

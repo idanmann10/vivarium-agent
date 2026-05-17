@@ -71,7 +71,8 @@ vivarium update
 ```
 
 That first run is fully offline. It uses the built-in local provider, records
-the run in local memory, and reports the skills, traces, prediction,
+the run in local SQLite memory, shows the `~/.vivarium/state.db` memory path,
+and reports the skills, traces, prediction,
 validation, and next local commands. Connect Anthropic, OpenRouter, or a private
 OpenAI-compatible endpoint only when you want real model calls.
 
