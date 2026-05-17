@@ -64,11 +64,11 @@ GitHub auth/public release checks, Phase 0 Discussion evidence, and latest
 agent/world CI evidence are configured enough that they are not in the current
 live doctor blocker list.
 
-PR #26 remains under required review with green status checks and auto-merge
-enabled. Stable public `main` installer use starts after that review lands; for
-pre-main validation, run `vivarium launch handoff` from the installed checkout
-to get the current commit-pinned branch installer. This review state is not one
-of the current `doctor --live` blockers.
+Stable public installer use starts after the reviewed installer branch lands on
+`main`. For pre-main validation, run `vivarium launch handoff` from the
+installed checkout to get the current commit-pinned branch installer. PR review
+status belongs in the active PR or audit, not this evergreen guide; review
+state is not one of the current `doctor --live` blockers.
 
 ## Operator Unlock Key Map
 

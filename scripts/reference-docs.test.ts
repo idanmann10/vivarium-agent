@@ -1046,10 +1046,11 @@ describe("reference docs", () => {
       "Model providers",
       "Internal credential smoke",
       "V1 evidence manifest",
-      "PR #26 remains under required review",
-      "Stable public `main` installer",
-      "This review state is not one",
-      "of the current `doctor --live` blockers",
+      "reviewed installer branch lands on",
+      "`main`. For pre-main validation",
+      "PR review",
+      "status belongs in the active PR or audit",
+      "state is not one of the current `doctor --live` blockers",
       "doctor --live reports `36 passing, 17 blocked`",
       "Provider accounts: 8 blockers",
       "Internal credential: 3 blockers",
@@ -1061,6 +1062,7 @@ describe("reference docs", () => {
       expect(body).toContain(term);
     }
     expect(body).toContain("Already clear:");
+    expect(body).not.toContain("PR #26 remains under required review");
     expect(body).not.toContain("Mac installer and handoff PRs have already merged");
     expect(body).not.toContain("GitHub live checks |");
   });
