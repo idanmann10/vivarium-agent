@@ -1010,6 +1010,17 @@ describe("reference docs", () => {
     expect(body).not.toContain("guided connect wizard in one command");
   });
 
+  test("keeps live readiness naming guidance aligned with public repo names", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+
+    expect(body).toContain(
+      "The public repository names are `vivarium-agent` and `vivarium-world`.",
+    );
+    expect(body).not.toContain(
+      "`goal.md` still treats `the-agent` and `the-world` as temporary names",
+    );
+  });
+
   test("keeps provider configuration guide on setup live first", () => {
     const body = readFileSync(join("docs", "guides", "configure-providers.md"), "utf8");
     const setupLive = body.indexOf("vivarium setup live");

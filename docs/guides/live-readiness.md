@@ -88,12 +88,13 @@ of the public installer. Use these friendly surfaces first when clearing
 
 ## Naming Gate
 
-`goal.md` still treats `the-agent` and `the-world` as temporary names. Choose final names before
-creating canonical GitHub repositories so local paths, README titles, package metadata, remote URLs,
-and public Discussion/PR links do not need a second migration.
+The public repository names are `vivarium-agent` and `vivarium-world`. The
+installed checkout paths still use `~/.vivarium/vivarium-agent` and
+`~/.vivarium/the-world`; treat those as local directory names, not unfinished
+public branding.
 
-Record the decision before adding remotes. In the default setup path, put the
-final names and owner in the generated local setup files, then rerun setup:
+For the default public setup, put those repo names and the GitHub owner in the
+generated local setup files, then rerun setup:
 
 ```text
 ~/.vivarium/secrets/agent-repo-name.txt
@@ -105,9 +106,10 @@ final names and owner in the generated local setup files, then rerun setup:
 vivarium setup live
 ```
 
-After names are chosen, either keep the installed checkout paths as
-compatibility aliases or rename the directories and update commands that
-reference `$HOME/.vivarium/vivarium-agent` and `$HOME/.vivarium/the-world`.
+Use different names only for a fork or a separately branded deployment. If you
+do, update the generated setup files, GitHub remotes, package/docs metadata, and
+public Discussion/PR evidence together so `doctor --live` checks one coherent
+owner/repo target.
 
 ## Git Remotes
 
