@@ -972,6 +972,8 @@ export async function dispatchCliCommand(
       const repo = value(flags, "repo");
       const explicitRef = value(flags, "ref");
       const explicitScriptRef = value(flags, "script-ref");
+      const daemonHost = value(flags, "daemon-host");
+      const daemonPort = value(flags, "daemon-port");
       const detectedRef =
         explicitRef === undefined && explicitScriptRef === undefined
           ? currentPreMainCheckoutRef(process.cwd())
@@ -983,6 +985,8 @@ export async function dispatchCliCommand(
         ...(repo === undefined ? {} : { repo }),
         ...(ref === undefined ? {} : { ref }),
         ...(scriptRef === undefined ? {} : { scriptRef }),
+        ...(daemonHost === undefined ? {} : { daemonHost }),
+        ...(daemonPort === undefined ? {} : { daemonPort }),
       });
       return { command, result, output: renderLaunchHandoffCommandResult(result) };
     }

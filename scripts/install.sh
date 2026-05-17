@@ -493,6 +493,38 @@ stage_label() {
   paint_line 33 "  [$1] $2"
 }
 
+print_launch_handoff_command() {
+  local command="$1"
+
+  printf '      %q launch handoff' "$command"
+  if [ "$daemon_host" != "127.0.0.1" ]; then
+    printf ' --daemon-host %q' "$daemon_host"
+  fi
+  if [ "$daemon_port" != "8787" ]; then
+    printf ' --daemon-port %q' "$daemon_port"
+  fi
+  printf '\n'
+}
+
+run_launch_handoff_summary() {
+  if [ "$daemon_host" != "127.0.0.1" ] && [ "$daemon_port" != "8787" ]; then
+    run "$command_path" launch handoff --daemon-host "$daemon_host" --daemon-port "$daemon_port"
+    return 0
+  fi
+
+  if [ "$daemon_host" != "127.0.0.1" ]; then
+    run "$command_path" launch handoff --daemon-host "$daemon_host"
+    return 0
+  fi
+
+  if [ "$daemon_port" != "8787" ]; then
+    run "$command_path" launch handoff --daemon-port "$daemon_port"
+    return 0
+  fi
+
+  run "$command_path" launch handoff
+}
+
 print_launch_sequence() {
   local command="$1"
   local keep_moving_stage=2
@@ -505,7 +537,7 @@ print_launch_sequence() {
     keep_moving_stage=3
   fi
   stage_label "$keep_moving_stage" "Review launch handoff"
-  printf '      %q launch handoff\n' "$command"
+  print_launch_handoff_command "$command"
   keep_moving_stage=$((keep_moving_stage + 1))
   stage_label "$keep_moving_stage" "Keep moving"
   printf '      %q status\n' "$command"
@@ -598,6 +630,6 @@ echo "Live setup fallback:"
 print_live_setup_sequence "$command_path"
 echo
 echo "Launch handoff summary:"
-run "$command_path" launch handoff
+run_launch_handoff_summary
 echo
 echo "If 'vivarium' is not found, add $bin_dir to PATH or run a command path above."

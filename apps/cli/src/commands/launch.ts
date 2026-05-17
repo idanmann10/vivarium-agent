@@ -6,6 +6,8 @@ export interface LaunchHandoffCommandOptions {
   readonly repo?: string;
   readonly ref?: string;
   readonly scriptRef?: string;
+  readonly daemonHost?: string;
+  readonly daemonPort?: string;
 }
 
 export interface LaunchHandoffCommandResult {
@@ -21,21 +23,39 @@ const defaultOwner = "idanmann10";
 const defaultRepo = "vivarium-agent";
 const defaultRef = "main";
 const defaultScriptRef = "main";
+const defaultDaemonHost = "127.0.0.1";
+const defaultDaemonPort = "8787";
 
 function shellValue(value: string): string {
   return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
 }
 
-function installCommand(owner: string, repo: string, ref: string, scriptRef: string): string {
+function daemonEnvironmentAssignments(daemonHost: string, daemonPort: string): readonly string[] {
+  return [
+    "VIVARIUM_DAEMON=launchd",
+    ...(daemonHost === defaultDaemonHost ? [] : [`VIVARIUM_DAEMON_HOST=${shellValue(daemonHost)}`]),
+    ...(daemonPort === defaultDaemonPort ? [] : [`VIVARIUM_DAEMON_PORT=${shellValue(daemonPort)}`]),
+  ];
+}
+
+function installCommand(
+  owner: string,
+  repo: string,
+  ref: string,
+  scriptRef: string,
+  daemonHost: string,
+  daemonPort: string,
+): string {
   const scriptUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${scriptRef}/scripts/install.sh`;
+  const daemonEnvironment = daemonEnvironmentAssignments(daemonHost, daemonPort);
   if (ref === "main") {
-    return `curl -fsSL ${scriptUrl} | VIVARIUM_DAEMON=launchd bash`;
+    return `curl -fsSL ${scriptUrl} | ${daemonEnvironment.join(" ")} bash`;
   }
 
   return [
     `curl -fsSL ${scriptUrl} | \\`,
     `  VIVARIUM_AGENT_REF=${shellValue(ref)} \\`,
-    "  VIVARIUM_DAEMON=launchd \\",
+    ...daemonEnvironment.map((assignment) => `  ${assignment} \\`),
     "  bash",
   ].join("\n");
 }
@@ -47,12 +67,14 @@ export function launchHandoffCommand(
   const repo = options.repo ?? defaultRepo;
   const ref = options.ref ?? defaultRef;
   const scriptRef = options.scriptRef ?? (ref === defaultRef ? defaultScriptRef : ref);
+  const daemonHost = options.daemonHost ?? defaultDaemonHost;
+  const daemonPort = options.daemonPort ?? defaultDaemonPort;
 
   return {
-    installCommand: installCommand(owner, repo, ref, scriptRef),
+    installCommand: installCommand(owner, repo, ref, scriptRef, daemonHost, daemonPort),
     postInstallCommands: [
       'vivarium local run --goal "build a tiny local agent" --state-path ~/.vivarium/state.db --world-root ~/.vivarium/the-world --live-env-path ~/.vivarium/live/live-readiness.local.env',
-      "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
+      `vivarium daemon smoke --status-url http://${daemonHost}:${daemonPort}/status`,
       "vivarium status",
       "vivarium help",
       "vivarium update",

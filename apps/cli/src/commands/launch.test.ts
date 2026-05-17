@@ -80,4 +80,18 @@ describe("launchHandoffCommand", () => {
     expect(output).toContain("VIVARIUM_DAEMON=launchd");
     expect(output).toContain("Keep branch protection and review intact before switching installs back to main.");
   });
+
+  test("renders custom daemon host and port in the launch handoff", () => {
+    const result = launchHandoffCommand({
+      daemonHost: "127.0.0.1",
+      daemonPort: "9898",
+    });
+    const output = renderLaunchHandoffCommandResult(result);
+
+    expect(result.installCommand).toBe(
+      "curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | VIVARIUM_DAEMON=launchd VIVARIUM_DAEMON_PORT=9898 bash",
+    );
+    expect(output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:9898/status");
+    expect(output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
+  });
 });

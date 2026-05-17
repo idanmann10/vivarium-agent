@@ -64,7 +64,7 @@ const launchCommandStages: readonly LaunchCommandStage[] = [
   },
   {
     label: "Review launch handoff",
-    matches: (command) => command === "vivarium launch handoff",
+    matches: (command) => command === "vivarium launch handoff" || command.startsWith("vivarium launch handoff "),
   },
   {
     label: "Keep moving",

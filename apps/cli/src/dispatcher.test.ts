@@ -2521,6 +2521,24 @@ describe("dispatchCliCommand", () => {
     expect(result.output).toContain("real provider keys/smokes");
   });
 
+  test("routes custom daemon launch handoff details", async () => {
+    const result = await dispatchCliCommand([
+      "launch",
+      "handoff",
+      "--ref",
+      "main",
+      "--daemon-host",
+      "127.0.0.1",
+      "--daemon-port",
+      "9898",
+    ]);
+
+    expect(result.command).toBe("launch");
+    expect(result.output).toContain("VIVARIUM_DAEMON_PORT=9898");
+    expect(result.output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:9898/status");
+    expect(result.output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
+  });
+
   test("routes launch handoff through a branch-pinned install when running from a pre-main checkout", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-launch-branch-"));
     const previousCwd = process.cwd();

@@ -239,6 +239,9 @@ describe("install.sh", () => {
     expect(stdout).toContain(
       "/tmp/vivarium-bin/vivarium daemon smoke --status-url http://127.0.0.1:9898/status",
     );
+    expect(stdout).toContain(
+      "Would run: /tmp/vivarium-bin/vivarium launch handoff --daemon-port 9898",
+    );
   });
 
   test("uses a custom Bun executable for install and generated commands", () => {
