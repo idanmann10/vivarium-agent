@@ -22,6 +22,10 @@ const defaultRepo = "vivarium-agent";
 const defaultRef = "main";
 const defaultScriptRef = "main";
 
+function shellValue(value: string): string {
+  return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
+}
+
 function installCommand(owner: string, repo: string, ref: string, scriptRef: string): string {
   const scriptUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${scriptRef}/scripts/install.sh`;
   if (ref === "main") {
@@ -30,7 +34,7 @@ function installCommand(owner: string, repo: string, ref: string, scriptRef: str
 
   return [
     `curl -fsSL ${scriptUrl} | \\`,
-    `  VIVARIUM_AGENT_REF=${ref} \\`,
+    `  VIVARIUM_AGENT_REF=${shellValue(ref)} \\`,
     "  VIVARIUM_DAEMON=launchd \\",
     "  bash",
   ].join("\n");
@@ -77,7 +81,9 @@ export function launchHandoffCommand(
       "GitHub IDs point checks at the public repos and Discussion category; they are not secrets.",
     ],
     ownerNextActions: [
-      "Run the stable main install command above, then run the local agent commands.",
+      ref === defaultRef
+        ? "Run the stable main install command above, then run the local agent commands."
+        : "Run the branch-pinned install command above, then run the local agent commands.",
       "Use the live verification commands only after secrets and evidence are available.",
       "Do not claim full v1 live readiness until doctor --live reports ready.",
     ],

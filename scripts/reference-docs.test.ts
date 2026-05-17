@@ -734,6 +734,8 @@ describe("reference docs", () => {
       "Pre-main Mac install",
       "VIVARIUM_AGENT_REF=<branch-or-tag-or-commit>",
       "VIVARIUM_DAEMON=launchd",
+      "`vivarium launch handoff` to print the same branch-pinned install command",
+      "vivarium launch handoff --ref main",
       "~/.vivarium/vivarium-agent",
       "~/.vivarium/the-world",
       "~/.local/bin/vivarium",

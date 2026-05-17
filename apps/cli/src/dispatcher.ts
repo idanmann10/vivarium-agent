@@ -187,6 +187,39 @@ function usage(message: string, nextCommands?: readonly string[]): never {
   throw new CliUsageError(message, nextCommands);
 }
 
+interface GitCheckoutRef {
+  readonly ref: string;
+  readonly scriptRef: string;
+}
+
+function gitOutput(args: readonly string[], cwd: string): string | undefined {
+  const result = Bun.spawnSync(["git", ...args], {
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  if (result.exitCode !== 0) {
+    return undefined;
+  }
+  const text = result.stdout.toString().trim();
+  return text.length === 0 ? undefined : text;
+}
+
+function currentPreMainCheckoutRef(cwd: string): GitCheckoutRef | undefined {
+  const branch = gitOutput(["rev-parse", "--abbrev-ref", "HEAD"], cwd);
+  if (branch === undefined || branch === "main" || branch === "master") {
+    return undefined;
+  }
+  const commit = gitOutput(["rev-parse", "HEAD"], cwd);
+  if (commit === undefined) {
+    return undefined;
+  }
+  return {
+    ref: branch === "HEAD" ? commit : branch,
+    scriptRef: commit,
+  };
+}
+
 const connectSetupNextCommands = [
   "vivarium connect fill",
   "vivarium connect setup --confirm-write",
@@ -907,11 +940,19 @@ export async function dispatchCliCommand(
       }
       const owner = value(flags, "owner");
       const repo = value(flags, "repo");
-      const ref = value(flags, "ref");
+      const explicitRef = value(flags, "ref");
+      const explicitScriptRef = value(flags, "script-ref");
+      const detectedRef =
+        explicitRef === undefined && explicitScriptRef === undefined
+          ? currentPreMainCheckoutRef(process.cwd())
+          : undefined;
+      const ref = explicitRef ?? detectedRef?.ref;
+      const scriptRef = explicitScriptRef ?? detectedRef?.scriptRef;
       const result = launchHandoffCommand({
         ...(owner === undefined ? {} : { owner }),
         ...(repo === undefined ? {} : { repo }),
         ...(ref === undefined ? {} : { ref }),
+        ...(scriptRef === undefined ? {} : { scriptRef }),
       });
       return { command, result, output: renderLaunchHandoffCommandResult(result) };
     }

@@ -54,6 +54,12 @@ curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/<installe
 This keeps the downloaded installer stable while the installed checkout follows
 the explicit ref you selected. The default Mac layout is:
 
+From an installed or source checkout that is already on a pre-main branch, run
+`vivarium launch handoff` to print the same branch-pinned install command with
+the installer script pinned to the current commit. Pass
+`vivarium launch handoff --ref main` when you want the stable public install
+command instead.
+
 - Agent checkout: `~/.vivarium/vivarium-agent`
 - Canonical world checkout: `~/.vivarium/the-world`
 - CLI command: `~/.local/bin/vivarium`

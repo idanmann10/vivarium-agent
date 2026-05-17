@@ -2443,8 +2443,8 @@ describe("dispatchCliCommand", () => {
     expect(doctor.output).not.toContain("Local state: configured");
   });
 
-  test("routes launch handoff with the Mac install walkthrough", async () => {
-    const result = await dispatchCliCommand(["launch", "handoff"]);
+  test("routes explicit main launch handoff with the stable Mac install walkthrough", async () => {
+    const result = await dispatchCliCommand(["launch", "handoff", "--ref", "main"]);
 
     expect(result.command).toBe("launch");
     expect(result.output).toContain("Vivarium Launch Handoff");
@@ -2459,6 +2459,38 @@ describe("dispatchCliCommand", () => {
       "live-readiness.local.env",
     );
     expect(result.output).toContain("real provider keys/smokes");
+  });
+
+  test("routes launch handoff through a branch-pinned install when running from a pre-main checkout", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-launch-branch-"));
+    const previousCwd = process.cwd();
+    runGit(["init", root]);
+    runGit(["config", "user.email", "test@example.test"], root);
+    runGit(["config", "user.name", "Test User"], root);
+    write(join(root, "README.md"), "# Branch handoff\n");
+    runGit(["add", "."], root);
+    runGit(["commit", "-m", "seed branch"], root);
+    runGit(["checkout", "-b", "codex/local-agent-production-ready"], root);
+    const commit = Bun.spawnSync(["git", "rev-parse", "HEAD"], {
+      cwd: root,
+      stdout: "pipe",
+      stderr: "pipe",
+    }).stdout.toString().trim();
+
+    try {
+      process.chdir(root);
+      const result = await dispatchCliCommand(["launch", "handoff"]);
+
+      expect(result.command).toBe("launch");
+      expect(result.output).toContain(
+        `https://raw.githubusercontent.com/idanmann10/vivarium-agent/${commit}/scripts/install.sh`,
+      );
+      expect(result.output).toContain("VIVARIUM_AGENT_REF=codex/local-agent-production-ready");
+      expect(result.output).toContain("Run the branch-pinned install command above");
+      expect(result.output).not.toContain("Run the stable main install command above");
+    } finally {
+      process.chdir(previousCwd);
+    }
   });
 
   test("routes live doctor checks through injected probes", async () => {
