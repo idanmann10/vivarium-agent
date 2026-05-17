@@ -1366,9 +1366,18 @@ describe("reference docs", () => {
     ]) {
       expect(body).toContain(term);
     }
-    expect(body).not.toMatch(
-      /raw\.githubusercontent\.com\/idanmann10\/vivarium-agent\/[0-9a-f]{7,40}\/scripts\/install\.sh/,
-    );
+    const hardcodedCommitInstallerLines = body.split(/\r?\n/).filter((line) => {
+      const hasInstallerUrl = line.includes(
+        "https://raw.githubusercontent.com/idanmann10/vivarium-agent/",
+      );
+      return (
+        hasInstallerUrl &&
+        line.includes("/scripts/install.sh") &&
+        !line.includes("/main/scripts/install.sh") &&
+        !line.includes("/<current-commit>/scripts/install.sh")
+      );
+    });
+    expect(hardcodedCommitInstallerLines).toEqual([]);
     expect(body).not.toMatch(/\bat `[0-9a-f]{7,40}`/);
   });
 
