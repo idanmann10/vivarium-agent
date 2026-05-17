@@ -256,8 +256,36 @@ need_command() {
       echo "Command: curl -fsSL https://bun.sh/install | bash" >&2
       echo "Then reload your shell and rerun the Vivarium installer." >&2
     fi
+    if [ "$dependency" = "launchctl" ]; then
+      echo "VIVARIUM_DAEMON=launchd requires macOS launchctl." >&2
+      echo "Restore PATH so launchctl is available, or rerun without VIVARIUM_DAEMON=launchd." >&2
+      echo "Then rerun the Vivarium installer." >&2
+    fi
     exit 1
   fi
+}
+
+validate_daemon_mode() {
+  if [ "$daemon_mode" = "none" ] || [ "$daemon_mode" = "launchd" ]; then
+    return 0
+  fi
+
+  echo "Invalid VIVARIUM_DAEMON: $daemon_mode" >&2
+  echo "Supported values: none, launchd" >&2
+  exit 2
+}
+
+preflight_launchd() {
+  if [ "$daemon_mode" != "launchd" ]; then
+    return 0
+  fi
+
+  if [ "$(uname -s)" != "Darwin" ]; then
+    echo "VIVARIUM_DAEMON=launchd requires macOS." >&2
+    exit 1
+  fi
+
+  need_command launchctl launchctl
 }
 
 run() {
@@ -585,9 +613,12 @@ echo "State path: $state_path"
 echo "Live readiness path: $live_env_path"
 echo
 
+validate_daemon_mode
+
 if [ "$dry_run" -eq 0 ]; then
   need_command git git
   need_command "$bun_command" bun
+  preflight_launchd
   bun_command="${VIVARIUM_BUN_PATH:-$(command -v bun)}"
 fi
 

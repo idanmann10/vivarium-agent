@@ -244,6 +244,79 @@ describe("install.sh", () => {
     );
   });
 
+  test("prints launchctl recovery before launchd install work when launchctl is missing", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-install-missing-launchctl-"));
+    const bin = join(root, "bin");
+    mkdirSync(bin);
+    writeFileSync(
+      join(bin, "dirname"),
+      [
+        "#!/bin/sh",
+        'path="${1%/}"',
+        'case "$path" in */*) dir="${path%/*}"; [ -n "$dir" ] || dir=/; printf "%s\\n" "$dir" ;; *) printf ".\\n" ;; esac',
+        "",
+      ].join("\n"),
+      { encoding: "utf8", mode: 0o755 },
+    );
+    writeFileSync(
+      join(bin, "basename"),
+      ["#!/bin/sh", 'path="${1%/}"', 'printf "%s\\n" "${path##*/}"', ""].join("\n"),
+      { encoding: "utf8", mode: 0o755 },
+    );
+    writeFileSync(
+      join(bin, "git"),
+      [
+        "#!/bin/sh",
+        'if [ "$1" = "clone" ]; then mkdir -p "$3/.git"; exit 0; fi',
+        "exit 0",
+        "",
+      ].join("\n"),
+      { encoding: "utf8", mode: 0o755 },
+    );
+    writeFakeBun(join(bin, "bun"));
+    writeFileSync(join(bin, "uname"), ["#!/bin/sh", 'printf "Darwin\\n"', ""].join("\n"), {
+      encoding: "utf8",
+      mode: 0o755,
+    });
+    writeFileSync(join(bin, "mkdir"), ["#!/bin/sh", 'exec /bin/mkdir "$@"', ""].join("\n"), {
+      encoding: "utf8",
+      mode: 0o755,
+    });
+    writeFileSync(join(bin, "chmod"), ["#!/bin/sh", 'exec /bin/chmod "$@"', ""].join("\n"), {
+      encoding: "utf8",
+      mode: 0o755,
+    });
+    writeFileSync(
+      join(bin, "id"),
+      ["#!/bin/sh", 'if [ "${1:-}" = "-u" ]; then printf "501\\n"; exit 0; fi', "exit 1", ""].join(
+        "\n",
+      ),
+      { encoding: "utf8", mode: 0o755 },
+    );
+
+    try {
+      const result = Bun.spawnSync(["/bin/bash", "scripts/install.sh"], {
+        env: {
+          ...process.env,
+          HOME: root,
+          PATH: bin,
+          VIVARIUM_DAEMON: "launchd",
+        },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const stderr = result.stderr.toString();
+
+      expect(result.exitCode).toBe(1);
+      expect(stderr).toContain("Missing required command: launchctl");
+      expect(stderr).toContain("VIVARIUM_DAEMON=launchd requires macOS launchctl.");
+      expect(stderr).toContain("rerun without VIVARIUM_DAEMON=launchd");
+      expect(stderr).toContain("Then rerun the Vivarium installer.");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   test("uses a custom Bun executable for install and generated commands", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-install-bun-path-"));
     const remote = createGitRemote(root, "agent");
