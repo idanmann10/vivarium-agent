@@ -848,7 +848,7 @@ describe("dispatchCliCommand", () => {
     expect(result.output).toContain("Command: vivarium setup live");
     expect(result.output).not.toContain("Command: vivarium onboard live");
     expect(result.output).toContain("Command: vivarium connect fill");
-    expect(result.output).toContain("Command: vivarium connect setup --confirm-write");
+    expect(result.output).toContain("then run vivarium connect setup");
     expect(result.output).toContain("Command: vivarium connect smoke");
     expect(result.output).toContain("Command: vivarium proof init");
     expect(result.output).not.toContain("vivarium connect wizard --path");

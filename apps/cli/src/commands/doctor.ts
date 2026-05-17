@@ -27,6 +27,7 @@ interface DoctorNextActionContext {
   readonly agentRoot: string;
   readonly worldRoot: string;
   readonly envFilePath?: string;
+  readonly checks?: readonly string[];
 }
 
 interface V1EvidenceReferenceContext {
@@ -1965,16 +1966,93 @@ function usesDefaultLiveSetup(context: DoctorNextActionContext): boolean {
   return context.envFilePath === undefined || isDefaultLiveEnvFile(context.envFilePath);
 }
 
+const providerSetupHandoffChecks = [
+  "provider.env",
+  "provider.anthropic",
+  "provider.openrouter",
+  "provider.privateOaiCompat",
+] as const;
+
+const providerSetupFillChecks = [
+  "provider.anthropicModel",
+  "provider.anthropicContextWindow",
+  "provider.openrouterModel",
+  "provider.openrouterBaseUrl",
+  "provider.openrouterContextWindow",
+  "provider.privateOaiCompatContextWindow",
+] as const;
+
+const credentialSetupHandoffChecks = [
+  "credentials.masterKey",
+  "internalApi.credentialValue",
+  "internalApi.healthUrl",
+] as const;
+
+function hasBlockingNamedCheck(
+  context: DoctorNextActionContext,
+  names: readonly string[],
+): boolean {
+  return names.some((name) => {
+    const check = context.checks?.find((candidate) => doctorCheckName(candidate) === name);
+    return check !== undefined && !isPassingCheck(check);
+  });
+}
+
+function hasProviderSetupPrerequisiteBlocker(context: DoctorNextActionContext): boolean {
+  return hasBlockingNamedCheck(context, [
+    ...providerSetupHandoffChecks,
+    ...providerSetupFillChecks,
+  ]);
+}
+
+function providerSetupPrerequisiteCommand(context: DoctorNextActionContext): string {
+  if (hasBlockingNamedCheck(context, providerSetupHandoffChecks)) {
+    return liveAccountHandoffCommand(context);
+  }
+  if (hasBlockingNamedCheck(context, providerSetupFillChecks)) {
+    return liveConnectFillCommand(context);
+  }
+
+  return liveSetupCommand(context);
+}
+
 function providerProfilesPathAction(context: DoctorNextActionContext): string {
+  if (usesDefaultLiveSetup(context) && hasProviderSetupPrerequisiteBlocker(context)) {
+    return "Complete provider handoff/fill values first, then run vivarium connect setup to create the generated provider profile file.";
+  }
+
   return usesDefaultLiveSetup(context)
     ? "Run vivarium connect setup to create the generated provider profile file."
     : `Fill the provider profiles path in ${liveEnvFileLabel(context)}, then create the configured provider profiles.`;
 }
 
 function providerProfileAction(context: DoctorNextActionContext, label: string): string {
+  if (usesDefaultLiveSetup(context) && hasProviderSetupPrerequisiteBlocker(context)) {
+    return `Complete provider handoff/fill values first, then run vivarium connect setup to create or refresh the ${label} provider profile.`;
+  }
+
   return usesDefaultLiveSetup(context)
     ? `Run vivarium connect setup to create or refresh the ${label} provider profile.`
     : `Fill and create the ${label} provider profile from ${liveEnvFileLabel(context)}.`;
+}
+
+function credentialStoreAction(context: DoctorNextActionContext): string {
+  if (
+    usesDefaultLiveSetup(context) &&
+    hasBlockingNamedCheck(context, credentialSetupHandoffChecks)
+  ) {
+    return "Complete internal credential handoff values first, then run vivarium connect setup to create the encrypted credential store at the generated local setup path.";
+  }
+
+  return usesDefaultLiveSetup(context)
+    ? "Run vivarium connect setup to create the encrypted credential store at the generated local setup path."
+    : `Create the encrypted credential store and save its path in ${liveEnvFileLabel(context)}.`;
+}
+
+function credentialStoreCommand(context: DoctorNextActionContext): string {
+  return hasBlockingNamedCheck(context, credentialSetupHandoffChecks)
+    ? liveAccountHandoffCommand(context)
+    : liveSetupCommand(context);
 }
 
 function nextActionForCheck(check: string, context: DoctorNextActionContext): DoctorNextAction {
@@ -2203,7 +2281,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: providerProfilesPathAction(context),
         env: [providerProfilesPathEnv],
-        command: liveSetupCommand(context),
+        command: providerSetupPrerequisiteCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.anthropicProfile":
@@ -2211,7 +2289,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: providerProfileAction(context, "Anthropic"),
         env: [anthropicProviderProfileEnv],
-        command: liveSetupCommand(context),
+        command: providerSetupPrerequisiteCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.openrouterProfile":
@@ -2219,7 +2297,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: providerProfileAction(context, "OpenRouter"),
         env: [openRouterProviderProfileEnv],
-        command: liveSetupCommand(context),
+        command: providerSetupPrerequisiteCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.privateOaiCompatProfile":
@@ -2227,7 +2305,7 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: providerProfileAction(context, "private OpenAI-compatible"),
         env: [privateOaiCompatProviderProfileEnv],
-        command: liveSetupCommand(context),
+        command: providerSetupPrerequisiteCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.anthropicSmoke":
@@ -2290,11 +2368,9 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "credentials.path":
       return {
         check,
-        action: usesDefaultLiveSetup(context)
-          ? "Run vivarium connect setup to create the encrypted credential store at the generated local setup path."
-          : `Create the encrypted credential store and save its path in ${liveEnvFileLabel(context)}.`,
+        action: credentialStoreAction(context),
         env: [credentialsPathEnv],
-        command: liveSetupCommand(context),
+        command: credentialStoreCommand(context),
         guide: `${guide}#internal-api-credential`,
       };
     case "credentials.masterKey":
@@ -2779,7 +2855,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     checks,
     nextActions: checks
       .filter((check) => !isPassingCheck(check))
-      .map((check) => nextActionForCheck(check, nextActionContext)),
+      .map((check) => nextActionForCheck(check, { ...nextActionContext, checks })),
   };
 }
 
