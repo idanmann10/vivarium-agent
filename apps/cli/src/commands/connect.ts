@@ -1287,7 +1287,6 @@ function credentialSmokeNeeds(
   return unique(
     [
       ...credentialRequirements
-        .filter((requirement) => requirement.key !== "VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE")
         .filter((requirement) => !isReadyRequirement(requirement, env))
         .map((requirement) => requirement.label),
       ...(isPlaceholder(credentialsPath)

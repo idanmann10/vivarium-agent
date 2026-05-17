@@ -677,6 +677,28 @@ describe("connectCommand", () => {
     expect(output).not.toContain("VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE");
   });
 
+  test("includes the missing credential value in internal credential smoke blockers", async () => {
+    const root = mkdtempSync(join(tmpdir(), "connect-smoke-missing-credential-value-"));
+    const credentialsPath = join(root, "credentials.enc");
+    writeFileSync(credentialsPath, "", "utf8");
+
+    const result = await connectSmokeCommand({
+      env: {
+        VIVARIUM_CREDENTIALS_PATH: credentialsPath,
+        VIVARIUM_INTERNAL_API_CREDENTIAL_NAME: "INTERNAL_API_TOKEN",
+      },
+      pathExists: (path) => path === credentialsPath,
+    });
+    const output = renderConnectSmokeCommandResult(result, {
+      envFilePath: "live-readiness.local.env",
+    });
+
+    expect(result.ok).toBe(false);
+    expect(output).toContain("[blocked] Internal credential: needs master key, credential value, health URL");
+    expect(output).toContain("vivarium connect fill");
+    expect(output).not.toContain("VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE");
+  });
+
   test("runs provider and internal credential smokes from a filled setup file", async () => {
     const root = mkdtempSync(join(tmpdir(), "connect-smoke-"));
     const env = {
@@ -747,6 +769,7 @@ describe("connectCommand", () => {
       VIVARIUM_CREDENTIALS_PATH: join(root, "missing-credentials.enc"),
       VIVARIUM_CREDENTIALS_MASTER_KEY: "test-master-key",
       VIVARIUM_INTERNAL_API_CREDENTIAL_NAME: "INTERNAL_API_TOKEN",
+      VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE: "internal-secret",
       VIVARIUM_INTERNAL_API_HEALTH_URL: "https://internal.example/health",
     };
 

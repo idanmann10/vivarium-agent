@@ -1409,7 +1409,7 @@ describe("reference docs", () => {
       "/Users/idanmann/.bun/bin/bun install --frozen-lockfile",
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
-      "`565 pass, 0 fail, 4590 expect calls`",
+      "`566 pass, 0 fail, 4594 expect calls`",
       "Provider-profile runs use the live setup file",
       "Setup live skips already-configured local source files",
       "Connect signup skips already-configured local source files",
