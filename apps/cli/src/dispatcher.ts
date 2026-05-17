@@ -1,8 +1,12 @@
-import type {
-  Capability,
-  CostClass,
-  CredentialKind,
-  Visibility,
+import {
+  daemonHostError,
+  daemonPortError,
+  parseDaemonHost,
+  parseDaemonPort,
+  type Capability,
+  type CostClass,
+  type CredentialKind,
+  type Visibility,
 } from "../../../packages/core/src/index.js";
 import type { ProviderFetch } from "../../../packages/providers/src/index.js";
 import { SQLiteStateRepository } from "../../../packages/state/src/index.js";
@@ -607,44 +611,12 @@ function daemonPortFlag(flags: FlagMap): string | undefined {
     return undefined;
   }
 
-  if (!/^[0-9]+$/.test(raw)) {
-    usage("--daemon-port must be an integer from 1 to 65535");
+  try {
+    parseDaemonPort(raw);
+  } catch {
+    usage(daemonPortError.replace("VIVARIUM_DAEMON_PORT", "--daemon-port"));
   }
-
-  const parsed = Number.parseInt(raw, 10);
-  if (parsed < 1 || parsed > 65535) {
-    usage("--daemon-port must be an integer from 1 to 65535");
-  }
-
   return raw;
-}
-
-function isValidDaemonHost(raw: string): boolean {
-  if (raw.length < 1 || raw.length > 253) {
-    return false;
-  }
-
-  if (/[\s:/?#\\[\]@]/.test(raw)) {
-    return false;
-  }
-
-  if (raw === "localhost") {
-    return true;
-  }
-
-  if (/^[0-9]+(?:\.[0-9]+){3}$/.test(raw)) {
-    return raw.split(".").every((part) => {
-      if (part.length > 1 && part.startsWith("0")) {
-        return false;
-      }
-      const octet = Number.parseInt(part, 10);
-      return octet >= 0 && octet <= 255;
-    });
-  }
-
-  return raw
-    .split(".")
-    .every((label) => /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/.test(label));
 }
 
 function daemonHostFlag(flags: FlagMap): string | undefined {
@@ -653,10 +625,11 @@ function daemonHostFlag(flags: FlagMap): string | undefined {
     return undefined;
   }
 
-  if (!isValidDaemonHost(raw)) {
-    usage("--daemon-host must be a hostname or IPv4 address without a scheme, path, port, or spaces");
+  try {
+    parseDaemonHost(raw);
+  } catch {
+    usage(daemonHostError.replace("VIVARIUM_DAEMON_HOST", "--daemon-host"));
   }
-
   return raw;
 }
 
