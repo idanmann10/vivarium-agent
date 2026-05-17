@@ -62,8 +62,12 @@ import {
 import {
   helpCommand,
   localRunHelpCommand,
+  localSetupHelpCommand,
   renderHelpCommandResult,
   renderLocalRunHelpCommandResult,
+  renderLocalSetupHelpCommandResult,
+  renderStatusHelpCommandResult,
+  statusHelpCommand,
 } from "./commands/help.js";
 import {
   identityHistoryCommand,
@@ -969,6 +973,16 @@ export async function dispatchCliCommand(
   if (command === "local" && subcommand === "run" && hasHelpRequest(rest)) {
     const result = localRunHelpCommand();
     return { command: "help", result, output: renderLocalRunHelpCommandResult(result) };
+  }
+
+  if (command === "local" && hasHelpRequest(argv.slice(1))) {
+    const result = localSetupHelpCommand();
+    return { command: "help", result, output: renderLocalSetupHelpCommandResult(result) };
+  }
+
+  if (command === "status" && hasHelpRequest(argv.slice(1))) {
+    const result = statusHelpCommand();
+    return { command: "help", result, output: renderStatusHelpCommandResult(result) };
   }
 
   const commandArgs = (subcommand?.startsWith("--") ?? true) ? argv.slice(1) : rest;

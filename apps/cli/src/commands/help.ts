@@ -10,12 +10,18 @@ export interface HelpCommandResult {
   readonly commands: readonly HelpCommandItem[];
 }
 
-export interface LocalRunHelpCommandResult {
+export interface FocusedHelpCommandResult {
+  readonly title: string;
+  readonly underline: string;
   readonly usage: string;
   readonly options: readonly HelpCommandItem[];
   readonly examples: readonly string[];
   readonly nextCommands: readonly string[];
 }
+
+export type LocalRunHelpCommandResult = FocusedHelpCommandResult;
+export type LocalSetupHelpCommandResult = FocusedHelpCommandResult;
+export type StatusHelpCommandResult = FocusedHelpCommandResult;
 
 export function helpCommand(): HelpCommandResult {
   return {
@@ -91,6 +97,8 @@ export function helpCommand(): HelpCommandResult {
 
 export function localRunHelpCommand(): LocalRunHelpCommandResult {
   return {
+    title: "Vivarium Local Run",
+    underline: "------------------",
     usage: 'vivarium local run --goal "build a tiny local agent"',
     options: [
       {
@@ -131,6 +139,77 @@ export function localRunHelpCommand(): LocalRunHelpCommandResult {
   };
 }
 
+export function localSetupHelpCommand(): LocalSetupHelpCommandResult {
+  return {
+    title: "Vivarium Local Setup",
+    underline: "--------------------",
+    usage: "vivarium local",
+    options: [
+      {
+        command: "--domain <name>",
+        description: "Primary starter domain to install. Defaults to coding.",
+      },
+      {
+        command: "--agent-name <name>",
+        description: "Local agent identity to create. Defaults to local-agent.",
+      },
+      {
+        command: "--state-path <path>",
+        description: "SQLite memory path to initialize and reuse for runs.",
+      },
+      {
+        command: "--world-root <path>",
+        description: "Local world checkout to install starter skills and traces from.",
+      },
+      {
+        command: "--live-env-path <path>",
+        description: "Private live-readiness file to stage for later provider setup.",
+      },
+      {
+        command: "--github-owner <name>",
+        description: "Prefill non-secret GitHub owner metadata in the staged setup file.",
+      },
+    ],
+    examples: [
+      "vivarium local",
+      "vivarium local --state-path ~/.vivarium/state.db --world-root ~/.vivarium/the-world --live-env-path ~/.vivarium/live/live-readiness.local.env",
+    ],
+    nextCommands: [
+      'vivarium local run --goal "build a tiny local agent"',
+      "vivarium status",
+      "vivarium launch handoff",
+    ],
+  };
+}
+
+export function statusHelpCommand(): StatusHelpCommandResult {
+  return {
+    title: "Vivarium Status",
+    underline: "---------------",
+    usage: "vivarium status",
+    options: [
+      {
+        command: "--state-path <path>",
+        description: "SQLite memory path to inspect for local state and latest run proof.",
+      },
+      {
+        command: "--live-env-path <path>",
+        description: "Live-readiness file to report as missing, staged, or ready.",
+      },
+    ],
+    examples: [
+      "vivarium status",
+      "vivarium status --state-path ~/.vivarium/state.db --live-env-path ~/.vivarium/live/live-readiness.local.env",
+    ],
+    nextCommands: [
+      "vivarium local run",
+      "vivarium proof",
+      "vivarium doctor --live",
+      "vivarium launch handoff",
+    ],
+  };
+}
+
 export function renderHelpCommandResult(result: HelpCommandResult): string {
   const commandWidth = Math.max(52, ...result.commands.map((item) => item.command.length)) + 2;
   const rows = result.commands.map((item) => `  ${item.command.padEnd(commandWidth)}${item.description}`);
@@ -159,12 +238,24 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
 }
 
 export function renderLocalRunHelpCommandResult(result: LocalRunHelpCommandResult): string {
+  return renderFocusedHelpCommandResult(result);
+}
+
+export function renderLocalSetupHelpCommandResult(result: LocalSetupHelpCommandResult): string {
+  return renderFocusedHelpCommandResult(result);
+}
+
+export function renderStatusHelpCommandResult(result: StatusHelpCommandResult): string {
+  return renderFocusedHelpCommandResult(result);
+}
+
+function renderFocusedHelpCommandResult(result: FocusedHelpCommandResult): string {
   const optionWidth = Math.max(...result.options.map((item) => item.command.length)) + 2;
   return [
     renderVivariumGlobe(),
     "",
-    "Vivarium Local Run",
-    "------------------",
+    result.title,
+    result.underline,
     "",
     `Usage: ${result.usage}`,
     "",

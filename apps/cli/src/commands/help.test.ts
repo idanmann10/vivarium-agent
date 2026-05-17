@@ -3,8 +3,12 @@ import { describe, expect, test } from "bun:test";
 import {
   helpCommand,
   localRunHelpCommand,
+  localSetupHelpCommand,
   renderHelpCommandResult,
   renderLocalRunHelpCommandResult,
+  renderLocalSetupHelpCommandResult,
+  renderStatusHelpCommandResult,
+  statusHelpCommand,
 } from "./help.js";
 
 describe("helpCommand", () => {
@@ -140,6 +144,36 @@ describe("helpCommand", () => {
     expect(output).toContain("--provider-profile <name>");
     expect(output).toContain('vivarium local run --goal "build a tiny local agent"');
     expect(output).toContain("vivarium status");
+    expect(output).not.toContain("Commands");
+    expect(output).not.toContain("vivarium run --goal");
+  });
+
+  test("renders focused local setup help for first-run operators", () => {
+    const result = localSetupHelpCommand();
+    const output = renderLocalSetupHelpCommandResult(result);
+
+    expect(output).toContain("Vivarium Local Setup");
+    expect(output).toContain("Usage: vivarium local");
+    expect(output).toContain("--state-path <path>");
+    expect(output).toContain("--world-root <path>");
+    expect(output).toContain("--live-env-path <path>");
+    expect(output).toContain("--github-owner <name>");
+    expect(output).toContain('vivarium local run --goal "build a tiny local agent"');
+    expect(output).not.toContain("Commands");
+    expect(output).not.toContain("vivarium run --goal");
+  });
+
+  test("renders focused status help for local proof checks", () => {
+    const result = statusHelpCommand();
+    const output = renderStatusHelpCommandResult(result);
+
+    expect(output).toContain("Vivarium Status");
+    expect(output).toContain("Usage: vivarium status");
+    expect(output).toContain("--state-path <path>");
+    expect(output).toContain("--live-env-path <path>");
+    expect(output).toContain("vivarium local run");
+    expect(output).toContain("vivarium proof");
+    expect(output).toContain("vivarium doctor --live");
     expect(output).not.toContain("Commands");
     expect(output).not.toContain("vivarium run --goal");
   });

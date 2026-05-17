@@ -101,6 +101,35 @@ describe("dispatchCliCommand", () => {
     expect(result.output).not.toContain("vivarium run --goal");
   });
 
+  test("routes local setup help to the first-run setup guide", async () => {
+    const result = await dispatchCliCommand(["local", "--help"]);
+
+    expect(result.command).toBe("help");
+    expect(result.output).toContain("Vivarium Local Setup");
+    expect(result.output).toContain("Usage: vivarium local");
+    expect(result.output).toContain("--state-path <path>");
+    expect(result.output).toContain("--world-root <path>");
+    expect(result.output).toContain("--live-env-path <path>");
+    expect(result.output).toContain("--github-owner <name>");
+    expect(result.output).toContain('vivarium local run --goal "build a tiny local agent"');
+    expect(result.output).not.toContain("Commands");
+    expect(result.output).not.toContain("vivarium run --goal");
+  });
+
+  test("routes status help to the local proof command guide", async () => {
+    const result = await dispatchCliCommand(["status", "--help"]);
+
+    expect(result.command).toBe("help");
+    expect(result.output).toContain("Vivarium Status");
+    expect(result.output).toContain("Usage: vivarium status");
+    expect(result.output).toContain("--state-path <path>");
+    expect(result.output).toContain("--live-env-path <path>");
+    expect(result.output).toContain("vivarium local run");
+    expect(result.output).toContain("vivarium proof");
+    expect(result.output).not.toContain("Commands");
+    expect(result.output).not.toContain("vivarium run --goal");
+  });
+
   test("routes update through the installed checkout updater", async () => {
     const calls: string[] = [];
     const result = await dispatchCliCommand(["update", "--agent-root", "/tmp/vivarium-agent"], {
