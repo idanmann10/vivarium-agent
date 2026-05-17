@@ -660,8 +660,18 @@ describe("connectCommand", () => {
     expect(output).toContain("[blocked] Anthropic provider");
     expect(output).toContain("[blocked] Internal credential");
     expect(output).toContain("vivarium connect");
+    expect(output).toContain("vivarium connect signup");
     expect(output).toContain("vivarium connect fill");
     expect(output).toContain("vivarium connect setup --confirm-write");
+    expect(output).toContain(
+      [
+        "  [1] Prepare live readiness",
+        "      vivarium connect",
+        "      vivarium connect signup",
+        "      vivarium connect fill",
+        "      vivarium connect setup --confirm-write",
+      ].join("\n"),
+    );
     expect(output).not.toContain("VIVARIUM_PROVIDER_PROFILES_PATH");
     expect(output).not.toContain("ANTHROPIC_API_KEY");
     expect(output).not.toContain("VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE");

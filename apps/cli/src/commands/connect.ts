@@ -1288,12 +1288,15 @@ export function renderConnectSmokeCommandResult(
   result: ConnectSmokeCommandResult,
   options: { readonly envFilePath?: string; readonly showDetails?: boolean } = {},
 ): string {
-  const envFilePath = shellQuote(options.envFilePath ?? "live-readiness.local.env");
+  const rawEnvFilePath = options.envFilePath ?? "live-readiness.local.env";
+  const envFilePath = shellQuote(rawEnvFilePath);
+  const hasFillableNeeds = smokeHasFillableNeeds(result);
   const nextCommands = result.ok
     ? [proofCommandLine(envFilePath), doctorLiveCommandLine(envFilePath)]
     : [
         connectCommandLine(envFilePath),
-        ...(smokeHasFillableNeeds(result) ? [connectFillCommandLine(envFilePath)] : []),
+        ...(hasFillableNeeds && isDefaultLiveSetupPath(rawEnvFilePath) ? [connectSignupCommandLine()] : []),
+        ...(hasFillableNeeds ? [connectFillCommandLine(envFilePath)] : []),
         connectSetupWriteCommand(envFilePath),
         connectSmokeCommandLine(envFilePath),
       ];
