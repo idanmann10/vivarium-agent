@@ -42,6 +42,8 @@ describe("local e2e demo recorder", () => {
     expect(text).toContain("$ vivarium world transmission-smoke");
     expect(text).toContain("$ bun run verify:sqlite-stack");
     expect(text).not.toContain("bun apps/cli/src/main.ts");
+    expect(text).toContain("Memory: <demo-state.db>");
+    expect(text).toContain("Readiness file: <demo-live-readiness.local.env>");
     expect(text).toContain("Vivarium World Transmission");
     expect(text).toContain("Status: ok");
     expect(text).toContain('"ok":true');
@@ -49,6 +51,8 @@ describe("local e2e demo recorder", () => {
     expect(text).toContain("<demo-state.db>");
     expect(text).toContain("<demo-world-second-install>");
     expect(text).toContain("run-demo-000");
+    expect(text).not.toContain("/Users/");
+    expect(text).not.toContain("vivarium-local-e2e-demo-");
     expect(text).not.toContain(statePath);
     expect(text).not.toContain(pulledWorld);
     expect(text).not.toContain(root);

@@ -1040,10 +1040,10 @@ describe("reference docs", () => {
       "V1 evidence manifest",
       "Mac installer and handoff PRs have already merged",
       "it is not one of the current `doctor --live`",
-      "doctor --live reports `34 passing, 19 blocked`",
-      "Provider accounts: 9 blockers",
-      "Internal credential: 2 blockers",
-      "V1 evidence: 8 blockers",
+      "doctor --live reports `36 passing, 17 blocked`",
+      "Provider accounts: 8 blockers",
+      "Internal credential: 3 blockers",
+      "V1 evidence: 6 blockers",
       "Default private setup file",
       "needs real values",
       "missing",
@@ -1272,6 +1272,21 @@ describe("reference docs", () => {
     }
   });
 
+  test("keeps the checked-in local e2e demo on current local run output", () => {
+    const body = readFileSync(join("docs", "demos", "local-e2e.cast"), "utf8");
+
+    expect(body).toContain("Vivarium Run");
+    expect(body).toContain("Status: success");
+    expect(body).toContain("Provider: local");
+    expect(body).toContain("Memory: <demo-state.db>");
+    expect(body).toContain("Readiness file: <demo-live-readiness.local.env>");
+    expect(body).toContain("--world-root <demo-world>");
+    expect(body).toContain("run-demo-000");
+    expect(body).not.toContain("/Users/");
+    expect(body).not.toContain("vivarium-local-e2e-demo-");
+    expect(body).not.toContain("Memory: /");
+  });
+
   test("documents the v1 completion boundary in the active audit", () => {
     const body = readFileSync(
       join("docs", "superpowers", "audits", "2026-05-10-v1-completion-audit-refresh.md"),
@@ -1320,17 +1335,17 @@ describe("reference docs", () => {
       "curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh",
       "VIVARIUM_DAEMON=launchd",
       "installed checkout",
-      "branch `main`",
+      "branch `codex/local-agent-production-ready`",
       "clean status",
       "Stable reinstalls recover from old branch-pinned checkouts",
       "Fresh installs prefill safe public metadata",
       "origin` set to `https://github.com/idanmann10/vivarium-agent.git",
       "vivarium update",
       "Status: ok",
-      "`504 pass, 0 fail`",
-      "`34 passing, 19 blocked`",
-      "PR #22 merged as `991b177`",
-      "PR #23 merged as `9d21154`",
+      "`513 pass, 0 fail`",
+      "`36 passing, 17 blocked`",
+      "PR #26",
+      "`64cb3a2`",
       "branch protection remained intact",
       "Operator Handoff",
       "vivarium local run",

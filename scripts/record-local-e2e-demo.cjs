@@ -37,12 +37,26 @@ const output = resolve(repoRoot, readFlag("output") ?? "docs/demos/local-e2e.cas
 const worldRoot = resolve(repoRoot, readFlag("world-root") ?? "../the-world");
 const statePath = resolve(repoRoot, readFlag("state-path") ?? join(demoRoot, "state.db"));
 const pullDestination = resolve(repoRoot, readFlag("pull-destination") ?? join(demoRoot, "world-second-install"));
+const liveReadinessPath = join(demoRoot, ".vivarium", "live", "live-readiness.local.env");
 
 function sanitize(text) {
-  return replaceAll(replaceAll(text, statePath, "<demo-state.db>"), pullDestination, "<demo-world-second-install>").replace(
-    /run-\d+-\d+/g,
-    "run-demo-000",
-  );
+  return replaceAll(
+    replaceAll(
+      replaceAll(
+        replaceAll(
+          replaceAll(text, statePath, "<demo-state.db>"),
+          pullDestination,
+          "<demo-world-second-install>",
+        ),
+        liveReadinessPath,
+        "<demo-live-readiness.local.env>",
+      ),
+      worldRoot,
+      "<demo-world>",
+    ),
+    demoRoot,
+    "<demo-home>",
+  ).replace(/run-\d+-\d+/g, "run-demo-000");
 }
 
 function localCliStep(args) {
@@ -115,7 +129,11 @@ for (const step of steps) {
   );
   time += 0.08;
 
-  const result = spawnSync(step.command, step.args, { cwd: repoRoot, encoding: "utf8" });
+  const result = spawnSync(step.command, step.args, {
+    cwd: repoRoot,
+    encoding: "utf8",
+    env: { ...process.env, HOME: demoRoot },
+  });
   const outputText = `${result.stderr}${result.stdout}`;
   if (outputText.length > 0) {
     lines.push(event(time, sanitize(outputText.endsWith("\n") ? outputText : `${outputText}\n`)));
