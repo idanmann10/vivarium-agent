@@ -244,6 +244,10 @@ banner() {
 need_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
     echo "Missing required command: $1" >&2
+    if [ "$1" = "git" ]; then
+      echo "Install Git first. On macOS, run: xcode-select --install" >&2
+      echo "Then rerun the Vivarium installer." >&2
+    fi
     if [ "$1" = "bun" ]; then
       echo "Install Bun first: https://bun.sh/docs/installation" >&2
       echo "Command: curl -fsSL https://bun.sh/install | bash" >&2

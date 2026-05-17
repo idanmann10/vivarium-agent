@@ -512,4 +512,45 @@ describe("install.sh", () => {
       rmSync(root, { recursive: true, force: true });
     }
   });
+
+  test("prints a copyable macOS Git install command when Git is missing", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-install-missing-git-"));
+    const bin = join(root, "bin");
+    mkdirSync(bin);
+    writeFileSync(
+      join(bin, "dirname"),
+      [
+        "#!/bin/sh",
+        'path="${1%/}"',
+        'case "$path" in */*) dir="${path%/*}"; [ -n "$dir" ] || dir=/; printf "%s\\n" "$dir" ;; *) printf ".\\n" ;; esac',
+        "",
+      ].join("\n"),
+      { encoding: "utf8", mode: 0o755 },
+    );
+    writeFileSync(
+      join(bin, "basename"),
+      ["#!/bin/sh", 'path="${1%/}"', 'printf "%s\\n" "${path##*/}"', ""].join("\n"),
+      { encoding: "utf8", mode: 0o755 },
+    );
+
+    try {
+      const result = Bun.spawnSync(["/bin/bash", "scripts/install.sh"], {
+        env: {
+          ...process.env,
+          HOME: root,
+          PATH: `${bin}:/bin:/usr/sbin:/sbin`,
+        },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const stderr = result.stderr.toString();
+
+      expect(result.exitCode).toBe(1);
+      expect(stderr).toContain("Missing required command: git");
+      expect(stderr).toContain("xcode-select --install");
+      expect(stderr).toContain("Then rerun the Vivarium installer.");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });
