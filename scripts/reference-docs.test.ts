@@ -1297,7 +1297,7 @@ describe("reference docs", () => {
     expect(body).toContain("Provider: local");
     expect(body).toContain("Memory: <demo-state.db>");
     expect(body).toContain(
-      "Recorded: vivarium status will show Run ID run-demo-000 with success state and score 0.8.",
+      "Recorded: vivarium status --state-path <demo-state.db> will show Run ID run-demo-000 with success state and score 0.8.",
     );
     expect(body).toContain('Outcome: Observation: executed \\"build a tiny local agent\\"');
     expect(body).toContain("Last run: build a tiny local agent");
@@ -1305,7 +1305,9 @@ describe("reference docs", () => {
     expect(body).toContain("Readiness file: <demo-live-readiness.local.env>");
     expect(body).toContain("--world-root <demo-world>");
     expect(body).toContain("run-demo-000");
-    expect(body).toContain("vivarium status\\n  vivarium launch handoff\\n  vivarium model");
+    expect(body).toContain(
+      "vivarium status --state-path <demo-state.db>\\n  vivarium launch handoff\\n  vivarium model",
+    );
     expect(body).not.toContain("/Users/");
     expect(body).not.toContain("vivarium-local-e2e-demo-");
     expect(body).not.toContain("Memory: /");

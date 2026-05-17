@@ -173,6 +173,17 @@ function shellQuote(value: string): string {
   return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
 }
 
+function statusCommandForRun(
+  explicitStatePath: string | undefined,
+  explicitLiveEnvPath: string | undefined,
+): string {
+  return [
+    "vivarium status",
+    ...(explicitStatePath === undefined ? [] : [`--state-path ${shellQuote(explicitStatePath)}`]),
+    ...(explicitLiveEnvPath === undefined ? [] : [`--live-env-path ${shellQuote(explicitLiveEnvPath)}`]),
+  ].join(" ");
+}
+
 function setupLiveResumeCommand(flags: FlagMap): string {
   const setupDir = value(flags, "setup-dir");
   const secretsDir = value(flags, "secrets-dir");
@@ -1065,7 +1076,9 @@ export async function dispatchCliCommand(
         const agentName = value(flags, "agent-name");
         const worldRoot = value(flags, "world-root");
         const worldSubscriptionsPath = value(flags, "world-subscriptions-path");
-        const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
+        const explicitStatePath = value(flags, "state-path");
+        const explicitLiveEnvPath = value(flags, "live-env-path");
+        const statePath = explicitStatePath ?? defaultStatePath(options.env);
         const providerKind = value(flags, "provider-kind") as RunProviderKind | undefined;
         const providerApiKeyEnv = value(flags, "provider-api-key-env");
         const providerModel = value(flags, "provider-model");
@@ -1082,6 +1095,7 @@ export async function dispatchCliCommand(
           ...(worldRoot === undefined ? {} : { worldRoot }),
           ...(worldSubscriptionsPath === undefined ? {} : { worldSubscriptionsPath }),
           ...(statePath === undefined ? {} : { statePath }),
+          statusCommand: statusCommandForRun(explicitStatePath, explicitLiveEnvPath),
           ...(booleanFlag(flags, "force-failure") ? { forceFailure: true } : {}),
           ...(providerKind === undefined ? {} : { providerKind }),
           ...(providerApiKeyEnv === undefined ? {} : { providerApiKeyEnv }),
@@ -1304,6 +1318,7 @@ export async function dispatchCliCommand(
       const worldRoot = value(flags, "world-root");
       const worldSubscriptionsPath = value(flags, "world-subscriptions-path");
       const statePath = value(flags, "state-path");
+      const liveEnvPath = value(flags, "live-env-path");
       const providerKind = value(flags, "provider-kind") as RunProviderKind | undefined;
       const providerApiKeyEnv = value(flags, "provider-api-key-env");
       const providerModel = value(flags, "provider-model");
@@ -1319,6 +1334,7 @@ export async function dispatchCliCommand(
         ...(worldRoot === undefined ? {} : { worldRoot }),
         ...(worldSubscriptionsPath === undefined ? {} : { worldSubscriptionsPath }),
         ...(statePath === undefined ? {} : { statePath }),
+        statusCommand: statusCommandForRun(statePath, liveEnvPath),
         ...(booleanFlag(flags, "force-failure") ? { forceFailure: true } : {}),
         ...(providerKind === undefined ? {} : { providerKind }),
         ...(providerApiKeyEnv === undefined ? {} : { providerApiKeyEnv }),

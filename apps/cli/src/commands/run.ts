@@ -31,6 +31,7 @@ export interface RunCommandOptions {
   readonly providerBaseUrl?: string;
   readonly providerProfilesPath?: string;
   readonly providerProfile?: string;
+  readonly statusCommand?: string;
   readonly availableToolsets?: readonly string[];
   readonly availableTools?: readonly string[];
   readonly env?: Readonly<Record<string, string | undefined>>;
@@ -46,6 +47,7 @@ export interface RunCommandResult {
   readonly agentName: string;
   readonly runId: string | null;
   readonly memoryPath?: string;
+  readonly statusCommand?: string;
   readonly provider: {
     readonly kind: string;
     readonly id: string;
@@ -103,6 +105,10 @@ function localProvider(): ConfiguredRunProvider {
     provider: createLocalProvider({ id: "local", costClass: "medium", capabilities: ["chat", "json_mode"] }),
     summary: { kind: "local", id: "local", model: null },
   };
+}
+
+function shellQuote(value: string): string {
+  return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
 }
 
 function providerConfigError(kind: string, id: string, model: string | null | undefined, error: string): RunCommandResult {
@@ -341,6 +347,11 @@ export async function runCommand(options: RunCommandOptions): Promise<RunCommand
     agentName,
     runId: String(result.runId),
     ...(options.statePath === undefined ? {} : { memoryPath: options.statePath }),
+    statusCommand:
+      options.statusCommand ??
+      (options.statePath === undefined
+        ? "vivarium status"
+        : `vivarium status --state-path ${shellQuote(options.statePath)}`),
     provider: selectedProvider.summary,
     episodeKinds,
     transparency,
@@ -375,21 +386,25 @@ function renderOutcomeSummary(outcome: string | null): readonly string[] {
 }
 
 function renderRunReceipt(result: RunCommandResult): readonly string[] {
-  if (!result.success || result.runId === null) {
+  if (!result.success || result.runId === null || result.memoryPath === undefined) {
     return [];
   }
 
   const score = result.transparency.validation?.score;
   const scoreText = score === undefined ? "." : ` and score ${score}.`;
-  return [`Recorded: vivarium status will show Run ID ${result.runId} with success state${scoreText}`];
+  const statusCommand = result.statusCommand ?? "vivarium status";
+  return [
+    `Recorded: ${statusCommand} will show Run ID ${result.runId} with success state${scoreText}`,
+  ];
 }
 
 function renderRunGuidance(result: RunCommandResult): readonly string[] {
+  const statusCommand = result.statusCommand ?? "vivarium status";
   if (result.success) {
     return [
       "Next commands:",
       "  vivarium local run --goal \"try another small coding task\"",
-      "  vivarium status",
+      `  ${statusCommand}`,
       "  vivarium launch handoff",
       "  vivarium model",
     ];

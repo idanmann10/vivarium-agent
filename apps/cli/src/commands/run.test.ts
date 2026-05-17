@@ -71,8 +71,9 @@ describe("runCommand", () => {
     expect(output).toContain("Provider: local");
     expect(output).toContain(`Memory: ${statePath}`);
     expect(output).toContain('Outcome: Observation: executed "build a tiny local agent" with local deterministic provider.');
+    expect(output).toContain(`Recorded: vivarium status --state-path ${statePath} will show Run ID`);
     expect(output).toContain("vivarium local run --goal");
-    expect(output).toContain("vivarium status");
+    expect(output).toContain(`vivarium status --state-path ${statePath}`);
     expect(output).toContain("vivarium launch handoff");
     expect(output).not.toContain("vivarium publish run");
     expect(output).not.toContain("--contributor <agent-id>");
@@ -369,6 +370,7 @@ describe("runCommand", () => {
       success: true,
       agentName: "local-agent",
       runId: "run-demo-000",
+      memoryPath: "/tmp/vivarium-state.db",
       provider: { kind: "local", id: "local", model: null },
       episodeKinds: ["run_start", "plan", "validation", "run_end"],
       transparency: {
@@ -392,6 +394,7 @@ describe("runCommand", () => {
     expect(output).toContain("Status: success");
     expect(output).toContain("Run ID: run-demo-000");
     expect(output).toContain("Provider: local");
+    expect(output).toContain("Memory: /tmp/vivarium-state.db");
     expect(output).toContain("Episodes: run_start, plan, validation, run_end");
     expect(output).toContain("Consulted skills: 1");
     expect(output).toContain("Validation: pass (0.8)");
@@ -400,6 +403,27 @@ describe("runCommand", () => {
       "Recorded: vivarium status will show Run ID run-demo-000 with success state and score 0.8.",
     );
     expect(output.trim().startsWith("{")).toBe(false);
+  });
+
+  test("does not claim a status receipt for in-memory runs", () => {
+    const output = renderRunCommandResult({
+      success: true,
+      agentName: "local-agent",
+      runId: "run-memory-000",
+      provider: { kind: "local", id: "local", model: null },
+      episodeKinds: ["run_start", "run_end"],
+      transparency: {
+        plan: null,
+        outcome: "Observation: rendered local output.",
+        prediction: null,
+        validation: { score: 0.8, passed: true, reasons: ["validated"] },
+        consulted: { skills: [], traces: [] },
+        highSurprises: [],
+      },
+    });
+
+    expect(output).not.toContain("Recorded:");
+    expect(output).toContain("vivarium status");
   });
 
   test("renders blocked provider runs with friendly setup guidance", () => {

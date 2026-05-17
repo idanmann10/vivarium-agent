@@ -1832,6 +1832,8 @@ describe("dispatchCliCommand", () => {
       expect(runs[0]?.goal).toBe("build a tiny local agent");
       expect(String(runs[0]?.id)).toBe((run.result as { readonly runId: string }).runId);
       expect(run.output).toContain("Agent: local-agent");
+      expect(run.output).toContain("Recorded: vivarium status will show Run ID");
+      expect(run.output).not.toContain("vivarium status --state-path");
     } finally {
       if (previousHome === undefined) {
         delete process.env.HOME;
@@ -1839,6 +1841,33 @@ describe("dispatchCliCommand", () => {
         process.env.HOME = previousHome;
       }
     }
+  });
+
+  test("routes custom local run status receipts through explicit local paths", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-local-run-custom-status-"));
+    const worldRoot = createWorldFixture();
+    const statePath = join(root, "state.db");
+    const liveEnvPath = join(root, "live-readiness.local.env");
+
+    const run = await dispatchCliCommand([
+      "local",
+      "run",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+      "--live-env-path",
+      liveEnvPath,
+    ]);
+
+    expect(run.result).toMatchObject({ success: true, agentName: "local-agent" });
+    expect(run.output).toContain(`Memory: ${statePath}`);
+    expect(run.output).toContain(
+      `Recorded: vivarium status --state-path ${statePath} --live-env-path ${liveEnvPath} will show Run ID`,
+    );
+    expect(run.output).toContain(
+      `vivarium status --state-path ${statePath} --live-env-path ${liveEnvPath}`,
+    );
   });
 
   test("bootstraps default local memory when local run is the first command", async () => {
