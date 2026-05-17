@@ -735,22 +735,26 @@ function bootstrapLocalRunState(options: {
   readonly domain: string | undefined;
   readonly agentName: string | undefined;
   readonly worldRoot: string | undefined;
+  readonly liveEnvPath: string | undefined;
 }): void {
   const stateStatus = localStateSeedStatus(options.statePath);
-  if (stateStatus === "seeded") {
-    return;
-  }
   if (stateStatus === "invalid") {
     localStateInvalidUsage(options.statePath);
   }
 
-  runInitCommand({
-    primaryDomain: options.domain ?? "coding",
-    bindGithubIdentity: false,
-    ...(options.agentName === undefined ? {} : { agentName: options.agentName }),
-    ...(options.worldRoot === undefined ? {} : { worldRoot: options.worldRoot }),
-    statePath: options.statePath,
-  });
+  if (stateStatus === "unseeded") {
+    runInitCommand({
+      primaryDomain: options.domain ?? "coding",
+      bindGithubIdentity: false,
+      ...(options.agentName === undefined ? {} : { agentName: options.agentName }),
+      ...(options.worldRoot === undefined ? {} : { worldRoot: options.worldRoot }),
+      statePath: options.statePath,
+    });
+  }
+
+  if (options.liveEnvPath !== undefined && !existsSync(options.liveEnvPath)) {
+    liveEnvInitCommand({ path: options.liveEnvPath });
+  }
 }
 
 function localStateInvalidUsage(statePath: string): never {
@@ -1084,6 +1088,7 @@ export async function dispatchCliCommand(
         const explicitStatePath = value(flags, "state-path");
         const explicitLiveEnvPath = value(flags, "live-env-path");
         const statePath = explicitStatePath ?? defaultStatePath(options.env);
+        const liveEnvPath = explicitLiveEnvPath ?? privateDefaultLiveEnvFile(options.env);
         const providerKind = value(flags, "provider-kind") as RunProviderKind | undefined;
         const providerApiKeyEnv = value(flags, "provider-api-key-env");
         const providerModel = value(flags, "provider-model");
@@ -1092,7 +1097,7 @@ export async function dispatchCliCommand(
         const providerProfile = value(flags, "provider-profile");
         const availableToolsets = values(flags, "available-toolset");
         const availableTools = values(flags, "available-tool");
-        bootstrapLocalRunState({ statePath, domain, agentName, worldRoot });
+        bootstrapLocalRunState({ statePath, domain, agentName, worldRoot, liveEnvPath });
         const result = await runCommand({
           goal: value(flags, "goal") ?? "build a tiny local agent",
           ...(agentName === undefined ? {} : { agentName }),

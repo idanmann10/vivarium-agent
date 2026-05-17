@@ -1889,11 +1889,13 @@ describe("dispatchCliCommand", () => {
     const worldRoot = createWorldFixture();
     const home = mkdtempSync(join(tmpdir(), "cli-dispatch-local-run-first-home-"));
     const statePath = join(home, ".vivarium", "state.db");
+    const liveEnvPath = join(home, ".vivarium", "live", "live-readiness.local.env");
 
     const run = await dispatchCliCommand(["local", "run", "--world-root", worldRoot], {
       env: { HOME: home },
     });
     const doctor = await dispatchCliCommand(["doctor"], { env: { HOME: home } });
+    const status = await dispatchCliCommand(["status"], { env: { HOME: home } });
 
     const state = new SQLiteStateRepository(statePath);
     const localSkills = state.listLocalSkills().filter((skill) => skill.domain === "coding");
@@ -1915,6 +1917,8 @@ describe("dispatchCliCommand", () => {
       checks: expect.arrayContaining(["state:configured"]),
     });
     expect(doctor.output).toContain("Readiness: ready");
+    expect(existsSync(liveEnvPath)).toBe(true);
+    expect(status.output).toContain(`[staged] Live setup file: ${liveEnvPath}`);
   });
 
   test("routes corrupt default local run state to repair guidance", async () => {

@@ -640,8 +640,8 @@ describe("reference docs", () => {
       expect(body).toContain(
         "Use `vivarium launch handoff` when you are ready for production evidence.",
       );
-      expect(body).toContain(
-        "If you run `vivarium local run` before `vivarium local`, the command seeds the same starter memory first",
+      expect(normalizedBody).toContain(
+        "If you run `vivarium local run` before `vivarium local`, the command seeds the same starter memory, stages the private live-readiness file, and then runs the local agent",
       );
       expect(body).toContain(
         "If the local SQLite state file is invalid, `vivarium local run` stops before writing new run data",
