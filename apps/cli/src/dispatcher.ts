@@ -29,6 +29,7 @@ import {
   connectSignupCommand,
   connectSmokeCommand,
   connectWizardCommand,
+  type ConnectSecretFile,
   type ConnectSecretFiles,
   type ConnectFillValues,
   renderConnectInitCommandResult,
@@ -155,23 +156,59 @@ export interface CliDispatchOptions {
 type FlagMap = ReadonlyMap<string, readonly string[]>;
 
 const secretDirFiles = [
-  { label: "Agent repo name", name: "agent-repo-name.txt" },
-  { label: "World repo name", name: "world-repo-name.txt" },
-  { label: "Canonical world ref", name: "canonical-world-ref.txt" },
-  { label: "Private world ref", name: "private-world-ref.txt" },
-  { label: "GitHub token", name: "github-token.key" },
-  { label: "GitHub owner", name: "github-owner.txt" },
-  { label: "GitHub repository ID", name: "github-repository-id.txt" },
-  { label: "GitHub Discussion category ID", name: "github-discussion-category-id.txt" },
-  { label: "Anthropic API key", name: "anthropic.key" },
-  { label: "OpenRouter API key", name: "openrouter.key" },
-  { label: "Private model API key", name: "private-oai.key" },
-  { label: "Private model base URL", name: "private-base-url.txt" },
-  { label: "Private model name", name: "private-model.txt" },
-  { label: "Private model context window", name: "private-context-window.txt" },
-  { label: "Credential master key", name: "credential-master.key" },
-  { label: "Internal API token", name: "internal-api.token" },
-  { label: "Internal API health URL", name: "internal-health-url.txt" },
+  { label: "Agent repo name", name: "agent-repo-name.txt", envKeys: ["VIVARIUM_AGENT_REPO_NAME"] },
+  { label: "World repo name", name: "world-repo-name.txt", envKeys: ["VIVARIUM_WORLD_REPO_NAME"] },
+  {
+    label: "Canonical world ref",
+    name: "canonical-world-ref.txt",
+    envKeys: ["VIVARIUM_CANONICAL_WORLD_REF"],
+  },
+  {
+    label: "Private world ref",
+    name: "private-world-ref.txt",
+    envKeys: ["VIVARIUM_PRIVATE_WORLD_REF"],
+  },
+  { label: "GitHub token", name: "github-token.key", envKeys: ["GITHUB_TOKEN", "GH_TOKEN"] },
+  { label: "GitHub owner", name: "github-owner.txt", envKeys: ["VIVARIUM_GITHUB_OWNER"] },
+  {
+    label: "GitHub repository ID",
+    name: "github-repository-id.txt",
+    envKeys: ["VIVARIUM_GITHUB_REPOSITORY_ID"],
+  },
+  {
+    label: "GitHub Discussion category ID",
+    name: "github-discussion-category-id.txt",
+    envKeys: ["VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID"],
+  },
+  { label: "Anthropic API key", name: "anthropic.key", envKeys: ["ANTHROPIC_API_KEY"] },
+  { label: "OpenRouter API key", name: "openrouter.key", envKeys: ["OPENROUTER_API_KEY"] },
+  { label: "Private model API key", name: "private-oai.key", envKeys: ["VIVARIUM_OAI_COMPAT_API_KEY"] },
+  {
+    label: "Private model base URL",
+    name: "private-base-url.txt",
+    envKeys: ["VIVARIUM_OAI_COMPAT_BASE_URL"],
+  },
+  { label: "Private model name", name: "private-model.txt", envKeys: ["VIVARIUM_OAI_COMPAT_MODEL"] },
+  {
+    label: "Private model context window",
+    name: "private-context-window.txt",
+    envKeys: ["VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW"],
+  },
+  {
+    label: "Credential master key",
+    name: "credential-master.key",
+    envKeys: ["VIVARIUM_CREDENTIALS_MASTER_KEY"],
+  },
+  {
+    label: "Internal API token",
+    name: "internal-api.token",
+    envKeys: ["VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE"],
+  },
+  {
+    label: "Internal API health URL",
+    name: "internal-health-url.txt",
+    envKeys: ["VIVARIUM_INTERNAL_API_HEALTH_URL"],
+  },
 ] as const;
 
 export class CliUsageError extends Error {
@@ -342,6 +379,7 @@ function valueOrFileInDir(
 function scaffoldSecretFiles(
   directory: string | undefined,
   resumeCommand: string | undefined,
+  setupEnv: Readonly<Record<string, string | undefined>> | undefined = undefined,
 ): ConnectSecretFiles | undefined {
   if (directory === undefined) {
     return undefined;
@@ -351,40 +389,65 @@ function scaffoldSecretFiles(
   return {
     directory,
     ...(resumeCommand === undefined ? {} : { resumeCommand }),
-    files: secretDirFiles.map((file) => {
+    files: secretDirFiles.flatMap((file): ConnectSecretFile[] => {
       const path = join(directory, file.name);
+      const configuredInSetupFile = hasConcreteSetupValue(setupEnv, file.envKeys);
       try {
         const body = readFileSync(path, "utf8");
-        return {
+        if (body.trim().length === 0 && configuredInSetupFile) {
+          return [];
+        }
+        return [{
           label: file.label,
           path,
           status: "existing" as const,
           ready: body.trim().length > 0,
-        };
+        }];
       } catch (error) {
         if ((error as { readonly code?: unknown }).code !== "ENOENT") {
           throw error;
         }
       }
 
+      if (configuredInSetupFile) {
+        return [];
+      }
+
       try {
         writeFileSync(path, "", { encoding: "utf8", flag: "wx", mode: 0o600 });
         chmodSync(path, 0o600);
-        return { label: file.label, path, status: "created" as const, ready: false };
+        return [{ label: file.label, path, status: "created" as const, ready: false }];
       } catch (error) {
         if ((error as { readonly code?: unknown }).code !== "EEXIST") {
           throw error;
         }
         const body = readFileSync(path, "utf8");
-        return {
+        if (body.trim().length === 0 && configuredInSetupFile) {
+          return [];
+        }
+        return [{
           label: file.label,
           path,
           status: "existing" as const,
           ready: body.trim().length > 0,
-        };
+        }];
       }
     }),
   };
+}
+
+function hasConcreteSetupValue(
+  setupEnv: Readonly<Record<string, string | undefined>> | undefined,
+  keys: readonly string[],
+): boolean {
+  if (setupEnv === undefined) {
+    return false;
+  }
+
+  return keys.some((key) => {
+    const value = setupEnv[key]?.trim();
+    return value !== undefined && value.length > 0 && !/^<[^>]+>$/.test(value);
+  });
 }
 
 function connectFillValuesFromFlags(flags: FlagMap): Partial<Record<keyof ConnectFillValues, string>> {
@@ -931,7 +994,14 @@ function dispatchConnectWizard(
   const privateWorldRef = value(wizardFlags, "private-world-ref");
   const wizardEnvFile = value(wizardFlags, "path") ?? value(wizardFlags, "env-file") ?? "live-readiness.local.env";
   const setupDir = value(wizardFlags, "setup-dir");
-  const secretFiles = scaffoldSecretFiles(value(wizardFlags, "secrets-dir"), defaults.resumeCommand);
+  const existingSetupEnv = existsSync(wizardEnvFile)
+    ? readEnvFile(wizardEnvFile, options.env ?? process.env)
+    : undefined;
+  const secretFiles = scaffoldSecretFiles(
+    value(wizardFlags, "secrets-dir"),
+    defaults.resumeCommand,
+    existingSetupEnv,
+  );
   const fillValues = connectFillValuesFromFlags(wizardFlags);
   const initResult =
     existsSync(wizardEnvFile) && !booleanFlag(wizardFlags, "overwrite")

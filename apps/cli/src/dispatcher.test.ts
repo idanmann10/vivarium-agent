@@ -1719,6 +1719,37 @@ describe("dispatchCliCommand", () => {
     expect(envBody).toContain('export VIVARIUM_INTERNAL_API_HEALTH_URL="https://internal.example/health"');
   });
 
+  test("routes setup live without asking for source files already configured in the setup file", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-setup-live-env-ready-"));
+    const home = join(root, "home");
+    const envPath = join(home, ".vivarium", "live", "live-readiness.local.env");
+    const secretsDir = join(home, ".vivarium", "secrets");
+    write(
+      envPath,
+      [
+        'export VIVARIUM_AGENT_REPO_NAME="vivarium-agent"',
+        'export VIVARIUM_WORLD_REPO_NAME="vivarium-world"',
+        'export VIVARIUM_CANONICAL_WORLD_REF="https://github.com/owner/vivarium-world.git"',
+        'export VIVARIUM_PRIVATE_WORLD_REF="git@github.com:owner/vivarium-world-private.git"',
+        'export GITHUB_TOKEN="ghp_live_token"',
+        'export VIVARIUM_GITHUB_OWNER="owner"',
+        'export VIVARIUM_GITHUB_REPOSITORY_ID="R_live_world"',
+        'export VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID="DIC_live_rfc"',
+      ].join("\n"),
+    );
+
+    const result = await dispatchCliCommand(["setup", "live"], { env: { HOME: home } });
+
+    expect(result.output).toContain("Vivarium Live Onboarding");
+    expect(result.output).toContain(`Setup file: ${envPath}`);
+    expect(result.output).not.toContain("[needs] Names and worlds");
+    expect(result.output).not.toContain("[needs] GitHub/public release");
+    expect(result.output).not.toContain(`Agent repo name: ${join(secretsDir, "agent-repo-name.txt")}`);
+    expect(result.output).not.toContain(`GitHub token: ${join(secretsDir, "github-token.key")}`);
+    expect(result.output).toContain("[needs] Provider accounts: 6 files");
+    expect(result.output).toContain("[needs] Internal credential: 3 files");
+  });
+
   test("keeps custom setup live paths in the local rerun command", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-setup-live-custom-"));
     const home = join(root, "home");
