@@ -61,6 +61,12 @@ Do not claim full v1 production readiness yet. A fresh installed
 `vivarium doctor --live` using the default private setup file still reports
 `36 passing, 17 blocked`.
 
+The matching `vivarium proof --details` evidence still reports
+`4 passing, 4 blocked`. The current tracker is GitHub issue #9,
+`Live/v1 production readiness blockers`, which now treats open-source/security
+launch as cleared and tracks only the remaining review, provider, credential,
+and v1 evidence gates.
+
 The remaining blockers require:
 
 - Real provider keys for Anthropic/OpenRouter, the private OpenAI-compatible provider
