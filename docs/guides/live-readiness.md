@@ -49,14 +49,14 @@ When `--env-file` is used, `doctor --live` reports `liveEnvFile.permissions:inse
 
 ## Current Production Blocker Map
 
-Default private setup file status on the current Mac install: doctor --live reports `35 passing, 18 blocked` until the operator-owned inputs are real and verified:
-The current live unlock checklist is Provider accounts: 8 blockers, Internal credential: 4 blockers, and V1 evidence: 6 blockers.
-Most remaining blockers currently report `needs real values`, `mismatch`, or `missing`.
+Default private setup file status on the current Mac install: doctor --live reports `36 passing, 17 blocked` until the operator-owned inputs are real and verified:
+The current live unlock checklist is Provider accounts: 8 blockers, Internal credential: 3 blockers, and V1 evidence: 6 blockers.
+Most remaining blockers currently report `needs real values` or `missing`.
 
 | Area | Current status |
 | --- | --- |
 | Model providers | Real Anthropic/OpenRouter keys, private OpenAI-compatible endpoint key/base/model/context values, and successful provider smoke calls are still required. |
-| Internal credential smoke | The credential store master key, internal API credential value, internal API health URL, and encrypted credential smoke must still be supplied and verified. |
+| Internal credential smoke | The internal API credential value, internal API health URL, and encrypted credential smoke must still be supplied and verified. |
 | V1 evidence manifest | Provider and credential smoke transcripts, public contribution evidence, published canonical-world artifacts, curation stats, and the required two-week follow-up evidence are still required. |
 
 Already clear: final repository names, canonical/private world subscription refs,
