@@ -650,9 +650,11 @@ function existingDefaultLiveEnvFile(env: Readonly<Record<string, string | undefi
   return undefined;
 }
 
-function localStateIsSeeded(statePath: string): boolean {
+type LocalStateSeedStatus = "seeded" | "unseeded" | "invalid";
+
+function localStateSeedStatus(statePath: string): LocalStateSeedStatus {
   if (!existsSync(statePath)) {
-    return false;
+    return "unseeded";
   }
 
   let state: SQLiteStateRepository | undefined;
@@ -666,9 +668,9 @@ function localStateIsSeeded(statePath: string): boolean {
         skill.domain.trim().length > 0 &&
         skill.body.trim().length > 0,
     );
-    return hasIdentity && hasStarterSkill;
+    return hasIdentity && hasStarterSkill ? "seeded" : "unseeded";
   } catch {
-    return true;
+    return "invalid";
   } finally {
     state?.close();
   }
@@ -680,8 +682,15 @@ function bootstrapLocalRunState(options: {
   readonly agentName: string | undefined;
   readonly worldRoot: string | undefined;
 }): void {
-  if (localStateIsSeeded(options.statePath)) {
+  const stateStatus = localStateSeedStatus(options.statePath);
+  if (stateStatus === "seeded") {
     return;
+  }
+  if (stateStatus === "invalid") {
+    usage(
+      `Local state is invalid: ${options.statePath}. Move the invalid local SQLite state aside, then run vivarium local to create a fresh local memory database.`,
+      ["vivarium doctor", "vivarium local", "vivarium help"],
+    );
   }
 
   runInitCommand({
