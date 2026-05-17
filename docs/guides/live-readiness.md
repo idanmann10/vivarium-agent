@@ -64,10 +64,11 @@ GitHub auth/public release checks, Phase 0 Discussion evidence, and latest
 agent/world CI evidence are configured enough that they are not in the current
 live doctor blocker list.
 
-The Mac installer and handoff PRs have already merged through protected `main`
-with required status checks and non-author review. Future PRs should keep using
-that branch-protection path; it is not one of the current `doctor --live`
-blockers.
+PR #26 remains under required review with green status checks and auto-merge
+enabled. Stable public `main` installer use starts after that review lands; for
+pre-main validation, run `vivarium launch handoff` from the installed checkout
+to get the current commit-pinned branch installer. This review state is not one
+of the current `doctor --live` blockers.
 
 ## Operator Unlock Key Map
 
