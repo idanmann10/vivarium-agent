@@ -1386,7 +1386,7 @@ describe("reference docs", () => {
       "/Users/idanmann/.bun/bin/bun install --frozen-lockfile",
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
-      "`541 pass, 0 fail, 4465 expect calls`",
+      "`542 pass, 0 fail, 4467 expect calls`",
       "focused help smokes",
       "vivarium local --help",
       "vivarium status --help",
