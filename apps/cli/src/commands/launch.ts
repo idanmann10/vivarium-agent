@@ -51,7 +51,7 @@ export function launchHandoffCommand(
   return {
     installCommand: installCommand(owner, repo, ref, scriptRef),
     postInstallCommands: [
-      'vivarium local run --goal "build a tiny local agent"',
+      'vivarium local run --goal "build a tiny local agent" --state-path ~/.vivarium/state.db --world-root ~/.vivarium/the-world --live-env-path ~/.vivarium/live/live-readiness.local.env',
       "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
       "vivarium status",
       "vivarium help",

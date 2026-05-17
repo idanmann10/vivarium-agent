@@ -13,7 +13,9 @@ describe("launchHandoffCommand", () => {
     expect(result.installCommand).not.toContain("VIVARIUM_AGENT_REF=");
     expect(output).toContain("Vivarium Launch Handoff");
     expect(output).toContain("Mac install command:");
-    expect(output).toContain("vivarium local run");
+    expect(output).toContain(
+      'vivarium local run --goal "build a tiny local agent" --state-path ~/.vivarium/state.db --world-root ~/.vivarium/the-world --live-env-path ~/.vivarium/live/live-readiness.local.env',
+    );
     expect(output).not.toContain("vivarium run --goal \"validate local setup\"");
     expect(output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
     expect(output).toContain("vivarium status");
@@ -44,8 +46,8 @@ describe("launchHandoffCommand", () => {
     expect(output).not.toContain("vivarium live env-init --path live-readiness.local.env");
     expect(output).not.toContain("vivarium setup --env-file live-readiness.local.env");
     expect(output).not.toContain("vivarium live evidence-init --path v1-evidence.json");
-    expect(output.slice(output.indexOf("After install:"), output.indexOf("When ready for live verification:"))).not.toContain(
-      "live-readiness.local.env",
+    expect(output.slice(output.indexOf("After install:"), output.indexOf("When ready for live verification:"))).toContain(
+      "--live-env-path ~/.vivarium/live/live-readiness.local.env",
     );
     expect(output).toContain("Production boundary:");
     expect(output).toContain("Local Mac install/deploy is ready for reviewer/operator use.");

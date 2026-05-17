@@ -2515,8 +2515,8 @@ describe("dispatchCliCommand", () => {
     expect(result.output).toContain("VIVARIUM_DAEMON=launchd");
     expect(result.output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
     expect(result.output).toContain("When ready for live verification:");
-    expect(result.output.slice(result.output.indexOf("After install:"), result.output.indexOf("When ready for live verification:"))).not.toContain(
-      "live-readiness.local.env",
+    expect(result.output.slice(result.output.indexOf("After install:"), result.output.indexOf("When ready for live verification:"))).toContain(
+      "--live-env-path ~/.vivarium/live/live-readiness.local.env",
     );
     expect(result.output).toContain("real provider keys/smokes");
   });
