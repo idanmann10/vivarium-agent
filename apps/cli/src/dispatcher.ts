@@ -619,6 +619,47 @@ function daemonPortFlag(flags: FlagMap): string | undefined {
   return raw;
 }
 
+function isValidDaemonHost(raw: string): boolean {
+  if (raw.length < 1 || raw.length > 253) {
+    return false;
+  }
+
+  if (/[\s:/?#\\[\]@]/.test(raw)) {
+    return false;
+  }
+
+  if (raw === "localhost") {
+    return true;
+  }
+
+  if (/^[0-9]+(?:\.[0-9]+){3}$/.test(raw)) {
+    return raw.split(".").every((part) => {
+      if (part.length > 1 && part.startsWith("0")) {
+        return false;
+      }
+      const octet = Number.parseInt(part, 10);
+      return octet >= 0 && octet <= 255;
+    });
+  }
+
+  return raw
+    .split(".")
+    .every((label) => /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/.test(label));
+}
+
+function daemonHostFlag(flags: FlagMap): string | undefined {
+  const raw = value(flags, "daemon-host");
+  if (raw === undefined) {
+    return undefined;
+  }
+
+  if (!isValidDaemonHost(raw)) {
+    usage("--daemon-host must be a hostname or IPv4 address without a scheme, path, port, or spaces");
+  }
+
+  return raw;
+}
+
 function booleanFlag(flags: FlagMap, name: string): boolean {
   return flags.has(name);
 }
@@ -1030,7 +1071,7 @@ export async function dispatchCliCommand(
       const repo = value(flags, "repo");
       const explicitRef = value(flags, "ref");
       const explicitScriptRef = value(flags, "script-ref");
-      const daemonHost = value(flags, "daemon-host");
+      const daemonHost = daemonHostFlag(flags);
       const daemonPort = daemonPortFlag(flags);
       const reviewPrNumber = value(flags, "pr-number");
       const reviewerUsername = value(flags, "reviewer");

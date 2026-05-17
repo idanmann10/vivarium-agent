@@ -19,6 +19,7 @@ Environment:
   VIVARIUM_WORLD_ROOT         World checkout directory.
   VIVARIUM_DAEMON             Set to launchd to install and start the macOS daemon.
   VIVARIUM_DAEMON_LABEL       macOS LaunchAgent label.
+  VIVARIUM_DAEMON_HOST        Local daemon bind host.
   VIVARIUM_DAEMON_PORT        Local daemon port.
   VIVARIUM_DOMAIN             Initial setup domain.
   VIVARIUM_STATE_PATH         State database path. Defaults to ~/.vivarium/state.db.
@@ -273,6 +274,68 @@ validate_daemon_mode() {
   echo "Invalid VIVARIUM_DAEMON: $daemon_mode" >&2
   echo "Supported values: none, launchd" >&2
   exit 2
+}
+
+invalid_daemon_host() {
+  echo "Invalid VIVARIUM_DAEMON_HOST: $daemon_host" >&2
+  echo "VIVARIUM_DAEMON_HOST must be a hostname or IPv4 address without a scheme, path, port, or spaces." >&2
+  exit 2
+}
+
+is_valid_ipv4_address() {
+  local host="$1"
+  local octets
+  local octet
+
+  [[ "$host" =~ ^[0-9]+(\.[0-9]+){3}$ ]] || return 1
+
+  IFS=. read -r -a octets <<<"$host"
+  for octet in "${octets[@]}"; do
+    if [ "${#octet}" -gt 1 ] && [[ "$octet" == 0* ]]; then
+      return 1
+    fi
+    if [ "$octet" -lt 0 ] || [ "$octet" -gt 255 ]; then
+      return 1
+    fi
+  done
+}
+
+is_valid_hostname() {
+  local host="$1"
+  local labels
+  local label
+
+  if [ "$host" = "localhost" ]; then
+    return 0
+  fi
+
+  if [ "${#host}" -gt 253 ]; then
+    return 1
+  fi
+
+  IFS=. read -r -a labels <<<"$host"
+  for label in "${labels[@]}"; do
+    [[ "$label" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$ ]] || return 1
+  done
+}
+
+validate_daemon_host() {
+  if [ "$daemon_mode" != "launchd" ]; then
+    return 0
+  fi
+
+  case "$daemon_host" in
+    "" | *://* | */* | *\\* | *:* | *"?"* | *"#"* | *"["* | *"]"* | *"@"* | *[[:space:]]*)
+      invalid_daemon_host
+      ;;
+  esac
+
+  if [[ "$daemon_host" =~ ^[0-9]+(\.[0-9]+){3}$ ]]; then
+    is_valid_ipv4_address "$daemon_host" || invalid_daemon_host
+    return 0
+  fi
+
+  is_valid_hostname "$daemon_host" || invalid_daemon_host
 }
 
 validate_daemon_port() {
@@ -634,6 +697,7 @@ echo "Live readiness path: $live_env_path"
 echo
 
 validate_daemon_mode
+validate_daemon_host
 validate_daemon_port
 
 if [ "$dry_run" -eq 0 ]; then

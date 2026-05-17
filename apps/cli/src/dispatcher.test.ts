@@ -2633,6 +2633,18 @@ describe("dispatchCliCommand", () => {
     }
   });
 
+  test("rejects invalid launch handoff daemon hosts", async () => {
+    try {
+      await dispatchCliCommand(["launch", "handoff", "--daemon-host", "bad host"]);
+      throw new Error("expected launch handoff to reject invalid daemon host");
+    } catch (error) {
+      expect(error).toBeInstanceOf(CliUsageError);
+      expect((error as CliUsageError).message).toBe(
+        "--daemon-host must be a hostname or IPv4 address without a scheme, path, port, or spaces",
+      );
+    }
+  });
+
   test("routes launch handoff through a branch-pinned install when running from a pre-main checkout", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-launch-branch-"));
     const previousCwd = process.cwd();
