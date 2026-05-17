@@ -132,6 +132,22 @@ describe("proofCommand", () => {
     expect(output).not.toContain("internalCredentialSmoke");
   });
 
+  test("points blocked loaded evidence at details instead of repeating proof", () => {
+    const root = mkdtempSync(join(tmpdir(), "proof-loaded-details-next-"));
+    const evidencePath = join(root, "v1-evidence.json");
+    writeFileSync(evidencePath, JSON.stringify({ realGoals: [] }), "utf8");
+
+    const output = renderProofCommandResult(
+      proofCommand({
+        envFilePath: "live-readiness.local.env",
+        env: { VIVARIUM_V1_EVIDENCE_PATH: evidencePath },
+      }),
+    );
+
+    expect(output).toContain("\n      vivarium proof --details\n");
+    expect(output).not.toContain("\n      vivarium proof\n");
+  });
+
   test("suggests proof init when the setup file points at a missing manifest", () => {
     const root = mkdtempSync(join(tmpdir(), "proof-missing-manifest-"));
     const evidencePath = join(root, "v1-evidence.json");

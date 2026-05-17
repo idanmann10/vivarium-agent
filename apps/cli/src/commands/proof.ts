@@ -351,6 +351,7 @@ function nextCommandsFor(
   envFilePath: string,
   manifestStatus: ProofManifestStatus,
   checks: readonly ProofCheck[],
+  showDetails: boolean,
 ): readonly string[] {
   const envFile = shellQuote(envFilePath);
   const initCommand = connectInitOrOnboardCommandLine(envFilePath);
@@ -371,6 +372,10 @@ function nextCommandsFor(
     isDefaultLiveEnvFile(envFilePath)
       ? "vivarium proof"
       : `vivarium proof --env-file ${envFile}`;
+  const proofDetailsCommand =
+    isDefaultLiveEnvFile(envFilePath)
+      ? "vivarium proof --details"
+      : `vivarium proof --env-file ${envFile} --details`;
   const proofInitCommand =
     isDefaultLiveEnvFile(envFilePath)
       ? "vivarium proof init"
@@ -384,6 +389,11 @@ function nextCommandsFor(
       ? "vivarium doctor --live"
       : `vivarium doctor --live --env-file ${envFile}`;
   const needsSmokeSetup = checks.some((check) => check.label === "Provider and credential smokes" && !check.ok);
+  const hasBlockedEvidence = checks.some((check) => !check.ok);
+  const proofReviewCommand =
+    manifestStatus.kind === "loaded" && hasBlockedEvidence && !showDetails
+      ? proofDetailsCommand
+      : proofCommand;
   return [
     ...(manifestStatus.kind === "not_configured" ? [initCommand] : []),
     connectCommand,
@@ -396,7 +406,7 @@ function nextCommandsFor(
           ? [proofInitCommand]
         : needsSmokeSetup ? [] : [setupCommand]),
     smokeCommand,
-    proofCommand,
+    proofReviewCommand,
     doctorCommand,
   ];
 }
@@ -507,7 +517,7 @@ export function proofCommand(options: ProofCommandOptions = {}): ProofCommandRes
     envFilePath,
     manifestStatus,
     checks: strictChecks,
-    nextCommands: nextCommandsFor(envFilePath, manifestStatus, strictChecks),
+    nextCommands: nextCommandsFor(envFilePath, manifestStatus, strictChecks, options.showDetails === true),
   };
 }
 
