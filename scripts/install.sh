@@ -489,12 +489,14 @@ checkout_or_update() {
   run git clone "$repo" "$destination"
   if [ "$ref" != "" ]; then
     run git -C "$destination" fetch --all --prune
+    if [ "$dry_run" -eq 1 ]; then
+      echo "Would run: git -C $destination checkout $ref"
+      return 0
+    fi
     checkout_ref "$destination" "$ref"
-    if [ "$dry_run" -eq 0 ]; then
-      upstream="$(git -C "$destination" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
-      if [ "$upstream" != "" ]; then
-        run git -C "$destination" pull --ff-only
-      fi
+    upstream="$(git -C "$destination" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
+    if [ "$upstream" != "" ]; then
+      run git -C "$destination" pull --ff-only
     fi
   fi
 }

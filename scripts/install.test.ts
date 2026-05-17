@@ -429,8 +429,10 @@ describe("install.sh", () => {
       VIVARIUM_WORLD_ROOT: "/tmp/vivarium-world",
     });
     const stdout = result.stdout.toString();
+    const stderr = result.stderr.toString();
 
     expect(result.exitCode).toBe(0);
+    expect(stderr).not.toContain("fatal:");
     expect(stdout).toContain("Agent ref: codex/hermes-style-quick-setup");
     expect(stdout).toContain(
       "Would run: git clone https://github.com/idanmann10/vivarium-agent.git /tmp/vivarium-agent-install",
