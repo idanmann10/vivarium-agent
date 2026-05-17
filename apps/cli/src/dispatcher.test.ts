@@ -2799,7 +2799,8 @@ describe("dispatchCliCommand", () => {
     );
     expect(result.output).not.toContain("VIVARIUM_AGENT_REF=");
     expect(result.output).toContain("VIVARIUM_DAEMON=launchd");
-    expect(result.output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
+    expect(result.output).toContain("vivarium daemon smoke");
+    expect(result.output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
     expect(result.output).toContain("When ready for live verification:");
     expect(result.output).toContain('vivarium local run --goal "build a simple agent end to end"');
     expect(

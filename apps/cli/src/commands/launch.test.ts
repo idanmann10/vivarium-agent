@@ -26,7 +26,8 @@ describe("launchHandoffCommand", () => {
       output.slice(output.indexOf("After install:"), output.indexOf("When ready for live verification:")),
     ).not.toContain("--live-env-path");
     expect(output).not.toContain("vivarium run --goal \"validate local setup\"");
-    expect(output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
+    expect(output).toContain("vivarium daemon smoke");
+    expect(output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
     expect(output).toContain("vivarium status");
     expect(output).toContain("vivarium help");
     expect(output).toContain("When ready for live verification:");

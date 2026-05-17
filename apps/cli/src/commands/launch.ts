@@ -62,6 +62,14 @@ function installCommand(
   ].join("\n");
 }
 
+function daemonSmokeCommand(daemonHost: string, daemonPort: string): string {
+  if (daemonHost === defaultDaemonHost && daemonPort === defaultDaemonPort) {
+    return "vivarium daemon smoke";
+  }
+
+  return `vivarium daemon smoke --status-url http://${daemonHost}:${daemonPort}/status`;
+}
+
 export function launchHandoffCommand(
   options: LaunchHandoffCommandOptions = {},
 ): LaunchHandoffCommandResult {
@@ -78,7 +86,7 @@ export function launchHandoffCommand(
     installCommand: installCommand(owner, repo, ref, scriptRef, daemonHost, daemonPort),
     postInstallCommands: [
       'vivarium local run --goal "build a simple agent end to end"',
-      `vivarium daemon smoke --status-url http://${daemonHost}:${daemonPort}/status`,
+      daemonSmokeCommand(daemonHost, daemonPort),
       "vivarium status",
       "vivarium help",
       "vivarium update",
