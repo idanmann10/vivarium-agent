@@ -643,6 +643,9 @@ describe("reference docs", () => {
         "If you run `vivarium local run` before `vivarium local`, the command seeds the same starter memory first",
       );
       expect(body).toContain(
+        "If the local SQLite state file is invalid, `vivarium local run` stops before writing new run data",
+      );
+      expect(body).toContain(
         "Use `vivarium setup live` when you are ready to create provider keys",
       );
       expect(body).toContain(
