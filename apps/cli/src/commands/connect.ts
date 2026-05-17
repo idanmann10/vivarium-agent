@@ -90,7 +90,12 @@ export interface ConnectCommandResult {
 
 export interface ConnectSignupCommandResult {
   readonly providers: readonly ConnectProvider[];
+  readonly setupStatus?: ConnectSetupStatus;
   readonly nextCommands: readonly string[];
+}
+
+export interface ConnectSignupCommandOptions {
+  readonly setupStatus?: ConnectSetupStatus;
 }
 
 export interface ConnectWizardCommandResult {
@@ -586,38 +591,90 @@ const signupLocalFileGroups = [
   {
     name: "Names and worlds",
     files: [
-      ["Agent repo name", "~/.vivarium/secrets/agent-repo-name.txt"],
-      ["World repo name", "~/.vivarium/secrets/world-repo-name.txt"],
-      ["Canonical world ref", "~/.vivarium/secrets/canonical-world-ref.txt"],
-      ["Private world ref", "~/.vivarium/secrets/private-world-ref.txt"],
+      {
+        label: "Agent repo name",
+        path: "~/.vivarium/secrets/agent-repo-name.txt",
+        key: "VIVARIUM_AGENT_REPO_NAME",
+      },
+      {
+        label: "World repo name",
+        path: "~/.vivarium/secrets/world-repo-name.txt",
+        key: "VIVARIUM_WORLD_REPO_NAME",
+      },
+      {
+        label: "Canonical world ref",
+        path: "~/.vivarium/secrets/canonical-world-ref.txt",
+        key: "VIVARIUM_CANONICAL_WORLD_REF",
+      },
+      {
+        label: "Private world ref",
+        path: "~/.vivarium/secrets/private-world-ref.txt",
+        key: "VIVARIUM_PRIVATE_WORLD_REF",
+      },
     ],
   },
   {
     name: "GitHub/public release",
     files: [
-      ["GitHub token", "~/.vivarium/secrets/github-token.key"],
-      ["GitHub owner", "~/.vivarium/secrets/github-owner.txt"],
-      ["GitHub repository ID", "~/.vivarium/secrets/github-repository-id.txt"],
-      ["GitHub Discussion category ID", "~/.vivarium/secrets/github-discussion-category-id.txt"],
+      { label: "GitHub token", path: "~/.vivarium/secrets/github-token.key", key: "GITHUB_TOKEN" },
+      { label: "GitHub owner", path: "~/.vivarium/secrets/github-owner.txt", key: "VIVARIUM_GITHUB_OWNER" },
+      {
+        label: "GitHub repository ID",
+        path: "~/.vivarium/secrets/github-repository-id.txt",
+        key: "VIVARIUM_GITHUB_REPOSITORY_ID",
+      },
+      {
+        label: "GitHub Discussion category ID",
+        path: "~/.vivarium/secrets/github-discussion-category-id.txt",
+        key: "VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID",
+      },
     ],
   },
   {
     name: "Provider accounts",
     files: [
-      ["Anthropic API key", "~/.vivarium/secrets/anthropic.key"],
-      ["OpenRouter API key", "~/.vivarium/secrets/openrouter.key"],
-      ["Private model API key", "~/.vivarium/secrets/private-oai.key"],
-      ["Private model base URL", "~/.vivarium/secrets/private-base-url.txt"],
-      ["Private model name", "~/.vivarium/secrets/private-model.txt"],
-      ["Private model context window", "~/.vivarium/secrets/private-context-window.txt"],
+      { label: "Anthropic API key", path: "~/.vivarium/secrets/anthropic.key", key: "ANTHROPIC_API_KEY" },
+      { label: "OpenRouter API key", path: "~/.vivarium/secrets/openrouter.key", key: "OPENROUTER_API_KEY" },
+      {
+        label: "Private model API key",
+        path: "~/.vivarium/secrets/private-oai.key",
+        key: "VIVARIUM_OAI_COMPAT_API_KEY",
+      },
+      {
+        label: "Private model base URL",
+        path: "~/.vivarium/secrets/private-base-url.txt",
+        key: "VIVARIUM_OAI_COMPAT_BASE_URL",
+      },
+      {
+        label: "Private model name",
+        path: "~/.vivarium/secrets/private-model.txt",
+        key: "VIVARIUM_OAI_COMPAT_MODEL",
+      },
+      {
+        label: "Private model context window",
+        path: "~/.vivarium/secrets/private-context-window.txt",
+        key: "VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW",
+      },
     ],
   },
   {
     name: "Internal credential",
     files: [
-      ["Credential master key", "~/.vivarium/secrets/credential-master.key"],
-      ["Internal API token", "~/.vivarium/secrets/internal-api.token"],
-      ["Internal API health URL", "~/.vivarium/secrets/internal-health-url.txt"],
+      {
+        label: "Credential master key",
+        path: "~/.vivarium/secrets/credential-master.key",
+        key: "VIVARIUM_CREDENTIALS_MASTER_KEY",
+      },
+      {
+        label: "Internal API token",
+        path: "~/.vivarium/secrets/internal-api.token",
+        key: "VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE",
+      },
+      {
+        label: "Internal API health URL",
+        path: "~/.vivarium/secrets/internal-health-url.txt",
+        key: "VIVARIUM_INTERNAL_API_HEALTH_URL",
+      },
     ],
   },
 ] as const;
@@ -839,9 +896,12 @@ export function connectCommand(options: ConnectCommandOptions = {}): ConnectComm
   };
 }
 
-export function connectSignupCommand(): ConnectSignupCommandResult {
+export function connectSignupCommand(
+  options: ConnectSignupCommandOptions = {},
+): ConnectSignupCommandResult {
   return {
     providers,
+    ...(options.setupStatus === undefined ? {} : { setupStatus: options.setupStatus }),
     nextCommands: [
       "vivarium setup live",
       ...liveSetupNextCommands("live-readiness.local.env").filter((command) => command !== "vivarium connect signup"),
@@ -992,15 +1052,53 @@ function renderReleaseCredentialHandoff(): readonly string[] {
   ];
 }
 
-function renderSignupLocalValueMap(): readonly string[] {
+function setupFileIsReady(
+  key: string,
+  status: ConnectSetupStatus | undefined,
+): boolean {
+  if (status === undefined) {
+    return false;
+  }
+
+  const fields = [
+    ...status.namesAndWorlds.fields,
+    ...status.github.fields,
+    ...status.providers.flatMap((provider) => provider.fields),
+    ...status.credential.fields,
+  ];
+  return fields.some((field) => field.key === key && field.ready);
+}
+
+function renderSignupLocalValueMap(status: ConnectSetupStatus | undefined): readonly string[] {
+  const groups = signupLocalFileGroups
+    .map((group) => ({
+      name: group.name,
+      files: status === undefined
+        ? group.files
+        : group.files.filter((file) => !setupFileIsReady(file.key, status)),
+    }))
+    .filter((group) => group.files.length > 0);
+
+  if (status !== undefined && groups.length === 0) {
+    return [
+      "Local value map",
+      "  All generated local setup files have concrete setup values.",
+      "  Re-run vivarium connect to review readiness.",
+    ];
+  }
+
   return [
     "Local value map",
-    "  Run vivarium setup live once, then paste one value into each generated file.",
-    ...signupLocalFileGroups.flatMap((group) => [
+    status === undefined
+      ? "  Run vivarium setup live once, then paste one value into each generated file."
+      : "  Run vivarium setup live once, then paste values only into files still listed here.",
+    ...groups.flatMap((group) => [
       `  ${group.name}:`,
-      ...group.files.map(([label, path]) => `    ${label}: ${path}`),
+      ...group.files.map((file) => `    ${file.label}: ${file.path}`),
     ]),
-    "  Paste one value per file; rerun vivarium setup live after filling them.",
+    status === undefined
+      ? "  Paste one value per file; rerun vivarium setup live after filling them."
+      : "  Paste the listed values; rerun vivarium setup live after filling them.",
   ];
 }
 
@@ -1818,7 +1916,7 @@ export function renderConnectSignupCommandResult(result: ConnectSignupCommandRes
     "  Generated profiles, credentials, and evidence files stay under ~/.vivarium/live.",
     "  Use vivarium connect to review readiness before writing anything.",
     "",
-    ...renderSignupLocalValueMap(),
+    ...renderSignupLocalValueMap(result.setupStatus),
     "",
     "Next commands:",
     ...renderLaunchSequence(result.nextCommands),

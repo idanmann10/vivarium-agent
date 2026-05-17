@@ -297,6 +297,36 @@ describe("dispatchCliCommand", () => {
     expect(result.output).not.toContain("providers configure --profiles-path");
   });
 
+  test("routes connect signup without already configured local source files", async () => {
+    const home = mkdtempSync(join(tmpdir(), "cli-dispatch-connect-signup-configured-"));
+    const envPath = join(home, ".vivarium", "live", "live-readiness.local.env");
+    write(
+      envPath,
+      [
+        'export VIVARIUM_AGENT_REPO_NAME="vivarium-agent"',
+        'export VIVARIUM_WORLD_REPO_NAME="vivarium-world"',
+        'export VIVARIUM_CANONICAL_WORLD_REF="https://github.com/idanmann10/vivarium-world.git"',
+        'export VIVARIUM_PRIVATE_WORLD_REF="/Users/idanmann/.vivarium/private-world"',
+        'export GITHUB_TOKEN="ghp_ready"',
+        'export VIVARIUM_GITHUB_OWNER="idanmann10"',
+        'export VIVARIUM_GITHUB_REPOSITORY_ID="R_123"',
+        'export VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID="DIC_123"',
+        "",
+      ].join("\n"),
+    );
+
+    const result = await dispatchCliCommand(["connect", "signup"], { env: { HOME: home } });
+
+    expect(result.command).toBe("connect");
+    expect(result.output).toContain("Local value map");
+    expect(result.output).toContain("Provider accounts:");
+    expect(result.output).toContain("Internal credential:");
+    expect(result.output).not.toContain("  Names and worlds:");
+    expect(result.output).not.toContain("    Agent repo name: ~/.vivarium/secrets/agent-repo-name.txt");
+    expect(result.output).not.toContain("    GitHub token: ~/.vivarium/secrets/github-token.key");
+    expect(result.output).not.toContain("    GitHub owner: ~/.vivarium/secrets/github-owner.txt");
+  });
+
   test("routes connect wizard through a single guided live setup entrypoint", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-connect-wizard-"));
     const envPath = join(root, "live-readiness.local.env");

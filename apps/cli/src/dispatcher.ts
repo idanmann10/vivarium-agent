@@ -1392,7 +1392,17 @@ export async function dispatchCliCommand(
         return { command, result, output: renderConnectInitCommandResult(result) };
       }
       if (connectSubcommand === "signup") {
-        const result = connectSignupCommand();
+        const signupSetupStatus =
+          envFile === undefined
+            ? undefined
+            : connectCommand({
+                envFilePath: envFile,
+                env: readEnvFile(envFile, options.env ?? process.env),
+                pathExists: existsSync,
+              }).setupStatus;
+        const result = connectSignupCommand({
+          ...(signupSetupStatus === undefined ? {} : { setupStatus: signupSetupStatus }),
+        });
         return { command, result, output: renderConnectSignupCommandResult(result) };
       }
       if (connectSubcommand === "wizard") {
