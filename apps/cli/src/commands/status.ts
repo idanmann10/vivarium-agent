@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { SQLiteStateRepository } from "../../../../packages/state/src/index.js";
 import { renderVivariumGlobe } from "./branding.js";
 
 export interface StatusSummary {
@@ -26,6 +27,30 @@ function defaultVivariumHome(): string {
   return process.env.HOME ?? homedir();
 }
 
+function localStateReady(statePath: string, pathExists: (path: string) => boolean): boolean {
+  if (!pathExists(statePath)) {
+    return false;
+  }
+
+  let state: SQLiteStateRepository | undefined;
+  try {
+    state = new SQLiteStateRepository(statePath);
+    const identity = state.getIdentity();
+    const hasIdentity = identity !== undefined && identity.name.trim().length > 0;
+    const hasStarterSkill = state.listLocalSkills().some(
+      (skill) =>
+        skill.status === "promoted" &&
+        skill.domain.trim().length > 0 &&
+        skill.body.trim().length > 0,
+    );
+    return hasIdentity && hasStarterSkill;
+  } catch {
+    return false;
+  } finally {
+    state?.close();
+  }
+}
+
 export function statusCommand(options: StatusCommandOptions = {}): StatusSummary {
   const home = defaultVivariumHome();
   const statePath = options.statePath ?? join(home, ".vivarium", "state.db");
@@ -35,7 +60,7 @@ export function statusCommand(options: StatusCommandOptions = {}): StatusSummary
   return {
     repo: "vivarium-agent",
     runtime: "offline-local",
-    localState: { path: statePath, ready: pathExists(statePath) },
+    localState: { path: statePath, ready: localStateReady(statePath, pathExists) },
     liveSetup: { path: liveEnvPath, staged: pathExists(liveEnvPath) },
   };
 }

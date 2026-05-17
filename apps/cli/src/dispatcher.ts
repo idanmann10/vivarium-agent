@@ -187,6 +187,10 @@ function usage(message: string, nextCommands?: readonly string[]): never {
   throw new CliUsageError(message, nextCommands);
 }
 
+function defaultStatePath(env: Readonly<Record<string, string | undefined>> | undefined): string {
+  return join(defaultVivariumHome(env), ".vivarium", "state.db");
+}
+
 interface GitCheckoutRef {
   readonly ref: string;
   readonly scriptRef: string;
@@ -720,10 +724,7 @@ function bootstrapLocalRunState(options: {
     return;
   }
   if (stateStatus === "invalid") {
-    usage(
-      `Local state is invalid: ${options.statePath}. Move the invalid local SQLite state aside, then run vivarium local to create a fresh local memory database.`,
-      ["vivarium doctor", "vivarium local", "vivarium help"],
-    );
+    localStateInvalidUsage(options.statePath);
   }
 
   runInitCommand({
@@ -733,6 +734,19 @@ function bootstrapLocalRunState(options: {
     ...(options.worldRoot === undefined ? {} : { worldRoot: options.worldRoot }),
     statePath: options.statePath,
   });
+}
+
+function localStateInvalidUsage(statePath: string): never {
+  usage(
+    `Local state is invalid: ${statePath}. Move the invalid local SQLite state aside, then run vivarium local to create a fresh local memory database.`,
+    ["vivarium doctor", "vivarium local", "vivarium help"],
+  );
+}
+
+function guardLocalSetupState(statePath: string): void {
+  if (localStateSeedStatus(statePath) === "invalid") {
+    localStateInvalidUsage(statePath);
+  }
 }
 
 function writableDefaultLiveEnvFile(env: Readonly<Record<string, string | undefined>> | undefined): string {
@@ -984,7 +998,7 @@ export async function dispatchCliCommand(
       }
 
       const worldRoot = value(flags, "world-root");
-      const statePath = value(flags, "state-path");
+      const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
       const agentName = value(flags, "agent-name");
       const liveEnvPath = value(flags, "live-env-path") ?? privateDefaultLiveEnvFile(options.env);
       const githubOwner = value(flags, "github-owner");
@@ -992,11 +1006,12 @@ export async function dispatchCliCommand(
       const worldRepo = value(flags, "world-repo");
       const canonicalWorldRef = value(flags, "canonical-world-ref");
       const privateWorldRef = value(flags, "private-world-ref");
+      guardLocalSetupState(statePath);
       const result = setupCommand({
         primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? "coding",
         ...(agentName === undefined ? {} : { agentName }),
         ...(worldRoot === undefined ? {} : { worldRoot }),
-        ...(statePath === undefined ? {} : { statePath }),
+        statePath,
         quick: true,
         ...(liveEnvPath === undefined ? {} : { liveEnvPath }),
         prefill: {
@@ -1012,7 +1027,7 @@ export async function dispatchCliCommand(
     case "local": {
       if (subcommand === undefined || subcommand.startsWith("--")) {
         const worldRoot = value(flags, "world-root");
-        const statePath = value(flags, "state-path");
+        const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
         const agentName = value(flags, "agent-name");
         const liveEnvPath = value(flags, "live-env-path") ?? privateDefaultLiveEnvFile(options.env);
         const githubOwner = value(flags, "github-owner");
@@ -1020,11 +1035,12 @@ export async function dispatchCliCommand(
         const worldRepo = value(flags, "world-repo");
         const canonicalWorldRef = value(flags, "canonical-world-ref");
         const privateWorldRef = value(flags, "private-world-ref");
+        guardLocalSetupState(statePath);
         const result = setupCommand({
           primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? "coding",
           ...(agentName === undefined ? {} : { agentName }),
           ...(worldRoot === undefined ? {} : { worldRoot }),
-          ...(statePath === undefined ? {} : { statePath }),
+          statePath,
           quick: true,
           ...(liveEnvPath === undefined ? {} : { liveEnvPath }),
           prefill: {
@@ -1043,8 +1059,7 @@ export async function dispatchCliCommand(
         const agentName = value(flags, "agent-name");
         const worldRoot = value(flags, "world-root");
         const worldSubscriptionsPath = value(flags, "world-subscriptions-path");
-        const statePath =
-          value(flags, "state-path") ?? join(defaultVivariumHome(options.env), ".vivarium", "state.db");
+        const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
         const providerKind = value(flags, "provider-kind") as RunProviderKind | undefined;
         const providerApiKeyEnv = value(flags, "provider-api-key-env");
         const providerModel = value(flags, "provider-model");
@@ -1089,7 +1104,7 @@ export async function dispatchCliCommand(
       }
 
       const worldRoot = value(flags, "world-root");
-      const statePath = value(flags, "state-path");
+      const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
       const agentName = value(flags, "agent-name");
       const envFile = value(flags, "env-file");
       const liveEnvPath = value(flags, "live-env-path") ?? privateDefaultLiveEnvFile(options.env);
@@ -1098,11 +1113,12 @@ export async function dispatchCliCommand(
       const worldRepo = value(flags, "world-repo");
       const canonicalWorldRef = value(flags, "canonical-world-ref");
       const privateWorldRef = value(flags, "private-world-ref");
+      guardLocalSetupState(statePath);
       const result = setupCommand({
         primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? "coding",
         ...(agentName === undefined ? {} : { agentName }),
         ...(worldRoot === undefined ? {} : { worldRoot }),
-        ...(statePath === undefined ? {} : { statePath }),
+        statePath,
         ...(booleanFlag(flags, "quick") ? { quick: true } : {}),
         ...(liveEnvPath === undefined ? {} : { liveEnvPath }),
         prefill: {

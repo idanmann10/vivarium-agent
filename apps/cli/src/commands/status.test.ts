@@ -3,7 +3,33 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { agentId, skillId } from "../../../../packages/core/src/index.js";
+import { SQLiteStateRepository } from "../../../../packages/state/src/index.js";
 import { renderStatusCommandResult, statusCommand } from "./status.js";
+
+function seedReadyLocalState(statePath: string): void {
+  const state = new SQLiteStateRepository(statePath);
+  state.upsertLocalSkill({
+    id: skillId("coding.status-ready"),
+    name: "Status Ready",
+    domain: "coding",
+    status: "promoted",
+    uses: 0,
+    helped: 0,
+    lastUsedRunOffset: 0,
+    habitual: false,
+    body: "A promoted starter skill.",
+  });
+  state.setIdentity({
+    agentId: agentId("local-agent"),
+    name: "local-agent",
+    devStages: { coding: "newborn" },
+    runsCompleted: 0,
+    summary: "Local agent initialized.",
+    updatedAt: "local",
+  });
+  state.close();
+}
 
 describe("statusCommand", () => {
   test("renders branded local runtime status", () => {
@@ -65,27 +91,69 @@ describe("statusCommand", () => {
     }
   });
 
+  test("does not mark invalid local state ready", () => {
+    const home = mkdtempSync(join(tmpdir(), "status-invalid-state-home-"));
+    const statePath = join(home, ".vivarium", "state.db");
+    mkdirSync(join(home, ".vivarium"), { recursive: true });
+    writeFileSync(statePath, "not a sqlite database", "utf8");
+
+    const result = statusCommand({ statePath });
+    const output = renderStatusCommandResult(result);
+
+    expect(result.localState).toEqual({
+      path: statePath,
+      ready: false,
+    });
+    expect(output).toContain(`[needs] Local state: ${statePath}`);
+    expect(output).toContain("vivarium local");
+    expect(output).toContain("Create the local agent.");
+  });
+
+  test("does not mark unseeded local state ready", () => {
+    const home = mkdtempSync(join(tmpdir(), "status-unseeded-state-home-"));
+    const statePath = join(home, ".vivarium", "state.db");
+    const state = new SQLiteStateRepository(statePath);
+    state.close();
+
+    const result = statusCommand({ statePath });
+    const output = renderStatusCommandResult(result);
+
+    expect(result.localState).toEqual({
+      path: statePath,
+      ready: false,
+    });
+    expect(output).toContain(`[needs] Local state: ${statePath}`);
+    expect(output).toContain("vivarium local");
+    expect(output).toContain("Create the local agent.");
+  });
+
   test("renders a production readiness dashboard without raw setup keys", () => {
+    const root = mkdtempSync(join(tmpdir(), "status-ready-dashboard-"));
+    const statePath = join(root, ".vivarium", "state.db");
+    const liveEnvPath = join(root, "live-readiness.local.env");
+    seedReadyLocalState(statePath);
+    writeFileSync(liveEnvPath, "# local readiness\n", "utf8");
+
     const result = statusCommand({
-      statePath: ".vivarium/state.db",
-      liveEnvPath: "live-readiness.local.env",
+      statePath,
+      liveEnvPath,
       pathExists: (path) =>
-        path === ".vivarium/state.db" || path === "live-readiness.local.env",
+        path === statePath || path === liveEnvPath,
     });
     const output = renderStatusCommandResult(result);
 
     expect(result.localState).toEqual({
-      path: ".vivarium/state.db",
+      path: statePath,
       ready: true,
     });
     expect(result.liveSetup).toEqual({
-      path: "live-readiness.local.env",
+      path: liveEnvPath,
       staged: true,
     });
     expect(output).toContain("Production readiness");
-    expect(output).toContain("[ready] Local state: .vivarium/state.db");
-    expect(output).toContain("[staged] Live setup file: live-readiness.local.env");
-    expect(output).not.toContain("[ready] Live setup file: live-readiness.local.env");
+    expect(output).toContain(`[ready] Local state: ${statePath}`);
+    expect(output).toContain(`[staged] Live setup file: ${liveEnvPath}`);
+    expect(output).not.toContain(`[ready] Live setup file: ${liveEnvPath}`);
     expect(output).toContain("vivarium local run");
     expect(output).toContain("vivarium connect");
     expect(output).toContain("vivarium model");

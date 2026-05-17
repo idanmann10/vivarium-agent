@@ -1895,6 +1895,26 @@ describe("dispatchCliCommand", () => {
     }
   });
 
+  test("routes corrupt default local setup state to repair guidance", async () => {
+    const home = mkdtempSync(join(tmpdir(), "cli-dispatch-local-corrupt-home-"));
+    const statePath = join(home, ".vivarium", "state.db");
+    write(statePath, "not a sqlite database");
+
+    try {
+      await dispatchCliCommand(["local"], { env: { HOME: home } });
+      throw new Error("expected command to fail");
+    } catch (error) {
+      expect(error).toBeInstanceOf(CliUsageError);
+      expect((error as CliUsageError).message).toContain("Local state is invalid");
+      expect((error as CliUsageError).message).toContain(statePath);
+      expect((error as CliUsageError).nextCommands).toEqual([
+        "vivarium doctor",
+        "vivarium local",
+        "vivarium help",
+      ]);
+    }
+  });
+
   test("routes local run through configured provider flags", async () => {
     const worldRoot = createWorldFixture();
     const run = await dispatchCliCommand([
