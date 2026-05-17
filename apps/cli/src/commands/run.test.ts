@@ -72,6 +72,7 @@ describe("runCommand", () => {
     expect(output).toContain(`Memory: ${statePath}`);
     expect(output).toContain("vivarium local run --goal");
     expect(output).toContain("vivarium status");
+    expect(output).toContain("vivarium launch handoff");
     expect(output).not.toContain("vivarium publish run");
     expect(output).not.toContain("--contributor <agent-id>");
   });

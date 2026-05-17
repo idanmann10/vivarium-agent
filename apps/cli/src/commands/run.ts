@@ -355,6 +355,7 @@ function renderRunGuidance(result: RunCommandResult): readonly string[] {
       "Next commands:",
       "  vivarium local run --goal \"try another small coding task\"",
       "  vivarium status",
+      "  vivarium launch handoff",
       "  vivarium model",
     ];
   }

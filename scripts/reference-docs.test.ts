@@ -1295,6 +1295,7 @@ describe("reference docs", () => {
     expect(body).toContain("Readiness file: <demo-live-readiness.local.env>");
     expect(body).toContain("--world-root <demo-world>");
     expect(body).toContain("run-demo-000");
+    expect(body).toContain("vivarium status\\n  vivarium launch handoff\\n  vivarium model");
     expect(body).not.toContain("/Users/");
     expect(body).not.toContain("vivarium-local-e2e-demo-");
     expect(body).not.toContain("Memory: /");
