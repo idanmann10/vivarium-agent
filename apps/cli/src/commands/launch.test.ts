@@ -104,4 +104,23 @@ describe("launchHandoffCommand", () => {
     expect(output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:9898/status");
     expect(output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
   });
+
+  test("renders exact reviewer commands when reviewer and PR number are supplied", () => {
+    const result = launchHandoffCommand({
+      ref: "codex/local-agent-production-ready",
+      scriptRef: "51dc4bd4dfa8de02ac2fe8a947ceb9d4066baa2a",
+      reviewPrNumber: "26",
+      reviewerUsername: "startclaw-ai",
+    });
+    const output = renderLaunchHandoffCommandResult(result);
+
+    expect(output).toContain(
+      "gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/startclaw-ai -f permission=push",
+    );
+    expect(output).toContain(
+      "gh pr edit 26 --repo idanmann10/vivarium-agent --add-reviewer startclaw-ai",
+    );
+    expect(output).not.toContain("PR_NUMBER");
+    expect(output).not.toContain("REVIEWER_GITHUB_USERNAME");
+  });
 });

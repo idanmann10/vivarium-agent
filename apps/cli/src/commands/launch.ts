@@ -8,6 +8,8 @@ export interface LaunchHandoffCommandOptions {
   readonly scriptRef?: string;
   readonly daemonHost?: string;
   readonly daemonPort?: string;
+  readonly reviewPrNumber?: string;
+  readonly reviewerUsername?: string;
 }
 
 export interface LaunchHandoffCommandResult {
@@ -69,6 +71,8 @@ export function launchHandoffCommand(
   const scriptRef = options.scriptRef ?? (ref === defaultRef ? defaultScriptRef : ref);
   const daemonHost = options.daemonHost ?? defaultDaemonHost;
   const daemonPort = options.daemonPort ?? defaultDaemonPort;
+  const reviewPrNumber = options.reviewPrNumber ?? "PR_NUMBER";
+  const reviewerUsername = options.reviewerUsername ?? "REVIEWER_GITHUB_USERNAME";
 
   return {
     installCommand: installCommand(owner, repo, ref, scriptRef, daemonHost, daemonPort),
@@ -111,8 +115,8 @@ export function launchHandoffCommand(
         : [
             "Keep branch protection and review intact before switching installs back to main.",
             "Invite one eligible non-author reviewer when GitHub reports REVIEW_REQUIRED.",
-            `gh api -X PUT repos/${owner}/${repo}/collaborators/REVIEWER_GITHUB_USERNAME -f permission=push`,
-            `gh pr edit PR_NUMBER --repo ${owner}/${repo} --add-reviewer REVIEWER_GITHUB_USERNAME`,
+            `gh api -X PUT repos/${owner}/${repo}/collaborators/${reviewerUsername} -f permission=push`,
+            `gh pr edit ${reviewPrNumber} --repo ${owner}/${repo} --add-reviewer ${reviewerUsername}`,
             "Do not lower branch protection or self-approve just to merge.",
           ]),
       "Use the live verification commands only after secrets and evidence are available.",

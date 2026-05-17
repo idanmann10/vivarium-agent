@@ -2633,6 +2633,31 @@ describe("dispatchCliCommand", () => {
     }
   });
 
+  test("routes launch handoff reviewer flags into exact unblock commands", async () => {
+    const result = await dispatchCliCommand([
+      "launch",
+      "handoff",
+      "--ref",
+      "codex/local-agent-production-ready",
+      "--script-ref",
+      "51dc4bd4dfa8de02ac2fe8a947ceb9d4066baa2a",
+      "--pr-number",
+      "26",
+      "--reviewer",
+      "startclaw-ai",
+    ]);
+
+    expect(result.command).toBe("launch");
+    expect(result.output).toContain(
+      "gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/startclaw-ai -f permission=push",
+    );
+    expect(result.output).toContain(
+      "gh pr edit 26 --repo idanmann10/vivarium-agent --add-reviewer startclaw-ai",
+    );
+    expect(result.output).not.toContain("PR_NUMBER");
+    expect(result.output).not.toContain("REVIEWER_GITHUB_USERNAME");
+  });
+
   test("routes live doctor checks through injected probes", async () => {
     await expect(
       dispatchCliCommand(["doctor", "--live", "--agent-root", "/agent", "--world-root", "/world"], {
