@@ -242,13 +242,16 @@ banner() {
 }
 
 need_command() {
-  if ! command -v "$1" >/dev/null 2>&1; then
-    echo "Missing required command: $1" >&2
-    if [ "$1" = "git" ]; then
+  local command_name="$1"
+  local dependency="${2:-$1}"
+
+  if ! command -v "$command_name" >/dev/null 2>&1; then
+    echo "Missing required command: $command_name" >&2
+    if [ "$dependency" = "git" ]; then
       echo "Install Git first. On macOS, run: xcode-select --install" >&2
       echo "Then rerun the Vivarium installer." >&2
     fi
-    if [ "$1" = "bun" ]; then
+    if [ "$dependency" = "bun" ]; then
       echo "Install Bun first: https://bun.sh/docs/installation" >&2
       echo "Command: curl -fsSL https://bun.sh/install | bash" >&2
       echo "Then reload your shell and rerun the Vivarium installer." >&2
@@ -583,8 +586,8 @@ echo "Live readiness path: $live_env_path"
 echo
 
 if [ "$dry_run" -eq 0 ]; then
-  need_command git
-  need_command "$bun_command"
+  need_command git git
+  need_command "$bun_command" bun
   bun_command="${VIVARIUM_BUN_PATH:-$(command -v bun)}"
 fi
 

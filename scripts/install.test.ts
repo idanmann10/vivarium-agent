@@ -513,6 +513,39 @@ describe("install.sh", () => {
     }
   });
 
+  test("prints Bun recovery when a custom Bun executable is missing", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-install-missing-custom-bun-"));
+    const bin = join(root, "bin");
+    const missingBun = join(root, "missing-bun");
+    mkdirSync(bin);
+    writeFileSync(join(bin, "git"), ["#!/bin/sh", "exit 0", ""].join("\n"), {
+      encoding: "utf8",
+      mode: 0o755,
+    });
+
+    try {
+      const result = Bun.spawnSync(["/bin/bash", "scripts/install.sh"], {
+        env: {
+          ...process.env,
+          HOME: root,
+          PATH: `${bin}:/usr/bin:/bin:/usr/sbin:/sbin`,
+          VIVARIUM_BUN_PATH: missingBun,
+        },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const stderr = result.stderr.toString();
+
+      expect(result.exitCode).toBe(1);
+      expect(stderr).toContain(`Missing required command: ${missingBun}`);
+      expect(stderr).toContain("Install Bun first: https://bun.sh/docs/installation");
+      expect(stderr).toContain("curl -fsSL https://bun.sh/install | bash");
+      expect(stderr).toContain("Then reload your shell and rerun the Vivarium installer.");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   test("prints a copyable macOS Git install command when Git is missing", () => {
     const root = mkdtempSync(join(tmpdir(), "vivarium-install-missing-git-"));
     const bin = join(root, "bin");
