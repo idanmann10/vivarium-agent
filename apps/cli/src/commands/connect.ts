@@ -381,7 +381,7 @@ function secretFileNextCommands(
 }
 
 const detailCommands = [
-  'vivarium providers configure --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --name "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE" --kind anthropic --api-key-env ANTHROPIC_API_KEY --model "$VIVARIUM_ANTHROPIC_MODEL" --capability chat --capability json_mode --context-window "$VIVARIUM_ANTHROPIC_CONTEXT_WINDOW" --cost-class expensive',
+  'vivarium providers configure --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --name "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE" --kind anthropic --api-key-env ANTHROPIC_API_KEY --model "$VIVARIUM_ANTHROPIC_MODEL" --capability chat --capability tools --context-window "$VIVARIUM_ANTHROPIC_CONTEXT_WINDOW" --cost-class expensive',
   'vivarium providers configure --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --name "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE" --kind openai-compat --api-key-env OPENROUTER_API_KEY --model "$VIVARIUM_OPENROUTER_MODEL" --base-url https://openrouter.ai/api/v1 --capability chat --capability json_mode --context-window "$VIVARIUM_OPENROUTER_CONTEXT_WINDOW" --cost-class medium',
   'vivarium providers configure --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --name "$VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE" --kind openai-compat --api-key-env VIVARIUM_OAI_COMPAT_API_KEY --model "$VIVARIUM_OAI_COMPAT_MODEL" --base-url "$VIVARIUM_OAI_COMPAT_BASE_URL" --capability chat --capability json_mode --context-window "$VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW" --cost-class medium',
   'vivarium providers smoke --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --profile "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE"',
