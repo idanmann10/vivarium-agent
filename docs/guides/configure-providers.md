@@ -169,6 +169,10 @@ Run a goal through a profile:
 ```bash
 vivarium local run \
   --goal "<small real goal>" \
-  --provider-profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
-  --provider-profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
+  --env-file "$HOME/.vivarium/live/live-readiness.local.env" \
+  --provider-profile openrouter
 ```
+
+`--env-file` loads the saved provider profile path and key env values from the
+same private setup file used by `vivarium connect`, so provider-backed local runs
+do not need a separate shell `source` step.

@@ -123,6 +123,10 @@ export function localRunHelpCommand(): LocalRunHelpCommandResult {
         description: "Live-readiness file to stage and report in status output.",
       },
       {
+        command: "--env-file <path>",
+        description: "Load provider profiles and key env values from a live-readiness file.",
+      },
+      {
         command: "--provider-profile <name>",
         description: "Saved provider profile to use after live provider setup is ready.",
       },
@@ -134,7 +138,7 @@ export function localRunHelpCommand(): LocalRunHelpCommandResult {
     examples: [
       'vivarium local run --goal "build a tiny local agent"',
       'vivarium local run --goal "summarize this repo" --state-path ~/.vivarium/state.db --live-env-path ~/.vivarium/live/live-readiness.local.env',
-      'vivarium local run --goal "try a live model" --provider-profile openrouter',
+      'vivarium local run --goal "try a live model" --env-file ~/.vivarium/live/live-readiness.local.env --provider-profile openrouter',
     ],
     nextCommands: ["vivarium status", "vivarium launch handoff", "vivarium model"],
   };

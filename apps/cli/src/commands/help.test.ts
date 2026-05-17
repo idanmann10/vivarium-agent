@@ -143,6 +143,7 @@ describe("helpCommand", () => {
     expect(output).toContain("--state-path <path>");
     expect(output).toContain("--world-root <path>");
     expect(output).toContain("--live-env-path <path>");
+    expect(output).toContain("--env-file <path>");
     expect(output).toContain("--provider-profile <name>");
     expect(output).toContain('vivarium local run --goal "build a tiny local agent"');
     expect(output).toContain("vivarium status");

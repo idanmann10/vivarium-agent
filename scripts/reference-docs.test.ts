@@ -1059,6 +1059,7 @@ describe("reference docs", () => {
       const body = readFileSync(path, "utf8");
 
       expect(body).toContain("vivarium local run \\");
+      expect(body).toContain('--env-file "$HOME/.vivarium/live/live-readiness.local.env"');
       expect(body).not.toContain("vivarium run \\");
     }
   });
@@ -1408,7 +1409,7 @@ describe("reference docs", () => {
       "/Users/idanmann/.bun/bin/bun install --frozen-lockfile",
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
-      "`560 pass, 0 fail, 4556 expect calls`",
+      "`562 pass, 0 fail, 4566 expect calls`",
       "bun run dependency:audit",
       "No vulnerabilities found",
       "status next commands preserve explicit `--state-path` and `--live-env-path` values",

@@ -1155,16 +1155,23 @@ export async function dispatchCliCommand(
         const domain = value(flags, "domain");
         const agentName = value(flags, "agent-name");
         const worldRoot = value(flags, "world-root");
-        const worldSubscriptionsPath = value(flags, "world-subscriptions-path");
         const explicitStatePath = value(flags, "state-path");
         const explicitLiveEnvPath = value(flags, "live-env-path");
+        const envFile = value(flags, "env-file");
+        const runEnv =
+          envFile === undefined ? options.env : readEnvFile(envFile, options.env ?? process.env);
+        const worldSubscriptionsPath =
+          value(flags, "world-subscriptions-path") ??
+          (runEnv ?? process.env).VIVARIUM_WORLD_SUBSCRIPTIONS_PATH;
         const statePath = explicitStatePath ?? defaultStatePath(options.env);
         const liveEnvPath = explicitLiveEnvPath ?? privateDefaultLiveEnvFile(options.env);
         const providerKind = value(flags, "provider-kind") as RunProviderKind | undefined;
         const providerApiKeyEnv = value(flags, "provider-api-key-env");
         const providerModel = value(flags, "provider-model");
         const providerBaseUrl = value(flags, "provider-base-url");
-        const providerProfilesPath = value(flags, "provider-profiles-path");
+        const providerProfilesPath =
+          value(flags, "provider-profiles-path") ??
+          (runEnv ?? process.env).VIVARIUM_PROVIDER_PROFILES_PATH;
         const providerProfile = value(flags, "provider-profile");
         const availableToolsets = values(flags, "available-toolset");
         const availableTools = values(flags, "available-tool");
@@ -1186,6 +1193,7 @@ export async function dispatchCliCommand(
           ...(providerProfile === undefined ? {} : { providerProfile }),
           ...(availableToolsets.length === 0 ? {} : { availableToolsets }),
           ...(availableTools.length === 0 ? {} : { availableTools }),
+          ...(runEnv === undefined ? {} : { env: runEnv }),
         });
         return { command, result, output: renderRunCommandResult(result) };
       }
@@ -1397,14 +1405,21 @@ export async function dispatchCliCommand(
       const domain = value(flags, "domain");
       const agentName = value(flags, "agent-name");
       const worldRoot = value(flags, "world-root");
-      const worldSubscriptionsPath = value(flags, "world-subscriptions-path");
       const statePath = value(flags, "state-path");
-      const liveEnvPath = value(flags, "live-env-path");
+      const envFile = value(flags, "env-file");
+      const liveEnvPath = value(flags, "live-env-path") ?? envFile;
+      const runEnv =
+        envFile === undefined ? options.env : readEnvFile(envFile, options.env ?? process.env);
+      const worldSubscriptionsPath =
+        value(flags, "world-subscriptions-path") ??
+        (runEnv ?? process.env).VIVARIUM_WORLD_SUBSCRIPTIONS_PATH;
       const providerKind = value(flags, "provider-kind") as RunProviderKind | undefined;
       const providerApiKeyEnv = value(flags, "provider-api-key-env");
       const providerModel = value(flags, "provider-model");
       const providerBaseUrl = value(flags, "provider-base-url");
-      const providerProfilesPath = value(flags, "provider-profiles-path");
+      const providerProfilesPath =
+        value(flags, "provider-profiles-path") ??
+        (runEnv ?? process.env).VIVARIUM_PROVIDER_PROFILES_PATH;
       const providerProfile = value(flags, "provider-profile");
       const availableToolsets = values(flags, "available-toolset");
       const availableTools = values(flags, "available-tool");
@@ -1425,6 +1440,7 @@ export async function dispatchCliCommand(
         ...(providerProfile === undefined ? {} : { providerProfile }),
         ...(availableToolsets.length === 0 ? {} : { availableToolsets }),
         ...(availableTools.length === 0 ? {} : { availableTools }),
+        ...(runEnv === undefined ? {} : { env: runEnv }),
       });
       return { command, result, output: renderRunCommandResult(result) };
     }

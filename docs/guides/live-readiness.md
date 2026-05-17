@@ -339,11 +339,15 @@ vivarium local run \
   --domain coding \
   --world-root "$HOME/.vivarium/the-world" \
   --state-path /tmp/vivarium-live-state.db \
-  --provider-profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
-  --provider-profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
+  --env-file "$HOME/.vivarium/live/live-readiness.local.env" \
+  --provider-profile openrouter
 ```
 
-One-off run flags also remain available. Use `--provider-kind openai` or `--provider-kind anthropic` without `--provider-base-url` for first-party providers.
+`--env-file` lets the run read `VIVARIUM_PROVIDER_PROFILES_PATH` plus the
+provider key environment values from the same local setup file used by
+`vivarium connect` and `vivarium doctor --live`. One-off run flags also remain
+available. Use `--provider-kind openai` or `--provider-kind anthropic` without
+`--provider-base-url` for first-party providers.
 
 `doctor --live` expects `VIVARIUM_PROVIDER_PROFILES_PATH` to point at the file created by `providers configure`, checks that each `VIVARIUM_*_PROVIDER_PROFILE` value is present in that file, and runs the three saved-profile smoke probes. It reports `provider.anthropicSmoke:ok`, `provider.openrouterSmoke:ok`, and `provider.privateOaiCompatSmoke:ok` only when those provider calls succeed.
 
@@ -673,10 +677,13 @@ vivarium local run \
   --goal "<small real coding goal>" \
   --domain coding \
   --state-path /tmp/vivarium-live-state.db \
-  --world-subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" \
-  --provider-profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
-  --provider-profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
+  --env-file "$HOME/.vivarium/live/live-readiness.local.env" \
+  --provider-profile openrouter
 ```
+
+When `--env-file` is present, runs also pick up
+`VIVARIUM_WORLD_SUBSCRIPTIONS_PATH`, so the saved canonical/private world
+registry is used without another path flag.
 
 For one-off checks without writing the registry, repeated roots still work:
 
@@ -949,7 +956,7 @@ After the external prerequisites are configured:
 7. Run `connect smoke` for the Anthropic, OpenRouter, private OpenAI-compatible, and encrypted internal credential smokes.
 8. Run `proof init` if the evidence manifest skeleton is missing.
 9. Run `proof` to review the plain-language v1 evidence checklist.
-10. Run `run` with `--provider-profiles-path`, `--provider-profile`, and `--world-subscriptions-path` against a small real goal.
+10. Run `run` with `--env-file`, `--provider-profile`, and the saved world/provider paths from the setup file against a small real goal.
 11. Run `github smoke` for the canonical world remote.
 12. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.
 13. Create a live world contribution PR from a generated artifact with `github pull-request --confirm-write`.

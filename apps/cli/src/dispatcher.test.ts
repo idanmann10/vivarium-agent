@@ -3287,6 +3287,71 @@ describe("dispatchCliCommand", () => {
     state.close();
   });
 
+  test("routes run world subscriptions through a live env file", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-run-env-subscriptions-"));
+    const publicWorld = join(root, "public");
+    const privateWorld = join(root, "private");
+    const subscriptionsPath = join(root, "subscriptions.json");
+    const envPath = join(root, "live-readiness.local.env");
+    const statePath = join(root, "state.db");
+    write(
+      join(publicWorld, "domains", "coding", "skills", "public-pattern", "SKILL.md"),
+      "# Public Pattern\n\nShared coding pattern.",
+    );
+    write(
+      join(privateWorld, "domains", "coding", "skills", "private-pattern", "SKILL.md"),
+      "# Private Pattern\n\nTeam coding pattern.",
+    );
+    await dispatchCliCommand([
+      "world",
+      "subscribe",
+      "--subscriptions-path",
+      subscriptionsPath,
+      "--world-root",
+      publicWorld,
+      "--world-label",
+      "public",
+      "--priority",
+      "1",
+    ]);
+    await dispatchCliCommand([
+      "world",
+      "subscribe",
+      "--subscriptions-path",
+      subscriptionsPath,
+      "--world-root",
+      privateWorld,
+      "--world-label",
+      "private",
+      "--priority",
+      "0",
+    ]);
+    write(envPath, `export VIVARIUM_WORLD_SUBSCRIPTIONS_PATH="${subscriptionsPath}"\n`);
+
+    const run = await dispatchCliCommand([
+      "run",
+      "--goal",
+      "use a coding pattern",
+      "--domain",
+      "coding",
+      "--state-path",
+      statePath,
+      "--env-file",
+      envPath,
+    ]);
+    const state = new SQLiteStateRepository(statePath);
+    const storedRun = state.listRuns()[0];
+    const plan =
+      storedRun === undefined
+        ? undefined
+        : state.listEpisodes(storedRun.id).find((episode) => episode.kind === "plan");
+
+    expect(run.result).toMatchObject({ success: true });
+    expect(plan?.plan).toContain("Private Pattern");
+    expect(plan?.plan).toContain("Public Pattern");
+    state.close();
+  });
+
   test("routes active tool availability into world search and runs", async () => {
     const worldRoot = mkdtempSync(join(tmpdir(), "cli-dispatch-tool-availability-"));
     write(
@@ -3632,6 +3697,63 @@ describe("dispatchCliCommand", () => {
       },
       error: "Missing provider environment variable: VIVARIUM_MISSING_PROVIDER_KEY",
     });
+  });
+
+  test("routes local provider-profile runs through a live env file", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-run-env-profile-"));
+    const envPath = join(root, "live-readiness.local.env");
+    const profilesPath = join(root, "provider-profiles.json");
+    const statePath = join(root, "state.db");
+    const worldRoot = createWorldFixture();
+    await dispatchCliCommand([
+      "providers",
+      "configure",
+      "--profiles-path",
+      profilesPath,
+      "--name",
+      "openrouter",
+      "--kind",
+      "openai-compat",
+      "--api-key-env",
+      "VIVARIUM_MISSING_PROVIDER_KEY",
+      "--model",
+      "openrouter/test-model",
+      "--base-url",
+      "https://openrouter.example",
+      "--capability",
+      "chat",
+      "--capability",
+      "json_mode",
+      "--context-window",
+      "128000",
+      "--cost-class",
+      "medium",
+    ]);
+    write(envPath, `export VIVARIUM_PROVIDER_PROFILES_PATH="${profilesPath}"\n`);
+
+    const run = await dispatchCliCommand([
+      "local",
+      "run",
+      "--goal",
+      "write a provider-backed test",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+      "--env-file",
+      envPath,
+      "--provider-profile",
+      "openrouter",
+    ]);
+
+    expect(run.result).toMatchObject({
+      success: false,
+      provider: { kind: "openai-compat", id: "run-openrouter", model: "openrouter/test-model" },
+      error: "Missing provider environment variable: VIVARIUM_MISSING_PROVIDER_KEY",
+    });
+    expect(run.output).toContain("Reason: Provider credentials are not connected for this run.");
+    expect(run.output).not.toContain("Missing --provider-profiles-path");
+    expect(run.output).not.toContain("VIVARIUM_MISSING_PROVIDER_KEY");
   });
 
   test("routes live setup through a filled env file with explicit write confirmation", async () => {
