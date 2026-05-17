@@ -275,6 +275,26 @@ validate_daemon_mode() {
   exit 2
 }
 
+validate_daemon_port() {
+  if [ "$daemon_mode" != "launchd" ]; then
+    return 0
+  fi
+
+  case "$daemon_port" in
+    "" | *[!0-9]*)
+      echo "Invalid VIVARIUM_DAEMON_PORT: $daemon_port" >&2
+      echo "VIVARIUM_DAEMON_PORT must be an integer from 1 to 65535." >&2
+      exit 2
+      ;;
+  esac
+
+  if [ "$daemon_port" -lt 1 ] || [ "$daemon_port" -gt 65535 ]; then
+    echo "Invalid VIVARIUM_DAEMON_PORT: $daemon_port" >&2
+    echo "VIVARIUM_DAEMON_PORT must be an integer from 1 to 65535." >&2
+    exit 2
+  fi
+}
+
 preflight_launchd() {
   if [ "$daemon_mode" != "launchd" ]; then
     return 0
@@ -614,6 +634,7 @@ echo "Live readiness path: $live_env_path"
 echo
 
 validate_daemon_mode
+validate_daemon_port
 
 if [ "$dry_run" -eq 0 ]; then
   need_command git git
