@@ -1364,6 +1364,7 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).toContain("Local setup is ready now.");
     expect(setup.output).toContain("Live readiness: staged for later");
     expect(setup.output).toContain(`Readiness file: ${envPath}`);
+    expect(setup.output).toContain(`--live-env-path ${envPath}`);
     expect(setup.output).not.toContain("Production evidence file prepared for later");
     expect(setup.output).toContain("vivarium launch handoff");
     expect(setup.output).toContain("vivarium status");
@@ -1396,7 +1397,7 @@ describe("dispatchCliCommand", () => {
         error: "Live readiness env already exists. Pass --overwrite to replace it.",
       },
       nextCommands: expect.arrayContaining([
-        expect.stringContaining("local run"),
+        expect.stringContaining(`--live-env-path ${envPath}`),
         "vivarium launch handoff",
         "vivarium status",
         "vivarium help",
@@ -1406,6 +1407,7 @@ describe("dispatchCliCommand", () => {
     expect(repeated.output).toContain("Local setup is ready now.");
     expect(repeated.output).toContain("Live readiness: already staged");
     expect(repeated.output).toContain(`Readiness file: ${envPath}`);
+    expect(repeated.output).toContain(`--live-env-path ${envPath}`);
     expect(repeated.output).not.toContain("Production evidence file prepared for later");
     expect(repeated.output).toContain("vivarium launch handoff");
     expect(repeated.output).not.toContain(`vivarium setup --env-file ${envPath}`);
@@ -1451,7 +1453,7 @@ describe("dispatchCliCommand", () => {
       },
     });
     expect(onboardResult.nextCommands).toEqual([
-      `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${worldRoot}`,
+      `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${worldRoot} --live-env-path ${envPath}`,
       "vivarium launch handoff",
       "vivarium status",
       "vivarium help",
@@ -1463,7 +1465,7 @@ describe("dispatchCliCommand", () => {
     expect(onboard.output).toContain("Live readiness: staged for later");
     expect(onboard.output).toContain(`Readiness file: ${envPath}`);
     expect(onboard.output).toContain(
-      `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${worldRoot}`,
+      `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${worldRoot} --live-env-path ${envPath}`,
     );
     expect(onboard.output).not.toContain(`vivarium run --goal "validate local setup" --domain coding --state-path ${statePath}`);
     expect(onboard.output).not.toContain(`vivarium setup --env-file ${envPath}`);
@@ -1715,7 +1717,7 @@ describe("dispatchCliCommand", () => {
         path: envPath,
       },
       nextCommands: expect.arrayContaining([
-        `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${worldRoot}`,
+        `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${worldRoot} --live-env-path ${envPath}`,
         "vivarium launch handoff",
         "vivarium status",
         "vivarium help",
@@ -1726,7 +1728,7 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).toContain("Vivarium Setup");
     expect(setup.output).toContain("Local setup is ready now.");
     expect(setup.output).toContain(
-      `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${worldRoot}`,
+      `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${worldRoot} --live-env-path ${envPath}`,
     );
     expect(setup.output).not.toContain(`vivarium run --goal "validate local setup" --domain coding --state-path ${statePath}`);
 

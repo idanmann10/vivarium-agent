@@ -77,6 +77,8 @@ const steps = [
     worldRoot,
     "--state-path",
     statePath,
+    "--live-env-path",
+    liveReadinessPath,
   ]),
   localCliStep([
     "local",
@@ -89,6 +91,8 @@ const steps = [
     worldRoot,
     "--state-path",
     statePath,
+    "--live-env-path",
+    liveReadinessPath,
   ]),
   localCliStep([
     "status",

@@ -69,12 +69,14 @@ function setupNextCommands(
   live: LiveSetupCommandResult | undefined,
   quickEnv: LiveEnvInitCommandResult | undefined,
 ): readonly string[] {
+  const liveRunPath = quickEnv?.path ?? options.liveEnvPath ?? options.envFilePath;
   const runCommand = commandWithFlags("local run", {
     goal: "build a tiny local agent",
     domain: options.primaryDomain,
     "agent-name": options.agentName,
     "state-path": local.statePath,
     "world-root": local.worldRoot,
+    "live-env-path": liveRunPath,
   });
   const liveEnvFilePath = options.envFilePath ?? quickEnv?.path ?? defaultLiveEnvFilePath;
   const modelCommand = commandWithFlags("model", { "env-file": liveEnvFilePath });
