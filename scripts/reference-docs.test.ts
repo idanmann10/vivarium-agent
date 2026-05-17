@@ -612,6 +612,7 @@ describe("reference docs", () => {
   test("keeps install docs on the installed local-first setup sequence", () => {
     for (const path of ["README.md", join("docs", "guides", "install.md")]) {
       const body = readFileSync(path, "utf8");
+      const normalizedBody = body.replaceAll(/\s+/g, " ");
       const block = readAfterInstallationBlock(path);
       for (const stage of [
         "# [1] Initialize local memory",
@@ -644,6 +645,9 @@ describe("reference docs", () => {
       );
       expect(body).toContain(
         "If the local SQLite state file is invalid, `vivarium local run` stops before writing new run data",
+      );
+      expect(normalizedBody).toContain(
+        "Use `vivarium status` after a run to confirm the latest local run goal, run ID, success state, and score",
       );
       expect(body).toContain(
         "Use `vivarium setup live` when you are ready to create provider keys",

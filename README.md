@@ -75,6 +75,8 @@ the run in local SQLite memory, shows the `~/.vivarium/state.db` memory path,
 and reports the skills, traces, prediction,
 validation, and next local commands. Connect Anthropic, OpenRouter, or a private
 OpenAI-compatible endpoint only when you want real model calls.
+Use `vivarium status` after a run to confirm the latest local run goal, run ID,
+success state, and score from SQLite before moving on.
 If you run `vivarium local run` before `vivarium local`, the command seeds the same starter memory first, then runs the local agent against that durable state.
 If the local SQLite state file is invalid, `vivarium local run` stops before writing new run data, names the damaged path, and points you at `vivarium doctor` plus `vivarium local` so you can move the file aside and reseed it.
 
