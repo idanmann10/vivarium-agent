@@ -482,4 +482,34 @@ describe("install.sh", () => {
     expect(source).toContain("VIVARIUM_THEME");
     expect(source).toContain('exec %q apps/cli/src/main.ts "$@"');
   });
+
+  test("prints a copyable Bun install command when Bun is missing", () => {
+    const root = mkdtempSync(join(tmpdir(), "vivarium-install-missing-bun-"));
+    const bin = join(root, "bin");
+    mkdirSync(bin);
+    writeFileSync(join(bin, "git"), ["#!/bin/sh", "exit 0", ""].join("\n"), {
+      encoding: "utf8",
+      mode: 0o755,
+    });
+
+    try {
+      const result = Bun.spawnSync(["/bin/bash", "scripts/install.sh"], {
+        env: {
+          ...process.env,
+          HOME: root,
+          PATH: `${bin}:/usr/bin:/bin:/usr/sbin:/sbin`,
+        },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const stderr = result.stderr.toString();
+
+      expect(result.exitCode).toBe(1);
+      expect(stderr).toContain("Missing required command: bun");
+      expect(stderr).toContain("curl -fsSL https://bun.sh/install | bash");
+      expect(stderr).toContain("Then reload your shell and rerun the Vivarium installer.");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });

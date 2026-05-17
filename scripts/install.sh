@@ -246,6 +246,8 @@ need_command() {
     echo "Missing required command: $1" >&2
     if [ "$1" = "bun" ]; then
       echo "Install Bun first: https://bun.sh/docs/installation" >&2
+      echo "Command: curl -fsSL https://bun.sh/install | bash" >&2
+      echo "Then reload your shell and rerun the Vivarium installer." >&2
     fi
     exit 1
   fi
