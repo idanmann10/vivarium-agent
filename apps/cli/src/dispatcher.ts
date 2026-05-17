@@ -272,6 +272,20 @@ function gitOutput(args: readonly string[], cwd: string): string | undefined {
   return text.length === 0 ? undefined : text;
 }
 
+function ghOutput(args: readonly string[], cwd: string): string | undefined {
+  const result = Bun.spawnSync(["gh", ...args], {
+    cwd,
+    env: process.env,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  if (result.exitCode !== 0) {
+    return undefined;
+  }
+  const text = result.stdout.toString().trim();
+  return text.length === 0 ? undefined : text;
+}
+
 function currentPreMainCheckoutRef(cwd: string): GitCheckoutRef | undefined {
   const branch = gitOutput(["rev-parse", "--abbrev-ref", "HEAD"], cwd);
   if (branch === undefined || branch === "main" || branch === "master") {
@@ -285,6 +299,11 @@ function currentPreMainCheckoutRef(cwd: string): GitCheckoutRef | undefined {
     ref: branch === "HEAD" ? commit : branch,
     scriptRef: commit,
   };
+}
+
+function currentPullRequestNumber(cwd: string): string | undefined {
+  const number = ghOutput(["pr", "view", "--json", "number", "--jq", ".number"], cwd);
+  return number !== undefined && /^[1-9]\d*$/.test(number) ? number : undefined;
 }
 
 const connectSetupNextCommands = [
@@ -1118,12 +1137,15 @@ export async function dispatchCliCommand(
       const daemonPort = daemonPortFlag(flags);
       const reviewPrNumber = value(flags, "pr-number");
       const reviewerUsername = value(flags, "reviewer");
+      const cwd = process.cwd();
       const detectedRef =
         explicitRef === undefined && explicitScriptRef === undefined
-          ? currentPreMainCheckoutRef(process.cwd())
+          ? currentPreMainCheckoutRef(cwd)
           : undefined;
       const ref = explicitRef ?? detectedRef?.ref;
       const scriptRef = explicitScriptRef ?? detectedRef?.scriptRef;
+      const detectedReviewPrNumber =
+        reviewPrNumber ?? (detectedRef === undefined ? undefined : currentPullRequestNumber(cwd));
       const result = launchHandoffCommand({
         ...(owner === undefined ? {} : { owner }),
         ...(repo === undefined ? {} : { repo }),
@@ -1131,7 +1153,7 @@ export async function dispatchCliCommand(
         ...(scriptRef === undefined ? {} : { scriptRef }),
         ...(daemonHost === undefined ? {} : { daemonHost }),
         ...(daemonPort === undefined ? {} : { daemonPort }),
-        ...(reviewPrNumber === undefined ? {} : { reviewPrNumber }),
+        ...(detectedReviewPrNumber === undefined ? {} : { reviewPrNumber: detectedReviewPrNumber }),
         ...(reviewerUsername === undefined ? {} : { reviewerUsername }),
       });
       return { command, result, output: renderLaunchHandoffCommandResult(result) };

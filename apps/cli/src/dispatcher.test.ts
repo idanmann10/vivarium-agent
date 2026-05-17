@@ -2708,6 +2708,49 @@ describe("dispatchCliCommand", () => {
     }
   });
 
+  test("routes launch handoff through the current PR number when GitHub can resolve it", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-launch-pr-"));
+    const bin = join(root, "bin");
+    const previousCwd = process.cwd();
+    const previousPath = process.env.PATH;
+    runGit(["init", root]);
+    runGit(["config", "user.email", "test@example.test"], root);
+    runGit(["config", "user.name", "Test User"], root);
+    write(join(root, "README.md"), "# Branch handoff\n");
+    runGit(["add", "."], root);
+    runGit(["commit", "-m", "seed branch"], root);
+    runGit(["checkout", "-b", "codex/local-agent-production-ready"], root);
+    write(
+      join(bin, "gh"),
+      [
+        "#!/bin/sh",
+        "if [ \"$1\" = \"pr\" ] && [ \"$2\" = \"view\" ]; then",
+        "  printf '26\\n'",
+        "  exit 0",
+        "fi",
+        "printf 'unexpected gh command\\n' >&2",
+        "exit 1",
+        "",
+      ].join("\n"),
+    );
+    chmodSync(join(bin, "gh"), 0o755);
+
+    try {
+      process.chdir(root);
+      process.env.PATH = `${bin}:${previousPath ?? ""}`;
+      const result = await dispatchCliCommand(["launch", "handoff"]);
+
+      expect(result.command).toBe("launch");
+      expect(result.output).toContain(
+        "gh pr edit 26 --repo idanmann10/vivarium-agent --add-reviewer REVIEWER_GITHUB_USERNAME",
+      );
+      expect(result.output).not.toContain("gh pr edit PR_NUMBER");
+    } finally {
+      process.chdir(previousCwd);
+      process.env.PATH = previousPath;
+    }
+  });
+
   test("routes launch handoff reviewer flags into exact unblock commands", async () => {
     const result = await dispatchCliCommand([
       "launch",
