@@ -1088,13 +1088,17 @@ function setupStatusGuidance(status: ConnectSetupStatus, envFilePath: string): s
   }
 
   const fillGuidance = isDefaultLiveSetupPath(status.envFilePath)
-    ? `Run vivarium setup live for generated local files, or ${connectFillCommandLine(envFilePath)} for scripted updates.`
+    ? defaultLiveSetupValueGuidance(envFilePath)
     : `Run ${connectFillCommandLine(envFilePath)} for setup labels.`;
   if (hasMissingEvidence) {
     return `${fillGuidance} Then run ${connectSetupWriteCommand(envFilePath)}. If evidence is still missing, run ${proofInitCommandLine(envFilePath)} before ${proofCommandLine(envFilePath)}.`;
   }
 
   return `${fillGuidance} Then run ${connectSetupWriteCommand(envFilePath)}.`;
+}
+
+function defaultLiveSetupValueGuidance(envFilePath: string): string {
+  return `Run vivarium setup live for generated local files, open ${connectSignupCommandLine()} for account/secret handoff, or use ${connectFillCommandLine(envFilePath)} for scripted updates.`;
 }
 
 function providerRequirementLabel(key: string): { readonly provider: string; readonly label: string } | undefined {
@@ -1412,7 +1416,7 @@ export function renderConnectSetupCommandResult(
     "",
     hasFillableValues
       ? isDefaultLiveSetupPath(rawEnvFilePath)
-        ? `Run vivarium setup live for generated local files, or ${connectFillCommandLine(envFilePath)} for scripted updates. Then rerun setup.`
+        ? `${defaultLiveSetupValueGuidance(envFilePath)} Then rerun setup.`
         : `Run ${connectFillCommandLine(envFilePath)} for provider/internal labels. Then rerun setup.`
       : `Fill these labels in ${rawEnvFilePath}, then rerun setup.`,
     "Use --details only if you need exact setup field names.",
@@ -1423,6 +1427,9 @@ export function renderConnectSetupCommandResult(
     "Next commands:",
     ...renderLaunchSequence([
       connectCommandLine(envFilePath),
+      ...(hasFillableValues && isDefaultLiveSetupPath(rawEnvFilePath)
+        ? [connectSignupCommandLine()]
+        : []),
       ...(hasFillableValues ? [connectFillCommandLine(envFilePath)] : []),
       connectSetupWriteCommand(envFilePath),
     ]),

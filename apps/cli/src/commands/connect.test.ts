@@ -407,7 +407,10 @@ describe("connectCommand", () => {
     expect(output).toContain("[needs] V1 evidence file: evidence manifest file");
     expect(output).toContain("doctor --live checks the required v1 evidence content");
     expect(output).toContain(
-      "Run vivarium setup live for generated local files, or vivarium connect fill for scripted updates. Then run vivarium connect setup --confirm-write. If evidence is still missing, run vivarium proof init before vivarium proof.",
+      "Run vivarium setup live for generated local files, open vivarium connect signup for account/secret handoff, or use vivarium connect fill for scripted updates. Then run vivarium connect setup --confirm-write. If evidence is still missing, run vivarium proof init before vivarium proof.",
+    );
+    expect(output).not.toContain(
+      "Run vivarium setup live for generated local files, or vivarium connect fill for scripted updates. Then run vivarium connect setup --confirm-write.",
     );
     expect(output).not.toContain("Then run vivarium proof init and vivarium connect setup");
     expect(output).not.toContain("Add the evidence manifest");
@@ -613,10 +616,11 @@ describe("connectCommand", () => {
     expect(output).toContain("Encrypted credentials/internal API");
     expect(output).toContain("Internal credential: credential store path, credential value, health URL");
     expect(output).toContain(
-      "Run vivarium setup live for generated local files, or vivarium connect fill for scripted updates. Then rerun setup.",
+      "Run vivarium setup live for generated local files, open vivarium connect signup for account/secret handoff, or use vivarium connect fill for scripted updates. Then rerun setup.",
     );
     expect(output).not.toContain("or edit live-readiness.local.env locally");
     expect(output).toContain("Use --details only if you need exact setup field names.");
+    expect(output).toContain("      vivarium connect signup");
     expect(output).toContain("vivarium connect fill");
     expect(output).toContain("vivarium connect setup --confirm-write");
     expect(output).not.toContain("vivarium connect setup --details");
