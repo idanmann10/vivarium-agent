@@ -638,7 +638,8 @@ describe("reference docs", () => {
       expect(block).not.toContain(
         "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
       );
-      expect(body).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
+      expect(body).toContain("vivarium daemon smoke");
+      expect(body).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
       expect(body).toContain(
         "Use `vivarium launch handoff` when you are ready for production evidence.",
       );
@@ -759,7 +760,7 @@ describe("reference docs", () => {
       "~/.vivarium/the-world",
       "~/.local/bin/vivarium",
       "live-readiness.local.env",
-      "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
+      "vivarium daemon smoke",
       "vivarium local run",
     ]) {
       expect(body).toContain(term);
@@ -1417,7 +1418,7 @@ describe("reference docs", () => {
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
       "Memory: /Users/idanmann/.vivarium/state.db",
-      "`577 pass, 0 fail, 4716 expect calls`",
+      "`577 pass, 0 fail, 4719 expect calls`",
       "build a simple agent end to end on my Mac",
       "run-1779025625380-620",
       "fresh temp install builds a simple agent end to end",

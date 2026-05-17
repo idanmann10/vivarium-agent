@@ -82,7 +82,7 @@ export function helpCommand(): HelpCommandResult {
         description: "Review the v1 evidence checklist without raw manifest keys.",
       },
       {
-        command: "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
+        command: "vivarium daemon smoke",
         description: "Verify the Mac LaunchAgent daemon.",
       },
       {

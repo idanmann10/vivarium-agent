@@ -51,7 +51,7 @@ describe("helpCommand", () => {
         expect.objectContaining({ command: "vivarium proof init" }),
         expect.objectContaining({ command: "vivarium proof" }),
         expect.objectContaining({
-          command: "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
+          command: "vivarium daemon smoke",
         }),
         expect.objectContaining({ command: "vivarium launch handoff" }),
         expect.objectContaining({ command: "vivarium update" }),
@@ -95,7 +95,8 @@ describe("helpCommand", () => {
     expect(firstRunBlock).toContain("[4] Keep moving");
     expect(firstRunBlock).not.toContain("Verify the Mac daemon");
     expect(firstRunBlock).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
-    expect(output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
+    expect(output).toContain("vivarium daemon smoke");
+    expect(output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
     expect(firstRunBlock).toContain("vivarium launch handoff");
     expect(firstRunBlock).toContain("vivarium status");
     expect(firstRunBlock).toContain("vivarium help");

@@ -73,7 +73,7 @@ command instead.
 After a pre-main install, verify both the daemon and a local run:
 
 ```bash
-vivarium daemon smoke --status-url http://127.0.0.1:8787/status
+vivarium daemon smoke
 vivarium local run --goal "build a simple agent end to end"
 ```
 
@@ -115,7 +115,7 @@ If the local SQLite state file is invalid, `vivarium local run` stops before wri
 When installed with the LaunchAgent option, verify the local daemon separately:
 
 ```bash
-vivarium daemon smoke --status-url http://127.0.0.1:8787/status
+vivarium daemon smoke
 ```
 
 Use `vivarium launch handoff` when you are ready for production evidence. That
