@@ -52,7 +52,8 @@ canonical world checkout at `~/.vivarium/the-world`, the CLI command at
 | Daemon is running | `vivarium daemon smoke --status-url http://127.0.0.1:8787/status` returned `Status: ok` | Complete |
 | Local loop runs after install | Installed `/Users/idanmann/.local/bin/vivarium local run` is the current shorthand for the validated local run path and defaults to the `build a tiny local agent` goal with the `local-agent` identity; fresh direct and custom-path temp-home smokes recorded local-provider success and matching `vivarium status` receipts | Complete |
 | focused help smokes match the Mac path | Installed `vivarium local run --help`, `vivarium local --help`, and `vivarium status --help` render focused run/setup/status usage, path flags, provider-profile/status/proof follow-ups, and no longer fall back to the global command table | Complete |
-| Local code gates pass | `bun run lint`, `bun run typecheck`, `bun run build`, `bun run knip`, `bun run public-release:scan`, `bun run format:check`, `git diff --check`, and `bun test` passed; the full test suite reported `537 pass, 0 fail, 4419 expect calls` after the focused-help refresh | Complete |
+| Branch-pinned review unblock stays safe | Branch-pinned `vivarium launch handoff` says `Invite one eligible non-author reviewer when GitHub reports REVIEW_REQUIRED.`, prints `gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/REVIEWER_GITHUB_USERNAME -f permission=push`, prints `gh pr edit PR_NUMBER --repo idanmann10/vivarium-agent --add-reviewer REVIEWER_GITHUB_USERNAME`, and warns not to lower branch protection or self-approve just to merge | Complete |
+| Local code gates pass | `bun run lint`, `bun run typecheck`, `bun run build`, `bun run knip`, `bun run public-release:scan`, `bun run format:check`, `git diff --check`, and `bun test` passed; the full test suite reported `537 pass, 0 fail, 4426 expect calls` after the branch-pinned review guidance refresh | Complete |
 | PR checks pass | PR #26 has successful `verify`, `changeset`, `Analyze JavaScript and TypeScript`, and CodeQL checks at the validated PR head from this audit; auto-merge is enabled and still blocked only by required review | Complete |
 | Launch security posture is verified | `bun run launch:security-audit` returned `ok:true` for public agent/world repos, enabled branch protection, enabled secret scanning and push protection, and zero open Dependabot, secret scanning, or code scanning alerts | Complete |
 
@@ -79,9 +80,17 @@ The remaining blockers require:
   and the required two-week improvement evidence.
 
 The public agent repository and public world repository are public, PR #26 has
-auto-merge enabled but still needs the required review, and branch protection remained intact. The live
-readiness gate is intentionally still blocked until real secrets and inspectable
-v1 evidence exist.
+auto-merge enabled but still needs the required review, and branch protection remained intact.
+The safe unblock is to invite one eligible non-author reviewer and request review:
+
+```bash
+gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/REVIEWER_GITHUB_USERNAME -f permission=push
+gh pr edit PR_NUMBER --repo idanmann10/vivarium-agent --add-reviewer REVIEWER_GITHUB_USERNAME
+```
+
+Do not lower branch protection or self-approve just to merge. The live readiness
+gate is intentionally still blocked until real secrets and inspectable v1
+evidence exist.
 
 ## Operator Handoff
 

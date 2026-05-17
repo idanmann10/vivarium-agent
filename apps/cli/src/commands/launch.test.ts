@@ -79,6 +79,16 @@ describe("launchHandoffCommand", () => {
     expect(result.installCommand).toContain("VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup");
     expect(output).toContain("VIVARIUM_DAEMON=launchd");
     expect(output).toContain("Keep branch protection and review intact before switching installs back to main.");
+    expect(output).toContain(
+      "Invite one eligible non-author reviewer when GitHub reports REVIEW_REQUIRED.",
+    );
+    expect(output).toContain(
+      "gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/REVIEWER_GITHUB_USERNAME -f permission=push",
+    );
+    expect(output).toContain(
+      "gh pr edit PR_NUMBER --repo idanmann10/vivarium-agent --add-reviewer REVIEWER_GITHUB_USERNAME",
+    );
+    expect(output).toContain("Do not lower branch protection or self-approve just to merge.");
   });
 
   test("renders custom daemon host and port in the launch handoff", () => {

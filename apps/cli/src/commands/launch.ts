@@ -108,7 +108,13 @@ export function launchHandoffCommand(
         : "Run the branch-pinned install command above, then run the local agent commands.",
       ...(ref === defaultRef
         ? []
-        : ["Keep branch protection and review intact before switching installs back to main."]),
+        : [
+            "Keep branch protection and review intact before switching installs back to main.",
+            "Invite one eligible non-author reviewer when GitHub reports REVIEW_REQUIRED.",
+            `gh api -X PUT repos/${owner}/${repo}/collaborators/REVIEWER_GITHUB_USERNAME -f permission=push`,
+            `gh pr edit PR_NUMBER --repo ${owner}/${repo} --add-reviewer REVIEWER_GITHUB_USERNAME`,
+            "Do not lower branch protection or self-approve just to merge.",
+          ]),
       "Use the live verification commands only after secrets and evidence are available.",
       "Do not claim full v1 live readiness until doctor --live reports ready.",
     ],
