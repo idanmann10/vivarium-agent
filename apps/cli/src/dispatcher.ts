@@ -59,7 +59,12 @@ import {
   renderGitHubSmokeCommandResult,
   renderGitHubWorkflowRunsCommandResult,
 } from "./commands/github.js";
-import { helpCommand, renderHelpCommandResult } from "./commands/help.js";
+import {
+  helpCommand,
+  localRunHelpCommand,
+  renderHelpCommandResult,
+  renderLocalRunHelpCommandResult,
+} from "./commands/help.js";
 import {
   identityHistoryCommand,
   identityStageCommand,
@@ -594,6 +599,10 @@ function booleanFlag(flags: FlagMap, name: string): boolean {
   return flags.has(name);
 }
 
+function hasHelpRequest(argv: readonly string[]): boolean {
+  return argv.includes("--help") || argv.includes("-h");
+}
+
 function stripEnvQuotes(value: string): string {
   if (
     (value.startsWith('"') && value.endsWith('"')) ||
@@ -955,6 +964,11 @@ export async function dispatchCliCommand(
   if (command === undefined || command === "--help" || command === "-h") {
     const result = helpCommand();
     return { command: "help", result, output: renderHelpCommandResult(result) };
+  }
+
+  if (command === "local" && subcommand === "run" && hasHelpRequest(rest)) {
+    const result = localRunHelpCommand();
+    return { command: "help", result, output: renderLocalRunHelpCommandResult(result) };
   }
 
   const commandArgs = (subcommand?.startsWith("--") ?? true) ? argv.slice(1) : rest;

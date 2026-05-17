@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { helpCommand, renderHelpCommandResult } from "./help.js";
+import {
+  helpCommand,
+  localRunHelpCommand,
+  renderHelpCommandResult,
+  renderLocalRunHelpCommandResult,
+} from "./help.js";
 
 describe("helpCommand", () => {
   test("renders branded first-run command help", () => {
@@ -120,5 +125,22 @@ describe("helpCommand", () => {
       .split("\n")
       .find((line) => line.includes("Write live setup files after reviewing readiness."));
     expect(liveSetupConfirmRow).toMatch(/--confirm-write\s{2,}Write/);
+  });
+
+  test("renders focused local run help for simple-agent operators", () => {
+    const result = localRunHelpCommand();
+    const output = renderLocalRunHelpCommandResult(result);
+
+    expect(output).toContain("Vivarium Local Run");
+    expect(output).toContain('Usage: vivarium local run --goal "build a tiny local agent"');
+    expect(output).toContain("--goal <text>");
+    expect(output).toContain("--state-path <path>");
+    expect(output).toContain("--world-root <path>");
+    expect(output).toContain("--live-env-path <path>");
+    expect(output).toContain("--provider-profile <name>");
+    expect(output).toContain('vivarium local run --goal "build a tiny local agent"');
+    expect(output).toContain("vivarium status");
+    expect(output).not.toContain("Commands");
+    expect(output).not.toContain("vivarium run --goal");
   });
 });

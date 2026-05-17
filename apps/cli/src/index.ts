@@ -66,8 +66,17 @@ export type {
   ProofInitCommandResult,
   ProofManifestStatus,
 } from "./commands/proof.js";
-export { helpCommand, renderHelpCommandResult } from "./commands/help.js";
-export type { HelpCommandItem, HelpCommandResult } from "./commands/help.js";
+export {
+  helpCommand,
+  localRunHelpCommand,
+  renderHelpCommandResult,
+  renderLocalRunHelpCommandResult,
+} from "./commands/help.js";
+export type {
+  HelpCommandItem,
+  HelpCommandResult,
+  LocalRunHelpCommandResult,
+} from "./commands/help.js";
 export { launchHandoffCommand, renderLaunchHandoffCommandResult } from "./commands/launch.js";
 export type { LaunchHandoffCommandOptions, LaunchHandoffCommandResult } from "./commands/launch.js";
 export { modelCommand, renderModelCommandResult } from "./commands/model.js";
