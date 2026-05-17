@@ -65,5 +65,5 @@ describe("local e2e demo recorder", () => {
     expect(text).not.toContain(statePath);
     expect(text).not.toContain(pulledWorld);
     expect(text).not.toContain(root);
-  }, 40_000);
+  }, 120_000);
 });

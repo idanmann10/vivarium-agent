@@ -592,6 +592,8 @@ write_launch_agent() {
     <string>$(xml_escape "$daemon_host")</string>
     <key>VIVARIUM_DAEMON_PORT</key>
     <string>$(xml_escape "$daemon_port")</string>
+    <key>VIVARIUM_STATE_PATH</key>
+    <string>$(xml_escape "$state_path")</string>
     <key>VIVARIUM_WORLD_ROOT</key>
     <string>$(xml_escape "$world_root")</string>
   </dict>

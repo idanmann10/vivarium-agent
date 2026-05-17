@@ -449,6 +449,18 @@ describe("install.sh", () => {
     }
   });
 
+  test("passes the durable state path to the macOS LaunchAgent daemon", () => {
+    const installScript = readFileSync("scripts/install.sh", "utf8");
+    const launchAgentBlock = sectionBetween(
+      installScript,
+      'cat >"$daemon_plist_path" <<EOF',
+      "EOF",
+    );
+
+    expect(launchAgentBlock).toContain("<key>VIVARIUM_STATE_PATH</key>");
+    expect(launchAgentBlock).toContain('<string>$(xml_escape "$state_path")</string>');
+  });
+
   test("can pin the agent checkout to an explicit git ref", () => {
     const result = runInstallerDryRun({
       VIVARIUM_AGENT_REF: "codex/hermes-style-quick-setup",

@@ -29,7 +29,9 @@ curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scri
 The LaunchAgent mode writes
 `~/Library/LaunchAgents/com.vivarium.agent.daemon.plist`, starts it with
 `launchctl`, and prints a daemon smoke command for
-`http://127.0.0.1:8787/status`. Override the label with
+`http://127.0.0.1:8787/status`. The LaunchAgent daemon uses the same
+installer-selected state path, so `vivarium daemon smoke` reports the durable
+local memory backing the daemon. Override the label with
 `VIVARIUM_DAEMON_LABEL`, the bind host with `VIVARIUM_DAEMON_HOST`, the port
 with `VIVARIUM_DAEMON_PORT`, or the Bun executable with `VIVARIUM_BUN_PATH`.
 Interactive terminals use the branded ANSI theme automatically. Set

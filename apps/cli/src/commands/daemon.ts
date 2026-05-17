@@ -12,6 +12,7 @@ export type DaemonSmokeCommandResult =
       readonly ok: true;
       readonly statusUrl: string;
       readonly daemonStatus: "running";
+      readonly statePath?: string;
       readonly runs: number;
       readonly confidenceBuckets: number;
     }
@@ -24,7 +25,12 @@ export type DaemonSmokeCommandResult =
 const defaultStatusUrl = "http://127.0.0.1:8787/status";
 
 function parseDaemonStatus(statusUrl: string, value: unknown): DaemonSmokeCommandResult {
-  const parsed = value as { readonly status?: unknown; readonly runs?: unknown; readonly confidenceBuckets?: unknown };
+  const parsed = value as {
+    readonly status?: unknown;
+    readonly statePath?: unknown;
+    readonly runs?: unknown;
+    readonly confidenceBuckets?: unknown;
+  };
   if (parsed.status !== "running" || typeof parsed.runs !== "number" || typeof parsed.confidenceBuckets !== "number") {
     return { ok: false, statusUrl, error: "Daemon status response did not include expected metadata" };
   }
@@ -33,6 +39,9 @@ function parseDaemonStatus(statusUrl: string, value: unknown): DaemonSmokeComman
     ok: true,
     statusUrl,
     daemonStatus: parsed.status,
+    ...(typeof parsed.statePath === "string" && parsed.statePath.length > 0
+      ? { statePath: parsed.statePath }
+      : {}),
     runs: parsed.runs,
     confidenceBuckets: parsed.confidenceBuckets,
   };
@@ -66,6 +75,7 @@ export function renderDaemonSmokeCommandResult(result: DaemonSmokeCommandResult)
     ...(result.ok
       ? [
           `Daemon: ${result.daemonStatus}`,
+          ...(result.statePath === undefined ? [] : [`Memory: ${result.statePath}`]),
           `Runs: ${result.runs}`,
           `Confidence buckets: ${result.confidenceBuckets}`,
           "",

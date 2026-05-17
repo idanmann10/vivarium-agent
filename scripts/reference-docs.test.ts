@@ -655,6 +655,9 @@ describe("reference docs", () => {
         "The installed `vivarium` command preserves the installer-selected domain, world root, state path, and live-readiness file as overridable defaults",
       );
       expect(normalizedBody).toContain(
+        "The LaunchAgent daemon uses the same installer-selected state path, so `vivarium daemon smoke` reports the durable local memory backing the daemon",
+      );
+      expect(normalizedBody).toContain(
         "Copy the exact installer-printed `vivarium local run` command only when you are running outside the installed wrapper",
       );
       expect(normalizedBody).toContain(

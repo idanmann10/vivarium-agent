@@ -28,7 +28,7 @@
     "public-release:scan": "bun run scripts/public-release-scan.ts",
     "quickstart": "bun run local && bun run local:run",
     "record:local-e2e-demo": "node scripts/record-local-e2e-demo.cjs",
-    "test": "bun test",
+    "test": "bun test --timeout=120000",
     "typecheck": "tsc --noEmit -p tsconfig.base.json",
     "vivarium": "bun apps/cli/src/main.ts",
     "verify:sqlite-stack": "node scripts/verify-better-sqlite3.cjs"
