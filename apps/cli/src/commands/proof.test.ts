@@ -65,6 +65,11 @@ describe("proofCommand", () => {
     expect(output).toContain("[needs] Real coding goals");
     expect(output).toContain("\n      vivarium setup live\n");
     expect(output).toContain("\n      vivarium connect\n");
+    expect(output).toContain("\n      vivarium connect signup\n");
+    expect(output).toContain("\n      vivarium connect fill\n");
+    expect(output).toContain("\n      vivarium connect setup --confirm-write\n");
+    expect(output.indexOf("vivarium connect signup")).toBeLessThan(output.indexOf("vivarium connect fill"));
+    expect(output.indexOf("vivarium connect fill")).toBeLessThan(output.indexOf("vivarium connect setup --confirm-write"));
     expect(output).toContain("vivarium connect smoke");
     expect(output).toContain(
       [
@@ -116,6 +121,9 @@ describe("proofCommand", () => {
     expect(output).toContain(`Evidence manifest: ${evidencePath}`);
     expect(output).toContain("Checks: 0 passing, 8 blocked");
     expect(output).toContain("[1] Prepare live readiness\n      vivarium connect");
+    expect(output).toContain("vivarium connect signup");
+    expect(output).toContain("vivarium connect fill");
+    expect(output).toContain("vivarium connect setup --confirm-write");
     expect(output).toContain("[needs] Starter pack: starter skills/traces plus first-run evidence");
     expect(output).toContain("[needs] Real coding goals: 0/5 goals recorded");
     expect(output).toContain("[needs] Provider and credential smokes: provider smokes 0/3, internal credential smoke missing");
@@ -153,6 +161,9 @@ describe("proofCommand", () => {
 
     expect(output).toContain(`Evidence manifest: missing at ${evidencePath}`);
     expect(output).toContain("\n      vivarium connect\n");
+    expect(output).toContain("\n      vivarium connect signup\n");
+    expect(output).toContain("\n      vivarium connect fill\n");
+    expect(output).toContain("\n      vivarium connect setup --confirm-write\n");
     expect(output).toContain("\n      vivarium proof init\n");
     expect(output).toContain("\n      vivarium proof\n");
     expect(output).toContain("\n      vivarium doctor --live\n");

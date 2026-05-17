@@ -347,9 +347,18 @@ function manifestStatusAndChecks(options: ProofCommandOptions): {
   }
 }
 
-function nextCommandsFor(envFilePath: string, manifestStatus: ProofManifestStatus): readonly string[] {
+function nextCommandsFor(
+  envFilePath: string,
+  manifestStatus: ProofManifestStatus,
+  checks: readonly ProofCheck[],
+): readonly string[] {
   const envFile = shellQuote(envFilePath);
   const initCommand = connectInitOrOnboardCommandLine(envFilePath);
+  const signupCommand = "vivarium connect signup";
+  const fillCommand =
+    isDefaultLiveEnvFile(envFilePath)
+      ? "vivarium connect fill"
+      : `vivarium connect fill --env-file ${envFile}`;
   const setupCommand =
     isDefaultLiveEnvFile(envFilePath)
       ? "vivarium connect setup --confirm-write"
@@ -374,16 +383,18 @@ function nextCommandsFor(envFilePath: string, manifestStatus: ProofManifestStatu
     isDefaultLiveEnvFile(envFilePath)
       ? "vivarium doctor --live"
       : `vivarium doctor --live --env-file ${envFile}`;
+  const needsSmokeSetup = checks.some((check) => check.label === "Provider and credential smokes" && !check.ok);
   return [
     ...(manifestStatus.kind === "not_configured" ? [initCommand] : []),
     connectCommand,
+    ...(needsSmokeSetup ? [signupCommand, fillCommand, setupCommand] : []),
     ...(manifestStatus.kind === "loaded"
       ? []
       : manifestStatus.kind === "missing"
         ? [proofInitCommand]
         : manifestStatus.kind === "not_configured"
-          ? [setupCommand, proofInitCommand]
-        : [setupCommand]),
+          ? [proofInitCommand]
+        : needsSmokeSetup ? [] : [setupCommand]),
     smokeCommand,
     proofCommand,
     doctorCommand,
@@ -496,7 +507,7 @@ export function proofCommand(options: ProofCommandOptions = {}): ProofCommandRes
     envFilePath,
     manifestStatus,
     checks: strictChecks,
-    nextCommands: nextCommandsFor(envFilePath, manifestStatus),
+    nextCommands: nextCommandsFor(envFilePath, manifestStatus, strictChecks),
   };
 }
 
