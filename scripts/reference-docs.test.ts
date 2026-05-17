@@ -1367,12 +1367,12 @@ describe("reference docs", () => {
       expect(body).toContain(term);
     }
     const hardcodedCommitInstallerLines = body.split(/\r?\n/).filter((line) => {
-      const hasInstallerUrl = line.includes(
-        "https://raw.githubusercontent.com/idanmann10/vivarium-agent/",
-      );
+      const looksLikeInstallerCommand =
+        line.startsWith("curl -fsSL ") &&
+        line.includes("idanmann10/vivarium-agent/") &&
+        line.includes("/scripts/install.sh");
       return (
-        hasInstallerUrl &&
-        line.includes("/scripts/install.sh") &&
+        looksLikeInstallerCommand &&
         !line.includes("/main/scripts/install.sh") &&
         !line.includes("/<current-commit>/scripts/install.sh")
       );
