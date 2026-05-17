@@ -85,6 +85,7 @@ describe("install.sh", () => {
       VIVARIUM_INSTALL_DIR: "/tmp/vivarium-agent-install",
       VIVARIUM_REPO_URL: "https://github.com/example/vivarium-agent.git",
       VIVARIUM_DOMAIN: "research",
+      VIVARIUM_LIVE_ENV_PATH: ".vivarium/research-live.env",
       VIVARIUM_WORLD_ROOT: "../research-world",
       VIVARIUM_STATE_PATH: ".vivarium/research.db",
     });
@@ -103,7 +104,7 @@ describe("install.sh", () => {
     expect(stdout).toContain("Would run: bun install --frozen-lockfile");
     expect(stdout).toContain("Would write vivarium command: /tmp/vivarium-bin/vivarium");
     expect(stdout).toContain(
-      `Would run: bun apps/cli/src/main.ts local --domain research --world-root ${worldRoot} --state-path .vivarium/research.db`,
+      `Would run: bun apps/cli/src/main.ts local --domain research --world-root ${worldRoot} --state-path .vivarium/research.db --live-env-path .vivarium/research-live.env`,
     );
     expect(stdout).toContain("After installation:");
     expect(stdout).toContain("[1] Run the local agent");
@@ -116,7 +117,7 @@ describe("install.sh", () => {
     expect(stdout).toContain("[4] Prove live readiness");
     expect(stdout).not.toContain("vivarium run --goal");
     expect(stdout).toContain(
-      `vivarium local run --goal "build a tiny local agent" --domain research --state-path .vivarium/research.db --world-root ${worldRoot}`,
+      `vivarium local run --goal "build a tiny local agent" --domain research --state-path .vivarium/research.db --world-root ${worldRoot} --live-env-path .vivarium/research-live.env`,
     );
     expect(stdout).toContain("vivarium setup live");
     expect(stdout).toContain("vivarium connect signup");
@@ -135,7 +136,7 @@ describe("install.sh", () => {
     expect(stdout).toContain("vivarium help");
     expect(stdout).toContain("vivarium update");
     expect(stdout).toContain(
-      `/tmp/vivarium-bin/vivarium local run --goal "build a tiny local agent" --domain research --state-path .vivarium/research.db --world-root ${worldRoot}`,
+      `/tmp/vivarium-bin/vivarium local run --goal "build a tiny local agent" --domain research --state-path .vivarium/research.db --world-root ${worldRoot} --live-env-path .vivarium/research-live.env`,
     );
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium setup live");
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium connect signup");
@@ -177,14 +178,16 @@ describe("install.sh", () => {
     });
     const stdout = result.stdout.toString();
     const statePath = join(home, ".vivarium", "state.db");
+    const liveEnvPath = join(home, ".vivarium", "live", "live-readiness.local.env");
 
     expect(result.exitCode).toBe(0);
     expect(stdout).toContain(`State path: ${statePath}`);
+    expect(stdout).toContain(`Live readiness path: ${liveEnvPath}`);
     expect(stdout).toContain(
-      `Would run: bun apps/cli/src/main.ts local --domain coding --world-root ${join(home, ".vivarium", "the-world")} --state-path ${statePath}`,
+      `Would run: bun apps/cli/src/main.ts local --domain coding --world-root ${join(home, ".vivarium", "the-world")} --state-path ${statePath} --live-env-path ${liveEnvPath}`,
     );
     expect(stdout).toContain(
-      `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${join(home, ".vivarium", "the-world")}`,
+      `vivarium local run --goal "build a tiny local agent" --domain coding --state-path ${statePath} --world-root ${join(home, ".vivarium", "the-world")} --live-env-path ${liveEnvPath}`,
     );
   });
 

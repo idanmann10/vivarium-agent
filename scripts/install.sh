@@ -22,6 +22,7 @@ Environment:
   VIVARIUM_DAEMON_PORT        Local daemon port.
   VIVARIUM_DOMAIN             Initial setup domain.
   VIVARIUM_STATE_PATH         State database path. Defaults to ~/.vivarium/state.db.
+  VIVARIUM_LIVE_ENV_PATH      Live readiness env path. Defaults to ~/.vivarium/live/live-readiness.local.env.
   VIVARIUM_GITHUB_OWNER       Prefill non-secret live env GitHub owner.
   VIVARIUM_AGENT_REPO_NAME    Prefill non-secret live env agent repository name.
   VIVARIUM_WORLD_REPO_NAME    Prefill non-secret live env world repository name.
@@ -145,6 +146,7 @@ daemon_log_dir="$home_dir/.vivarium/logs"
 bun_command="${VIVARIUM_BUN_PATH:-bun}"
 domain="${VIVARIUM_DOMAIN:-coding}"
 state_path="${VIVARIUM_STATE_PATH:-$home_dir/.vivarium/state.db}"
+live_env_path="${VIVARIUM_LIVE_ENV_PATH:-$home_dir/.vivarium/live/live-readiness.local.env}"
 github_owner="${VIVARIUM_GITHUB_OWNER:-}"
 agent_repo_name="${VIVARIUM_AGENT_REPO_NAME:-}"
 world_repo_name="${VIVARIUM_WORLD_REPO_NAME:-}"
@@ -496,7 +498,7 @@ print_launch_sequence() {
   local keep_moving_stage=2
 
   stage_label 1 "Run the local agent"
-  printf '      %q local run --goal "%s" --domain %q --state-path %q --world-root %q\n' "$command" "$starter_goal" "$domain" "$state_path" "$world_root"
+  printf '      %q local run --goal "%s" --domain %q --state-path %q --world-root %q --live-env-path %q\n' "$command" "$starter_goal" "$domain" "$state_path" "$world_root" "$live_env_path"
   if [ "$daemon_mode" = "launchd" ]; then
     stage_label 2 "Verify the Mac daemon"
     printf '      %q daemon smoke --status-url %q\n' "$command" "http://$daemon_host:$daemon_port/status"
@@ -539,6 +541,7 @@ echo "World directory: $world_root"
 echo "World repository: $world_repo_url"
 echo "Domain: $domain"
 echo "State path: $state_path"
+echo "Live readiness path: $live_env_path"
 echo
 
 if [ "$dry_run" -eq 0 ]; then
@@ -561,7 +564,8 @@ run "$bun_command" install --frozen-lockfile
 run mkdir -p "$bin_dir"
 write_vivarium_command
 run mkdir -p "$(dirname "$state_path")"
-setup_args=(apps/cli/src/main.ts local --domain "$domain" --world-root "$world_root" --state-path "$state_path")
+run mkdir -p "$(dirname "$live_env_path")"
+setup_args=(apps/cli/src/main.ts local --domain "$domain" --world-root "$world_root" --state-path "$state_path" --live-env-path "$live_env_path")
 if [ "$github_owner" != "" ]; then
   setup_args+=(--github-owner "$github_owner")
 fi

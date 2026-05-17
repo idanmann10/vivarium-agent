@@ -649,6 +649,9 @@ describe("reference docs", () => {
       expect(normalizedBody).toContain(
         "Use `vivarium status` after a run to confirm the latest local run goal, run ID, success state, and score",
       );
+      expect(normalizedBody).toContain(
+        "Copy the exact installer-printed `vivarium local run` command when it includes `--state-path` and `--live-env-path`",
+      );
       expect(body).toContain(
         "Use `vivarium setup live` when you are ready to create provider keys",
       );
