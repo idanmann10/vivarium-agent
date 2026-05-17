@@ -1493,6 +1493,43 @@ describe("dispatchCliCommand", () => {
     });
   });
 
+  test("routes installed env domain defaults through local run", async () => {
+    const worldRoot = mkdtempSync(join(tmpdir(), "cli-dispatch-install-env-domain-world-"));
+    const home = mkdtempSync(join(tmpdir(), "cli-dispatch-install-env-domain-home-"));
+    const statePath = join(home, ".vivarium", "state.db");
+    const liveEnvPath = join(home, ".vivarium", "live", "live-readiness.local.env");
+    write(join(worldRoot, "domains", "research", "curriculum.md"), "# Research Curriculum\n");
+    write(
+      join(worldRoot, "domains", "research", "skills", "installer-domain", "SKILL.md"),
+      "# Research Installer Domain Skill\n\nUse the installer-selected research domain to build a simple agent end to end.",
+    );
+
+    const env = {
+      HOME: home,
+      VIVARIUM_DOMAIN: "research",
+      VIVARIUM_WORLD_ROOT: worldRoot,
+      VIVARIUM_STATE_PATH: statePath,
+      VIVARIUM_LIVE_ENV_PATH: liveEnvPath,
+    };
+
+    const setup = await dispatchCliCommand(["local"], { env });
+    const run = await dispatchCliCommand(["local", "run"], { env });
+
+    expect(setup.result).toMatchObject({
+      local: {
+        primaryDomain: "research",
+        starterSkills: [{ title: "Research Installer Domain Skill" }],
+      },
+    });
+    expect(run.result).toMatchObject({
+      transparency: {
+        consulted: {
+          skills: [expect.stringContaining("installer-domain/SKILL.md")],
+        },
+      },
+    });
+  });
+
   test("routes quick setup through local init and live env bootstrap", async () => {
     const worldRoot = createWorldFixture();
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-setup-quick-"));

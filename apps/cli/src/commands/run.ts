@@ -310,6 +310,10 @@ function configuredWorldRoot(options: RunCommandOptions): string | undefined {
   return options.worldRoot ?? configuredEnvValue(options.env, "VIVARIUM_WORLD_ROOT");
 }
 
+function configuredDomain(options: RunCommandOptions): string {
+  return options.domain ?? configuredEnvValue(options.env, "VIVARIUM_DOMAIN") ?? "coding";
+}
+
 function createRunWorldReader(options: RunCommandOptions): LocalWorldReader {
   if (options.worldSubscriptionsPath !== undefined) {
     const worlds = listWorldSubscriptionsCommand({ subscriptionsPath: options.worldSubscriptionsPath }).subscriptions;
@@ -340,7 +344,7 @@ export async function runCommand(options: RunCommandOptions): Promise<RunCommand
   });
   const request = {
     goal: options.goal,
-    domain: options.domain ?? "coding",
+    domain: configuredDomain(options),
     agentName,
     provider: selectedProvider.provider,
     tools,

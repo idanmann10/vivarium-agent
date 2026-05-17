@@ -1299,13 +1299,14 @@ export async function dispatchCliCommand(
       }
 
       if (subcommand === "run") {
-        const domain = value(flags, "domain");
+        const explicitDomain = value(flags, "domain");
         const agentName = value(flags, "agent-name");
         const explicitStatePath = value(flags, "state-path");
         const explicitLiveEnvPath = value(flags, "live-env-path");
         const envFile = value(flags, "env-file");
         const runEnv =
           envFile === undefined ? options.env : readEnvFile(envFile, options.env ?? process.env);
+        const domain = explicitDomain ?? defaultDomain(runEnv);
         const worldRoot = value(flags, "world-root") ?? defaultWorldRoot(runEnv);
         const worldSubscriptionsPath =
           value(flags, "world-subscriptions-path") ??
@@ -1559,11 +1560,12 @@ export async function dispatchCliCommand(
       return { command, result, output: renderProofCommandResult(result) };
     }
     case "run": {
-      const domain = value(flags, "domain");
+      const explicitDomain = value(flags, "domain");
       const agentName = value(flags, "agent-name");
       const envFile = value(flags, "env-file");
       const runEnv =
         envFile === undefined ? options.env : readEnvFile(envFile, options.env ?? process.env);
+      const domain = explicitDomain ?? defaultDomain(runEnv);
       const worldRoot = value(flags, "world-root") ?? defaultWorldRoot(runEnv);
       const statePath = value(flags, "state-path") ?? defaultStatePath(runEnv);
       const liveEnvPath = value(flags, "live-env-path") ?? envFile ?? privateDefaultLiveEnvFile(runEnv);

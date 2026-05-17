@@ -656,7 +656,7 @@ print_launch_sequence() {
   local keep_moving_stage=2
 
   stage_label 1 "Run the local agent"
-  printf '      %q local run --goal "%s" --domain %q --state-path %q --world-root %q --live-env-path %q\n' "$command" "$starter_goal" "$domain" "$state_path" "$world_root" "$live_env_path"
+  printf '      %q local run --domain %q\n' "$command" "$domain"
   if [ "$daemon_mode" = "launchd" ]; then
     stage_label 2 "Verify the Mac daemon"
     printf '      %q daemon smoke --status-url %q\n' "$command" "http://$daemon_host:$daemon_port/status"

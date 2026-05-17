@@ -78,6 +78,15 @@ function writeFakeBun(path: string): void {
   );
 }
 
+function sectionBetween(body: string, start: string, end: string): string {
+  const startIndex = body.indexOf(start);
+  const endIndex = body.indexOf(end, startIndex + start.length);
+  if (startIndex === -1 || endIndex === -1) {
+    throw new Error(`Missing installer section ${start} -> ${end}`);
+  }
+  return body.slice(startIndex, endIndex);
+}
+
 describe("install.sh", () => {
   test("prints a one-line installer dry-run plan with local commands", () => {
     const result = runInstallerDryRun({
@@ -116,9 +125,16 @@ describe("install.sh", () => {
     expect(stdout).toContain("[3] Review readiness");
     expect(stdout).toContain("[4] Prove live readiness");
     expect(stdout).not.toContain("vivarium run --goal");
-    expect(stdout).toContain(
-      `vivarium local run --goal "build a simple agent end to end" --domain research --state-path .vivarium/research.db --world-root ${worldRoot} --live-env-path .vivarium/research-live.env`,
+    const afterInstall = sectionBetween(stdout, "After installation:", "Command path fallback:");
+    const commandPathFallback = sectionBetween(
+      stdout,
+      "Command path fallback:",
+      "Live setup when ready:",
     );
+    expect(afterInstall).toContain("vivarium local run --domain research");
+    expect(afterInstall).not.toContain("--world-root");
+    expect(afterInstall).not.toContain("--state-path");
+    expect(afterInstall).not.toContain("--live-env-path");
     expect(stdout).not.toContain("build a tiny local agent");
     expect(stdout).toContain("vivarium setup live");
     expect(stdout).toContain("vivarium connect signup");
@@ -136,9 +152,10 @@ describe("install.sh", () => {
     expect(stdout).toContain("vivarium status");
     expect(stdout).toContain("vivarium help");
     expect(stdout).toContain("vivarium update");
-    expect(stdout).toContain(
-      `/tmp/vivarium-bin/vivarium local run --goal "build a simple agent end to end" --domain research --state-path .vivarium/research.db --world-root ${worldRoot} --live-env-path .vivarium/research-live.env`,
-    );
+    expect(commandPathFallback).toContain("/tmp/vivarium-bin/vivarium local run --domain research");
+    expect(commandPathFallback).not.toContain("--world-root");
+    expect(commandPathFallback).not.toContain("--state-path");
+    expect(commandPathFallback).not.toContain("--live-env-path");
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium setup live");
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium connect signup");
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium connect setup --confirm-write");
@@ -187,9 +204,11 @@ describe("install.sh", () => {
     expect(stdout).toContain(
       `Would run: bun apps/cli/src/main.ts local --domain coding --world-root ${join(home, ".vivarium", "the-world")} --state-path ${statePath} --live-env-path ${liveEnvPath}`,
     );
-    expect(stdout).toContain(
-      `vivarium local run --goal "build a simple agent end to end" --domain coding --state-path ${statePath} --world-root ${join(home, ".vivarium", "the-world")} --live-env-path ${liveEnvPath}`,
-    );
+    const afterInstall = sectionBetween(stdout, "After installation:", "Command path fallback:");
+    expect(afterInstall).toContain("vivarium local run --domain coding");
+    expect(afterInstall).not.toContain("--world-root");
+    expect(afterInstall).not.toContain("--state-path");
+    expect(afterInstall).not.toContain("--live-env-path");
   });
 
   test("prints a branded ANSI installer when color is forced", () => {
