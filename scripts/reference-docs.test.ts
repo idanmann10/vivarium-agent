@@ -645,7 +645,9 @@ describe("reference docs", () => {
       ]) {
         expect(block).toContain(command);
       }
+      expect(block).toContain("\nvivarium local run\n");
       expect(block).not.toContain("Verify the Mac daemon");
+      expect(body).not.toContain('vivarium local run --goal "build a simple agent end to end"');
       expect(block).not.toContain(
         "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
       );
@@ -1429,7 +1431,7 @@ describe("reference docs", () => {
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
       "Memory: /Users/idanmann/.vivarium/state.db",
-      "`578 pass, 0 fail, 4729 expect calls`",
+      "`578 pass, 0 fail, 4743 expect calls`",
       "build a simple agent end to end on my Mac",
       "run-1779025625380-620",
       "fresh temp install builds a simple agent end to end",

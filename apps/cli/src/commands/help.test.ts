@@ -141,14 +141,16 @@ describe("helpCommand", () => {
     const output = renderLocalRunHelpCommandResult(result);
 
     expect(output).toContain("Vivarium Local Run");
-    expect(output).toContain('Usage: vivarium local run --goal "build a simple agent end to end"');
+    expect(output).toContain("Usage: vivarium local run");
+    expect(output).not.toContain('Usage: vivarium local run --goal "build a simple agent end to end"');
     expect(output).toContain("--goal <text>");
     expect(output).toContain("--state-path <path>");
     expect(output).toContain("--world-root <path>");
     expect(output).toContain("--live-env-path <path>");
     expect(output).toContain("--env-file <path>");
     expect(output).toContain("--provider-profile <name>");
-    expect(output).toContain('vivarium local run --goal "build a simple agent end to end"');
+    expect(output).toContain("\n  vivarium local run\n");
+    expect(output).not.toContain('vivarium local run --goal "build a simple agent end to end"');
     expect(output).toContain(
       'vivarium local run --goal "summarize this repo" --state-path ./vivarium-state.db --live-env-path ./live-readiness.local.env',
     );
@@ -174,7 +176,8 @@ describe("helpCommand", () => {
     expect(output).not.toContain("--state-path ~/.vivarium/state.db");
     expect(output).not.toContain("--world-root ~/.vivarium/the-world");
     expect(output).not.toContain("--live-env-path ~/.vivarium/live/live-readiness.local.env");
-    expect(output).toContain('vivarium local run --goal "build a simple agent end to end"');
+    expect(output).toContain("\n  vivarium local run\n");
+    expect(output).not.toContain('vivarium local run --goal "build a simple agent end to end"');
     expect(output).not.toContain("build a tiny local agent");
     expect(output).not.toContain("Commands");
     expect(output).not.toContain("vivarium run --goal");

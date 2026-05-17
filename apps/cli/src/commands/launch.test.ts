@@ -13,9 +13,8 @@ describe("launchHandoffCommand", () => {
     expect(result.installCommand).not.toContain("VIVARIUM_AGENT_REF=");
     expect(output).toContain("Vivarium Launch Handoff");
     expect(output).toContain("Mac install command:");
-    expect(output).toContain(
-      'vivarium local run --goal "build a simple agent end to end"',
-    );
+    expect(output).toContain("\n      vivarium local run\n");
+    expect(output).not.toContain('vivarium local run --goal "build a simple agent end to end"');
     expect(
       output.slice(output.indexOf("After install:"), output.indexOf("When ready for live verification:")),
     ).not.toContain("--state-path");
