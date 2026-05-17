@@ -538,7 +538,7 @@ describe("install.sh", () => {
         env: {
           ...process.env,
           HOME: root,
-          PATH: `${bin}:/bin:/usr/sbin:/sbin`,
+          PATH: bin,
         },
         stdout: "pipe",
         stderr: "pipe",
