@@ -652,7 +652,10 @@ describe("reference docs", () => {
         "Use `vivarium status` after a run to confirm the latest local run goal, run ID, success state, and score",
       );
       expect(normalizedBody).toContain(
-        "Copy the exact installer-printed `vivarium local run` command when it includes `--state-path` and `--live-env-path`",
+        "The installed `vivarium` command preserves the installer-selected domain, world root, state path, and live-readiness file as overridable defaults",
+      );
+      expect(normalizedBody).toContain(
+        "Copy the exact installer-printed `vivarium local run` command only when you are running outside the installed wrapper",
       );
       expect(normalizedBody).toContain(
         "`vivarium status --state-path <file> --live-env-path <file>` keeps those explicit paths in its next `vivarium local run` and `vivarium connect` commands",
