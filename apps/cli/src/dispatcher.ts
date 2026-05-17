@@ -1649,6 +1649,8 @@ export async function dispatchCliCommand(
     case "doctor": {
       const agentRoot = value(flags, "agent-root");
       const worldRoot = value(flags, "world-root");
+      const statePath =
+        value(flags, "state-path") ?? join(defaultVivariumHome(options.env), ".vivarium", "state.db");
       const liveMode = booleanFlag(flags, "live");
       const explicitEnvFile = value(flags, "env-file");
       const envFile =
@@ -1659,6 +1661,7 @@ export async function dispatchCliCommand(
         ...(liveMode ? { mode: "live-readiness" } : {}),
         ...(agentRoot === undefined ? {} : { agentRoot }),
         ...(worldRoot === undefined ? {} : { worldRoot }),
+        ...(liveMode ? {} : { statePath }),
         ...(options.doctorRunner === undefined ? {} : { runner: options.doctorRunner }),
         ...(env === undefined ? {} : { env }),
         ...(envFile === undefined ? {} : { envFilePath: envFile }),

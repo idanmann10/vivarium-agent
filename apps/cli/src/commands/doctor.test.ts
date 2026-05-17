@@ -580,8 +580,8 @@ describe("doctorCommand", () => {
     expect(output).toContain("VIVARIUM // local memory // world culture");
     expect(output).toContain("Readiness: ready");
     expect(output).toContain("Checks: 3 passing, 0 blocked");
-    expect(output).toContain("[ok] state:in-memory");
-    expect(output).toContain("[ok] provider:local");
+    expect(output).toContain("[ok] Local state: in-memory");
+    expect(output).toContain("[ok] Provider: local");
     expect(output).not.toContain("Next actions");
   });
 

@@ -60,6 +60,7 @@ export interface DoctorCommandOptions {
   readonly mode?: "offline-local" | "live-readiness";
   readonly agentRoot?: string;
   readonly worldRoot?: string;
+  readonly statePath?: string;
   readonly nowMillis?: number;
   readonly env?: Readonly<Record<string, string | undefined>>;
   readonly envFilePath?: string;
@@ -1467,7 +1468,14 @@ function dockerCheck(
 }
 
 function isPassingCheck(check: string): boolean {
-  return check.endsWith(":configured") || check.endsWith(":ok") || check.endsWith(":installed");
+  return (
+    check.endsWith(":configured") ||
+    check.endsWith(":ok") ||
+    check.endsWith(":installed") ||
+    check.endsWith(":in-memory") ||
+    check.endsWith(":local") ||
+    check.endsWith(":filesystem")
+  );
 }
 
 function isDetailedCommand(command: string): boolean {
@@ -1483,6 +1491,7 @@ function actionHasHiddenDetails(action: DoctorNextAction): boolean {
 }
 
 const friendlyDoctorCheckNames: Readonly<Record<string, string>> = {
+  state: "Local state",
   "agent.name": "Agent repository name",
   "world.name": "World repository name",
   "liveEnvFile.permissions": "Setup file permissions",
@@ -1539,6 +1548,10 @@ const friendlyDoctorCheckNames: Readonly<Record<string, string>> = {
 };
 
 const friendlyDoctorStatuses: Readonly<Record<string, string>> = {
+  configured: "configured",
+  local: "local",
+  filesystem: "filesystem",
+  "in-memory": "in-memory",
   missing: "missing",
   placeholder: "needs real values",
   unavailable: "not created yet",
@@ -1586,6 +1599,10 @@ const doctorUnlockGroups: readonly {
   readonly name: string;
   readonly matches: (checkName: string) => boolean;
 }[] = [
+  {
+    name: "Local runtime",
+    matches: (checkName) => checkName === "state",
+  },
   {
     name: "Setup file",
     matches: (checkName) => checkName.startsWith("liveEnvFile."),
@@ -1697,9 +1714,12 @@ function renderDoctorUnlockChecklist(
     const groupName = group?.name ?? "Other checks";
     counts.set(groupName, (counts.get(groupName) ?? 0) + 1);
   }
+  const title = blockedChecks.every((check) => doctorCheckName(check) === "state")
+    ? "Local unlock checklist:"
+    : "Live unlock checklist:";
 
   return [
-    "Live unlock checklist:",
+    title,
     ...[
       ...doctorUnlockGroups.map((group) => group.name),
       ...(counts.has("Other checks") ? ["Other checks"] : []),
@@ -1755,7 +1775,7 @@ export function renderDoctorCommandResult(
     `Checks: ${passingChecks.length} passing, ${blockedChecks.length} blocked`,
     "",
     ...(blockedChecks.length === 0
-      ? ["Checks:", ...passingChecks.map((check) => `  [ok] ${check}`)]
+      ? ["Checks:", ...passingChecks.map((check) => `  [ok] ${renderDoctorCheckLabel(check, options)}`)]
       : [
           ...renderDoctorUnlockChecklist(blockedChecks, options),
           "Blocked checks:",
@@ -1785,6 +1805,35 @@ function shellQuote(value: string): string {
 
 function cliCommand(_context: DoctorNextActionContext, args: string): string {
   return `vivarium ${args}`;
+}
+
+function offlineLocalDoctor(options: DoctorCommandOptions): DoctorResult {
+  if (options.statePath === undefined) {
+    return {
+      ok: true,
+      checks: ["state:in-memory", "provider:local", "world:filesystem"],
+    };
+  }
+
+  const stateCheck = existsSync(options.statePath) ? "state:configured" : "state:unavailable";
+  const checks = [stateCheck, "provider:local", "world:filesystem"];
+  const ok = stateCheck === "state:configured";
+  return {
+    ok,
+    checks,
+    ...(ok
+      ? {}
+      : {
+          nextActions: [
+            {
+              check: stateCheck,
+              action: "Run vivarium local to initialize local SQLite memory, then rerun vivarium doctor.",
+              command: "vivarium local",
+              guide: "docs/guides/install.md",
+            },
+          ],
+        }),
+  };
 }
 
 function isDefaultLiveEnvFile(envFilePath: string | undefined): boolean {
@@ -2706,8 +2755,5 @@ export function doctorCommand(options: DoctorCommandOptions = {}): DoctorResult 
     return liveReadinessDoctor(options);
   }
 
-  return {
-    ok: true,
-    checks: ["state:in-memory", "provider:local", "world:filesystem"],
-  };
+  return offlineLocalDoctor(options);
 }

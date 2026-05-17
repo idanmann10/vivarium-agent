@@ -2230,14 +2230,17 @@ describe("dispatchCliCommand", () => {
     expect(customStatus.output).toContain("Local state: /tmp/vivarium-state.db");
     expect(customStatus.output).toContain("Live setup file: /tmp/live-readiness.local.env");
 
-    await expect(dispatchCliCommand(["doctor"])).resolves.toMatchObject({
+    const doctorHome = mkdtempSync(join(tmpdir(), "cli-dispatch-doctor-ready-"));
+    const doctorState = new SQLiteStateRepository(join(doctorHome, ".vivarium", "state.db"));
+    doctorState.close();
+    await expect(dispatchCliCommand(["doctor"], { env: { HOME: doctorHome } })).resolves.toMatchObject({
       command: "doctor",
       result: { ok: true },
       output: expect.stringContaining("Vivarium Doctor"),
     });
-    const doctor = await dispatchCliCommand(["doctor"]);
+    const doctor = await dispatchCliCommand(["doctor"], { env: { HOME: doctorHome } });
     expect(doctor.output).toContain("Readiness: ready");
-    expect(doctor.output).toContain("[ok] state:in-memory");
+    expect(doctor.output).toContain("[ok] Local state: configured");
 
     const previousCwd = process.cwd();
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-doctor-no-default-env-"));
@@ -2292,6 +2295,41 @@ describe("dispatchCliCommand", () => {
     } finally {
       process.chdir(previousCwd);
     }
+  });
+
+  test("routes offline doctor through the default persistent state", async () => {
+    const home = mkdtempSync(join(tmpdir(), "cli-dispatch-doctor-state-"));
+    const statePath = join(home, ".vivarium", "state.db");
+    const state = new SQLiteStateRepository(statePath);
+    state.close();
+
+    const doctor = await dispatchCliCommand(["doctor"], { env: { HOME: home } });
+
+    expect(doctor.command).toBe("doctor");
+    expect(doctor.result).toMatchObject({
+      ok: true,
+      checks: expect.arrayContaining(["state:configured"]),
+    });
+    expect(doctor.output).toContain("Readiness: ready");
+    expect(doctor.output).toContain("[ok] Local state: configured");
+    expect(doctor.output).not.toContain("state:in-memory");
+  });
+
+  test("routes missing default doctor state to local setup guidance", async () => {
+    const home = mkdtempSync(join(tmpdir(), "cli-dispatch-doctor-missing-state-"));
+
+    const doctor = await dispatchCliCommand(["doctor"], { env: { HOME: home } });
+
+    expect(doctor.command).toBe("doctor");
+    expect(doctor.result).toMatchObject({
+      ok: false,
+      checks: expect.arrayContaining(["state:unavailable"]),
+    });
+    expect(doctor.output).toContain("Readiness: needs attention");
+    expect(doctor.output).toContain("Local unlock checklist:");
+    expect(doctor.output).toContain("[fix] Local state: not created yet");
+    expect(doctor.output).toContain("Command: vivarium local");
+    expect(doctor.output).not.toContain("Live unlock checklist:");
   });
 
   test("routes launch handoff with the Mac install walkthrough", async () => {
