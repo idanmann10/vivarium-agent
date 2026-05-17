@@ -83,8 +83,6 @@ const steps = [
   localCliStep([
     "local",
     "run",
-    "--goal",
-    "build a simple agent end to end",
     "--domain",
     "coding",
     "--world-root",

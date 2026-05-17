@@ -1347,6 +1347,7 @@ describe("reference docs", () => {
     expect(body).toContain("Readiness file: <demo-live-readiness.local.env>");
     expect(body).toContain("--world-root <demo-world>");
     expect(body).toContain("--live-env-path <demo-live-readiness.local.env>");
+    expect(body).not.toContain('vivarium local run --goal \\"build a simple agent end to end\\"');
     expect(body).toContain("run-demo-000");
     expect(body).toContain(
       "vivarium status --state-path <demo-state.db> --live-env-path <demo-live-readiness.local.env>\\n  vivarium launch handoff\\n  vivarium model",
@@ -1431,7 +1432,7 @@ describe("reference docs", () => {
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
       "Memory: /Users/idanmann/.vivarium/state.db",
-      "`578 pass, 0 fail, 4743 expect calls`",
+      "`578 pass, 0 fail, 4745 expect calls`",
       "build a simple agent end to end on my Mac",
       "run-1779025625380-620",
       "fresh temp install builds a simple agent end to end",
