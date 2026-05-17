@@ -91,6 +91,13 @@ const steps = [
     statePath,
   ]),
   localCliStep([
+    "status",
+    "--state-path",
+    statePath,
+    "--live-env-path",
+    liveReadinessPath,
+  ]),
+  localCliStep([
     "world",
     "transmission-smoke",
     "--remote",

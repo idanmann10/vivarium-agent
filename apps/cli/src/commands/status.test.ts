@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { agentId, skillId } from "../../../../packages/core/src/index.js";
+import { agentId, runId, skillId } from "../../../../packages/core/src/index.js";
 import { SQLiteStateRepository } from "../../../../packages/state/src/index.js";
 import { renderStatusCommandResult, statusCommand } from "./status.js";
 
@@ -27,6 +27,26 @@ function seedReadyLocalState(statePath: string): void {
     runsCompleted: 0,
     summary: "Local agent initialized.",
     updatedAt: "local",
+  });
+  state.close();
+}
+
+function seedCompletedRun(statePath: string): void {
+  const state = new SQLiteStateRepository(statePath);
+  state.createRun({
+    id: runId("run-status-001"),
+    agentId: agentId("local-agent"),
+    domain: "coding",
+    goal: "build a tiny local agent",
+    startedAt: "2026-05-17T04:00:00.000Z",
+    endedAt: "2026-05-17T04:00:03.000Z",
+    success: true,
+    score: 0.8,
+    notes: "Completed local runtime slice",
+    publishable: false,
+    published: false,
+    publishedAt: null,
+    visibility: "private",
   });
   state.close();
 }
@@ -162,6 +182,27 @@ describe("statusCommand", () => {
     expect(output).not.toContain("ANTHROPIC_API_KEY");
     expect(output).not.toContain("VIVARIUM_PROVIDER_PROFILES_PATH");
     expect(output).not.toContain("--env-file live-readiness.local.env");
+  });
+
+  test("shows the latest local run after the simple-agent smoke", () => {
+    const root = mkdtempSync(join(tmpdir(), "status-latest-run-"));
+    const statePath = join(root, ".vivarium", "state.db");
+    seedReadyLocalState(statePath);
+    seedCompletedRun(statePath);
+
+    const result = statusCommand({ statePath });
+    const output = renderStatusCommandResult(result);
+
+    expect(result.localState?.lastRun).toEqual({
+      id: "run-status-001",
+      goal: "build a tiny local agent",
+      domain: "coding",
+      success: true,
+      score: 0.8,
+    });
+    expect(output).toContain("Last run: build a tiny local agent");
+    expect(output).toContain("success, score 0.8");
+    expect(output).toContain("Run ID: run-status-001");
   });
 
   test("points missing live setup at guided onboarding", () => {

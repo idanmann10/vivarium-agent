@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import type { Run } from "../../../../packages/core/src/index.js";
 import { SQLiteStateRepository } from "../../../../packages/state/src/index.js";
 import { renderVivariumGlobe } from "./branding.js";
 
@@ -10,6 +11,13 @@ export interface StatusSummary {
   readonly localState?: {
     readonly path: string;
     readonly ready: boolean;
+    readonly lastRun?: {
+      readonly id: string;
+      readonly goal: string;
+      readonly domain: string;
+      readonly success: boolean | null;
+      readonly score: number | null;
+    };
   };
   readonly liveSetup?: {
     readonly path: string;
@@ -27,9 +35,20 @@ function defaultVivariumHome(): string {
   return process.env.HOME ?? homedir();
 }
 
-function localStateReady(statePath: string, pathExists: (path: string) => boolean): boolean {
+function latestRun(runs: readonly Run[]): Run | undefined {
+  return [...runs].sort((left, right) => {
+    const leftTime = left.endedAt ?? left.startedAt;
+    const rightTime = right.endedAt ?? right.startedAt;
+    return rightTime.localeCompare(leftTime);
+  })[0];
+}
+
+function inspectLocalState(
+  statePath: string,
+  pathExists: (path: string) => boolean,
+): NonNullable<StatusSummary["localState"]> {
   if (!pathExists(statePath)) {
-    return false;
+    return { path: statePath, ready: false };
   }
 
   let state: SQLiteStateRepository | undefined;
@@ -43,9 +62,24 @@ function localStateReady(statePath: string, pathExists: (path: string) => boolea
         skill.domain.trim().length > 0 &&
         skill.body.trim().length > 0,
     );
-    return hasIdentity && hasStarterSkill;
+    const run = latestRun(state.listRuns());
+    return {
+      path: statePath,
+      ready: hasIdentity && hasStarterSkill,
+      ...(run === undefined
+        ? {}
+        : {
+            lastRun: {
+              id: String(run.id),
+              goal: run.goal,
+              domain: run.domain,
+              success: run.success,
+              score: run.score,
+            },
+          }),
+    };
   } catch {
-    return false;
+    return { path: statePath, ready: false };
   } finally {
     state?.close();
   }
@@ -60,9 +94,25 @@ export function statusCommand(options: StatusCommandOptions = {}): StatusSummary
   return {
     repo: "vivarium-agent",
     runtime: "offline-local",
-    localState: { path: statePath, ready: localStateReady(statePath, pathExists) },
+    localState: inspectLocalState(statePath, pathExists),
     liveSetup: { path: liveEnvPath, staged: pathExists(liveEnvPath) },
   };
+}
+
+function renderLastRun(
+  lastRun: NonNullable<NonNullable<StatusSummary["localState"]>["lastRun"]> | undefined,
+): readonly string[] {
+  if (lastRun === undefined) {
+    return [];
+  }
+
+  const status = lastRun.success === null ? "running" : lastRun.success ? "success" : "blocked";
+  const score = lastRun.score === null ? "" : `, score ${lastRun.score}`;
+  return [
+    `  [run] Last run: ${lastRun.goal} (${status}${score})`,
+    `        Domain: ${lastRun.domain}`,
+    `        Run ID: ${lastRun.id}`,
+  ];
 }
 
 export function renderStatusCommandResult(result: StatusSummary): string {
@@ -83,6 +133,7 @@ export function renderStatusCommandResult(result: StatusSummary): string {
     "",
     "Production readiness",
     `  [${localState.ready ? "ready" : "needs"}] Local state: ${localState.path}`,
+    ...renderLastRun(localState.lastRun),
     `  [${liveSetup.staged ? "staged" : "needs"}] Live setup file: ${liveSetup.path}`,
     `  [gate] Live proof: vivarium proof`,
     `  [gate] Readiness check: vivarium doctor --live`,
