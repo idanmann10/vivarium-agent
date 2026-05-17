@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
+import { SQLiteStateRepository } from "../../../../packages/state/src/index.js";
 import { doctorCommand, renderDoctorCommandResult, type DoctorCommandRunner } from "./doctor.js";
 
 const blockedRunner: DoctorCommandRunner = ({ command, args, cwd }) => {
@@ -570,6 +571,25 @@ describe("doctorCommand", () => {
     expect(doctorCommand()).toEqual({
       ok: true,
       checks: ["state:in-memory", "provider:local", "world:filesystem"],
+    });
+  });
+
+  test("blocks a migrated but unseeded local state", () => {
+    const statePath = join(mkdtempSync(join(tmpdir(), "doctor-empty-state-")), "state.db");
+    const state = new SQLiteStateRepository(statePath);
+    state.close();
+
+    const result = doctorCommand({ statePath });
+
+    expect(result).toMatchObject({
+      ok: false,
+      checks: expect.arrayContaining(["state:uninitialized"]),
+      nextActions: expect.arrayContaining([
+        expect.objectContaining({
+          check: "state:uninitialized",
+          command: "vivarium local",
+        }),
+      ]),
     });
   });
 

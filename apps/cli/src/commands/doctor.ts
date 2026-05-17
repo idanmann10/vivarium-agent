@@ -1556,6 +1556,7 @@ const friendlyDoctorStatuses: Readonly<Record<string, string>> = {
   missing: "missing",
   placeholder: "needs real values",
   unavailable: "not created yet",
+  uninitialized: "needs local setup",
   invalid: "invalid",
   failed: "failed",
   mismatch: "mismatch",
@@ -1816,8 +1817,15 @@ function offlineLocalStateCheck(statePath: string): string {
   try {
     const state = new SQLiteStateRepository(statePath);
     try {
-      state.listRuns();
-      return "state:configured";
+      const identity = state.getIdentity();
+      const hasIdentity = identity !== undefined && identity.name.trim().length > 0;
+      const hasStarterSkill = state.listLocalSkills().some(
+        (skill) =>
+          skill.status === "promoted" &&
+          skill.domain.trim().length > 0 &&
+          skill.body.trim().length > 0,
+      );
+      return hasIdentity && hasStarterSkill ? "state:configured" : "state:uninitialized";
     } finally {
       state.close();
     }
@@ -1840,6 +1848,8 @@ function offlineLocalDoctor(options: DoctorCommandOptions): DoctorResult {
   const stateAction =
     stateCheck === "state:invalid"
       ? "Move the invalid local SQLite state aside, then run vivarium local to create a fresh local memory database."
+      : stateCheck === "state:uninitialized"
+        ? "Run vivarium local to seed local-agent identity and starter skills, then rerun vivarium doctor."
       : "Run vivarium local to initialize local SQLite memory, then rerun vivarium doctor.";
   return {
     ok,

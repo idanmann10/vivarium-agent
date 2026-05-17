@@ -2231,8 +2231,17 @@ describe("dispatchCliCommand", () => {
     expect(customStatus.output).toContain("Live setup file: /tmp/live-readiness.local.env");
 
     const doctorHome = mkdtempSync(join(tmpdir(), "cli-dispatch-doctor-ready-"));
-    const doctorState = new SQLiteStateRepository(join(doctorHome, ".vivarium", "state.db"));
-    doctorState.close();
+    const doctorWorldRoot = createWorldFixture();
+    const doctorStatePath = join(doctorHome, ".vivarium", "state.db");
+    await dispatchCliCommand([
+      "setup",
+      "--domain",
+      "coding",
+      "--world-root",
+      doctorWorldRoot,
+      "--state-path",
+      doctorStatePath,
+    ]);
     await expect(dispatchCliCommand(["doctor"], { env: { HOME: doctorHome } })).resolves.toMatchObject({
       command: "doctor",
       result: { ok: true },
@@ -2300,8 +2309,16 @@ describe("dispatchCliCommand", () => {
   test("routes offline doctor through the default persistent state", async () => {
     const home = mkdtempSync(join(tmpdir(), "cli-dispatch-doctor-state-"));
     const statePath = join(home, ".vivarium", "state.db");
-    const state = new SQLiteStateRepository(statePath);
-    state.close();
+    const worldRoot = createWorldFixture();
+    await dispatchCliCommand([
+      "setup",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+    ]);
 
     const doctor = await dispatchCliCommand(["doctor"], { env: { HOME: home } });
 
@@ -2313,6 +2330,27 @@ describe("dispatchCliCommand", () => {
     expect(doctor.output).toContain("Readiness: ready");
     expect(doctor.output).toContain("[ok] Local state: configured");
     expect(doctor.output).not.toContain("state:in-memory");
+  });
+
+  test("routes unseeded default doctor state to local setup guidance", async () => {
+    const home = mkdtempSync(join(tmpdir(), "cli-dispatch-doctor-unseeded-state-"));
+    const statePath = join(home, ".vivarium", "state.db");
+    const state = new SQLiteStateRepository(statePath);
+    state.close();
+
+    const doctor = await dispatchCliCommand(["doctor"], { env: { HOME: home } });
+
+    expect(doctor.command).toBe("doctor");
+    expect(doctor.result).toMatchObject({
+      ok: false,
+      checks: expect.arrayContaining(["state:uninitialized"]),
+    });
+    expect(doctor.output).toContain("Readiness: needs attention");
+    expect(doctor.output).toContain("Local unlock checklist:");
+    expect(doctor.output).toContain("[fix] Local state: needs local setup");
+    expect(doctor.output).toContain("seed local-agent identity and starter skills");
+    expect(doctor.output).toContain("Command: vivarium local");
+    expect(doctor.output).not.toContain("Local state: configured");
   });
 
   test("routes missing default doctor state to local setup guidance", async () => {
