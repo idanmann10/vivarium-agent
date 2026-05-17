@@ -84,6 +84,9 @@ export function launchHandoffCommand(
       ref === defaultRef
         ? "Run the stable main install command above, then run the local agent commands."
         : "Run the branch-pinned install command above, then run the local agent commands.",
+      ...(ref === defaultRef
+        ? []
+        : ["Keep branch protection and review intact before switching installs back to main."]),
       "Use the live verification commands only after secrets and evidence are available.",
       "Do not claim full v1 live readiness until doctor --live reports ready.",
     ],

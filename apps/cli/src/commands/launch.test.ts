@@ -59,6 +59,7 @@ describe("launchHandoffCommand", () => {
     expect(output).toContain("Evidence refs prove the real v1 behavior loop instead of local-only demos.");
     expect(output).toContain("Owner next action:");
     expect(output).toContain("Run the stable main install command above, then run the local agent commands.");
+    expect(output).not.toContain("Keep branch protection and review intact before switching installs back to main.");
     expect(output).toContain("Use the live verification commands only after secrets and evidence are available.");
     expect(output).toContain("Do not claim full v1 live readiness until doctor --live reports ready.");
   });
@@ -75,5 +76,6 @@ describe("launchHandoffCommand", () => {
     );
     expect(result.installCommand).toContain("VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup");
     expect(output).toContain("VIVARIUM_DAEMON=launchd");
+    expect(output).toContain("Keep branch protection and review intact before switching installs back to main.");
   });
 });
