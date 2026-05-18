@@ -61,6 +61,12 @@ function renderDashboard(daemon: DaemonServer): string {
       dl { display: grid; grid-template-columns: 150px 1fr; gap: 10px 16px; margin: 20px 0; }
       dt { color: #53604d; }
       dd { margin: 0; font-weight: 650; overflow-wrap: anywhere; }
+      form { display: grid; gap: 12px; margin-top: 24px; }
+      label { display: grid; gap: 6px; color: #53604d; font-weight: 650; }
+      input { width: 100%; box-sizing: border-box; border: 1px solid #cfd6c8; border-radius: 6px; padding: 10px 12px; background: Canvas; color: CanvasText; font: inherit; }
+      button { justify-self: start; border: 0; border-radius: 6px; padding: 10px 14px; background: #275e3d; color: #fff; font: inherit; font-weight: 750; cursor: pointer; }
+      button:disabled { cursor: progress; opacity: 0.72; }
+      output { display: block; min-height: 24px; margin-top: 14px; white-space: pre-wrap; overflow-wrap: anywhere; color: #20231f; }
       code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92em; }
       .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
       a { color: #275e3d; font-weight: 700; }
@@ -68,6 +74,8 @@ function renderDashboard(daemon: DaemonServer): string {
         body { background: #101410; color: #f2f6ee; }
         .panel { background: #171d17; border-color: #364231; box-shadow: none; }
         dt { color: #acb8a5; }
+        input { border-color: #364231; }
+        output { color: #f2f6ee; }
         a { color: #9ad38e; }
       }
     </style>
@@ -82,11 +90,58 @@ function renderDashboard(daemon: DaemonServer): string {
         <dt>Runs</dt><dd>Runs: ${status.runs}</dd>
         <dt>Confidence</dt><dd>${status.confidenceBuckets} buckets</dd>
       </dl>
+      <form id="run-agent-form">
+        <label>
+          Goal
+          <input name="goal" value="build a simple agent end to end" autocomplete="off">
+        </label>
+        <label>
+          Domain
+          <input name="domain" value="coding" autocomplete="off">
+        </label>
+        <button type="submit">Run agent</button>
+        <output id="run-agent-result" aria-live="polite"></output>
+      </form>
       <div class="links">
         <a href="/status">/status</a>
         <a href="/run">/run</a>
       </div>
     </main>
+    <script>
+      const form = document.getElementById("run-agent-form");
+      const result = document.getElementById("run-agent-result");
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const button = form.querySelector("button");
+        const data = new FormData(form);
+        button.disabled = true;
+        result.textContent = "Running...";
+        try {
+          const response = await fetch("/run", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              goal: String(data.get("goal") ?? ""),
+              domain: String(data.get("domain") ?? ""),
+            }),
+          });
+          const body = await response.json();
+          if (!response.ok) {
+            result.textContent = body.error ?? "Run failed";
+            return;
+          }
+          result.textContent = [
+            "Status: " + (body.success ? "success" : "failed"),
+            "Run ID: " + body.runId,
+            "Validation: " + body.validation.score,
+          ].join("\\n");
+        } catch {
+          result.textContent = "Run failed";
+        } finally {
+          button.disabled = false;
+        }
+      });
+    </script>
   </body>
 </html>`;
 }

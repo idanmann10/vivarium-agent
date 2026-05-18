@@ -40,6 +40,13 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain("Runs: 0");
     expect(body).toContain("/status");
     expect(body).toContain("/run");
+    expect(body).toContain('<form id="run-agent-form">');
+    expect(body).toContain('name="goal"');
+    expect(body).toContain("build a simple agent end to end");
+    expect(body).toContain('name="domain"');
+    expect(body).toContain("Run agent");
+    expect(body).toContain('fetch("/run"');
+    expect(body).toContain('id="run-agent-result"');
   });
 
   test("routes status, run, and dream requests to the daemon", async () => {
