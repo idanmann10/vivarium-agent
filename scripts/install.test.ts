@@ -129,9 +129,10 @@ describe("install.sh", () => {
       `Would run: bun apps/cli/src/main.ts local --domain research --world-root ${worldRoot} --state-path .vivarium/research.db --live-env-path .vivarium/research-live.env`,
     );
     expect(stdout).toContain("After installation:");
-    expect(stdout).toContain("[1] Run the local agent");
-    expect(stdout).toContain("[2] Review launch handoff");
-    expect(stdout).toContain("[3] Keep moving");
+    expect(stdout).toContain("[1] Set up Vivarium");
+    expect(stdout).toContain("[2] Run the local agent");
+    expect(stdout).toContain("[3] Review launch handoff");
+    expect(stdout).toContain("[4] Keep moving");
     expect(stdout).toContain("Live setup when ready:");
     expect(stdout).toContain("[1] Generate local setup files");
     expect(stdout).toContain("[2] Open account and key handoff");
@@ -144,7 +145,11 @@ describe("install.sh", () => {
       "Command path fallback:",
       "Live setup when ready:",
     );
+    expect(afterInstall).toContain("vivarium --setup");
     expect(afterInstall).toContain("vivarium local run");
+    expect(afterInstall.indexOf("vivarium --setup")).toBeLessThan(
+      afterInstall.indexOf("vivarium local run"),
+    );
     expect(afterInstall).not.toContain("vivarium local run --domain research");
     expect(afterInstall).not.toContain("--domain");
     expect(afterInstall).not.toContain("--world-root");
@@ -168,7 +173,11 @@ describe("install.sh", () => {
     expect(stdout).toContain("vivarium tools");
     expect(stdout).toContain("vivarium help");
     expect(stdout).toContain("vivarium update");
+    expect(commandPathFallback).toContain("/tmp/vivarium-bin/vivarium --setup");
     expect(commandPathFallback).toContain("/tmp/vivarium-bin/vivarium local run");
+    expect(commandPathFallback.indexOf("/tmp/vivarium-bin/vivarium --setup")).toBeLessThan(
+      commandPathFallback.indexOf("/tmp/vivarium-bin/vivarium local run"),
+    );
     expect(commandPathFallback).not.toContain(
       "/tmp/vivarium-bin/vivarium local run --domain research",
     );
@@ -244,6 +253,10 @@ describe("install.sh", () => {
     expect(stdout).toContain("State path: /tmp/vivarium-flag-state.db");
     expect(stdout).toContain("Live readiness path: /tmp/vivarium-flag-live.env");
     expect(stdout).toContain("Daemon deployment: launchd");
+    expect(stdout).toContain("[3] Open the dashboard");
+    expect(stdout).toContain(
+      "/tmp/vivarium-flag-bin/vivarium dashboard --url http://127.0.0.1:9898",
+    );
     expect(stdout).toContain("vivarium daemon smoke --status-url http://127.0.0.1:9898/status");
     expect(stdout).toContain(
       "Would run: git -C /tmp/vivarium-flag-install checkout release-candidate",
@@ -292,7 +305,11 @@ describe("install.sh", () => {
       `Would run: bun apps/cli/src/main.ts local --domain coding --world-root ${join(home, ".vivarium", "the-world")} --state-path ${statePath} --live-env-path ${liveEnvPath}`,
     );
     const afterInstall = sectionBetween(stdout, "After installation:", "Command path fallback:");
+    expect(afterInstall).toContain("vivarium --setup");
     expect(afterInstall).toContain("vivarium local run");
+    expect(afterInstall.indexOf("vivarium --setup")).toBeLessThan(
+      afterInstall.indexOf("vivarium local run"),
+    );
     expect(afterInstall).not.toContain("vivarium local run --domain coding");
     expect(afterInstall).not.toContain("--domain");
     expect(afterInstall).not.toContain("--world-root");
@@ -345,9 +362,11 @@ describe("install.sh", () => {
       "Would run: launchctl kickstart -k gui/$UID/com.example.vivarium.daemon",
     );
     expect(stdout).toContain("vivarium daemon smoke --status-url http://127.0.0.1:9898/status");
+    expect(stdout).toContain("vivarium dashboard --url http://127.0.0.1:9898");
     expect(stdout).toContain(
       "/tmp/vivarium-bin/vivarium daemon smoke --status-url http://127.0.0.1:9898/status",
     );
+    expect(stdout).toContain("/tmp/vivarium-bin/vivarium dashboard --url http://127.0.0.1:9898");
     expect(stdout).toContain(
       "Would run: /tmp/vivarium-bin/vivarium launch handoff --daemon-port 9898",
     );

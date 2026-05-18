@@ -769,19 +769,26 @@ run_launch_handoff_summary() {
 
 print_launch_sequence() {
   local command="$1"
-  local keep_moving_stage=2
+  local next_stage=3
 
-  stage_label 1 "Run the local agent"
+  stage_label 1 "Set up Vivarium"
+  printf '      %q --setup\n' "$command"
+  stage_label 2 "Run the local agent"
   printf '      %q local run\n' "$command"
   if [ "$daemon_mode" = "launchd" ]; then
-    stage_label 2 "Verify the Mac daemon"
+    stage_label 3 "Open the dashboard"
+    if [ "$daemon_host" = "127.0.0.1" ] && [ "$daemon_port" = "8787" ]; then
+      printf '      %q dashboard\n' "$command"
+    else
+      printf '      %q dashboard --url %q\n' "$command" "http://$daemon_host:$daemon_port"
+    fi
     printf '      %q daemon smoke --status-url %q\n' "$command" "http://$daemon_host:$daemon_port/status"
-    keep_moving_stage=3
+    next_stage=4
   fi
-  stage_label "$keep_moving_stage" "Review launch handoff"
+  stage_label "$next_stage" "Review launch handoff"
   print_launch_handoff_command "$command"
-  keep_moving_stage=$((keep_moving_stage + 1))
-  stage_label "$keep_moving_stage" "Keep moving"
+  next_stage=$((next_stage + 1))
+  stage_label "$next_stage" "Keep moving"
   printf '      %q status\n' "$command"
   printf '      %q tools\n' "$command"
   printf '      %q help\n' "$command"
