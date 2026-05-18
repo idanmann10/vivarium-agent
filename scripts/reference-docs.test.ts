@@ -700,6 +700,9 @@ describe("reference docs", () => {
         "Clicking `Run agent` records the local run through `/run` and shows the run ID inline",
       );
       expect(normalizedBody).toContain(
+        "The dashboard also shows the latest local run summary after the daemon records a run",
+      );
+      expect(normalizedBody).toContain(
         "`vivarium local run` should print `Status: success`, `Provider: local`, and `Validation: pass (0.8)`",
       );
       expect(normalizedBody).toContain("`vivarium daemon smoke` should print `Status: ok`");

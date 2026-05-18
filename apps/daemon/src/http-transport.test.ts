@@ -38,6 +38,8 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain("Vivarium Dashboard");
     expect(body).toContain("Status: running");
     expect(body).toContain("Runs: 0");
+    expect(body).toContain("Latest run");
+    expect(body).toContain("None yet");
     expect(body).toContain("/status");
     expect(body).toContain("POST /run");
     expect(body).not.toContain('href="/run"');
@@ -66,6 +68,23 @@ describe("createDaemonFetchHandler", () => {
       ),
     );
     expect(run).toMatchObject({ success: true });
+
+    const statusAfterRun = await json(await handler(new Request("http://daemon/status")));
+    expect(statusAfterRun).toMatchObject({
+      status: "running",
+      runs: 1,
+      latestRun: {
+        goal: "write a transport test",
+        domain: "coding",
+        success: true,
+        score: 0.8,
+      },
+    });
+
+    const dashboardAfterRun = await handler(new Request("http://daemon/"));
+    expect(await dashboardAfterRun.text()).toContain(
+      "write a transport test (success, score 0.8)",
+    );
 
     const dream = await json(
       await handler(

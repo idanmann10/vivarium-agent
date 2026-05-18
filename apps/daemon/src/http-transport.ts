@@ -43,9 +43,21 @@ function htmlResponse(body: string, init?: ResponseInit): Response {
   });
 }
 
+function latestRunText(status: ReturnType<DaemonServer["status"]>): string {
+  if (status.latestRun === undefined) {
+    return "None yet";
+  }
+
+  const runStatus =
+    status.latestRun.success === null ? "running" : status.latestRun.success ? "success" : "blocked";
+  const score = status.latestRun.score === null ? "" : `, score ${status.latestRun.score}`;
+  return `${status.latestRun.goal} (${runStatus}${score})`;
+}
+
 function renderDashboard(daemon: DaemonServer): string {
   const status = daemon.status();
   const statePath = status.statePath ?? "memory-only";
+  const latestRun = latestRunText(status);
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -90,6 +102,7 @@ function renderDashboard(daemon: DaemonServer): string {
         <dt>Status</dt><dd>Status: ${escapeHtml(status.status)}</dd>
         <dt>Memory</dt><dd><code>${escapeHtml(statePath)}</code></dd>
         <dt>Runs</dt><dd>Runs: ${status.runs}</dd>
+        <dt>Latest run</dt><dd>${escapeHtml(latestRun)}</dd>
         <dt>Confidence</dt><dd>${status.confidenceBuckets} buckets</dd>
       </dl>
       <form id="run-agent-form">

@@ -16,6 +16,12 @@ describe("createDaemonServer", () => {
 
     expect(run.success).toBe(true);
     expect(daemon.status().runs).toBe(1);
+    expect(daemon.status().latestRun).toMatchObject({
+      goal: "write a test",
+      domain: "coding",
+      success: true,
+      score: 0.8,
+    });
     expect(dream.identitySummary).toContain("coding");
   });
 
