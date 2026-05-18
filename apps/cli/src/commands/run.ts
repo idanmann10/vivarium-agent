@@ -422,10 +422,10 @@ function renderRunGuidance(result: RunCommandResult): readonly string[] {
   if (result.success) {
     return [
       "Next commands:",
+      "  vivarium dashboard",
+      "  vivarium daemon smoke",
       "  vivarium local run --goal \"try another small coding task\"",
       `  ${statusCommand}`,
-      "  vivarium launch handoff",
-      "  vivarium model",
     ];
   }
 

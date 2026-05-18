@@ -42,6 +42,9 @@ describe("local e2e demo recorder", () => {
       "$ vivarium local run --domain coding --world-root <demo-world> --state-path <demo-state.db> --live-env-path <demo-live-readiness.local.env>",
     );
     expect(text).not.toContain('vivarium local run --goal "build a simple agent end to end"');
+    expect(text).toContain("vivarium dashboard");
+    expect(text).toContain("vivarium daemon smoke");
+    expect(text).not.toContain("vivarium launch handoff\n  vivarium model");
     expect(text).toContain("$ vivarium status --state-path <demo-state.db> --live-env-path <demo-live-readiness.local.env>");
     expect(text).toContain("Last run: build a simple agent end to end");
     expect(text).toContain("Run ID: run-demo-000");

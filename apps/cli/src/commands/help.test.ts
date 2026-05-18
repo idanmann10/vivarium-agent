@@ -182,6 +182,10 @@ describe("helpCommand", () => {
     expect(output).not.toContain("--live-env-path ~/.vivarium/live/live-readiness.local.env");
     expect(output).not.toContain("build a tiny local agent");
     expect(output).toContain("vivarium status");
+    expect(output).toContain("vivarium dashboard");
+    expect(output).toContain("vivarium daemon smoke");
+    expect(output).not.toContain("vivarium launch handoff");
+    expect(output).not.toContain("vivarium model");
     expect(output).not.toContain("Commands");
     expect(output).not.toContain("vivarium run --goal");
   });

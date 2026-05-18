@@ -151,7 +151,7 @@ export function localRunHelpCommand(): LocalRunHelpCommandResult {
       'vivarium local run --goal "summarize this repo" --state-path ./vivarium-state.db --live-env-path ./live-readiness.local.env',
       'vivarium local run --goal "try a live model" --env-file ~/.vivarium/live/live-readiness.local.env --provider-profile openrouter',
     ],
-    nextCommands: ["vivarium status", "vivarium launch handoff", "vivarium model"],
+    nextCommands: ["vivarium dashboard", "vivarium daemon smoke", "vivarium status"],
   };
 }
 

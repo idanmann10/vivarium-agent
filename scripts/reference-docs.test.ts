@@ -1414,8 +1414,9 @@ describe("reference docs", () => {
     expect(body).not.toContain('vivarium local run --goal \\"build a simple agent end to end\\"');
     expect(body).toContain("run-demo-000");
     expect(body).toContain(
-      "vivarium status --state-path <demo-state.db> --live-env-path <demo-live-readiness.local.env>\\n  vivarium launch handoff\\n  vivarium model",
+      'vivarium dashboard\\n  vivarium daemon smoke\\n  vivarium local run --goal \\"try another small coding task\\"\\n  vivarium status --state-path <demo-state.db> --live-env-path <demo-live-readiness.local.env>',
     );
+    expect(body).not.toContain("vivarium launch handoff\\n  vivarium model");
     expect(body).not.toContain("/Users/");
     expect(body).not.toContain("vivarium-local-e2e-demo-");
     expect(body).not.toContain("Memory: /");
