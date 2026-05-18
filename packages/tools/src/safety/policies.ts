@@ -18,6 +18,12 @@ export interface ResolvedToolPolicy {
   readonly subject?: string;
 }
 
+export interface ToolPolicyEvaluation {
+  readonly action: ToolPolicyAction;
+  readonly policy: ResolvedToolPolicy;
+  readonly decisions: readonly ResolvedToolPolicy[];
+}
+
 export interface ToolPolicyRequest {
   readonly toolId: string;
   readonly args?: unknown;
@@ -335,7 +341,7 @@ export function resolveToolPolicy(
   policies: readonly ToolPolicy[],
   defaultAction: ToolPolicyAction = "approve",
 ): ResolvedToolPolicy {
-  return resolveForSubject(toolId, policies, defaultAction);
+  return evaluateToolPolicyForRequest({ toolId }, policies, defaultAction).policy;
 }
 
 function commandFromArgs(args: unknown): string | undefined {
@@ -353,14 +359,24 @@ export function resolveToolPolicyForRequest(
   policies: readonly ToolPolicy[],
   defaultAction: ToolPolicyAction = "approve",
 ): ResolvedToolPolicy {
+  return evaluateToolPolicyForRequest(request, policies, defaultAction).policy;
+}
+
+export function evaluateToolPolicyForRequest(
+  request: ToolPolicyRequest,
+  policies: readonly ToolPolicy[],
+  defaultAction: ToolPolicyAction = "approve",
+): ToolPolicyEvaluation {
   const command = request.toolId === "terminal.run" ? commandFromArgs(request.args) : undefined;
   if (command === undefined) {
-    return resolveToolPolicy(request.toolId, policies, defaultAction);
+    const policy = resolveForSubject(request.toolId, policies, defaultAction);
+    return { action: policy.action, policy, decisions: [policy] };
   }
 
   const segments = parseShellCommand(command);
   const decisions = segments.map((segment) => resolveForSubject(request.toolId, policies, defaultAction, segment));
-  return decisions.reduce((winner, decision) =>
+  const policy = decisions.reduce((winner, decision) =>
     isActionMoreRestrictive(decision.action, winner.action) ? decision : winner,
   );
+  return { action: policy.action, policy, decisions };
 }

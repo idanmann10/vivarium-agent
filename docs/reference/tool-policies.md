@@ -24,9 +24,15 @@ Each `ToolPolicy` has:
   used as the policy rank.
 - `reason`: optional human-readable audit reason.
 
-Policy resolution returns one effective rule. Matching candidates are ordered by
-rank, then by `id` for stable ties. If nothing matches, the dispatcher uses
-`toolPolicyDefaultAction`, which defaults to `approve`.
+Policy evaluation returns an aggregate action, the effective policy that decides
+that action, and the ordered per-subject decisions used to get there. The
+compatibility helpers `resolveToolPolicy` and `resolveToolPolicyForRequest`
+return only the effective policy; integrations that need audit detail should use
+`evaluateToolPolicyForRequest`.
+
+Matching candidates are ordered by rank, then by `id` for stable ties. If
+nothing matches, the dispatcher uses `toolPolicyDefaultAction`, which defaults
+to `approve`.
 
 For `terminal.run`, command-prefix policies use Executor-style shell handling:
 the command is split at shell control operators such as `&&`, `||`, `;`, and
@@ -43,6 +49,11 @@ back to general `terminal.run` policies or the default action.
 `confirmed: true`; otherwise the call returns a blocked result. Confirmed calls
 continue into the existing rate-limit, credential, HTTP, computer-use, and output
 safety checks.
+
+Dispatch audit events include the effective policy for external tools. For
+terminal chains, the policy's `subject` is the command segment that caused the
+aggregate decision, which lets logs point at `rm -rf build` instead of only the
+larger `git status && rm -rf build` request.
 
 Example:
 

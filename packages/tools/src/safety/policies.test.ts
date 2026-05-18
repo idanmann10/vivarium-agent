@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { resolveToolPolicy, resolveToolPolicyForRequest, type ToolPolicy } from "./policies.js";
+import {
+  evaluateToolPolicyForRequest,
+  resolveToolPolicy,
+  resolveToolPolicyForRequest,
+  type ToolPolicy,
+} from "./policies.js";
 
 describe("tool policies", () => {
   test("uses the default action when no policy matches", () => {
@@ -129,6 +134,56 @@ describe("tool policies", () => {
       id: "default",
       action: "block",
       subject: "rm -rf build",
+    });
+  });
+
+  test("keeps every shell segment decision in the policy evaluation", () => {
+    const policies: readonly ToolPolicy[] = [
+      {
+        id: "allow-git-status",
+        pattern: "terminal.run",
+        commandPrefix: ["git", "status"],
+        action: "approve",
+      },
+      {
+        id: "confirm-rm",
+        pattern: "terminal.run",
+        commandPrefix: ["rm"],
+        action: "require_confirmation",
+        reason: "File removal needs approval",
+      },
+    ];
+
+    expect(
+      evaluateToolPolicyForRequest(
+        { toolId: "terminal.run", args: { command: "git status --short && rm -rf build" } },
+        policies,
+        "block",
+      ),
+    ).toEqual({
+      action: "require_confirmation",
+      policy: {
+        id: "confirm-rm",
+        pattern: "terminal.run",
+        action: "require_confirmation",
+        reason: "File removal needs approval",
+        subject: "rm -rf build",
+      },
+      decisions: [
+        {
+          id: "allow-git-status",
+          pattern: "terminal.run",
+          action: "approve",
+          subject: "git status --short",
+        },
+        {
+          id: "confirm-rm",
+          pattern: "terminal.run",
+          action: "require_confirmation",
+          reason: "File removal needs approval",
+          subject: "rm -rf build",
+        },
+      ],
     });
   });
 

@@ -31,4 +31,5 @@ external capabilities by exact tool name, subtree pattern, wildcard, or
 `terminal.run` command prefix. Terminal prefix policies are evaluated per shell
 segment, so a chain only runs when every segment is approved or confirmed. See
 [Tool Policies](../reference/tool-policies.md) for the policy fields and
-resolution order.
+resolution order. Dispatcher audit events include the effective policy decision,
+including the specific terminal segment that blocked or held a chained command.

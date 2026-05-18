@@ -314,6 +314,46 @@ describe("createToolDispatcher", () => {
     expect(commands).toEqual(["git status --short && pwd"]);
   });
 
+  test("emits the blocking policy decision for terminal segment audit events", async () => {
+    const events: ToolDispatchEvent[] = [];
+    const dispatcher = createToolDispatcher({
+      toolPolicyDefaultAction: "block",
+      toolPolicies: [
+        {
+          id: "allow-git-status",
+          pattern: "terminal.run",
+          commandPrefix: ["git", "status"],
+          action: "approve",
+        },
+      ],
+      externalAdapters: {
+        runTerminal: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
+      },
+      onDispatch: (event) => events.push(event),
+    });
+
+    await expect(
+      dispatcher.dispatch({ name: "terminal.run", args: { command: "git status --short && rm -rf build" } }),
+    ).resolves.toEqual({
+      ok: false,
+      error: "Tool policy blocks terminal.run: Default tool policy action",
+      blocked: true,
+    });
+
+    expect(events).toContainEqual({
+      name: "terminal.run",
+      status: "blocked",
+      reason: "Tool policy blocks terminal.run: Default tool policy action",
+      policy: {
+        id: "default",
+        pattern: "*",
+        action: "block",
+        reason: "Default tool policy action",
+        subject: "rm -rf build",
+      },
+    });
+  });
+
   test("requires confirmation for terminal prefixes that are policy-gated", async () => {
     let runs = 0;
     const dispatcher = createToolDispatcher({
