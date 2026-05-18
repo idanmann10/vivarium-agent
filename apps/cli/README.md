@@ -8,7 +8,7 @@ thin and route through `src/dispatcher.ts`.
 
 Implemented command groups include:
 
-- `local`, `local run`, `setup live`, `connect`, `proof`, `init`, `run`, `model`, `status`, `doctor`, and `doctor --live`
+- `local`, `local run`, `setup live`, `connect`, `proof`, `init`, `run`, `model`, `tools`, `status`, `doctor`, and `doctor --live`
 - `connect signup/fill/setup/smoke`
 - `proof init`
 - `skills list`
@@ -40,7 +40,8 @@ Use the CLI for local handoff checks such as provider profile smoke tests,
 encrypted credential smoke tests, GitHub read/write guards, daemon status, and
 world transmission-smoke. `model` summarizes
 configured provider profiles without printing secret values and flags expected
-live profiles that are still missing. `local` is the shortest local-first
+live profiles that are still missing. `tools` renders the read-only external
+tool and safety policy dashboard. `local` is the shortest local-first
 entrypoint: it creates the named `local-agent`, runs quick setup, stages the
 private readiness file for later, and prints `local run` as the offline
 simple-agent command. `setup` remains available for

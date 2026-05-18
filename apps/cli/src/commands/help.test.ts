@@ -36,6 +36,10 @@ describe("helpCommand", () => {
           command: "vivarium model",
           description: "Show provider profile readiness.",
         }),
+        expect.objectContaining({
+          command: "vivarium tools",
+          description: "Show external toolsets and safety policy posture.",
+        }),
         expect.objectContaining({ command: "vivarium connect init" }),
         expect.objectContaining({
           command: "vivarium connect signup",
@@ -81,6 +85,7 @@ describe("helpCommand", () => {
     expect(output).not.toContain("vivarium live env-init");
     expect(output).not.toContain("vivarium live evidence-init");
     expect(output).toContain("vivarium model");
+    expect(output).toContain("vivarium tools");
     expect(output).toContain("vivarium help");
     expect(firstRunBlock).toContain("vivarium local");
     expect(firstRunBlock).toContain("vivarium local run");

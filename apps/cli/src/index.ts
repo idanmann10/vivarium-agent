@@ -20,6 +20,7 @@ export const cliCommands = [
   "curriculum",
   "help",
   "model",
+  "tools",
   "status",
   "update",
   "doctor",
@@ -99,6 +100,8 @@ export type {
   ModelCommandResult,
   ModelProfileSummary,
 } from "./commands/model.js";
+export { renderToolsCommandResult, toolsCommand } from "./commands/tools.js";
+export type { ToolsCommandResult, ToolsToolsetSummary } from "./commands/tools.js";
 export { renderStatusCommandResult, statusCommand } from "./commands/status.js";
 export { renderUpdateCommandResult, updateCommand } from "./commands/update.js";
 export type {

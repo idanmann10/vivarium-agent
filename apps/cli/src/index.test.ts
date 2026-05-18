@@ -39,6 +39,8 @@ describe("CLI public API", () => {
     expect(typeof exports.renderLaunchHandoffCommandResult).toBe("function");
     expect(typeof exports.modelCommand).toBe("function");
     expect(typeof exports.renderModelCommandResult).toBe("function");
+    expect(typeof exports.toolsCommand).toBe("function");
+    expect(typeof exports.renderToolsCommandResult).toBe("function");
     expect(typeof exports.liveEnvInitCommand).toBe("function");
     expect(typeof exports.renderLiveEnvInitCommandResult).toBe("function");
     expect(typeof exports.renderConnectInitCommandResult).toBe("function");

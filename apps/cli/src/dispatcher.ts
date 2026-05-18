@@ -133,6 +133,7 @@ import { renderRunCommandResult, runCommand, type RunProviderKind } from "./comm
 import { renderSetupCommandResult, setupCommand } from "./commands/setup.js";
 import { listSkillsCommand, renderListSkillsCommandResult } from "./commands/skills.js";
 import { renderStatusCommandResult, statusCommand } from "./commands/status.js";
+import { renderToolsCommandResult, toolsCommand } from "./commands/tools.js";
 import {
   renderUpdateCommandResult,
   updateCommand,
@@ -1175,6 +1176,11 @@ export async function dispatchCliCommand(
     return { command: "help", result, output: renderGithubSmokeHelpCommandResult(result) };
   }
 
+  if (command === "tools" && hasHelpRequest(argv.slice(1))) {
+    const result = toolsCommand();
+    return { command, result, output: renderToolsCommandResult(result) };
+  }
+
   const commandArgs = (subcommand?.startsWith("--") ?? true) ? argv.slice(1) : rest;
   const { flags } = parseFlags(commandArgs);
   if (flags.has("help") || flags.has("h")) {
@@ -1186,6 +1192,10 @@ export async function dispatchCliCommand(
     case "help": {
       const result = helpCommand();
       return { command, result, output: renderHelpCommandResult(result) };
+    }
+    case "tools": {
+      const result = toolsCommand();
+      return { command, result, output: renderToolsCommandResult(result) };
     }
     case "launch": {
       if (subcommand !== "handoff") {

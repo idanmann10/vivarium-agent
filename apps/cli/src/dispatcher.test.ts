@@ -312,6 +312,22 @@ describe("dispatchCliCommand", () => {
     }
   });
 
+  test("routes tools through the read-only tool safety dashboard", async () => {
+    const result = await dispatchCliCommand(["tools"]);
+    const help = await dispatchCliCommand(["tools", "--help"]);
+
+    expect(result.command).toBe("tools");
+    expect(result.output).toContain("Vivarium Tools");
+    expect(result.output).toContain("External toolsets");
+    expect(result.output).toContain("terminal.run");
+    expect(result.output).toContain("Tool policies: approve unless configured otherwise");
+    expect(result.output).toContain("commandPrefix: git status");
+    expect(result.output).toContain("vivarium model");
+    expect(help.command).toBe("tools");
+    expect(help.output).toContain("Vivarium Tools");
+    expect(help.output).toContain("Read-only dashboard");
+  });
+
   test("routes connect through provider signup guidance", async () => {
     const root = mkdtempSync(join(tmpdir(), "cli-dispatch-connect-guide-"));
     const previousCwd = process.cwd();

@@ -640,6 +640,7 @@ describe("reference docs", () => {
         "vivarium local run",
         "vivarium launch handoff",
         "vivarium status",
+        "vivarium tools",
         "vivarium help",
         "vivarium update",
       ]) {
@@ -664,6 +665,9 @@ describe("reference docs", () => {
       );
       expect(normalizedBody).toContain(
         "Use `vivarium status` after a run to confirm the latest local run goal, run ID, success state, and score",
+      );
+      expect(normalizedBody).toContain(
+        "Use `vivarium tools` to inspect external toolsets and safety policy posture without mutating local state",
       );
       expect(normalizedBody).toContain(
         "The installed `vivarium` command preserves the installer-selected domain, world root, state path, and live-readiness file as overridable defaults",
@@ -1294,6 +1298,7 @@ describe("reference docs", () => {
 
   test("keeps the CLI app README on the connect live setup path", () => {
     const body = readFileSync(join("apps", "cli", "README.md"), "utf8");
+    const normalizedBody = body.replaceAll(/\s+/g, " ");
     const commandGroups = body.indexOf("Implemented command groups include:");
     const lowLevelBoundary = body.indexOf("Lower-level/debug command groups");
     const credentialsCommands = body.indexOf("credentials add/list/smoke");
@@ -1311,6 +1316,8 @@ describe("reference docs", () => {
     expect(body).toContain("connect fill");
     expect(body).toContain("connect setup --confirm-write");
     expect(body).toContain("connect smoke");
+    expect(body).toContain("tools");
+    expect(normalizedBody).toContain("read-only external tool and safety policy dashboard");
     expect(body).toContain("proof init");
     expect(body).toContain("proof");
     expect(body).toContain("names/world");

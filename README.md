@@ -66,6 +66,7 @@ vivarium launch handoff
 
 # [4] Keep moving
 vivarium status
+vivarium tools
 vivarium help
 vivarium update
 ```
@@ -77,6 +78,8 @@ validation, and next local commands. Connect Anthropic, OpenRouter, or a private
 OpenAI-compatible endpoint only when you want real model calls.
 Use `vivarium status` after a run to confirm the latest local run goal, run ID,
 success state, and score from SQLite before moving on.
+Use `vivarium tools` to inspect external toolsets and safety policy posture
+without mutating local state.
 The installed `vivarium` command preserves the installer-selected domain, world
 root, state path, and live-readiness file as overridable defaults, so
 `vivarium local run` stays enough after custom-path or branch-pinned installs.
