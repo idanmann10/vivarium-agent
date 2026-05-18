@@ -39,7 +39,7 @@
     "drizzle-kit": "^0.31.10",
     "knip": "^6.12.2",
     "oxfmt": "^0.49.0",
-    "oxlint": "^1.64.0",
+    "oxlint": "^1.65.0",
     "turbo": "^2.5.8",
     "typescript": "^5.9.3",
     "vitest": "^4.1.6"
