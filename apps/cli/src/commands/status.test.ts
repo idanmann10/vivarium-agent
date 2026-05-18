@@ -74,7 +74,10 @@ describe("statusCommand", () => {
       expect(output).toContain("vivarium local");
       expect(output).toContain("Create the local agent.");
       expect(output).not.toContain("vivarium run --goal <goal>");
-      expect(output).toContain("vivarium launch handoff");
+      expect(output).toContain("vivarium dashboard");
+      expect(output).toContain("vivarium daemon smoke");
+      expect(output).not.toContain("vivarium launch handoff");
+      expect(output).not.toContain("vivarium model");
       expect(output).toContain("vivarium help");
     } finally {
       if (previousHome === undefined) {
@@ -175,12 +178,15 @@ describe("statusCommand", () => {
     expect(output).toContain(`[staged] Live setup file: ${liveEnvPath}`);
     expect(output).not.toContain(`[ready] Live setup file: ${liveEnvPath}`);
     expect(output).toContain("vivarium local run");
+    expect(output).toContain("vivarium dashboard");
+    expect(output).toContain("vivarium daemon smoke");
     expect(output).toContain("vivarium connect");
-    expect(output).toContain("vivarium model");
-    expect(output).toContain("Inspect provider profile readiness.");
+    expect(output).not.toContain("vivarium model");
+    expect(output).not.toContain("Inspect provider profile readiness.");
     expect(output).not.toContain("Inspect configured provider profiles.");
     expect(output).toContain("vivarium proof");
     expect(output).toContain("vivarium doctor --live");
+    expect(output).not.toContain("vivarium launch handoff");
     expect(output).not.toContain("ANTHROPIC_API_KEY");
     expect(output).not.toContain("VIVARIUM_PROVIDER_PROFILES_PATH");
     expect(output).not.toContain("--env-file live-readiness.local.env");

@@ -2742,8 +2742,11 @@ describe("dispatchCliCommand", () => {
     expect(status.output).toContain("VIVARIUM // local memory // world culture");
     expect(status.output).toContain("Repository: vivarium-agent");
     expect(status.output).toContain("vivarium local");
+    expect(status.output).toContain("vivarium dashboard");
+    expect(status.output).toContain("vivarium daemon smoke");
     expect(status.output).not.toContain("vivarium run --goal <goal>");
-    expect(status.output).toContain("vivarium launch handoff");
+    expect(status.output).not.toContain("vivarium launch handoff");
+    expect(status.output).not.toContain("vivarium model");
 
     const customStatus = await dispatchCliCommand([
       "status",
