@@ -289,6 +289,10 @@ function connectSignupCommandLine(): string {
   return "vivarium connect signup";
 }
 
+function setupLiveCommandLine(envFilePath: string): string | undefined {
+  return isDefaultLiveSetupPath(envFilePath) ? "vivarium setup live" : undefined;
+}
+
 function connectCommandLine(envFilePath: string): string {
   return isDefaultLiveSetupPath(envFilePath)
     ? "vivarium connect"
@@ -1408,9 +1412,11 @@ export function renderConnectSmokeCommandResult(
   const rawEnvFilePath = options.envFilePath ?? "live-readiness.local.env";
   const envFilePath = shellQuote(rawEnvFilePath);
   const hasFillableNeeds = smokeHasFillableNeeds(result);
+  const setupLiveCommand = hasFillableNeeds ? setupLiveCommandLine(rawEnvFilePath) : undefined;
   const nextCommands = result.ok
     ? [proofCommandLine(envFilePath), doctorLiveCommandLine(envFilePath)]
     : [
+        ...(setupLiveCommand === undefined ? [] : [setupLiveCommand]),
         connectCommandLine(envFilePath),
         ...(hasFillableNeeds && isDefaultLiveSetupPath(rawEnvFilePath) ? [connectSignupCommandLine()] : []),
         ...(hasFillableNeeds ? [connectFillCommandLine(envFilePath)] : []),

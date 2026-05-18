@@ -935,6 +935,17 @@ describe("dispatchCliCommand", () => {
       expect(smoke.output).toContain("Vivarium Connect Smoke");
       expect(smoke.output).toContain("Setup file: live-readiness.local.env");
       expect(smoke.output).toContain("Status: blocked");
+      expect(smoke.output).toContain("vivarium setup live");
+      expect(smoke.output).toContain(
+        [
+          "  [1] Prepare live readiness",
+          "      vivarium setup live",
+          "      vivarium connect",
+          "      vivarium connect signup",
+          "      vivarium connect fill",
+          "      vivarium connect setup --confirm-write",
+        ].join("\n"),
+      );
     } finally {
       process.chdir(previousCwd);
     }

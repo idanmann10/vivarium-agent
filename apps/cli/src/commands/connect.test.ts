@@ -665,6 +665,7 @@ describe("connectCommand", () => {
     expect(output).toContain("Vivarium Connect Smoke");
     expect(output).toContain("[blocked] Anthropic provider");
     expect(output).toContain("[blocked] Internal credential");
+    expect(output).toContain("vivarium setup live");
     expect(output).toContain("vivarium connect");
     expect(output).toContain("vivarium connect signup");
     expect(output).toContain("vivarium connect fill");
@@ -672,6 +673,7 @@ describe("connectCommand", () => {
     expect(output).toContain(
       [
         "  [1] Prepare live readiness",
+        "      vivarium setup live",
         "      vivarium connect",
         "      vivarium connect signup",
         "      vivarium connect fill",
