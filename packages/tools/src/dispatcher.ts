@@ -17,7 +17,7 @@ import {
   scanToolOutputForPromptInjection,
   type ComputerUseConfirmationLevel,
 } from "./safety/pipeline.js";
-import { resolveToolPolicy, type ToolPolicy, type ToolPolicyAction } from "./safety/policies.js";
+import { resolveToolPolicyForRequest, type ToolPolicy, type ToolPolicyAction } from "./safety/policies.js";
 
 export interface ToolDispatchRequest {
   readonly name: string;
@@ -361,8 +361,8 @@ function checkToolPolicy(
   external: ExternalToolRequest,
   options: ToolDispatcherOptions,
 ): ToolDispatchResult | undefined {
-  const policy = resolveToolPolicy(
-    external.name,
+  const policy = resolveToolPolicyForRequest(
+    { toolId: external.name, args: external.args },
     options.toolPolicies ?? [],
     options.toolPolicyDefaultAction ?? "approve",
   );

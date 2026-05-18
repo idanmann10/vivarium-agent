@@ -14,10 +14,12 @@ model prompt.
 
 ## Action Safety
 
-HTTP and file requests use allowlist checks, configured rate limits, destructive
-confirmation, and argument scrubbing for credential-like values. The dispatcher
-blocks unsafe external requests before they reach adapters and can emit sanitized
-safety-surprise evidence without echoing secrets.
+HTTP, file, and terminal requests use allowlist checks, configured rate limits,
+destructive confirmation, and argument scrubbing for credential-like values.
+Terminal policies can approve or hold command prefixes per shell segment, which
+keeps chained commands from inheriting approval from only their first command.
+The dispatcher blocks unsafe external requests before they reach adapters and can
+emit sanitized safety-surprise evidence without echoing secrets.
 
 ## Interface Safety
 
