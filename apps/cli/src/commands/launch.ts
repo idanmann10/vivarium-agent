@@ -32,11 +32,13 @@ function shellValue(value: string): string {
   return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
 }
 
-function daemonEnvironmentAssignments(daemonHost: string, daemonPort: string): readonly string[] {
+function installerFlags(ref: string, daemonHost: string, daemonPort: string): readonly string[] {
   return [
-    "VIVARIUM_DAEMON=launchd",
-    ...(daemonHost === defaultDaemonHost ? [] : [`VIVARIUM_DAEMON_HOST=${shellValue(daemonHost)}`]),
-    ...(daemonPort === defaultDaemonPort ? [] : [`VIVARIUM_DAEMON_PORT=${shellValue(daemonPort)}`]),
+    ...(ref === defaultRef ? [] : ["--ref", shellValue(ref)]),
+    "--daemon",
+    "launchd",
+    ...(daemonHost === defaultDaemonHost ? [] : ["--daemon-host", shellValue(daemonHost)]),
+    ...(daemonPort === defaultDaemonPort ? [] : ["--daemon-port", shellValue(daemonPort)]),
   ];
 }
 
@@ -49,17 +51,7 @@ function installCommand(
   daemonPort: string,
 ): string {
   const scriptUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${scriptRef}/scripts/install.sh`;
-  const daemonEnvironment = daemonEnvironmentAssignments(daemonHost, daemonPort);
-  if (ref === "main") {
-    return `curl -fsSL ${scriptUrl} | ${daemonEnvironment.join(" ")} bash`;
-  }
-
-  return [
-    `curl -fsSL ${scriptUrl} | \\`,
-    `  VIVARIUM_AGENT_REF=${shellValue(ref)} \\`,
-    ...daemonEnvironment.map((assignment) => `  ${assignment} \\`),
-    "  bash",
-  ].join("\n");
+  return `curl -fsSL ${scriptUrl} | bash -s -- ${installerFlags(ref, daemonHost, daemonPort).join(" ")}`;
 }
 
 function daemonSmokeCommand(daemonHost: string, daemonPort: string): string {

@@ -8,7 +8,7 @@ describe("launchHandoffCommand", () => {
     const output = renderLaunchHandoffCommandResult(result);
 
     expect(result.installCommand).toBe(
-      "curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | VIVARIUM_DAEMON=launchd bash",
+      "curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash -s -- --daemon launchd",
     );
     expect(result.installCommand).not.toContain("VIVARIUM_AGENT_REF=");
     expect(output).toContain("Vivarium Launch Handoff");
@@ -83,8 +83,11 @@ describe("launchHandoffCommand", () => {
     expect(result.installCommand).toContain(
       "https://raw.githubusercontent.com/idanmann10/vivarium-agent/c6c6778f1024f19294d24219b02c7778566e5b04/scripts/install.sh",
     );
-    expect(result.installCommand).toContain("VIVARIUM_AGENT_REF=codex/hermes-style-quick-setup");
-    expect(output).toContain("VIVARIUM_DAEMON=launchd");
+    expect(result.installCommand).toContain(
+      "bash -s -- --ref codex/hermes-style-quick-setup --daemon launchd",
+    );
+    expect(result.installCommand).not.toContain("VIVARIUM_AGENT_REF=");
+    expect(output).not.toContain("VIVARIUM_DAEMON=launchd");
     expect(output).toContain("Keep branch protection and review intact before switching installs back to main.");
     expect(output).toContain(
       "Invite one eligible non-author reviewer when GitHub reports REVIEW_REQUIRED.",
@@ -115,7 +118,7 @@ describe("launchHandoffCommand", () => {
     const output = renderLaunchHandoffCommandResult(result);
 
     expect(result.installCommand).toBe(
-      "curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | VIVARIUM_DAEMON=launchd VIVARIUM_DAEMON_PORT=9898 bash",
+      "curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash -s -- --daemon launchd --daemon-port 9898",
     );
     expect(output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:9898/status");
     expect(output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");

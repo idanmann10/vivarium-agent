@@ -2863,7 +2863,8 @@ describe("dispatchCliCommand", () => {
       "https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh",
     );
     expect(result.output).not.toContain("VIVARIUM_AGENT_REF=");
-    expect(result.output).toContain("VIVARIUM_DAEMON=launchd");
+    expect(result.output).toContain("bash -s -- --daemon launchd");
+    expect(result.output).not.toContain("VIVARIUM_DAEMON=launchd");
     expect(result.output).toContain("vivarium daemon smoke");
     expect(result.output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
     expect(result.output).toContain("When ready for live verification:");
@@ -2903,7 +2904,8 @@ describe("dispatchCliCommand", () => {
     ]);
 
     expect(result.command).toBe("launch");
-    expect(result.output).toContain("VIVARIUM_DAEMON_PORT=9898");
+    expect(result.output).toContain("--daemon-port 9898");
+    expect(result.output).not.toContain("VIVARIUM_DAEMON_PORT=9898");
     expect(result.output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:9898/status");
     expect(result.output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
   });
@@ -2956,7 +2958,8 @@ describe("dispatchCliCommand", () => {
       expect(result.output).toContain(
         `https://raw.githubusercontent.com/idanmann10/vivarium-agent/${commit}/scripts/install.sh`,
       );
-      expect(result.output).toContain("VIVARIUM_AGENT_REF=codex/local-agent-production-ready");
+      expect(result.output).toContain("--ref codex/local-agent-production-ready --daemon launchd");
+      expect(result.output).not.toContain("VIVARIUM_AGENT_REF=");
       expect(result.output).toContain("Run the branch-pinned install command above");
       expect(result.output).not.toContain("Run the stable main install command above");
     } finally {
