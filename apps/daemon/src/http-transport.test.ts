@@ -46,6 +46,7 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain('name="domain"');
     expect(body).toContain("Run agent");
     expect(body).toContain('fetch("/run"');
+    expect(body).toContain('body.validation?.score ?? "recorded"');
     expect(body).toContain('id="run-agent-result"');
   });
 

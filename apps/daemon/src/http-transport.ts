@@ -133,7 +133,7 @@ function renderDashboard(daemon: DaemonServer): string {
           result.textContent = [
             "Status: " + (body.success ? "success" : "failed"),
             "Run ID: " + body.runId,
-            "Validation: " + body.validation.score,
+            "Validation: " + (body.validation?.score ?? "recorded"),
           ].join("\\n");
         } catch {
           result.textContent = "Run failed";
