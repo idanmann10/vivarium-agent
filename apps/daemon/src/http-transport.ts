@@ -69,6 +69,7 @@ function renderDashboard(daemon: DaemonServer): string {
       output { display: block; min-height: 24px; margin-top: 14px; white-space: pre-wrap; overflow-wrap: anywhere; color: #20231f; }
       code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92em; }
       .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+      .links span { color: #53604d; font-weight: 700; }
       a { color: #275e3d; font-weight: 700; }
       @media (prefers-color-scheme: dark) {
         body { background: #101410; color: #f2f6ee; }
@@ -76,6 +77,7 @@ function renderDashboard(daemon: DaemonServer): string {
         dt { color: #acb8a5; }
         input { border-color: #364231; }
         output { color: #f2f6ee; }
+        .links span { color: #acb8a5; }
         a { color: #9ad38e; }
       }
     </style>
@@ -104,7 +106,7 @@ function renderDashboard(daemon: DaemonServer): string {
       </form>
       <div class="links">
         <a href="/status">/status</a>
-        <a href="/run">/run</a>
+        <span><code>POST /run</code></span>
       </div>
     </main>
     <script>

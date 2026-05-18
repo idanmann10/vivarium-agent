@@ -39,7 +39,8 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain("Status: running");
     expect(body).toContain("Runs: 0");
     expect(body).toContain("/status");
-    expect(body).toContain("/run");
+    expect(body).toContain("POST /run");
+    expect(body).not.toContain('href="/run"');
     expect(body).toContain('<form id="run-agent-form">');
     expect(body).toContain('name="goal"');
     expect(body).toContain("build a simple agent end to end");
