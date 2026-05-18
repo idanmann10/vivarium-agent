@@ -669,6 +669,7 @@ print_launch_sequence() {
   keep_moving_stage=$((keep_moving_stage + 1))
   stage_label "$keep_moving_stage" "Keep moving"
   printf '      %q status\n' "$command"
+  printf '      %q tools\n' "$command"
   printf '      %q help\n' "$command"
   printf '      %q update\n' "$command"
 }

@@ -152,6 +152,7 @@ describe("install.sh", () => {
     expect(stdout).not.toContain("vivarium doctor --live --env-file live-readiness.local.env");
     expect(stdout).toContain("vivarium launch handoff");
     expect(stdout).toContain("vivarium status");
+    expect(stdout).toContain("vivarium tools");
     expect(stdout).toContain("vivarium help");
     expect(stdout).toContain("vivarium update");
     expect(commandPathFallback).toContain("/tmp/vivarium-bin/vivarium local run");
@@ -185,6 +186,7 @@ describe("install.sh", () => {
       "/tmp/vivarium-bin/vivarium doctor --live --env-file live-readiness.local.env",
     );
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium launch handoff");
+    expect(stdout).toContain("/tmp/vivarium-bin/vivarium tools");
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium help");
     expect(stdout).toContain("/tmp/vivarium-bin/vivarium update");
     expect(stdout).toContain("Launch handoff summary:");
