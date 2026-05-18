@@ -463,6 +463,7 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
     "vivarium local run",
     "vivarium launch handoff",
     "vivarium status",
+    "vivarium tools",
     "vivarium help",
     "vivarium update",
   ];

@@ -69,7 +69,10 @@ const launchCommandStages: readonly LaunchCommandStage[] = [
   {
     label: "Keep moving",
     matches: (command) =>
-      command === "vivarium status" || command === "vivarium help" || command === "vivarium update",
+      command === "vivarium status" ||
+      command === "vivarium tools" ||
+      command === "vivarium help" ||
+      command === "vivarium update",
   },
 ];
 

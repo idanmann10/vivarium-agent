@@ -104,6 +104,7 @@ describe("helpCommand", () => {
     expect(output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
     expect(firstRunBlock).toContain("vivarium launch handoff");
     expect(firstRunBlock).toContain("vivarium status");
+    expect(firstRunBlock).toContain("vivarium tools");
     expect(firstRunBlock).toContain("vivarium help");
     expect(firstRunBlock).toContain("vivarium update");
     expect(firstRunBlock).not.toContain("vivarium setup --env-file live-readiness.local.env");

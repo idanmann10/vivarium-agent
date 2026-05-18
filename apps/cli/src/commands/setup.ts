@@ -129,6 +129,7 @@ function setupNextCommands(
       runCommand,
       "vivarium launch handoff",
       "vivarium status",
+      "vivarium tools",
       "vivarium help",
       "vivarium update",
     ];
@@ -138,6 +139,7 @@ function setupNextCommands(
     runCommand,
     "vivarium launch handoff",
     "vivarium status",
+    "vivarium tools",
     "vivarium help",
     "vivarium update",
   ];

@@ -88,6 +88,7 @@ export function launchHandoffCommand(
       "vivarium local run",
       daemonSmokeCommand(daemonHost, daemonPort),
       "vivarium status",
+      "vivarium tools",
       "vivarium help",
       "vivarium update",
     ],

@@ -28,6 +28,7 @@ describe("launchHandoffCommand", () => {
     expect(output).toContain("vivarium daemon smoke");
     expect(output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
     expect(output).toContain("vivarium status");
+    expect(output).toContain("vivarium tools");
     expect(output).toContain("vivarium help");
     expect(output).toContain("When ready for live verification:");
     expect(output).toContain("vivarium setup live");

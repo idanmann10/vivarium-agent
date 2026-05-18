@@ -1479,6 +1479,7 @@ describe("dispatchCliCommand", () => {
         expect.stringContaining("local run"),
         "vivarium launch handoff",
         "vivarium status",
+        "vivarium tools",
         "vivarium help",
         "vivarium update",
       ]),
@@ -1495,6 +1496,7 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).not.toContain("vivarium run --goal");
     expect(setup.output).toContain("vivarium launch handoff");
     expect(setup.output).toContain("vivarium status");
+    expect(setup.output).toContain("vivarium tools");
     expect(setup.output).toContain("vivarium help");
     expect(setup.output).toContain("vivarium update");
     expect(setup.output).not.toContain("live env-init --path live-readiness.local.env");
@@ -1635,6 +1637,7 @@ describe("dispatchCliCommand", () => {
         expect.stringContaining("local run"),
         "vivarium launch handoff",
         "vivarium status",
+        "vivarium tools",
         "vivarium help",
         "vivarium update",
       ]),
@@ -1656,6 +1659,7 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).not.toContain("Production evidence file prepared for later");
     expect(setup.output).toContain("vivarium launch handoff");
     expect(setup.output).toContain("vivarium status");
+    expect(setup.output).toContain("vivarium tools");
     expect(setup.output).toContain("vivarium help");
     expect(setup.output).toContain("vivarium update");
     expect(setup.output).not.toContain(`vivarium setup --env-file ${envPath}`);
@@ -1688,6 +1692,7 @@ describe("dispatchCliCommand", () => {
         expect.stringContaining(`--live-env-path ${envPath}`),
         "vivarium launch handoff",
         "vivarium status",
+        "vivarium tools",
         "vivarium help",
         "vivarium update",
       ]),
@@ -1744,6 +1749,7 @@ describe("dispatchCliCommand", () => {
       `vivarium local run --domain coding --state-path ${statePath} --world-root ${worldRoot} --live-env-path ${envPath}`,
       "vivarium launch handoff",
       "vivarium status",
+      "vivarium tools",
       "vivarium help",
       "vivarium update",
     ]);
@@ -2041,6 +2047,7 @@ describe("dispatchCliCommand", () => {
         `vivarium local run --domain coding --state-path ${statePath} --world-root ${worldRoot} --live-env-path ${envPath}`,
         "vivarium launch handoff",
         "vivarium status",
+        "vivarium tools",
         "vivarium help",
         "vivarium update",
       ]),
