@@ -26,6 +26,22 @@ async function findAvailablePort(): Promise<number> {
 }
 
 describe("createDaemonFetchHandler", () => {
+  test("serves a human-readable dashboard at the daemon root", async () => {
+    const handler = createDaemonFetchHandler(createDaemonServer({ worldRoot: "../the-world" }));
+
+    const response = await handler(new Request("http://daemon/"));
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/html");
+    expect(body).toContain("<title>Vivarium Dashboard</title>");
+    expect(body).toContain("Vivarium Dashboard");
+    expect(body).toContain("Status: running");
+    expect(body).toContain("Runs: 0");
+    expect(body).toContain("/status");
+    expect(body).toContain("/run");
+  });
+
   test("routes status, run, and dream requests to the daemon", async () => {
     const handler = createDaemonFetchHandler(createDaemonServer({ worldRoot: "../the-world" }));
 

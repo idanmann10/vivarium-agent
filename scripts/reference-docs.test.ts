@@ -628,17 +628,18 @@ describe("reference docs", () => {
       const normalizedBody = body.replaceAll(/\s+/g, " ");
       const block = readAfterInstallationBlock(path);
       for (const stage of [
-        "# [1] Start Vivarium",
+        "# [1] Set up Vivarium",
         "# [2] Run the local agent",
-        "# [3] Review launch handoff",
+        "# [3] Open the dashboard",
         "# [4] Keep moving",
       ]) {
         expect(block).toContain(stage);
       }
       for (const command of [
-        "vivarium start",
+        "vivarium --setup",
         "vivarium local run",
-        "vivarium launch handoff",
+        "vivarium dashboard",
+        "vivarium daemon smoke",
         "vivarium status",
         "vivarium tools",
         "vivarium help",
@@ -647,6 +648,7 @@ describe("reference docs", () => {
         expect(block).toContain(command);
       }
       expect(block).toContain("\nvivarium local run\n");
+      expect(block).not.toContain("vivarium launch handoff");
       expect(block).not.toContain("Verify the Mac daemon");
       expect(block).not.toContain('vivarium local run --goal "build a simple agent end to end"');
       expect(block).not.toContain(
@@ -658,7 +660,7 @@ describe("reference docs", () => {
         "Use `vivarium launch handoff` when you are ready for production evidence.",
       );
       expect(normalizedBody).toContain(
-        "`vivarium start` is the friendly alias for `vivarium local`; both commands seed the same starter memory, stage the private live-readiness file, and print the same local-first launch sequence",
+        "`vivarium start` remains the friendly alias for `vivarium local`; both commands seed the same starter memory, stage the same private live-readiness file, and print the local-first launch sequence",
       );
       expect(normalizedBody).toContain(
         "If you run `vivarium local run` before `vivarium start`, the command seeds the same starter memory, stages the private live-readiness file, and then runs the local agent",
@@ -677,13 +679,20 @@ describe("reference docs", () => {
       for (const command of [
         "vivarium update",
         "vivarium help",
-        "vivarium start",
+        "vivarium --setup",
         'vivarium local run --goal "build a simple agent end to end"',
+        "vivarium dashboard",
         "vivarium status",
         "vivarium daemon smoke",
       ]) {
         expect(body).toContain(command);
       }
+      expect(normalizedBody).toContain(
+        "`vivarium --setup` is the shortest local setup path: it seeds local memory, stages the private live-readiness file for later, and prints the localhost dashboard URL",
+      );
+      expect(normalizedBody).toContain(
+        "`vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon dashboard backed by `/status`",
+      );
       expect(normalizedBody).toContain(
         "`vivarium local run` should print `Status: success`, `Provider: local`, and `Validation: pass (0.8)`",
       );

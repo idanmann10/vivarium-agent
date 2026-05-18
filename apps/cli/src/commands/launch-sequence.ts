@@ -67,6 +67,10 @@ const launchCommandStages: readonly LaunchCommandStage[] = [
     matches: (command) => command.startsWith("vivarium daemon smoke"),
   },
   {
+    label: "Open the dashboard",
+    matches: (command) => command === "vivarium dashboard" || command.startsWith("vivarium dashboard "),
+  },
+  {
     label: "Review launch handoff",
     matches: (command) => command === "vivarium launch handoff" || command.startsWith("vivarium launch handoff "),
   },

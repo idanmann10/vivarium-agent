@@ -261,6 +261,27 @@ function setupLiveResumeCommand(flags: FlagMap): string {
   ].join(" ");
 }
 
+const defaultDashboardUrl = "http://127.0.0.1:8787";
+
+function normalizedDashboardUrl(raw: string | undefined): string {
+  return (raw ?? defaultDashboardUrl).replace(/\/$/, "");
+}
+
+function renderDashboardCommandResult(dashboardUrl: string): string {
+  const url = normalizedDashboardUrl(dashboardUrl);
+  return [
+    "Vivarium Dashboard",
+    "------------------",
+    `Dashboard: ${url}`,
+    `Status JSON: ${url}/status`,
+    `Run API: ${url}/run`,
+    "",
+    "Next command:",
+    "  vivarium daemon smoke",
+    "",
+  ].join("\n");
+}
+
 function usage(message: string, nextCommands?: readonly string[]): never {
   throw new CliUsageError(message, nextCommands);
 }
@@ -1200,6 +1221,10 @@ export async function dispatchCliCommand(
       const result = helpCommand();
       return { command, result, output: renderHelpCommandResult(result) };
     }
+    case "dashboard": {
+      const dashboardUrl = normalizedDashboardUrl(value(flags, "url"));
+      return { command, result: { dashboardUrl }, output: renderDashboardCommandResult(dashboardUrl) };
+    }
     case "tools": {
       const result = toolsCommand();
       return { command, result, output: renderToolsCommandResult(result) };
@@ -1284,6 +1309,35 @@ export async function dispatchCliCommand(
         },
       });
       return { command, result, output: renderSetupCommandResult(result) };
+    }
+    case "--setup": {
+      const worldRoot = value(flags, "world-root") ?? defaultWorldRoot(options.env);
+      const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
+      const agentName = value(flags, "agent-name");
+      const liveEnvPath = value(flags, "live-env-path") ?? privateDefaultLiveEnvFile(options.env);
+      const githubOwner = value(flags, "github-owner");
+      const agentRepo = value(flags, "agent-repo");
+      const worldRepo = value(flags, "world-repo");
+      const canonicalWorldRef = value(flags, "canonical-world-ref");
+      const privateWorldRef = value(flags, "private-world-ref");
+      guardLocalSetupState(statePath);
+      const result = setupCommand({
+        primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? defaultDomain(options.env),
+        ...(agentName === undefined ? {} : { agentName }),
+        ...(worldRoot === undefined ? {} : { worldRoot }),
+        statePath,
+        quick: true,
+        dashboardUrl: normalizedDashboardUrl(value(flags, "dashboard-url")),
+        ...(liveEnvPath === undefined ? {} : { liveEnvPath }),
+        prefill: {
+          ...(githubOwner === undefined ? {} : { githubOwner }),
+          ...(agentRepo === undefined ? {} : { agentRepo }),
+          ...(worldRepo === undefined ? {} : { worldRepo }),
+          ...(canonicalWorldRef === undefined ? {} : { canonicalWorldRef }),
+          ...(privateWorldRef === undefined ? {} : { privateWorldRef }),
+        },
+      });
+      return { command: "setup", result, output: renderSetupCommandResult(result) };
     }
     case "onboard": {
       if (subcommand === "live") {

@@ -175,6 +175,25 @@ describe("dispatchCliCommand", () => {
     expect(result.output).not.toContain("Commands");
   });
 
+  test("routes dashboard to the local daemon dashboard URL", async () => {
+    const result = await dispatchCliCommand(["dashboard"]);
+
+    expect(result.command).toBe("dashboard");
+    expect(result.output).toContain("Vivarium Dashboard");
+    expect(result.output).toContain("Dashboard: http://127.0.0.1:8787");
+    expect(result.output).toContain("Status JSON: http://127.0.0.1:8787/status");
+    expect(result.output).toContain("Run API: http://127.0.0.1:8787/run");
+    expect(result.output).toContain("vivarium daemon smoke");
+  });
+
+  test("routes dashboard with custom URL", async () => {
+    const result = await dispatchCliCommand(["dashboard", "--url", "http://127.0.0.1:9898"]);
+
+    expect(result.command).toBe("dashboard");
+    expect(result.output).toContain("Dashboard: http://127.0.0.1:9898");
+    expect(result.output).toContain("Status JSON: http://127.0.0.1:9898/status");
+  });
+
   test("routes live setup help to focused operator guides", async () => {
     const cases = [
       {
@@ -1521,6 +1540,55 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).not.toContain("bun apps/cli/src/main.ts");
     expect(setup.output).not.toContain("cp docs/live-readiness.env.example");
     expect(setup.output).not.toContain("chmod 600 live-readiness.local.env");
+  });
+
+  test("routes top-level --setup through local setup with a localhost dashboard hint", async () => {
+    const worldRoot = createWorldFixture();
+    const root = mkdtempSync(join(tmpdir(), "cli-dispatch-top-level-setup-"));
+    const statePath = join(root, ".vivarium", "state.db");
+    const envPath = join(root, "live-readiness.local.env");
+
+    const setup = await dispatchCliCommand([
+      "--setup",
+      "--domain",
+      "coding",
+      "--world-root",
+      worldRoot,
+      "--state-path",
+      statePath,
+      "--live-env-path",
+      envPath,
+    ]);
+
+    expect(setup.command).toBe("setup");
+    expect(setup.result).toMatchObject({
+      ok: true,
+      local: {
+        primaryDomain: "coding",
+        statePath,
+        starterSkills: [{ title: "Red Green" }],
+      },
+      quickEnv: {
+        ok: true,
+        written: true,
+        path: envPath,
+      },
+      dashboardUrl: "http://127.0.0.1:8787",
+      nextCommands: expect.arrayContaining([
+        expect.stringContaining("local run"),
+        "vivarium dashboard",
+        "vivarium daemon smoke",
+        "vivarium status",
+      ]),
+    });
+    expect(setup.output).toContain("Vivarium Setup");
+    expect(setup.output).toContain("Local setup is ready now.");
+    expect(setup.output).toContain("Dashboard: http://127.0.0.1:8787");
+    expect(setup.output).toContain("vivarium local run");
+    expect(setup.output).toContain("vivarium dashboard");
+    expect(setup.output).toContain("vivarium daemon smoke");
+    expect(setup.output).not.toContain("vivarium setup live");
+    expect(setup.output).not.toContain("provider keys");
   });
 
   test("routes installed env defaults through local setup and default run", async () => {

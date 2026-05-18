@@ -22,6 +22,7 @@ export const cliCommands = [
   "help",
   "model",
   "tools",
+  "dashboard",
   "status",
   "update",
   "doctor",

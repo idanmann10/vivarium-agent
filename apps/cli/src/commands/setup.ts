@@ -33,6 +33,7 @@ export interface SetupCommandOptions {
   readonly confirmWrite?: boolean;
   readonly quick?: boolean;
   readonly liveEnvPath?: string;
+  readonly dashboardUrl?: string;
   readonly prefill?: LiveEnvPrefillOptions;
   readonly diskSpaceProbe?: SetupDiskSpaceProbe;
 }
@@ -43,6 +44,7 @@ export interface SetupCommandResult {
   readonly live?: LiveSetupCommandResult;
   readonly quickEnv?: LiveEnvInitCommandResult;
   readonly liveEnvFilePath: string;
+  readonly dashboardUrl?: string;
   readonly nextCommands: readonly string[];
 }
 
@@ -82,6 +84,18 @@ function setupNextCommands(
   const smokeCommand = commandWithFlags("connect smoke", { "env-file": liveEnvFilePath });
   const proofCommand = commandWithFlags("proof", { "env-file": liveEnvFilePath });
   const doctorCommand = commandWithFlags("doctor", { live: true, "env-file": liveEnvFilePath });
+
+  if (options.dashboardUrl !== undefined) {
+    return [
+      runCommand,
+      "vivarium dashboard",
+      "vivarium daemon smoke",
+      "vivarium status",
+      "vivarium tools",
+      "vivarium help",
+      "vivarium update",
+    ];
+  }
 
   if (options.envFilePath !== undefined && live?.ok === true) {
     return [runCommand, modelCommand, smokeCommand, proofCommand, doctorCommand];
@@ -229,11 +243,16 @@ export function setupCommand(options: SetupCommandOptions): SetupCommandResult {
     ...(live === undefined ? {} : { live }),
     ...(quickEnv === undefined ? {} : { quickEnv }),
     liveEnvFilePath,
+    ...(options.dashboardUrl === undefined ? {} : { dashboardUrl: options.dashboardUrl }),
     nextCommands: setupNextCommands(options, local, live, quickEnv),
   };
 }
 
-function renderQuickEnvSummary(quickEnv: LiveEnvInitCommandResult | undefined): readonly string[] {
+function renderQuickEnvSummary(
+  quickEnv: LiveEnvInitCommandResult | undefined,
+  options: { readonly showLiveHandoff?: boolean } = {},
+): readonly string[] {
+  const showLiveHandoff = options.showLiveHandoff ?? true;
   if (quickEnv === undefined) {
     return [];
   }
@@ -245,7 +264,9 @@ function renderQuickEnvSummary(quickEnv: LiveEnvInitCommandResult | undefined): 
       `Readiness file: ${quickEnv.path}`,
       `Permissions: ${quickEnv.mode}`,
       ...(quickEnv.prefilled.length === 0 ? [] : [`Prefilled: ${quickEnv.prefilled.join(", ")}`]),
-      "Use vivarium launch handoff when you are ready for provider keys and live evidence.",
+      ...(showLiveHandoff
+        ? ["Use vivarium launch handoff when you are ready for provider keys and live evidence."]
+        : []),
     ];
   }
 
@@ -254,7 +275,9 @@ function renderQuickEnvSummary(quickEnv: LiveEnvInitCommandResult | undefined): 
       "Local setup is ready now.",
       "Live readiness: already staged",
       `Readiness file: ${quickEnv.path}`,
-      "Use vivarium launch handoff when you are ready for provider keys and live evidence.",
+      ...(showLiveHandoff
+        ? ["Use vivarium launch handoff when you are ready for provider keys and live evidence."]
+        : []),
     ];
   }
 
@@ -396,7 +419,13 @@ export function renderSetupCommandResult(result: SetupCommandResult): string {
     `Starter traces: ${result.local.starterTraces.length}`,
     ...(result.quickEnv === undefined
       ? renderLiveSummary(result.live, result.liveEnvFilePath)
-      : renderQuickEnvSummary(result.quickEnv)),
+      : renderQuickEnvSummary(result.quickEnv, { showLiveHandoff: result.dashboardUrl === undefined })),
+    ...(result.dashboardUrl === undefined
+      ? []
+      : [
+          `Dashboard: ${result.dashboardUrl}`,
+          `Status JSON: ${result.dashboardUrl.replace(/\/$/, "")}/status`,
+        ]),
     "",
     ...renderLaunchSequence(result.nextCommands, { heading: "Next commands:" }),
     "",
