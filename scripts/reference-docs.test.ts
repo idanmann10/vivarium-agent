@@ -694,6 +694,12 @@ describe("reference docs", () => {
         "`vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon dashboard backed by `/status`",
       );
       expect(normalizedBody).toContain(
+        "The localhost dashboard includes a `Run agent` form with the default `build a simple agent end to end` goal",
+      );
+      expect(normalizedBody).toContain(
+        "Clicking `Run agent` records the local run through `/run` and shows the run ID inline",
+      );
+      expect(normalizedBody).toContain(
         "`vivarium local run` should print `Status: success`, `Provider: local`, and `Validation: pass (0.8)`",
       );
       expect(normalizedBody).toContain("`vivarium daemon smoke` should print `Status: ok`");
