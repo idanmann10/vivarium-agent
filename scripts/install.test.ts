@@ -131,7 +131,9 @@ describe("install.sh", () => {
       "Command path fallback:",
       "Live setup when ready:",
     );
-    expect(afterInstall).toContain("vivarium local run --domain research");
+    expect(afterInstall).toContain("vivarium local run");
+    expect(afterInstall).not.toContain("vivarium local run --domain research");
+    expect(afterInstall).not.toContain("--domain");
     expect(afterInstall).not.toContain("--world-root");
     expect(afterInstall).not.toContain("--state-path");
     expect(afterInstall).not.toContain("--live-env-path");
@@ -152,7 +154,11 @@ describe("install.sh", () => {
     expect(stdout).toContain("vivarium status");
     expect(stdout).toContain("vivarium help");
     expect(stdout).toContain("vivarium update");
-    expect(commandPathFallback).toContain("/tmp/vivarium-bin/vivarium local run --domain research");
+    expect(commandPathFallback).toContain("/tmp/vivarium-bin/vivarium local run");
+    expect(commandPathFallback).not.toContain(
+      "/tmp/vivarium-bin/vivarium local run --domain research",
+    );
+    expect(commandPathFallback).not.toContain("--domain");
     expect(commandPathFallback).not.toContain("--world-root");
     expect(commandPathFallback).not.toContain("--state-path");
     expect(commandPathFallback).not.toContain("--live-env-path");
@@ -205,7 +211,9 @@ describe("install.sh", () => {
       `Would run: bun apps/cli/src/main.ts local --domain coding --world-root ${join(home, ".vivarium", "the-world")} --state-path ${statePath} --live-env-path ${liveEnvPath}`,
     );
     const afterInstall = sectionBetween(stdout, "After installation:", "Command path fallback:");
-    expect(afterInstall).toContain("vivarium local run --domain coding");
+    expect(afterInstall).toContain("vivarium local run");
+    expect(afterInstall).not.toContain("vivarium local run --domain coding");
+    expect(afterInstall).not.toContain("--domain");
     expect(afterInstall).not.toContain("--world-root");
     expect(afterInstall).not.toContain("--state-path");
     expect(afterInstall).not.toContain("--live-env-path");

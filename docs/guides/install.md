@@ -102,10 +102,10 @@ from the local agent loop to live model calls.
 Use `vivarium status` after a run to confirm the latest local run goal, run ID,
 success state, and score from SQLite before moving on.
 The installed `vivarium` command preserves the installer-selected domain, world
-root, state path, and live-readiness file as overridable defaults, so the short
-`vivarium local run --domain coding` path keeps working after custom-path or
-branch-pinned installs. Copy the exact installer-printed `vivarium local run`
-command only when you are running outside the installed wrapper.
+root, state path, and live-readiness file as overridable defaults, so
+`vivarium local run` stays enough after custom-path or branch-pinned installs.
+Copy the exact installer-printed `vivarium local run` command only when you are
+running outside the installed wrapper.
 `vivarium status --state-path <file> --live-env-path <file>` keeps those
 explicit paths in its next `vivarium local run` and `vivarium connect` commands,
 so custom-path smokes do not drift back to default state.

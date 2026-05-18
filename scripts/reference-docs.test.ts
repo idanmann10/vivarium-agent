@@ -669,6 +669,10 @@ describe("reference docs", () => {
         "The installed `vivarium` command preserves the installer-selected domain, world root, state path, and live-readiness file as overridable defaults",
       );
       expect(normalizedBody).toContain(
+        "so `vivarium local run` stays enough after custom-path or branch-pinned installs",
+      );
+      expect(body).not.toContain("vivarium local run --domain coding");
+      expect(normalizedBody).toContain(
         "The LaunchAgent daemon uses the same installer-selected state path, so `vivarium daemon smoke` reports the durable local memory backing the daemon",
       );
       expect(normalizedBody).toContain(
@@ -1432,7 +1436,7 @@ describe("reference docs", () => {
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
       "Memory: /Users/idanmann/.vivarium/state.db",
-      "`578 pass, 0 fail, 4745 expect calls`",
+      "`578 pass, 0 fail, 4755 expect calls`",
       "build a simple agent end to end on my Mac",
       "run-1779025625380-620",
       "fresh temp install builds a simple agent end to end",
