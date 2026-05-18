@@ -1416,6 +1416,13 @@ describe("reference docs", () => {
     expect(body).toContain(
       'vivarium dashboard\\n  vivarium daemon smoke\\n  vivarium local run --goal \\"try another small coding task\\"\\n  vivarium status --state-path <demo-state.db> --live-env-path <demo-live-readiness.local.env>',
     );
+    expect(body).toContain(
+      "vivarium dashboard          Open the local dashboard URL.\\n  vivarium daemon smoke       Verify the local daemon.",
+    );
+    expect(body).not.toContain("vivarium model               Inspect provider profile readiness.");
+    expect(body).not.toContain(
+      "vivarium launch handoff      Review install and production boundaries.",
+    );
     expect(body).not.toContain("vivarium launch handoff\\n  vivarium model");
     expect(body).not.toContain("/Users/");
     expect(body).not.toContain("vivarium-local-e2e-demo-");
