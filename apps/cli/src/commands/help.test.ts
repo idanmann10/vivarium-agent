@@ -276,7 +276,10 @@ describe("helpCommand", () => {
     expect(output).toContain("Defaults to http://127.0.0.1:8787/status.");
     expect(output).toContain("vivarium daemon smoke");
     expect(output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
-    expect(output).toContain("vivarium launch handoff");
+    expect(output).toContain("vivarium dashboard");
+    expect(output).toContain("vivarium status");
+    expect(output).toContain("vivarium local run");
+    expect(output).not.toContain("vivarium launch handoff");
     expect(output).not.toContain("Commands");
   });
 });

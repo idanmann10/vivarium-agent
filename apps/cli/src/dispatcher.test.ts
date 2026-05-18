@@ -171,7 +171,9 @@ describe("dispatchCliCommand", () => {
     expect(result.output).toContain("Usage: vivarium daemon smoke");
     expect(result.output).toContain("--status-url <url>");
     expect(result.output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
-    expect(result.output).toContain("vivarium launch handoff");
+    expect(result.output).toContain("vivarium dashboard");
+    expect(result.output).toContain("vivarium status");
+    expect(result.output).not.toContain("vivarium launch handoff");
     expect(result.output).not.toContain("Commands");
   });
 

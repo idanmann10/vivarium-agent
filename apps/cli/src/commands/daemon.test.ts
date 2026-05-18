@@ -27,9 +27,11 @@ describe("daemonSmokeCommand", () => {
       confidenceBuckets: 4,
     });
     expect(urls).toEqual(["http://daemon.test/status"]);
-    expect(renderDaemonSmokeCommandResult(result)).toContain(
-      "Memory: /Users/tester/.vivarium/state.db",
-    );
+    const output = renderDaemonSmokeCommandResult(result);
+    expect(output).toContain("Memory: /Users/tester/.vivarium/state.db");
+    expect(output).toContain("vivarium dashboard");
+    expect(output).toContain("vivarium status");
+    expect(output).not.toContain("vivarium doctor --live");
   });
 
   test("returns an error when the daemon endpoint is unavailable", async () => {

@@ -327,7 +327,7 @@ export function daemonSmokeHelpCommand(): DaemonSmokeHelpCommandResult {
       "vivarium daemon smoke",
       "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
     ],
-    nextCommands: ["vivarium launch handoff", "vivarium status", "vivarium doctor --live"],
+    nextCommands: ["vivarium dashboard", "vivarium status", "vivarium local run"],
   };
 }
 

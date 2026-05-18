@@ -79,8 +79,9 @@ export function renderDaemonSmokeCommandResult(result: DaemonSmokeCommandResult)
           `Runs: ${result.runs}`,
           `Confidence buckets: ${result.confidenceBuckets}`,
           "",
-          "Next command:",
-          "  vivarium doctor --live",
+          "Next commands:",
+          "  vivarium dashboard",
+          "  vivarium status",
         ]
       : [
           `Error: ${result.error}`,
