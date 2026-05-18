@@ -85,7 +85,9 @@ import {
   renderLocalRunHelpCommandResult,
   renderLocalSetupHelpCommandResult,
   renderProofInitHelpCommandResult,
+  renderSetupHelpCommandResult,
   renderStatusHelpCommandResult,
+  setupHelpCommand,
   statusHelpCommand,
 } from "./commands/help.js";
 import {
@@ -1134,6 +1136,11 @@ export async function dispatchCliCommand(
   if (command === "local" && hasHelpRequest(argv.slice(1))) {
     const result = localSetupHelpCommand();
     return { command: "help", result, output: renderLocalSetupHelpCommandResult(result) };
+  }
+
+  if (command === "setup" && (subcommand === undefined || subcommand.startsWith("--")) && hasHelpRequest(argv.slice(1))) {
+    const result = setupHelpCommand();
+    return { command: "help", result, output: renderSetupHelpCommandResult(result) };
   }
 
   if (command === "status" && hasHelpRequest(argv.slice(1))) {

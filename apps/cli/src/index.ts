@@ -78,7 +78,9 @@ export {
   renderLaunchHandoffHelpCommandResult,
   renderLocalRunHelpCommandResult,
   renderLocalSetupHelpCommandResult,
+  renderSetupHelpCommandResult,
   renderStatusHelpCommandResult,
+  setupHelpCommand,
   statusHelpCommand,
 } from "./commands/help.js";
 export type {
@@ -89,6 +91,7 @@ export type {
   LaunchHandoffHelpCommandResult,
   LocalRunHelpCommandResult,
   LocalSetupHelpCommandResult,
+  SetupHelpCommandResult,
   StatusHelpCommandResult,
 } from "./commands/help.js";
 export { launchHandoffCommand, renderLaunchHandoffCommandResult } from "./commands/launch.js";

@@ -118,6 +118,20 @@ describe("dispatchCliCommand", () => {
     expect(result.output).not.toContain("vivarium run --goal");
   });
 
+  test("routes setup help to the focused setup guide", async () => {
+    const result = await dispatchCliCommand(["setup", "--help"]);
+
+    expect(result.command).toBe("help");
+    expect(result.output).toContain("Vivarium Setup");
+    expect(result.output).toContain("Usage: vivarium setup");
+    expect(result.output).toContain("--env-file <path>");
+    expect(result.output).toContain("--confirm-write");
+    expect(result.output).toContain("vivarium setup live");
+    expect(result.output).toContain("vivarium connect");
+    expect(result.output).not.toContain("Commands");
+    expect(result.output).not.toContain("vivarium run --goal");
+  });
+
   test("routes status help to the local proof command guide", async () => {
     const result = await dispatchCliCommand(["status", "--help"]);
 

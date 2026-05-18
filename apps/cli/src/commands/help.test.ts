@@ -11,7 +11,9 @@ import {
   renderLaunchHandoffHelpCommandResult,
   renderLocalRunHelpCommandResult,
   renderLocalSetupHelpCommandResult,
+  renderSetupHelpCommandResult,
   renderStatusHelpCommandResult,
+  setupHelpCommand,
   statusHelpCommand,
 } from "./help.js";
 
@@ -185,6 +187,22 @@ describe("helpCommand", () => {
     expect(output).toContain("\n  vivarium local run\n");
     expect(output).not.toContain('vivarium local run --goal "build a simple agent end to end"');
     expect(output).not.toContain("build a tiny local agent");
+    expect(output).not.toContain("Commands");
+    expect(output).not.toContain("vivarium run --goal");
+  });
+
+  test("renders focused setup help for the obvious setup command", () => {
+    const result = setupHelpCommand();
+    const output = renderSetupHelpCommandResult(result);
+
+    expect(output).toContain("Vivarium Setup");
+    expect(output).toContain("Usage: vivarium setup");
+    expect(output).toContain("--domain <name>");
+    expect(output).toContain("--live-env-path <path>");
+    expect(output).toContain("--env-file <path>");
+    expect(output).toContain("--confirm-write");
+    expect(output).toContain("vivarium setup live");
+    expect(output).toContain("vivarium connect");
     expect(output).not.toContain("Commands");
     expect(output).not.toContain("vivarium run --goal");
   });

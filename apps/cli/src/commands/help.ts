@@ -21,6 +21,7 @@ export interface FocusedHelpCommandResult {
 
 export type LocalRunHelpCommandResult = FocusedHelpCommandResult;
 export type LocalSetupHelpCommandResult = FocusedHelpCommandResult;
+export type SetupHelpCommandResult = FocusedHelpCommandResult;
 export type StatusHelpCommandResult = FocusedHelpCommandResult;
 export type LaunchHandoffHelpCommandResult = FocusedHelpCommandResult;
 export type DaemonSmokeHelpCommandResult = FocusedHelpCommandResult;
@@ -190,6 +191,52 @@ export function localSetupHelpCommand(): LocalSetupHelpCommandResult {
       "vivarium local run",
       "vivarium status",
       "vivarium launch handoff",
+    ],
+  };
+}
+
+export function setupHelpCommand(): SetupHelpCommandResult {
+  return {
+    title: "Vivarium Setup",
+    underline: "--------------",
+    usage: "vivarium setup",
+    options: [
+      {
+        command: "--domain <name>",
+        description: "Primary starter domain to install. Defaults to coding.",
+      },
+      {
+        command: "--state-path <path>",
+        description: "SQLite memory path to initialize and reuse for runs.",
+      },
+      {
+        command: "--world-root <path>",
+        description: "Local world checkout to install starter skills and traces from.",
+      },
+      {
+        command: "--live-env-path <path>",
+        description: "Private live-readiness file to stage for later provider setup.",
+      },
+      {
+        command: "--env-file <path>",
+        description: "Filled live-readiness file to materialize provider and credential setup.",
+      },
+      {
+        command: "--confirm-write",
+        description: "Write generated live setup files after reviewing the setup dashboard.",
+      },
+    ],
+    examples: [
+      "vivarium setup",
+      "vivarium setup live",
+      "vivarium setup --domain research",
+      "vivarium setup --env-file ~/.vivarium/live/live-readiness.local.env --confirm-write",
+    ],
+    nextCommands: [
+      "vivarium local run",
+      "vivarium setup live",
+      "vivarium connect",
+      "vivarium doctor --live",
     ],
   };
 }
@@ -488,6 +535,10 @@ export function renderLocalRunHelpCommandResult(result: LocalRunHelpCommandResul
 }
 
 export function renderLocalSetupHelpCommandResult(result: LocalSetupHelpCommandResult): string {
+  return renderFocusedHelpCommandResult(result);
+}
+
+export function renderSetupHelpCommandResult(result: SetupHelpCommandResult): string {
   return renderFocusedHelpCommandResult(result);
 }
 
