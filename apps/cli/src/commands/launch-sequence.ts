@@ -10,6 +10,10 @@ export interface RenderLaunchSequenceOptions {
 
 const launchCommandStages: readonly LaunchCommandStage[] = [
   {
+    label: "Set up Vivarium",
+    matches: (command) => command === "vivarium --setup" || command.startsWith("vivarium --setup "),
+  },
+  {
     label: "Start Vivarium",
     matches: (command) => command === "vivarium start" || command.startsWith("vivarium start "),
   },
@@ -63,12 +67,12 @@ const launchCommandStages: readonly LaunchCommandStage[] = [
     matches: (command) => command.startsWith("vivarium doctor"),
   },
   {
-    label: "Verify the Mac daemon",
-    matches: (command) => command.startsWith("vivarium daemon smoke"),
-  },
-  {
     label: "Open the dashboard",
     matches: (command) => command === "vivarium dashboard" || command.startsWith("vivarium dashboard "),
+  },
+  {
+    label: "Verify the Mac daemon",
+    matches: (command) => command.startsWith("vivarium daemon smoke"),
   },
   {
     label: "Review launch handoff",

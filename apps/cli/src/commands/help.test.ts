@@ -27,6 +27,10 @@ describe("helpCommand", () => {
       expect.arrayContaining([
         expect.objectContaining({ command: "vivarium onboard" }),
         expect.objectContaining({
+          command: "vivarium --setup",
+          description: "Set up local memory and show the localhost dashboard path.",
+        }),
+        expect.objectContaining({
           command: "vivarium start",
           description: "Start guided local setup with the starter pack.",
         }),
@@ -70,9 +74,11 @@ describe("helpCommand", () => {
     expect(output).toContain("Vivarium Agent");
     expect(output).toContain("VIVARIUM // local memory // world culture");
     expect(output).toContain("First run");
+    expect(output).toContain("vivarium --setup");
     expect(output).toContain("vivarium start");
     expect(output).toContain("vivarium local");
     expect(output).toContain("vivarium local run");
+    expect(output).toContain("vivarium dashboard");
     expect(output).toContain("vivarium onboard");
     expect(output).toContain("vivarium setup live");
     expect(output).toContain("vivarium onboard live");
@@ -94,25 +100,29 @@ describe("helpCommand", () => {
     expect(output).toContain("vivarium model");
     expect(output).toContain("vivarium tools");
     expect(output).toContain("vivarium help");
-    expect(firstRunBlock).toContain("vivarium start");
+    expect(firstRunBlock).toContain("vivarium --setup");
+    expect(firstRunBlock).not.toContain("vivarium start");
     expect(firstRunBlock).not.toContain("vivarium local\n");
     expect(firstRunBlock).toContain("vivarium local run");
     expect(result.commands.some((item) => item.command.startsWith("vivarium run --goal"))).toBe(false);
     expect(firstRunBlock).not.toContain(
       "vivarium run --goal \"validate local setup\" --state-path .vivarium/state.db",
     );
-    expect(firstRunBlock).toContain("[1] Start Vivarium");
+    expect(firstRunBlock).toContain("[1] Set up Vivarium");
     expect(firstRunBlock).not.toContain("vivarium onboard");
     expect(firstRunBlock).toContain("[2] Run the local agent");
-    expect(firstRunBlock).toContain("[3] Review launch handoff");
-    expect(firstRunBlock).toContain("[4] Keep moving");
-    expect(firstRunBlock).not.toContain("Verify the Mac daemon");
+    expect(firstRunBlock).toContain("[3] Open the dashboard");
+    expect(firstRunBlock).toContain("[4] Verify the Mac daemon");
+    expect(firstRunBlock).toContain("[5] Keep moving");
+    expect(firstRunBlock).toContain("vivarium dashboard");
+    expect(firstRunBlock).toContain("vivarium daemon smoke");
+    expect(firstRunBlock).not.toContain("Review launch handoff");
     expect(firstRunBlock).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
     expect(output).toContain("vivarium daemon smoke");
     expect(output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
-    expect(firstRunBlock).toContain("vivarium launch handoff");
+    expect(firstRunBlock).not.toContain("vivarium launch handoff");
     expect(firstRunBlock).toContain("vivarium status");
-    expect(firstRunBlock).toContain("vivarium tools");
+    expect(firstRunBlock).not.toContain("vivarium tools");
     expect(firstRunBlock).toContain("vivarium help");
     expect(firstRunBlock).toContain("vivarium update");
     expect(firstRunBlock).not.toContain("vivarium setup --env-file live-readiness.local.env");

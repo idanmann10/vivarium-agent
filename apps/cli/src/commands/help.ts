@@ -509,11 +509,11 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
   const commandWidth = Math.max(52, ...result.commands.map((item) => item.command.length)) + 2;
   const rows = result.commands.map((item) => `  ${item.command.padEnd(commandWidth)}${item.description}`);
   const firstRunCommands = [
-    "vivarium start",
+    "vivarium --setup",
     "vivarium local run",
-    "vivarium launch handoff",
+    "vivarium dashboard",
+    "vivarium daemon smoke",
     "vivarium status",
-    "vivarium tools",
     "vivarium help",
     "vivarium update",
   ];

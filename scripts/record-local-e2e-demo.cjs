@@ -71,7 +71,7 @@ function localCliStep(args) {
 const steps = [
   localCliStep(["help"]),
   localCliStep([
-    "start",
+    "--setup",
     "--domain",
     "coding",
     "--world-root",
