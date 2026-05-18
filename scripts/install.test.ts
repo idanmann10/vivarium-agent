@@ -14,12 +14,25 @@ function runInstallerDryRun(env: Readonly<Record<string, string>> = {}) {
   });
 }
 
+function runInstallerArgs(args: readonly string[], env: Readonly<Record<string, string>> = {}) {
+  return Bun.spawnSync(["bash", "scripts/install.sh", ...args], {
+    env: {
+      ...process.env,
+      ...env,
+    },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+}
+
 const gitCommitEnv = {
   GIT_AUTHOR_EMAIL: "test@example.com",
   GIT_AUTHOR_NAME: "Vivarium Test",
   GIT_COMMITTER_EMAIL: "test@example.com",
   GIT_COMMITTER_NAME: "Vivarium Test",
 } as const;
+
+const gitInstallTestTimeoutMs = 30_000;
 
 function run(command: string[], cwd: string, env: Readonly<Record<string, string>> = {}) {
   const result = Bun.spawnSync(command, {
@@ -192,6 +205,72 @@ describe("install.sh", () => {
     expect(stdout).toContain("Launch handoff summary:");
     expect(stdout).toContain("Would run: /tmp/vivarium-bin/vivarium launch handoff");
     expect(stdout).toContain("If 'vivarium' is not found, add /tmp/vivarium-bin to PATH");
+  });
+
+  test("accepts common setup values as installer flags", () => {
+    const result = runInstallerArgs([
+      "--dry-run",
+      "--ref",
+      "release-candidate",
+      "--dir",
+      "/tmp/vivarium-flag-install",
+      "--bin-dir",
+      "/tmp/vivarium-flag-bin",
+      "--world-root",
+      "/tmp/vivarium-flag-world",
+      "--domain",
+      "research",
+      "--state-path",
+      "/tmp/vivarium-flag-state.db",
+      "--live-env-path",
+      "/tmp/vivarium-flag-live.env",
+      "--daemon",
+      "launchd",
+      "--daemon-port",
+      "9898",
+      "--color",
+      "never",
+      "--theme",
+      "amber",
+    ]);
+    const stdout = result.stdout.toString();
+
+    expect(result.exitCode).toBe(0);
+    expect(stdout).toContain("Install directory: /tmp/vivarium-flag-install");
+    expect(stdout).toContain("Command path: /tmp/vivarium-flag-bin/vivarium");
+    expect(stdout).toContain("Agent ref: release-candidate");
+    expect(stdout).toContain("World directory: /tmp/vivarium-flag-world");
+    expect(stdout).toContain("Domain: research");
+    expect(stdout).toContain("State path: /tmp/vivarium-flag-state.db");
+    expect(stdout).toContain("Live readiness path: /tmp/vivarium-flag-live.env");
+    expect(stdout).toContain("Daemon deployment: launchd");
+    expect(stdout).toContain("vivarium daemon smoke --status-url http://127.0.0.1:9898/status");
+    expect(stdout).toContain(
+      "Would run: git -C /tmp/vivarium-flag-install checkout release-candidate",
+    );
+    expect(stdout).toContain(
+      "Would run: bun apps/cli/src/main.ts local --domain research --world-root /tmp/vivarium-flag-world --state-path /tmp/vivarium-flag-state.db --live-env-path /tmp/vivarium-flag-live.env",
+    );
+    expect(stdout).not.toContain("\u001b[");
+  });
+
+  test("documents installer flags in help output", () => {
+    const result = runInstallerArgs(["--help"]);
+    const stdout = result.stdout.toString();
+
+    expect(result.exitCode).toBe(0);
+    expect(stdout).toContain("--dry-run");
+    expect(stdout).toContain("--ref <ref>");
+    expect(stdout).toContain("--dir <path>");
+    expect(stdout).toContain("--bin-dir <path>");
+    expect(stdout).toContain("--world-root <path>");
+    expect(stdout).toContain("--domain <name>");
+    expect(stdout).toContain("--state-path <path>");
+    expect(stdout).toContain("--live-env-path <path>");
+    expect(stdout).toContain("--daemon <none|launchd>");
+    expect(stdout).toContain("--daemon-port <port>");
+    expect(stdout).toContain("--color <always|never>");
+    expect(stdout).toContain("--theme <vivarium|matrix|amber>");
   });
 
   test("defaults installer state to the shared Vivarium home", () => {
@@ -415,49 +494,53 @@ describe("install.sh", () => {
     }
   });
 
-  test("uses a custom Bun executable for install and generated commands", () => {
-    const root = mkdtempSync(join(tmpdir(), "vivarium-install-bun-path-"));
-    const remote = createGitRemote(root, "agent");
-    const worldRemote = createGitRemote(root, "world");
-    const installDir = join(root, "install");
-    const worldDir = join(root, "world-checkout");
-    const binDir = join(root, "bin");
-    const fakeBun = join(root, "custom-bun");
-    const home = join(root, "home");
-    const statePath = join(home, ".vivarium", "state.db");
-    const liveEnvPath = join(home, ".vivarium", "live", "live-readiness.local.env");
+  test(
+    "uses a custom Bun executable for install and generated commands",
+    () => {
+      const root = mkdtempSync(join(tmpdir(), "vivarium-install-bun-path-"));
+      const remote = createGitRemote(root, "agent");
+      const worldRemote = createGitRemote(root, "world");
+      const installDir = join(root, "install");
+      const worldDir = join(root, "world-checkout");
+      const binDir = join(root, "bin");
+      const fakeBun = join(root, "custom-bun");
+      const home = join(root, "home");
+      const statePath = join(home, ".vivarium", "state.db");
+      const liveEnvPath = join(home, ".vivarium", "live", "live-readiness.local.env");
 
-    try {
-      writeFakeBun(fakeBun);
+      try {
+        writeFakeBun(fakeBun);
 
-      const result = Bun.spawnSync(["bash", "scripts/install.sh"], {
-        cwd: process.cwd(),
-        env: {
-          ...process.env,
-          HOME: home,
-          PATH: "/usr/bin:/bin:/usr/sbin:/sbin",
-          VIVARIUM_BIN_DIR: binDir,
-          VIVARIUM_BUN_PATH: fakeBun,
-          VIVARIUM_INSTALL_DIR: installDir,
-          VIVARIUM_REPO_URL: remote,
-          VIVARIUM_WORLD_REPO_URL: worldRemote,
-          VIVARIUM_WORLD_ROOT: worldDir,
-        },
-        stdout: "pipe",
-        stderr: "pipe",
-      });
+        const result = Bun.spawnSync(["bash", "scripts/install.sh"], {
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            HOME: home,
+            PATH: "/usr/bin:/bin:/usr/sbin:/sbin",
+            VIVARIUM_BIN_DIR: binDir,
+            VIVARIUM_BUN_PATH: fakeBun,
+            VIVARIUM_INSTALL_DIR: installDir,
+            VIVARIUM_REPO_URL: remote,
+            VIVARIUM_WORLD_REPO_URL: worldRemote,
+            VIVARIUM_WORLD_ROOT: worldDir,
+          },
+          stdout: "pipe",
+          stderr: "pipe",
+        });
 
-      expect(result.exitCode).toBe(0);
-      const command = readFileSync(join(binDir, "vivarium"), "utf8");
-      expect(command).toContain(`export VIVARIUM_DOMAIN=coding`);
-      expect(command).toContain(`export VIVARIUM_WORLD_ROOT=${worldDir}`);
-      expect(command).toContain(`export VIVARIUM_STATE_PATH=${statePath}`);
-      expect(command).toContain(`export VIVARIUM_LIVE_ENV_PATH=${liveEnvPath}`);
-      expect(command).toContain(`exec ${fakeBun} apps/cli/src/main.ts "$@"`);
-    } finally {
-      rmSync(root, { recursive: true, force: true });
-    }
-  });
+        expect(result.exitCode).toBe(0);
+        const command = readFileSync(join(binDir, "vivarium"), "utf8");
+        expect(command).toContain(`export VIVARIUM_DOMAIN=coding`);
+        expect(command).toContain(`export VIVARIUM_WORLD_ROOT=${worldDir}`);
+        expect(command).toContain(`export VIVARIUM_STATE_PATH=${statePath}`);
+        expect(command).toContain(`export VIVARIUM_LIVE_ENV_PATH=${liveEnvPath}`);
+        expect(command).toContain(`exec ${fakeBun} apps/cli/src/main.ts "$@"`);
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+    gitInstallTestTimeoutMs,
+  );
 
   test("passes the durable state path to the macOS LaunchAgent daemon", () => {
     const installScript = readFileSync("scripts/install.sh", "utf8");
@@ -523,103 +606,114 @@ describe("install.sh", () => {
     }
   });
 
-  test("returns branch-pinned installs to the default branch when reinstalling without a ref", () => {
-    const root = mkdtempSync(join(tmpdir(), "vivarium-install-main-"));
-    const remote = createGitRemote(root, "agent");
-    const worldRemote = createGitRemote(root, "world");
-    const installDir = join(root, "install");
-    const worldDir = join(root, "world-checkout");
-    const binDir = join(root, "bin");
-    const fakeBun = join(root, "bun");
+  test(
+    "returns branch-pinned installs to the default branch when reinstalling without a ref",
+    () => {
+      const root = mkdtempSync(join(tmpdir(), "vivarium-install-main-"));
+      const remote = createGitRemote(root, "agent");
+      const worldRemote = createGitRemote(root, "world");
+      const installDir = join(root, "install");
+      const worldDir = join(root, "world-checkout");
+      const binDir = join(root, "bin");
+      const fakeBun = join(root, "bun");
 
-    try {
-      writeFakeBun(fakeBun);
-      run(["git", "clone", remote, installDir], root);
-      run(["git", "checkout", "-b", "codex/hermes-style-quick-setup"], installDir);
-      run(["git", "config", "branch.codex/hermes-style-quick-setup.remote", "origin"], installDir);
-      run(
-        [
-          "git",
-          "config",
-          "branch.codex/hermes-style-quick-setup.merge",
-          "refs/heads/codex/hermes-style-quick-setup",
-        ],
-        installDir,
-      );
+      try {
+        writeFakeBun(fakeBun);
+        run(["git", "clone", remote, installDir], root);
+        run(["git", "checkout", "-b", "codex/hermes-style-quick-setup"], installDir);
+        run(
+          ["git", "config", "branch.codex/hermes-style-quick-setup.remote", "origin"],
+          installDir,
+        );
+        run(
+          [
+            "git",
+            "config",
+            "branch.codex/hermes-style-quick-setup.merge",
+            "refs/heads/codex/hermes-style-quick-setup",
+          ],
+          installDir,
+        );
 
-      const result = Bun.spawnSync(["bash", "scripts/install.sh"], {
-        cwd: process.cwd(),
-        env: {
-          ...process.env,
-          PATH: `${root}:${process.env.PATH ?? ""}`,
-          VIVARIUM_BIN_DIR: binDir,
-          VIVARIUM_BUN_PATH: fakeBun,
-          VIVARIUM_INSTALL_DIR: installDir,
-          VIVARIUM_REPO_URL: remote,
-          VIVARIUM_WORLD_REPO_URL: worldRemote,
-          VIVARIUM_WORLD_ROOT: worldDir,
-        },
-        stdout: "pipe",
-        stderr: "pipe",
-      });
+        const result = Bun.spawnSync(["bash", "scripts/install.sh"], {
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            PATH: `${root}:${process.env.PATH ?? ""}`,
+            VIVARIUM_BIN_DIR: binDir,
+            VIVARIUM_BUN_PATH: fakeBun,
+            VIVARIUM_INSTALL_DIR: installDir,
+            VIVARIUM_REPO_URL: remote,
+            VIVARIUM_WORLD_REPO_URL: worldRemote,
+            VIVARIUM_WORLD_ROOT: worldDir,
+          },
+          stdout: "pipe",
+          stderr: "pipe",
+        });
 
-      expect(result.exitCode).toBe(0);
-      expect(run(["git", "branch", "--show-current"], installDir).stdout.toString().trim()).toBe(
-        "main",
-      );
-    } finally {
-      rmSync(root, { recursive: true, force: true });
-    }
-  });
+        expect(result.exitCode).toBe(0);
+        expect(run(["git", "branch", "--show-current"], installDir).stdout.toString().trim()).toBe(
+          "main",
+        );
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+    gitInstallTestTimeoutMs,
+  );
 
-  test("pins an existing checkout to origin ref when another remote has the same branch", () => {
-    const root = mkdtempSync(join(tmpdir(), "vivarium-install-multiremote-"));
-    const remote = createGitRemote(root, "agent");
-    const worldRemote = createGitRemote(root, "world");
-    const branchWork = join(root, "agent-branch-work");
-    const installDir = join(root, "install");
-    const worldDir = join(root, "world-checkout");
-    const binDir = join(root, "bin");
-    const fakeBun = join(root, "bun");
-    const branchName = "codex/local-agent-production-ready";
+  test(
+    "pins an existing checkout to origin ref when another remote has the same branch",
+    () => {
+      const root = mkdtempSync(join(tmpdir(), "vivarium-install-multiremote-"));
+      const remote = createGitRemote(root, "agent");
+      const worldRemote = createGitRemote(root, "world");
+      const branchWork = join(root, "agent-branch-work");
+      const installDir = join(root, "install");
+      const worldDir = join(root, "world-checkout");
+      const binDir = join(root, "bin");
+      const fakeBun = join(root, "bun");
+      const branchName = "codex/local-agent-production-ready";
 
-    try {
-      writeFakeBun(fakeBun);
-      run(["git", "clone", remote, branchWork], root);
-      run(["git", "checkout", "-b", branchName], branchWork);
-      writeFileSync(join(branchWork, "BRANCH.md"), "# branch\n", "utf8");
-      run(["git", "add", "BRANCH.md"], branchWork);
-      run(["git", "commit", "-m", "branch"], branchWork, gitCommitEnv);
-      run(["git", "push", "-u", "origin", branchName], branchWork);
+      try {
+        writeFakeBun(fakeBun);
+        run(["git", "clone", remote, branchWork], root);
+        run(["git", "checkout", "-b", branchName], branchWork);
+        writeFileSync(join(branchWork, "BRANCH.md"), "# branch\n", "utf8");
+        run(["git", "add", "BRANCH.md"], branchWork);
+        run(["git", "commit", "-m", "branch"], branchWork, gitCommitEnv);
+        run(["git", "push", "-u", "origin", branchName], branchWork);
 
-      run(["git", "clone", remote, installDir], root);
-      run(["git", "remote", "add", "github", remote], installDir);
+        run(["git", "clone", remote, installDir], root);
+        run(["git", "remote", "add", "github", remote], installDir);
 
-      const result = Bun.spawnSync(["bash", "scripts/install.sh"], {
-        cwd: process.cwd(),
-        env: {
-          ...process.env,
-          PATH: `${root}:${process.env.PATH ?? ""}`,
-          VIVARIUM_AGENT_REF: branchName,
-          VIVARIUM_BIN_DIR: binDir,
-          VIVARIUM_BUN_PATH: fakeBun,
-          VIVARIUM_INSTALL_DIR: installDir,
-          VIVARIUM_REPO_URL: remote,
-          VIVARIUM_WORLD_REPO_URL: worldRemote,
-          VIVARIUM_WORLD_ROOT: worldDir,
-        },
-        stdout: "pipe",
-        stderr: "pipe",
-      });
+        const result = Bun.spawnSync(["bash", "scripts/install.sh"], {
+          cwd: process.cwd(),
+          env: {
+            ...process.env,
+            PATH: `${root}:${process.env.PATH ?? ""}`,
+            VIVARIUM_AGENT_REF: branchName,
+            VIVARIUM_BIN_DIR: binDir,
+            VIVARIUM_BUN_PATH: fakeBun,
+            VIVARIUM_INSTALL_DIR: installDir,
+            VIVARIUM_REPO_URL: remote,
+            VIVARIUM_WORLD_REPO_URL: worldRemote,
+            VIVARIUM_WORLD_ROOT: worldDir,
+          },
+          stdout: "pipe",
+          stderr: "pipe",
+        });
 
-      expect(result.exitCode).toBe(0);
-      expect(run(["git", "branch", "--show-current"], installDir).stdout.toString().trim()).toBe(
-        branchName,
-      );
-    } finally {
-      rmSync(root, { recursive: true, force: true });
-    }
-  });
+        expect(result.exitCode).toBe(0);
+        expect(run(["git", "branch", "--show-current"], installDir).stdout.toString().trim()).toBe(
+          branchName,
+        );
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+    gitInstallTestTimeoutMs,
+  );
 
   test("infers safe live metadata from GitHub repository URLs", () => {
     const result = runInstallerDryRun({

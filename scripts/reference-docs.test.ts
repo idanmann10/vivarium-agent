@@ -221,7 +221,7 @@ const guideDocs = {
     "bun run knip",
     "VIVARIUM_INSTALL_DIR",
     "VIVARIUM_BIN_DIR",
-    "VIVARIUM_DAEMON=launchd",
+    "--daemon launchd",
     "LaunchAgent",
     "vivarium daemon smoke",
     "vivarium local",
@@ -752,6 +752,25 @@ describe("reference docs", () => {
     }
   });
 
+  test("documents installer flags for common setup overrides", () => {
+    const body = readFileSync(join("docs", "guides", "install.md"), "utf8");
+
+    for (const term of [
+      "bash -s -- --ref main --daemon launchd",
+      "bash scripts/install.sh --dry-run",
+      "--dir ~/.vivarium/vivarium-agent",
+      "--world-root ~/.vivarium/the-world",
+      "--domain coding",
+      "--state-path ~/.vivarium/state.db",
+      "--live-env-path ~/.vivarium/live/live-readiness.local.env",
+      "--color always",
+      "--theme matrix",
+      "Environment variables remain supported for CI",
+    ]) {
+      expect(body).toContain(term);
+    }
+  });
+
   test("documents live env init public prefill flags", () => {
     for (const path of ["README.md", join("docs", "guides", "install.md")]) {
       const body = readFileSync(path, "utf8");
@@ -772,8 +791,8 @@ describe("reference docs", () => {
 
     for (const term of [
       "Pre-main Mac install",
-      "VIVARIUM_AGENT_REF=<branch-or-tag-or-commit>",
-      "VIVARIUM_DAEMON=launchd",
+      "--ref <branch-or-tag-or-commit>",
+      "--daemon launchd",
       "`vivarium launch handoff` to print the same branch-pinned install command",
       "vivarium launch handoff --help",
       "vivarium launch handoff --ref main",

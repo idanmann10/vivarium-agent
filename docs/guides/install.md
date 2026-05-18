@@ -23,7 +23,7 @@ public repo metadata, creates a named `local-agent` with state under
 On macOS, install and start the local daemon as a LaunchAgent in the same pass:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | VIVARIUM_DAEMON=launchd bash
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash -s -- --daemon launchd
 ```
 
 The LaunchAgent mode writes
@@ -47,10 +47,7 @@ verified installer script by commit or tag and pass the desired checkout ref
 into the install step:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/<installer-commit-or-tag>/scripts/install.sh | \
-  VIVARIUM_AGENT_REF=<branch-or-tag-or-commit> \
-  VIVARIUM_DAEMON=launchd \
-  bash
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/<installer-commit-or-tag>/scripts/install.sh | bash -s -- --ref <branch-or-tag-or-commit> --daemon launchd
 ```
 
 This keeps the downloaded installer stable while the installed checkout follows
@@ -173,10 +170,27 @@ evidence skeleton in one step.
 
 ## Advanced install controls
 
-Override the layout with `VIVARIUM_INSTALL_DIR`, `VIVARIUM_BIN_DIR`,
-`VIVARIUM_WORLD_ROOT`, `VIVARIUM_DOMAIN`, or `VIVARIUM_STATE_PATH`. Set
-`VIVARIUM_AGENT_REF` to pin the checkout to a branch, tag, or commit before
-dependency installation. The installer infers the non-secret GitHub owner, agent
+Use installer flags for common overrides:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash -s -- --ref main --daemon launchd
+
+bash scripts/install.sh --dry-run \
+  --dir ~/.vivarium/vivarium-agent \
+  --world-root ~/.vivarium/the-world \
+  --domain coding \
+  --state-path ~/.vivarium/state.db \
+  --live-env-path ~/.vivarium/live/live-readiness.local.env \
+  --color always \
+  --theme matrix
+```
+
+Use `--repo`, `--world-repo`, `--bin-dir`, `--daemon-host`, and
+`--daemon-port` when you need custom remotes, command locations, or daemon
+binding. Environment variables remain supported for CI and scripted installs:
+`VIVARIUM_INSTALL_DIR`, `VIVARIUM_BIN_DIR`, `VIVARIUM_WORLD_ROOT`,
+`VIVARIUM_DOMAIN`, `VIVARIUM_STATE_PATH`, and `VIVARIUM_AGENT_REF` map to the
+same installer settings. The installer infers the non-secret GitHub owner, agent
 repo, world repo, and canonical world ref from the GitHub repository URLs while
 it runs `vivarium local`; set `VIVARIUM_GITHUB_OWNER`,
 `VIVARIUM_AGENT_REPO_NAME`, `VIVARIUM_WORLD_REPO_NAME`,

@@ -8,7 +8,24 @@ usage() {
 Vivarium Agent installer
 
 Usage:
-  bash scripts/install.sh [--dry-run]
+  bash scripts/install.sh [--dry-run] [options]
+
+Options:
+  --dry-run                         Print the install plan without writing files.
+  --ref <ref>                       Agent git branch, tag, or commit to checkout.
+  --repo <url>                      Agent repository URL.
+  --dir <path>                      Agent checkout directory.
+  --bin-dir <path>                  Directory for the vivarium command.
+  --world-repo <url>                World repository URL.
+  --world-root <path>               World checkout directory.
+  --domain <name>                   Initial setup domain.
+  --state-path <path>               State database path.
+  --live-env-path <path>            Live readiness env path.
+  --daemon <none|launchd>           Optional daemon deployment mode.
+  --daemon-host <host>              Local daemon bind host.
+  --daemon-port <port>              Local daemon port.
+  --color <always|never>            Control ANSI output.
+  --theme <vivarium|matrix|amber>   ASCII-art color theme.
 
 Environment:
   VIVARIUM_REPO_URL           Agent repository URL.
@@ -34,20 +51,117 @@ Environment:
 
 Example:
   curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash
+  bash scripts/install.sh --ref main --daemon launchd
 EOF
 }
 
-for arg in "$@"; do
-  case "$arg" in
+require_arg() {
+  local flag="$1"
+  local value="${2:-}"
+
+  if [ "$value" = "" ]; then
+    echo "Missing value for $flag" >&2
+    usage >&2
+    exit 2
+  fi
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
     --dry-run)
       dry_run=1
+      shift
+      ;;
+    --ref)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_AGENT_REF="$2"
+      export VIVARIUM_AGENT_REF
+      shift 2
+      ;;
+    --repo)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_REPO_URL="$2"
+      export VIVARIUM_REPO_URL
+      shift 2
+      ;;
+    --dir)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_INSTALL_DIR="$2"
+      export VIVARIUM_INSTALL_DIR
+      shift 2
+      ;;
+    --bin-dir)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_BIN_DIR="$2"
+      export VIVARIUM_BIN_DIR
+      shift 2
+      ;;
+    --world-repo)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_WORLD_REPO_URL="$2"
+      export VIVARIUM_WORLD_REPO_URL
+      shift 2
+      ;;
+    --world-root)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_WORLD_ROOT="$2"
+      export VIVARIUM_WORLD_ROOT
+      shift 2
+      ;;
+    --domain)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_DOMAIN="$2"
+      export VIVARIUM_DOMAIN
+      shift 2
+      ;;
+    --state-path)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_STATE_PATH="$2"
+      export VIVARIUM_STATE_PATH
+      shift 2
+      ;;
+    --live-env-path)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_LIVE_ENV_PATH="$2"
+      export VIVARIUM_LIVE_ENV_PATH
+      shift 2
+      ;;
+    --daemon)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_DAEMON="$2"
+      export VIVARIUM_DAEMON
+      shift 2
+      ;;
+    --daemon-host)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_DAEMON_HOST="$2"
+      export VIVARIUM_DAEMON_HOST
+      shift 2
+      ;;
+    --daemon-port)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_DAEMON_PORT="$2"
+      export VIVARIUM_DAEMON_PORT
+      shift 2
+      ;;
+    --color)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_COLOR="$2"
+      export VIVARIUM_COLOR
+      shift 2
+      ;;
+    --theme)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_THEME="$2"
+      export VIVARIUM_THEME
+      shift 2
       ;;
     -h | --help)
       usage
       exit 0
       ;;
     *)
-      echo "Unknown argument: $arg" >&2
+      echo "Unknown argument: $1" >&2
       usage >&2
       exit 2
       ;;

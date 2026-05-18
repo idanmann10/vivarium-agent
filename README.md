@@ -37,7 +37,7 @@ On macOS, add the opt-in LaunchAgent deployment when you want the local daemon
 installed and started in the same setup pass:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | VIVARIUM_DAEMON=launchd bash
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash -s -- --daemon launchd
 ```
 
 This writes `~/Library/LaunchAgents/com.vivarium.agent.daemon.plist`, starts the daemon with `launchctl`, and prints a `vivarium daemon smoke` command for `http://127.0.0.1:8787/status`. The LaunchAgent daemon uses the same installer-selected state path, so `vivarium daemon smoke` reports the durable local memory backing the daemon.
