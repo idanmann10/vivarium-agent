@@ -628,7 +628,7 @@ describe("reference docs", () => {
       const normalizedBody = body.replaceAll(/\s+/g, " ");
       const block = readAfterInstallationBlock(path);
       for (const stage of [
-        "# [1] Initialize local memory",
+        "# [1] Start Vivarium",
         "# [2] Run the local agent",
         "# [3] Review launch handoff",
         "# [4] Keep moving",
@@ -636,7 +636,7 @@ describe("reference docs", () => {
         expect(block).toContain(stage);
       }
       for (const command of [
-        "vivarium local",
+        "vivarium start",
         "vivarium local run",
         "vivarium launch handoff",
         "vivarium status",
@@ -658,7 +658,10 @@ describe("reference docs", () => {
         "Use `vivarium launch handoff` when you are ready for production evidence.",
       );
       expect(normalizedBody).toContain(
-        "If you run `vivarium local run` before `vivarium local`, the command seeds the same starter memory, stages the private live-readiness file, and then runs the local agent",
+        "`vivarium start` is the friendly alias for `vivarium local`; both commands seed the same starter memory, stage the private live-readiness file, and print the same local-first launch sequence",
+      );
+      expect(normalizedBody).toContain(
+        "If you run `vivarium local run` before `vivarium start`, the command seeds the same starter memory, stages the private live-readiness file, and then runs the local agent",
       );
       expect(body).toContain(
         "If the local SQLite state file is invalid, `vivarium local run` stops before writing new run data",

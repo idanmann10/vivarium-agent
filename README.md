@@ -46,17 +46,16 @@ Interactive terminals use the branded ANSI theme automatically. Set `VIVARIUM_CO
 
 ## Terminal-first setup
 
-`vivarium local` creates a named `local-agent`, initializes SQLite state under
-`~/.vivarium`, installs the coding starter pack, stages
-`~/.vivarium/live/live-readiness.local.env` for later, and prints a local-first
-numbered launch sequence. The installer runs the same quick setup
+`vivarium start` is the friendly alias for `vivarium local`; both commands seed
+the same starter memory, stage the private live-readiness file, and print the
+same local-first launch sequence. The installer runs the same quick setup
 automatically.
 
 After installation, reload your shell if needed and run:
 
 ```bash
-# [1] Initialize local memory
-vivarium local
+# [1] Start Vivarium
+vivarium start
 
 # [2] Run the local agent
 vivarium local run
@@ -90,7 +89,7 @@ explicit paths in its next `vivarium local run` and `vivarium connect` commands,
 so custom-path smokes do not drift back to default state.
 Run `vivarium launch handoff --help` when you need the branch/ref, daemon, or
 reviewer flags for pre-main Mac handoffs.
-If you run `vivarium local run` before `vivarium local`, the command seeds the same starter memory, stages the private live-readiness file, and then runs the local agent against that durable state.
+If you run `vivarium local run` before `vivarium start`, the command seeds the same starter memory, stages the private live-readiness file, and then runs the local agent against that durable state.
 If the local SQLite state file is invalid, `vivarium local run` stops before writing new run data, names the damaged path, and points you at `vivarium doctor` plus `vivarium local` so you can move the file aside and reseed it.
 
 When installed with the LaunchAgent option, verify the local daemon separately:
