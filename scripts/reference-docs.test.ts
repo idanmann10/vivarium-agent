@@ -1436,7 +1436,7 @@ describe("reference docs", () => {
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
       "Memory: /Users/idanmann/.vivarium/state.db",
-      "`578 pass, 0 fail, 4776 expect calls`",
+      "`583 pass, 0 fail, 4786 expect calls`",
       "build a simple agent end to end on my Mac",
       "run-1779025625380-620",
       "fresh temp install builds a simple agent end to end",
