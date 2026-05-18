@@ -192,8 +192,9 @@ export function localSetupHelpCommand(): LocalSetupHelpCommandResult {
     ],
     nextCommands: [
       "vivarium local run",
+      "vivarium dashboard",
+      "vivarium daemon smoke",
       "vivarium status",
-      "vivarium launch handoff",
     ],
   };
 }
@@ -237,9 +238,9 @@ export function setupHelpCommand(): SetupHelpCommandResult {
     ],
     nextCommands: [
       "vivarium local run",
-      "vivarium setup live",
-      "vivarium connect",
-      "vivarium doctor --live",
+      "vivarium dashboard",
+      "vivarium daemon smoke",
+      "vivarium status",
     ],
   };
 }

@@ -193,6 +193,7 @@ describe("helpCommand", () => {
   test("renders focused local setup help for first-run operators", () => {
     const result = localSetupHelpCommand();
     const output = renderLocalSetupHelpCommandResult(result);
+    const nextBlock = output.slice(output.indexOf("Next"));
 
     expect(output).toContain("Vivarium Local Setup");
     expect(output).toContain("Usage: vivarium local");
@@ -205,6 +206,10 @@ describe("helpCommand", () => {
     expect(output).not.toContain("--world-root ~/.vivarium/the-world");
     expect(output).not.toContain("--live-env-path ~/.vivarium/live/live-readiness.local.env");
     expect(output).toContain("\n  vivarium local run\n");
+    expect(nextBlock).toContain("vivarium dashboard");
+    expect(nextBlock).toContain("vivarium daemon smoke");
+    expect(nextBlock).toContain("vivarium status");
+    expect(nextBlock).not.toContain("vivarium launch handoff");
     expect(output).not.toContain('vivarium local run --goal "build a simple agent end to end"');
     expect(output).not.toContain("build a tiny local agent");
     expect(output).not.toContain("Commands");
@@ -214,6 +219,7 @@ describe("helpCommand", () => {
   test("renders focused setup help for the obvious setup command", () => {
     const result = setupHelpCommand();
     const output = renderSetupHelpCommandResult(result);
+    const nextBlock = output.slice(output.indexOf("Next"));
 
     expect(output).toContain("Vivarium Setup");
     expect(output).toContain("Usage: vivarium setup");
@@ -222,7 +228,13 @@ describe("helpCommand", () => {
     expect(output).toContain("--env-file <path>");
     expect(output).toContain("--confirm-write");
     expect(output).toContain("vivarium setup live");
-    expect(output).toContain("vivarium connect");
+    expect(output).not.toContain("vivarium connect");
+    expect(nextBlock).toContain("vivarium local run");
+    expect(nextBlock).toContain("vivarium dashboard");
+    expect(nextBlock).toContain("vivarium daemon smoke");
+    expect(nextBlock).toContain("vivarium status");
+    expect(nextBlock).not.toContain("vivarium setup live");
+    expect(nextBlock).not.toContain("vivarium doctor --live");
     expect(output).not.toContain("Commands");
     expect(output).not.toContain("vivarium run --goal");
   });
