@@ -274,7 +274,7 @@ function renderDashboardCommandResult(dashboardUrl: string): string {
     "------------------",
     `Dashboard: ${url}`,
     `Status JSON: ${url}/status`,
-    `Run API: ${url}/run`,
+    `Run API (POST): ${url}/run`,
     "",
     "Next command:",
     "  vivarium daemon smoke",

@@ -182,7 +182,8 @@ describe("dispatchCliCommand", () => {
     expect(result.output).toContain("Vivarium Dashboard");
     expect(result.output).toContain("Dashboard: http://127.0.0.1:8787");
     expect(result.output).toContain("Status JSON: http://127.0.0.1:8787/status");
-    expect(result.output).toContain("Run API: http://127.0.0.1:8787/run");
+    expect(result.output).toContain("Run API (POST): http://127.0.0.1:8787/run");
+    expect(result.output).not.toContain("Run API: http://127.0.0.1:8787/run");
     expect(result.output).toContain("vivarium daemon smoke");
   });
 
