@@ -343,29 +343,39 @@ describe("dispatchCliCommand", () => {
   });
 
   test("routes connect signup through a signup-first handoff", async () => {
-    const result = await dispatchCliCommand(["connect", "signup"]);
+    const home = mkdtempSync(join(tmpdir(), "cli-dispatch-connect-signup-"));
+    const previousCwd = process.cwd();
 
-    expect(result.command).toBe("connect");
-    expect(result.output).toContain("Vivarium Connect Signup");
-    expect(result.output).toContain("Accounts and keys");
-    expect(result.output).toContain("https://console.anthropic.com/settings/keys");
-    expect(result.output).toContain("https://openrouter.ai/keys");
-    expect(result.output).toContain("Private OpenAI-compatible");
-    expect(result.output).toContain("vivarium setup live");
-    expect(result.output).toContain("vivarium connect");
-    expect(result.output).toContain("vivarium connect fill");
-    expect(result.output).toContain("vivarium connect setup --confirm-write");
-    expect(result.output).toContain("vivarium connect smoke");
-    expect(result.output).toContain("vivarium proof init");
-    expect(result.output).toContain("vivarium proof");
-    expect(result.output).toContain("vivarium doctor --live");
-    expect(result.output).not.toContain("ANTHROPIC_API_KEY");
-    expect(result.output).not.toContain("providers configure --profiles-path");
+    try {
+      process.chdir(home);
+      const result = await dispatchCliCommand(["connect", "signup"], { env: { HOME: home } });
+
+      expect(result.command).toBe("connect");
+      expect(result.output).toContain("Vivarium Connect Signup");
+      expect(result.output).toContain("Accounts and keys");
+      expect(result.output).toContain("https://console.anthropic.com/settings/keys");
+      expect(result.output).toContain("https://openrouter.ai/keys");
+      expect(result.output).toContain("Private OpenAI-compatible");
+      expect(result.output).toContain("vivarium setup live");
+      expect(result.output).toContain("vivarium connect");
+      expect(result.output).toContain("vivarium connect fill");
+      expect(result.output).toContain("vivarium connect setup --confirm-write");
+      expect(result.output).toContain("vivarium connect smoke");
+      expect(result.output).toContain("vivarium proof init");
+      expect(result.output).toContain("vivarium proof");
+      expect(result.output).toContain("vivarium doctor --live");
+      expect(result.output).not.toContain("ANTHROPIC_API_KEY");
+      expect(result.output).not.toContain("providers configure --profiles-path");
+    } finally {
+      process.chdir(previousCwd);
+    }
   });
 
   test("routes connect signup without already configured local source files", async () => {
     const home = mkdtempSync(join(tmpdir(), "cli-dispatch-connect-signup-configured-"));
     const envPath = join(home, ".vivarium", "live", "live-readiness.local.env");
+    const evidencePath = join(home, ".vivarium", "live", "v1-evidence.json");
+    write(evidencePath, "{}\n");
     write(
       envPath,
       [
@@ -377,6 +387,7 @@ describe("dispatchCliCommand", () => {
         'export VIVARIUM_GITHUB_OWNER="idanmann10"',
         'export VIVARIUM_GITHUB_REPOSITORY_ID="R_123"',
         'export VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID="DIC_123"',
+        `export VIVARIUM_V1_EVIDENCE_PATH="${evidencePath}"`,
         "",
       ].join("\n"),
     );
@@ -391,6 +402,8 @@ describe("dispatchCliCommand", () => {
     expect(result.output).not.toContain("    Agent repo name: ~/.vivarium/secrets/agent-repo-name.txt");
     expect(result.output).not.toContain("    GitHub token: ~/.vivarium/secrets/github-token.key");
     expect(result.output).not.toContain("    GitHub owner: ~/.vivarium/secrets/github-owner.txt");
+    expect(result.output).not.toContain("\n      vivarium proof init\n");
+    expect(result.output).toContain("\n      vivarium proof\n");
   });
 
   test("routes connect wizard through a single guided live setup entrypoint", async () => {

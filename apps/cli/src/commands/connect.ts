@@ -903,12 +903,18 @@ export function connectCommand(options: ConnectCommandOptions = {}): ConnectComm
 export function connectSignupCommand(
   options: ConnectSignupCommandOptions = {},
 ): ConnectSignupCommandResult {
+  const envFilePath = options.setupStatus?.envFilePath ?? "live-readiness.local.env";
+  const proofInitCommand = proofInitCommandLine(envFilePath);
   return {
     providers,
     ...(options.setupStatus === undefined ? {} : { setupStatus: options.setupStatus }),
     nextCommands: [
       "vivarium setup live",
-      ...liveSetupNextCommands("live-readiness.local.env").filter((command) => command !== "vivarium connect signup"),
+      ...liveSetupNextCommands(envFilePath).filter(
+        (command) =>
+          command !== "vivarium connect signup" &&
+          (options.setupStatus?.evidence.ready !== true || command !== proofInitCommand),
+      ),
     ],
   };
 }
