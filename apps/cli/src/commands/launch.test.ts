@@ -89,10 +89,19 @@ describe("launchHandoffCommand", () => {
       "Invite one eligible non-author reviewer when GitHub reports REVIEW_REQUIRED.",
     );
     expect(output).toContain(
+      "gh pr view PR_NUMBER --repo idanmann10/vivarium-agent --json reviewDecision,mergeStateStatus,reviewRequests",
+    );
+    expect(output).toContain(
+      "gh api repos/idanmann10/vivarium-agent/collaborators --jq '.[].login'",
+    );
+    expect(output).toContain(
       "gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/REVIEWER_GITHUB_USERNAME -f permission=push",
     );
     expect(output).toContain(
       "gh pr edit PR_NUMBER --repo idanmann10/vivarium-agent --add-reviewer REVIEWER_GITHUB_USERNAME",
+    );
+    expect(output).toContain(
+      "If the collaborator list only shows the PR author, the reviewer must accept the invite before the review request can satisfy branch protection.",
     );
     expect(output).toContain("Do not lower branch protection or self-approve just to merge.");
   });
@@ -122,6 +131,9 @@ describe("launchHandoffCommand", () => {
 
     expect(output).toContain(
       "gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/startclaw-ai -f permission=push",
+    );
+    expect(output).toContain(
+      "gh pr view 26 --repo idanmann10/vivarium-agent --json reviewDecision,mergeStateStatus,reviewRequests",
     );
     expect(output).toContain(
       "gh pr edit 26 --repo idanmann10/vivarium-agent --add-reviewer startclaw-ai",

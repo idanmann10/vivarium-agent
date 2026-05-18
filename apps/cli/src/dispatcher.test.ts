@@ -2939,6 +2939,9 @@ describe("dispatchCliCommand", () => {
       expect(result.output).toContain(
         "gh pr edit 26 --repo idanmann10/vivarium-agent --add-reviewer REVIEWER_GITHUB_USERNAME",
       );
+      expect(result.output).toContain(
+        "gh pr view 26 --repo idanmann10/vivarium-agent --json reviewDecision,mergeStateStatus,reviewRequests",
+      );
       expect(result.output).not.toContain("gh pr edit PR_NUMBER");
     } finally {
       process.chdir(previousCwd);
@@ -2963,6 +2966,9 @@ describe("dispatchCliCommand", () => {
     expect(result.command).toBe("launch");
     expect(result.output).toContain(
       "gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/startclaw-ai -f permission=push",
+    );
+    expect(result.output).toContain(
+      "gh pr view 26 --repo idanmann10/vivarium-agent --json reviewDecision,mergeStateStatus,reviewRequests",
     );
     expect(result.output).toContain(
       "gh pr edit 26 --repo idanmann10/vivarium-agent --add-reviewer startclaw-ai",

@@ -123,8 +123,11 @@ export function launchHandoffCommand(
         : [
             "Keep branch protection and review intact before switching installs back to main.",
             "Invite one eligible non-author reviewer when GitHub reports REVIEW_REQUIRED.",
+            `gh pr view ${reviewPrNumber} --repo ${owner}/${repo} --json reviewDecision,mergeStateStatus,reviewRequests`,
+            `gh api repos/${owner}/${repo}/collaborators --jq '.[].login'`,
             `gh api -X PUT repos/${owner}/${repo}/collaborators/${reviewerUsername} -f permission=push`,
             `gh pr edit ${reviewPrNumber} --repo ${owner}/${repo} --add-reviewer ${reviewerUsername}`,
+            "If the collaborator list only shows the PR author, the reviewer must accept the invite before the review request can satisfy branch protection.",
             "Do not lower branch protection or self-approve just to merge.",
           ]),
       "Use the live verification commands only after secrets and evidence are available.",
