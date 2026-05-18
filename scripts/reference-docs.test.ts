@@ -703,6 +703,9 @@ describe("reference docs", () => {
         "The dashboard also shows the latest local run summary after the daemon records a run",
       );
       expect(normalizedBody).toContain(
+        "`vivarium daemon smoke` also prints the latest local run when the daemon reports one",
+      );
+      expect(normalizedBody).toContain(
         "`vivarium local run` should print `Status: success`, `Provider: local`, and `Validation: pass (0.8)`",
       );
       expect(normalizedBody).toContain("`vivarium daemon smoke` should print `Status: ok`");

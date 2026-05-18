@@ -34,6 +34,40 @@ describe("daemonSmokeCommand", () => {
     expect(output).not.toContain("vivarium doctor --live");
   });
 
+  test("shows the latest local run when the daemon reports one", async () => {
+    const result = await daemonSmokeCommand({
+      statusUrl: "http://daemon.test/status",
+      fetch: async () =>
+        Response.json({
+          status: "running",
+          statePath: "/Users/tester/.vivarium/state.db",
+          runs: 3,
+          confidenceBuckets: 1,
+          latestRun: {
+            id: "run-123",
+            goal: "build a simple agent",
+            domain: "coding",
+            success: true,
+            score: 0.8,
+          },
+        }),
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      latestRun: {
+        id: "run-123",
+        goal: "build a simple agent",
+        domain: "coding",
+        success: true,
+        score: 0.8,
+      },
+    });
+    expect(renderDaemonSmokeCommandResult(result)).toContain(
+      "Latest run: build a simple agent (success, score 0.8)",
+    );
+  });
+
   test("returns an error when the daemon endpoint is unavailable", async () => {
     const result = await daemonSmokeCommand({
       statusUrl: "http://daemon.test/status",

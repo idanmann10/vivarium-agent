@@ -110,6 +110,8 @@ The localhost dashboard includes a `Run agent` form with the default
 run through `/run` and shows the run ID inline.
 The dashboard also shows the latest local run summary after the daemon records
 a run.
+`vivarium daemon smoke` also prints the latest local run when the daemon reports
+one.
 The installed `vivarium` command preserves the installer-selected domain, world
 root, state path, and live-readiness file as overridable defaults, so
 `vivarium local run` stays enough after custom-path or branch-pinned installs.
