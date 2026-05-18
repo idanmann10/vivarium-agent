@@ -98,6 +98,27 @@ When installed with the LaunchAgent option, verify the local daemon separately:
 vivarium daemon smoke
 ```
 
+## Local terminal smoke
+
+Use this from a normal terminal when you want to prove the installed local agent
+path works end to end on your Mac:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+
+vivarium update
+vivarium help
+vivarium start
+vivarium local run --goal "build a simple agent end to end"
+vivarium status
+vivarium daemon smoke
+```
+
+`vivarium local run` should print `Status: success`, `Provider: local`, and
+`Validation: pass (0.8)`. `vivarium status` should show the latest run ID and
+score from `~/.vivarium/state.db`. `vivarium daemon smoke` should print
+`Status: ok` when the optional LaunchAgent daemon is installed and running.
+
 Use `vivarium launch handoff` when you are ready for production evidence. That
 command explains provider keys, live smoke tests, and the v1 evidence gate
 without blocking the local agent loop.

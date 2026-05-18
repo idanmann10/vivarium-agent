@@ -648,7 +648,7 @@ describe("reference docs", () => {
       }
       expect(block).toContain("\nvivarium local run\n");
       expect(block).not.toContain("Verify the Mac daemon");
-      expect(body).not.toContain('vivarium local run --goal "build a simple agent end to end"');
+      expect(block).not.toContain('vivarium local run --goal "build a simple agent end to end"');
       expect(block).not.toContain(
         "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
       );
@@ -672,6 +672,22 @@ describe("reference docs", () => {
       expect(normalizedBody).toContain(
         "Use `vivarium tools` to inspect external toolsets and safety policy posture without mutating local state",
       );
+      expect(body).toContain("## Local terminal smoke");
+      expect(body).toContain('export PATH="$HOME/.local/bin:$PATH"');
+      for (const command of [
+        "vivarium update",
+        "vivarium help",
+        "vivarium start",
+        'vivarium local run --goal "build a simple agent end to end"',
+        "vivarium status",
+        "vivarium daemon smoke",
+      ]) {
+        expect(body).toContain(command);
+      }
+      expect(normalizedBody).toContain(
+        "`vivarium local run` should print `Status: success`, `Provider: local`, and `Validation: pass (0.8)`",
+      );
+      expect(normalizedBody).toContain("`vivarium daemon smoke` should print `Status: ok`");
       expect(normalizedBody).toContain(
         "The installed `vivarium` command preserves the installer-selected domain, world root, state path, and live-readiness file as overridable defaults",
       );
