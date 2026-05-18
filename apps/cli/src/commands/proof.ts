@@ -390,12 +390,13 @@ function nextCommandsFor(
       : `vivarium doctor --live --env-file ${envFile}`;
   const needsSmokeSetup = checks.some((check) => check.label === "Provider and credential smokes" && !check.ok);
   const hasBlockedEvidence = checks.some((check) => !check.ok);
+  const needsDefaultSetupFiles = needsSmokeSetup && isDefaultLiveEnvFile(envFilePath);
   const proofReviewCommand =
     manifestStatus.kind === "loaded" && hasBlockedEvidence && !showDetails
       ? proofDetailsCommand
       : proofCommand;
   return [
-    ...(manifestStatus.kind === "not_configured" ? [initCommand] : []),
+    ...(manifestStatus.kind === "not_configured" || needsDefaultSetupFiles ? [initCommand] : []),
     connectCommand,
     ...(needsSmokeSetup ? [signupCommand, fillCommand, setupCommand] : []),
     ...(manifestStatus.kind === "loaded"

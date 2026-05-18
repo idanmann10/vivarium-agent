@@ -120,7 +120,8 @@ describe("proofCommand", () => {
 
     expect(output).toContain(`Evidence manifest: ${evidencePath}`);
     expect(output).toContain("Checks: 0 passing, 8 blocked");
-    expect(output).toContain("[1] Prepare live readiness\n      vivarium connect");
+    expect(output).toContain("[1] Prepare live readiness\n      vivarium setup live");
+    expect(output.indexOf("vivarium setup live")).toBeLessThan(output.indexOf("vivarium connect"));
     expect(output).toContain("vivarium connect signup");
     expect(output).toContain("vivarium connect fill");
     expect(output).toContain("vivarium connect setup --confirm-write");
