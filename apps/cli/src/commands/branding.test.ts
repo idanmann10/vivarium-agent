@@ -6,6 +6,9 @@ describe("Vivarium terminal branding", () => {
   test("renders a dense ASCII art terminal wordmark", () => {
     const mark = renderVivariumGlobe();
 
+    expect(mark).toContain("      .-\"\"\"-.");
+    expect(mark).toContain("   .-'  .-.  '-.");
+    expect(mark).toContain("  /  .-(   )-.  \\");
     expect(mark).toContain("__      __");
     expect(mark).toContain("VIVARIUM // local memory // world culture");
     expect(

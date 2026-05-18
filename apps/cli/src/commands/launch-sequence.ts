@@ -10,6 +10,10 @@ export interface RenderLaunchSequenceOptions {
 
 const launchCommandStages: readonly LaunchCommandStage[] = [
   {
+    label: "Start Vivarium",
+    matches: (command) => command === "vivarium start" || command.startsWith("vivarium start "),
+  },
+  {
     label: "Initialize local memory",
     matches: (command) =>
       command === "vivarium local" ||

@@ -26,6 +26,10 @@ describe("helpCommand", () => {
     expect(result.commands).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ command: "vivarium onboard" }),
+        expect.objectContaining({
+          command: "vivarium start",
+          description: "Start guided local setup with the starter pack.",
+        }),
         expect.objectContaining({ command: "vivarium setup live" }),
         expect.objectContaining({ command: "vivarium onboard live" }),
         expect.objectContaining({ command: "vivarium local" }),
@@ -66,6 +70,7 @@ describe("helpCommand", () => {
     expect(output).toContain("Vivarium Agent");
     expect(output).toContain("VIVARIUM // local memory // world culture");
     expect(output).toContain("First run");
+    expect(output).toContain("vivarium start");
     expect(output).toContain("vivarium local");
     expect(output).toContain("vivarium local run");
     expect(output).toContain("vivarium onboard");
@@ -89,13 +94,14 @@ describe("helpCommand", () => {
     expect(output).toContain("vivarium model");
     expect(output).toContain("vivarium tools");
     expect(output).toContain("vivarium help");
-    expect(firstRunBlock).toContain("vivarium local");
+    expect(firstRunBlock).toContain("vivarium start");
+    expect(firstRunBlock).not.toContain("vivarium local\n");
     expect(firstRunBlock).toContain("vivarium local run");
     expect(result.commands.some((item) => item.command.startsWith("vivarium run --goal"))).toBe(false);
     expect(firstRunBlock).not.toContain(
       "vivarium run --goal \"validate local setup\" --state-path .vivarium/state.db",
     );
-    expect(firstRunBlock).toContain("[1] Initialize local memory");
+    expect(firstRunBlock).toContain("[1] Start Vivarium");
     expect(firstRunBlock).not.toContain("vivarium onboard");
     expect(firstRunBlock).toContain("[2] Run the local agent");
     expect(firstRunBlock).toContain("[3] Review launch handoff");

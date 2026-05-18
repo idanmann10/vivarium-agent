@@ -1,4 +1,5 @@
 export const cliCommands = [
+  "start",
   "local",
   "onboard",
   "setup",

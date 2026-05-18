@@ -1253,6 +1253,38 @@ export async function dispatchCliCommand(
       });
       return { command, result, output: renderInitCommandResult(result) };
     }
+    case "start": {
+      if (subcommand !== undefined && !subcommand.startsWith("--")) {
+        usage('Unknown start subcommand. Use "vivarium start".');
+      }
+
+      const worldRoot = value(flags, "world-root") ?? defaultWorldRoot(options.env);
+      const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
+      const agentName = value(flags, "agent-name");
+      const liveEnvPath = value(flags, "live-env-path") ?? privateDefaultLiveEnvFile(options.env);
+      const githubOwner = value(flags, "github-owner");
+      const agentRepo = value(flags, "agent-repo");
+      const worldRepo = value(flags, "world-repo");
+      const canonicalWorldRef = value(flags, "canonical-world-ref");
+      const privateWorldRef = value(flags, "private-world-ref");
+      guardLocalSetupState(statePath);
+      const result = setupCommand({
+        primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? defaultDomain(options.env),
+        ...(agentName === undefined ? {} : { agentName }),
+        ...(worldRoot === undefined ? {} : { worldRoot }),
+        statePath,
+        quick: true,
+        ...(liveEnvPath === undefined ? {} : { liveEnvPath }),
+        prefill: {
+          ...(githubOwner === undefined ? {} : { githubOwner }),
+          ...(agentRepo === undefined ? {} : { agentRepo }),
+          ...(worldRepo === undefined ? {} : { worldRepo }),
+          ...(canonicalWorldRef === undefined ? {} : { canonicalWorldRef }),
+          ...(privateWorldRef === undefined ? {} : { privateWorldRef }),
+        },
+      });
+      return { command, result, output: renderSetupCommandResult(result) };
+    }
     case "onboard": {
       if (subcommand === "live") {
         const home = defaultVivariumHome(options.env);
