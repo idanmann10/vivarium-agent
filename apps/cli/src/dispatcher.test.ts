@@ -1606,6 +1606,41 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).not.toContain("provider keys");
   });
 
+  test("routes plain installed --setup to the shortest local run command", async () => {
+    const worldRoot = createWorldFixture();
+    const home = mkdtempSync(join(tmpdir(), "cli-dispatch-plain-setup-home-"));
+    const statePath = join(home, ".vivarium", "state.db");
+    const liveEnvPath = join(home, ".vivarium", "live", "live-readiness.local.env");
+    const env = {
+      HOME: home,
+      VIVARIUM_DOMAIN: "coding",
+      VIVARIUM_WORLD_ROOT: worldRoot,
+      VIVARIUM_STATE_PATH: statePath,
+      VIVARIUM_LIVE_ENV_PATH: liveEnvPath,
+    };
+
+    const setup = await dispatchCliCommand(["--setup"], { env });
+    const nextBlock = setup.output.slice(setup.output.indexOf("Next commands:"));
+
+    expect(setup.command).toBe("setup");
+    expect(setup.result).toMatchObject({
+      dashboardUrl: "http://127.0.0.1:8787",
+      nextCommands: expect.arrayContaining([
+        "vivarium local run",
+        "vivarium dashboard",
+        "vivarium daemon smoke",
+        "vivarium status",
+      ]),
+    });
+    expect(nextBlock).toContain("\n      vivarium local run\n");
+    expect(nextBlock).toContain("vivarium dashboard");
+    expect(nextBlock).toContain("vivarium daemon smoke");
+    expect(nextBlock).not.toContain("--domain");
+    expect(nextBlock).not.toContain("--state-path");
+    expect(nextBlock).not.toContain("--world-root");
+    expect(nextBlock).not.toContain("--live-env-path");
+  });
+
   test("routes installed env defaults through local setup and default run", async () => {
     const worldRoot = mkdtempSync(join(tmpdir(), "cli-dispatch-install-env-world-"));
     const home = mkdtempSync(join(tmpdir(), "cli-dispatch-install-env-home-"));

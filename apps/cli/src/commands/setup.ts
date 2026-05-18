@@ -36,6 +36,7 @@ export interface SetupCommandOptions {
   readonly dashboardUrl?: string;
   readonly prefill?: LiveEnvPrefillOptions;
   readonly diskSpaceProbe?: SetupDiskSpaceProbe;
+  readonly simpleLocalRunNextCommand?: boolean;
 }
 
 export interface SetupCommandResult {
@@ -72,13 +73,14 @@ function setupNextCommands(
   quickEnv: LiveEnvInitCommandResult | undefined,
 ): readonly string[] {
   const liveRunPath = quickEnv?.path ?? options.liveEnvPath ?? options.envFilePath;
-  const runCommand = commandWithFlags("local run", {
+  const explicitRunCommand = commandWithFlags("local run", {
     domain: options.primaryDomain,
     "agent-name": options.agentName,
     "state-path": local.statePath,
     "world-root": local.worldRoot,
     "live-env-path": liveRunPath,
   });
+  const runCommand = options.simpleLocalRunNextCommand === true ? "vivarium local run" : explicitRunCommand;
   const liveEnvFilePath = options.envFilePath ?? quickEnv?.path ?? defaultLiveEnvFilePath;
   const modelCommand = commandWithFlags("model", { "env-file": liveEnvFilePath });
   const smokeCommand = commandWithFlags("connect smoke", { "env-file": liveEnvFilePath });

@@ -261,6 +261,10 @@ function setupLiveResumeCommand(flags: FlagMap): string {
   ].join(" ");
 }
 
+function hasAnyFlag(flags: FlagMap, names: readonly string[]): boolean {
+  return names.some((name) => flags.has(name));
+}
+
 const defaultDashboardUrl = "http://127.0.0.1:8787";
 
 function normalizedDashboardUrl(raw: string | undefined): string {
@@ -1328,6 +1332,14 @@ export async function dispatchCliCommand(
         statePath,
         quick: true,
         dashboardUrl: normalizedDashboardUrl(value(flags, "dashboard-url")),
+        simpleLocalRunNextCommand: !hasAnyFlag(flags, [
+          "domain",
+          "primary-domain",
+          "agent-name",
+          "world-root",
+          "state-path",
+          "live-env-path",
+        ]),
         ...(liveEnvPath === undefined ? {} : { liveEnvPath }),
         prefill: {
           ...(githubOwner === undefined ? {} : { githubOwner }),
