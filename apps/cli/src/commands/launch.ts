@@ -62,6 +62,14 @@ function daemonSmokeCommand(daemonHost: string, daemonPort: string): string {
   return `vivarium daemon smoke --status-url http://${daemonHost}:${daemonPort}/status`;
 }
 
+function dashboardOpenCommand(daemonHost: string, daemonPort: string): string {
+  if (daemonHost === defaultDaemonHost && daemonPort === defaultDaemonPort) {
+    return "vivarium dashboard --open";
+  }
+
+  return `vivarium dashboard --open --url http://${daemonHost}:${daemonPort}`;
+}
+
 export function launchHandoffCommand(
   options: LaunchHandoffCommandOptions = {},
 ): LaunchHandoffCommandResult {
@@ -78,6 +86,7 @@ export function launchHandoffCommand(
     installCommand: installCommand(owner, repo, ref, scriptRef, daemonHost, daemonPort),
     postInstallCommands: [
       "vivarium local run",
+      dashboardOpenCommand(daemonHost, daemonPort),
       daemonSmokeCommand(daemonHost, daemonPort),
       "vivarium status",
       "vivarium tools",

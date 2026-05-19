@@ -14,6 +14,7 @@ describe("launchHandoffCommand", () => {
     expect(output).toContain("Vivarium Launch Handoff");
     expect(output).toContain("Mac install command:");
     expect(output).toContain("\n      vivarium local run\n");
+    expect(output).toContain("\n      vivarium dashboard --open\n");
     expect(output).not.toContain('vivarium local run --goal "build a simple agent end to end"');
     expect(
       output.slice(output.indexOf("After install:"), output.indexOf("When ready for live verification:")),
@@ -120,7 +121,9 @@ describe("launchHandoffCommand", () => {
     expect(result.installCommand).toBe(
       "curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash -s -- --daemon launchd --daemon-port 9898",
     );
+    expect(output).toContain("vivarium dashboard --open --url http://127.0.0.1:9898");
     expect(output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:9898/status");
+    expect(output).not.toContain("vivarium dashboard --open --url http://127.0.0.1:8787");
     expect(output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
   });
 

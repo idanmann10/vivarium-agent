@@ -3023,6 +3023,7 @@ describe("dispatchCliCommand", () => {
     expect(result.output).not.toContain("VIVARIUM_AGENT_REF=");
     expect(result.output).toContain("bash -s -- --daemon launchd");
     expect(result.output).not.toContain("VIVARIUM_DAEMON=launchd");
+    expect(result.output).toContain("vivarium dashboard --open");
     expect(result.output).toContain("vivarium daemon smoke");
     expect(result.output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
     expect(result.output).toContain("When ready for live verification:");
@@ -3064,7 +3065,9 @@ describe("dispatchCliCommand", () => {
     expect(result.command).toBe("launch");
     expect(result.output).toContain("--daemon-port 9898");
     expect(result.output).not.toContain("VIVARIUM_DAEMON_PORT=9898");
+    expect(result.output).toContain("vivarium dashboard --open --url http://127.0.0.1:9898");
     expect(result.output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:9898/status");
+    expect(result.output).not.toContain("vivarium dashboard --open --url http://127.0.0.1:8787");
     expect(result.output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
   });
 
