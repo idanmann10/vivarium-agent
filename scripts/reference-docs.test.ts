@@ -694,6 +694,9 @@ describe("reference docs", () => {
         "`vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon dashboard backed by `/status`",
       );
       expect(normalizedBody).toContain(
+        "The daemon root is a `Vivarium Gateway` with agent chat, agent roster, world telemetry, and a canvas world view",
+      );
+      expect(normalizedBody).toContain(
         "Use `vivarium dashboard --open` to open that URL in your browser",
       );
       expect(normalizedBody).toContain(

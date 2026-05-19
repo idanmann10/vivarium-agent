@@ -34,8 +34,18 @@ describe("createDaemonFetchHandler", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/html");
-    expect(body).toContain("<title>Vivarium Dashboard</title>");
-    expect(body).toContain("Vivarium Dashboard");
+    expect(body).toContain("<title>Vivarium Gateway</title>");
+    expect(body).toContain("Vivarium Gateway");
+    expect(body).toContain("Agent Chat");
+    expect(body).toContain("World View");
+    expect(body).toContain("Agent Roster");
+    expect(body).toContain("World Telemetry");
+    expect(body).toContain("Local Agent");
+    expect(body).toContain("Dream Worker");
+    expect(body).toContain("World Scout");
+    expect(body).toContain("Safety Sentinel");
+    expect(body).toContain('<canvas id="world-scene"');
+    expect(body).toContain('data-testid="gateway-shell"');
     expect(body).toContain("Status: running");
     expect(body).toContain("Runs: 0");
     expect(body).toContain("Latest run");
@@ -43,14 +53,16 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain("/status");
     expect(body).toContain("POST /run");
     expect(body).not.toContain('href="/run"');
-    expect(body).toContain('<form id="run-agent-form">');
+    expect(body).toContain('<form id="gateway-chat-form">');
+    expect(body).toContain('id="chat-log"');
     expect(body).toContain('name="goal"');
     expect(body).toContain("build a simple agent end to end");
     expect(body).toContain('name="domain"');
     expect(body).toContain("Run agent");
     expect(body).toContain('fetch("/run"');
     expect(body).toContain('body.validation?.score ?? "recorded"');
-    expect(body).toContain('id="run-agent-result"');
+    expect(body).toContain("requestAnimationFrame(drawWorld)");
+    expect(body).toContain("drawAgent(");
   });
 
   test("routes status, run, and dream requests to the daemon", async () => {
