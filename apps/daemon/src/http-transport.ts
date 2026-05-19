@@ -202,6 +202,85 @@ function renderDashboard(daemon: DaemonServer): string {
         gap: 16px;
         align-items: stretch;
       }
+      .dashboard-main { display: grid; gap: 16px; align-content: start; }
+      .section-heading {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 2px 0 -4px;
+      }
+      .section-heading h2 { margin-bottom: 0; font-size: 18px; }
+      .section-heading span { color: #b8b39f; font-size: 12px; font-weight: 800; }
+      .section-cards {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .section-card {
+        min-height: 126px;
+        border: 1px solid rgba(224, 213, 184, 0.15);
+        border-radius: 8px;
+        padding: 14px;
+        background:
+          linear-gradient(180deg, rgba(255, 248, 223, 0.07), rgba(255, 248, 223, 0.025)),
+          rgba(17, 24, 18, 0.84);
+      }
+      .section-card span { color: #b8b39f; font-size: 12px; font-weight: 850; }
+      .section-card strong { display: block; margin-top: 10px; color: #fff8df; font-size: 24px; line-height: 1; overflow-wrap: anywhere; }
+      .section-card p { margin: 10px 0 0; color: #cfc7ae; font-size: 12px; line-height: 1.35; }
+      .dashboard-content {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+        gap: 16px;
+        align-items: start;
+      }
+      .primary-stack, .aside-stack { display: grid; gap: 16px; min-width: 0; }
+      .world-panel { min-height: 560px; position: relative; padding: 0; }
+      .world-panel.featured { min-height: 620px; }
+      .chart-panel { min-height: 260px; }
+      .run-chart {
+        width: 100%;
+        height: 180px;
+        display: block;
+        margin-top: 8px;
+      }
+      .chart-axis { stroke: rgba(255, 248, 223, 0.12); stroke-width: 1; }
+      .chart-grid { stroke: rgba(255, 248, 223, 0.08); stroke-width: 1; }
+      .chart-area { fill: rgba(142, 222, 146, 0.12); }
+      .chart-line { fill: none; stroke: #8ede92; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+      .chart-dot { fill: #fff8df; stroke: #8ede92; stroke-width: 3; }
+      .activity-table-wrap { width: 100%; overflow: auto; }
+      .activity-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 620px;
+      }
+      .activity-table th,
+      .activity-table td {
+        border-bottom: 1px solid rgba(224, 213, 184, 0.12);
+        padding: 12px 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .activity-table th {
+        color: #b8b39f;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+      .activity-table td { color: #fff8df; font-size: 13px; }
+      .status-badge {
+        display: inline-flex;
+        border: 1px solid rgba(142, 222, 146, 0.26);
+        border-radius: 999px;
+        padding: 4px 8px;
+        color: #c7f6c9;
+        background: rgba(79, 143, 91, 0.16);
+        font-size: 12px;
+        font-weight: 850;
+        white-space: nowrap;
+      }
       .column { display: grid; gap: 16px; align-content: start; }
       .panel { border-radius: 8px; padding: 18px; overflow: hidden; }
       .panel-header {
@@ -268,7 +347,6 @@ function renderDashboard(daemon: DaemonServer): string {
         background: rgba(244, 241, 232, 0.055);
       }
       .agent-card strong { display: block; margin-bottom: 4px; }
-      .world-panel { min-height: 640px; position: relative; padding: 0; }
       .world-head { padding: 18px 18px 0; }
       .scene-wrap {
         position: relative;
@@ -317,20 +395,22 @@ function renderDashboard(daemon: DaemonServer): string {
           grid-template-rows: auto;
         }
         .nav-list { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-        .gateway-grid { grid-template-columns: 1fr; }
+        .gateway-grid,
+        .dashboard-content { grid-template-columns: 1fr; }
+        .section-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .world-panel { min-height: auto; }
       }
       @media (max-width: 680px) {
         .gateway-shell { width: min(100% - 20px, 1480px); margin: 10px auto; }
         .topbar { align-items: flex-start; flex-direction: column; }
         .nav-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .metric-grid, .scene-hud { grid-template-columns: 1fr; }
+        .metric-grid, .scene-hud, .section-cards { grid-template-columns: 1fr; }
         #world-scene { height: 420px; }
       }
     </style>
   </head>
   <body>
-    <main class="gateway-shell" data-testid="gateway-shell">
+    <main class="gateway-shell" data-testid="gateway-shell" data-template="shadcn-dashboard-01">
       <aside class="sidebar" data-testid="gateway-sidebar">
         <div class="brand-stack">
           <div class="brand-mark">V</div>
@@ -360,11 +440,112 @@ function renderDashboard(daemon: DaemonServer): string {
           </div>
           <div class="status-pill">Status: ${daemonStatus}</div>
         </header>
-        <div class="gateway-grid">
-        <section class="column">
-          <section class="panel" id="chat" data-testid="agent-command-panel">
+        <section class="dashboard-main">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">World Telemetry</p>
+              <h2>Operations Overview</h2>
+            </div>
+            <span>Local dashboard pattern: sidebar, cards, chart, table</span>
+          </div>
+          <section class="section-cards" data-testid="dashboard-section-cards">
+            <article class="section-card">
+              <span>Total Runs</span>
+              <strong>${status.runs}</strong>
+              <p>Recorded local agent runs in durable memory.</p>
+            </article>
+            <article class="section-card">
+              <span>Latest Score</span>
+              <strong>${escapedLatestRunHud}</strong>
+              <p>Last validation result from the local runtime.</p>
+            </article>
+            <article class="section-card">
+              <span>Confidence</span>
+              <strong>${status.confidenceBuckets}</strong>
+              <p>Prediction buckets available for Dream consolidation.</p>
+            </article>
+            <article class="section-card">
+              <span>State</span>
+              <strong>${escapedStateHud}</strong>
+              <p>${escapedStatePath}</p>
+            </article>
+          </section>
+          <div class="dashboard-content">
+            <section class="primary-stack">
+              <section class="panel world-panel featured" id="world">
+                <div class="world-head panel-header">
+                  <div>
+                    <p class="eyebrow">World View</p>
+                    <h2>3D Agent World</h2>
+                  </div>
+                  <span>4 agents online</span>
+                </div>
+                <div class="scene-wrap" data-testid="world-canvas-viewport">
+                  <canvas id="world-scene" width="960" height="520" aria-label="Vivarium world view"></canvas>
+                  <div class="scene-hud">
+                    <div class="hud-item"><span>Daemon</span><strong>${daemonStatus}</strong></div>
+                    <div class="hud-item"><span>Latest</span><strong>${escapedLatestRunHud}</strong></div>
+                    <div class="hud-item"><span>State</span><strong>${escapedStateHud}</strong></div>
+                  </div>
+                </div>
+              </section>
+              <section class="panel chart-panel" data-testid="run-signal-chart">
+                <div class="panel-header">
+                  <div>
+                    <p class="eyebrow">Pipeline</p>
+                    <h2>Run Signal</h2>
+                  </div>
+                  <span>${escapedLatestRunHud}</span>
+                </div>
+                <svg class="run-chart" viewBox="0 0 640 180" role="img" aria-label="Run signal chart">
+                  <line class="chart-grid" x1="24" y1="36" x2="616" y2="36"></line>
+                  <line class="chart-grid" x1="24" y1="90" x2="616" y2="90"></line>
+                  <line class="chart-grid" x1="24" y1="144" x2="616" y2="144"></line>
+                  <line class="chart-axis" x1="24" y1="154" x2="616" y2="154"></line>
+                  <path class="chart-area" d="M24 142 C112 126 136 116 184 110 C250 100 286 78 338 82 C412 88 434 48 492 52 C548 56 578 40 616 34 L616 154 L24 154 Z"></path>
+                  <path class="chart-line" d="M24 142 C112 126 136 116 184 110 C250 100 286 78 338 82 C412 88 434 48 492 52 C548 56 578 40 616 34"></path>
+                  <circle class="chart-dot" cx="24" cy="142" r="5"></circle>
+                  <circle class="chart-dot" cx="184" cy="110" r="5"></circle>
+                  <circle class="chart-dot" cx="338" cy="82" r="5"></circle>
+                  <circle class="chart-dot" cx="492" cy="52" r="5"></circle>
+                  <circle class="chart-dot" cx="616" cy="34" r="5"></circle>
+                </svg>
+              </section>
+              <section class="panel" data-testid="activity-table">
+                <div class="panel-header">
+                  <div>
+                    <p class="eyebrow">Pipeline</p>
+                    <h2>Recent Activity</h2>
+                  </div>
+                  <span>local runtime</span>
+                </div>
+                <div class="activity-table-wrap">
+                  <table class="activity-table">
+                    <thead>
+                      <tr>
+                        <th>Stage</th>
+                        <th>Pipeline</th>
+                        <th>Status</th>
+                        <th>Owner</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>Plan</td><td>Select local skills and traces</td><td><span class="status-badge">ready</span></td><td>Local Agent</td></tr>
+                      <tr><td>Predict</td><td>Score likely outcome and risk</td><td><span class="status-badge">ready</span></td><td>Local Agent</td></tr>
+                      <tr><td>Execute</td><td>Run deterministic provider action</td><td><span class="status-badge">ready</span></td><td>Tool Runtime</td></tr>
+                      <tr><td>Validate</td><td>Record score and confidence bucket</td><td><span class="status-badge">ready</span></td><td>Safety Sentinel</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </section>
+            <aside class="aside-stack">
+              <section class="panel" id="chat" data-testid="agent-command-panel">
             <div class="panel-header">
-              <h2>Agent Chat</h2>
+              <div>
+                <p class="eyebrow">Agent Chat</p>
+                <h2>Operator Console</h2>
+              </div>
               <a href="/status">/status</a>
             </div>
             <div id="chat-log" class="chat-log" aria-live="polite">
@@ -380,16 +561,16 @@ function renderDashboard(daemon: DaemonServer): string {
             <form id="gateway-chat-form">
               <label>
                 Goal
-                <textarea name="goal" autocomplete="off">build a simple agent end to end</textarea>
+                <textarea name="goal" aria-label="Goal" autocomplete="off">build a simple agent end to end</textarea>
               </label>
               <label>
                 Domain
-                <input name="domain" value="coding" autocomplete="off">
+                <input name="domain" aria-label="Domain" value="coding" autocomplete="off">
               </label>
               <button type="submit">Run agent</button>
             </form>
-          </section>
-          <section class="panel" id="memory">
+              </section>
+              <section class="panel" id="memory">
             <div class="panel-header">
               <h2>World Telemetry</h2>
               <span>${status.confidenceBuckets} buckets</span>
@@ -405,27 +586,8 @@ function renderDashboard(daemon: DaemonServer): string {
               <code>POST /run</code>
               <code>POST /dream</code>
             </div>
-          </section>
-        </section>
-        <section class="panel world-panel" id="world">
-          <div class="world-head panel-header">
-            <div>
-              <p class="eyebrow">World View</p>
-              <h2>3D Agent World</h2>
-            </div>
-            <span>4 agents online</span>
-          </div>
-          <div class="scene-wrap" data-testid="world-canvas-viewport">
-            <canvas id="world-scene" width="960" height="520" aria-label="Vivarium world view"></canvas>
-            <div class="scene-hud">
-              <div class="hud-item"><span>Daemon</span><strong>${daemonStatus}</strong></div>
-              <div class="hud-item"><span>Latest</span><strong>${escapedLatestRunHud}</strong></div>
-              <div class="hud-item"><span>State</span><strong>${escapedStateHud}</strong></div>
-            </div>
-          </div>
-        </section>
-        <section class="column">
-          <section class="panel" id="agents">
+              </section>
+              <section class="panel" id="agents">
             <div class="panel-header">
               <div>
                 <p class="eyebrow">Agent Roster</p>
@@ -439,8 +601,8 @@ function renderDashboard(daemon: DaemonServer): string {
               <article class="agent-card" data-agent-name="World Scout"><strong>World Scout</strong><span>Tracks subscribed worlds, skills, and traces.</span></article>
               <article class="agent-card" data-agent-name="Safety Sentinel"><strong>Safety Sentinel</strong><span>Keeps external tools behind policy checks.</span></article>
             </div>
-          </section>
-          <section class="panel">
+              </section>
+              <section class="panel">
             <div class="panel-header">
               <h2>Latest Run</h2>
               <span>${daemonStatus}</span>
@@ -449,9 +611,10 @@ function renderDashboard(daemon: DaemonServer): string {
               <span>Run summary</span>
               <strong>${escapedLatestRun}</strong>
             </div>
-          </section>
+              </section>
+            </aside>
+          </div>
         </section>
-        </div>
       </section>
     </main>
     <script>
@@ -494,7 +657,7 @@ function renderDashboard(daemon: DaemonServer): string {
             return;
           }
           pending.textContent = [
-            "Status: " + (body.success ? "success" : "failed"),
+            body.success ? "Run recorded" : "Run failed",
             "Run ID: " + body.runId,
             "Validation: " + (body.validation?.score ?? "recorded"),
           ].join("\\n");
