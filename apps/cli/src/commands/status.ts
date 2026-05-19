@@ -183,7 +183,7 @@ export function renderStatusCommandResult(result: StatusSummary): string {
     "",
     "Next commands:",
     commandLine(localCommand, localState.ready ? "Run the local agent." : "Create the local agent."),
-    commandLine("vivarium dashboard", "Open the local gateway URL."),
+    commandLine("vivarium dashboard --open", "Open the local gateway URL."),
     commandLine("vivarium daemon smoke", "Verify the local daemon."),
     commandLine(
       liveCommand,

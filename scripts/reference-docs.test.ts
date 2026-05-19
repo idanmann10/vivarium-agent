@@ -1426,10 +1426,10 @@ describe("reference docs", () => {
     expect(body).not.toContain('vivarium local run --goal \\"build a simple agent end to end\\"');
     expect(body).toContain("run-demo-000");
     expect(body).toContain(
-      'vivarium dashboard\\n  vivarium daemon smoke\\n  vivarium local run --goal \\"try another small coding task\\"\\n  vivarium status --state-path <demo-state.db> --live-env-path <demo-live-readiness.local.env>',
+      'vivarium dashboard --open\\n  vivarium daemon smoke\\n  vivarium local run --goal \\"try another small coding task\\"\\n  vivarium status --state-path <demo-state.db> --live-env-path <demo-live-readiness.local.env>',
     );
     expect(body).toContain(
-      "vivarium dashboard          Open the local gateway URL.\\n  vivarium daemon smoke       Verify the local daemon.",
+      "vivarium dashboard --open   Open the local gateway URL.\\n  vivarium daemon smoke       Verify the local daemon.",
     );
     expect(body).not.toContain("vivarium model               Inspect provider profile readiness.");
     expect(body).not.toContain(

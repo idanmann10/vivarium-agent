@@ -74,7 +74,7 @@ describe("statusCommand", () => {
       expect(output).toContain("vivarium local");
       expect(output).toContain("Create the local agent.");
       expect(output).not.toContain("vivarium run --goal <goal>");
-      expect(output).toContain("vivarium dashboard");
+      expect(output).toContain("vivarium dashboard --open");
       expect(output).toContain("vivarium daemon smoke");
       expect(output).not.toContain("vivarium launch handoff");
       expect(output).not.toContain("vivarium model");
@@ -178,7 +178,7 @@ describe("statusCommand", () => {
     expect(output).toContain(`[staged] Live setup file: ${liveEnvPath}`);
     expect(output).not.toContain(`[ready] Live setup file: ${liveEnvPath}`);
     expect(output).toContain("vivarium local run");
-    expect(output).toContain("vivarium dashboard");
+    expect(output).toContain("vivarium dashboard --open");
     expect(output).toContain("vivarium daemon smoke");
     expect(output).toContain("vivarium connect");
     expect(output).not.toContain("vivarium model");

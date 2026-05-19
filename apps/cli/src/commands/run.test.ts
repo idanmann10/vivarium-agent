@@ -77,7 +77,7 @@ describe("runCommand", () => {
     expect(output).toContain(`Recorded: vivarium status --state-path ${statePath} will show Run ID`);
     expect(output).toContain("vivarium local run --goal");
     expect(output).toContain(`vivarium status --state-path ${statePath}`);
-    expect(output).toContain("vivarium dashboard");
+    expect(output).toContain("vivarium dashboard --open");
     expect(output).toContain("vivarium daemon smoke");
     expect(output).not.toContain("vivarium launch handoff");
     expect(output).not.toContain("vivarium model");
