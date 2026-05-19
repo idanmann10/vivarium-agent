@@ -151,7 +151,7 @@ export function localRunHelpCommand(): LocalRunHelpCommandResult {
       'vivarium local run --goal "summarize this repo" --state-path ./vivarium-state.db --live-env-path ./live-readiness.local.env',
       'vivarium local run --goal "try a live model" --env-file ~/.vivarium/live/live-readiness.local.env --provider-profile openrouter',
     ],
-    nextCommands: ["vivarium dashboard", "vivarium daemon smoke", "vivarium status"],
+    nextCommands: ["vivarium dashboard --open", "vivarium daemon smoke", "vivarium status"],
   };
 }
 
@@ -192,7 +192,7 @@ export function localSetupHelpCommand(): LocalSetupHelpCommandResult {
     ],
     nextCommands: [
       "vivarium local run",
-      "vivarium dashboard",
+      "vivarium dashboard --open",
       "vivarium daemon smoke",
       "vivarium status",
     ],
@@ -238,7 +238,7 @@ export function setupHelpCommand(): SetupHelpCommandResult {
     ],
     nextCommands: [
       "vivarium local run",
-      "vivarium dashboard",
+      "vivarium dashboard --open",
       "vivarium daemon smoke",
       "vivarium status",
     ],
@@ -512,7 +512,7 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
   const firstRunCommands = [
     "vivarium --setup",
     "vivarium local run",
-    "vivarium dashboard",
+    "vivarium dashboard --open",
     "vivarium daemon smoke",
     "vivarium status",
     "vivarium help",

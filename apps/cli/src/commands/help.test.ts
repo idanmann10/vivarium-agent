@@ -118,7 +118,7 @@ describe("helpCommand", () => {
     expect(firstRunBlock).toContain("[3] Open the dashboard");
     expect(firstRunBlock).toContain("[4] Verify the Mac daemon");
     expect(firstRunBlock).toContain("[5] Keep moving");
-    expect(firstRunBlock).toContain("vivarium dashboard");
+    expect(firstRunBlock).toContain("vivarium dashboard --open");
     expect(firstRunBlock).toContain("vivarium daemon smoke");
     expect(firstRunBlock).not.toContain("Review launch handoff");
     expect(firstRunBlock).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
@@ -186,7 +186,7 @@ describe("helpCommand", () => {
     expect(output).not.toContain("--live-env-path ~/.vivarium/live/live-readiness.local.env");
     expect(output).not.toContain("build a tiny local agent");
     expect(output).toContain("vivarium status");
-    expect(output).toContain("vivarium dashboard");
+    expect(output).toContain("vivarium dashboard --open");
     expect(output).toContain("vivarium daemon smoke");
     expect(output).not.toContain("vivarium launch handoff");
     expect(output).not.toContain("vivarium model");
@@ -210,7 +210,7 @@ describe("helpCommand", () => {
     expect(output).not.toContain("--world-root ~/.vivarium/the-world");
     expect(output).not.toContain("--live-env-path ~/.vivarium/live/live-readiness.local.env");
     expect(output).toContain("\n  vivarium local run\n");
-    expect(nextBlock).toContain("vivarium dashboard");
+    expect(nextBlock).toContain("vivarium dashboard --open");
     expect(nextBlock).toContain("vivarium daemon smoke");
     expect(nextBlock).toContain("vivarium status");
     expect(nextBlock).not.toContain("vivarium launch handoff");
@@ -234,7 +234,7 @@ describe("helpCommand", () => {
     expect(output).toContain("vivarium setup live");
     expect(output).not.toContain("vivarium connect");
     expect(nextBlock).toContain("vivarium local run");
-    expect(nextBlock).toContain("vivarium dashboard");
+    expect(nextBlock).toContain("vivarium dashboard --open");
     expect(nextBlock).toContain("vivarium daemon smoke");
     expect(nextBlock).toContain("vivarium status");
     expect(nextBlock).not.toContain("vivarium setup live");

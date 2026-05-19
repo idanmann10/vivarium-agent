@@ -1609,7 +1609,7 @@ describe("dispatchCliCommand", () => {
       dashboardUrl: "http://127.0.0.1:8787",
       nextCommands: expect.arrayContaining([
         expect.stringContaining("local run"),
-        "vivarium dashboard",
+        "vivarium dashboard --open",
         "vivarium daemon smoke",
         "vivarium status",
       ]),
@@ -1618,7 +1618,7 @@ describe("dispatchCliCommand", () => {
     expect(setup.output).toContain("Local setup is ready now.");
     expect(setup.output).toContain("Dashboard: http://127.0.0.1:8787");
     expect(setup.output).toContain("vivarium local run");
-    expect(setup.output).toContain("vivarium dashboard");
+    expect(setup.output).toContain("vivarium dashboard --open");
     expect(setup.output).toContain("vivarium daemon smoke");
     expect(setup.output).not.toContain("vivarium setup live");
     expect(setup.output).not.toContain("provider keys");
@@ -1645,13 +1645,13 @@ describe("dispatchCliCommand", () => {
       dashboardUrl: "http://127.0.0.1:8787",
       nextCommands: expect.arrayContaining([
         "vivarium local run",
-        "vivarium dashboard",
+        "vivarium dashboard --open",
         "vivarium daemon smoke",
         "vivarium status",
       ]),
     });
     expect(nextBlock).toContain("\n      vivarium local run\n");
-    expect(nextBlock).toContain("vivarium dashboard");
+    expect(nextBlock).toContain("vivarium dashboard --open");
     expect(nextBlock).toContain("vivarium daemon smoke");
     expect(nextBlock).not.toContain("--domain");
     expect(nextBlock).not.toContain("--state-path");

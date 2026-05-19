@@ -638,7 +638,7 @@ describe("reference docs", () => {
       for (const command of [
         "vivarium --setup",
         "vivarium local run",
-        "vivarium dashboard",
+        "vivarium dashboard --open",
         "vivarium daemon smoke",
         "vivarium status",
         "vivarium tools",
@@ -681,7 +681,7 @@ describe("reference docs", () => {
         "vivarium help",
         "vivarium --setup",
         'vivarium local run --goal "build a simple agent end to end"',
-        "vivarium dashboard",
+        "vivarium dashboard --open",
         "vivarium status",
         "vivarium daemon smoke",
       ]) {

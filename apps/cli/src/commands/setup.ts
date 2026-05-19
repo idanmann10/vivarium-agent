@@ -90,7 +90,7 @@ function setupNextCommands(
   if (options.dashboardUrl !== undefined) {
     return [
       runCommand,
-      "vivarium dashboard",
+      "vivarium dashboard --open",
       "vivarium daemon smoke",
       "vivarium status",
       "vivarium tools",

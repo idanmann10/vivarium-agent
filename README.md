@@ -63,7 +63,7 @@ vivarium --setup
 vivarium local run
 
 # [3] Open the dashboard
-vivarium dashboard
+vivarium dashboard --open
 vivarium daemon smoke
 
 # [4] Keep moving
@@ -126,7 +126,7 @@ vivarium update
 vivarium help
 vivarium --setup
 vivarium local run --goal "build a simple agent end to end"
-vivarium dashboard
+vivarium dashboard --open
 vivarium status
 vivarium daemon smoke
 ```
