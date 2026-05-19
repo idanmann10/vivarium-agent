@@ -225,6 +225,25 @@ describe("dispatchCliCommand", () => {
     expect(result.command).toBe("dashboard");
     expect(result.output).toContain("Dashboard: http://127.0.0.1:9898");
     expect(result.output).toContain("Status JSON: http://127.0.0.1:9898/status");
+    expect(result.output).toContain("vivarium dashboard --open --url http://127.0.0.1:9898");
+    expect(result.output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:9898/status");
+    expect(result.output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
+  });
+
+  test("routes dashboard open with custom URL through an injectable browser opener", async () => {
+    const opened: string[] = [];
+    const result = await dispatchCliCommand(["dashboard", "--open", "--url", "http://127.0.0.1:9898"], {
+      dashboardOpenRunner: (url) => {
+        opened.push(url);
+        return { exitCode: 0, stderr: "" };
+      },
+    });
+
+    expect(opened).toEqual(["http://127.0.0.1:9898"]);
+    expect(result.command).toBe("dashboard");
+    expect(result.output).toContain("Opened: http://127.0.0.1:9898");
+    expect(result.output).toContain("vivarium dashboard --open --url http://127.0.0.1:9898");
+    expect(result.output).toContain("vivarium daemon smoke --status-url http://127.0.0.1:9898/status");
   });
 
   test("routes live setup help to focused operator guides", async () => {

@@ -297,6 +297,13 @@ function renderDashboardCommandResult(
   open?: { readonly ok: boolean; readonly error?: string },
 ): string {
   const url = normalizedDashboardUrl(dashboardUrl);
+  const isDefaultDashboard = url === defaultDashboardUrl;
+  const dashboardCommand = isDefaultDashboard
+    ? "vivarium dashboard --open"
+    : `vivarium dashboard --open --url ${shellQuote(url)}`;
+  const daemonSmokeCommand = isDefaultDashboard
+    ? "vivarium daemon smoke"
+    : `vivarium daemon smoke --status-url ${shellQuote(`${url}/status`)}`;
   return [
     "Vivarium Gateway",
     "----------------",
@@ -308,8 +315,8 @@ function renderDashboardCommandResult(
       : [open.ok ? `Opened: ${url}` : `Open: blocked`, ...(open.error === undefined ? [] : [`Error: ${open.error}`])]),
     "",
     "Next commands:",
-    "  vivarium dashboard --open",
-    "  vivarium daemon smoke",
+    `  ${dashboardCommand}`,
+    `  ${daemonSmokeCommand}`,
     "",
   ].join("\n");
 }
