@@ -105,12 +105,15 @@ without mutating local state.
 `vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon gateway backed
 by `/status`. Install with `--daemon launchd` when you want that dashboard
 served automatically on macOS.
-The daemon root is a `Vivarium Gateway` with agent chat, agent roster, world
-telemetry, and a canvas world view.
+The daemon root is a TailAdmin-inspired `Vivarium Gateway` with agent chat, a
+command bar, run controls, agent loadout, mission board, world telemetry, and a
+canvas world view.
 Use `vivarium dashboard --open` to open that URL in your browser.
 The localhost dashboard includes a `Run agent` form with the default
 `build a simple agent end to end` goal. Clicking `Run agent` records the local
 run through `/run` and shows the run ID inline.
+Clicking `Run Dream` posts to `/dream` and appends the Dream consolidation
+summary in chat.
 The dashboard also shows the latest local run summary after the daemon records
 a run.
 `vivarium daemon smoke` also prints the latest local run when the daemon reports

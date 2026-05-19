@@ -694,7 +694,7 @@ describe("reference docs", () => {
         "`vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon gateway backed by `/status`",
       );
       expect(normalizedBody).toContain(
-        "The daemon root is a `Vivarium Gateway` with agent chat, agent roster, world telemetry, and a canvas world view",
+        "The daemon root is a TailAdmin-inspired `Vivarium Gateway` with agent chat, a command bar, run controls, agent loadout, mission board, world telemetry, and a canvas world view",
       );
       expect(normalizedBody).toContain(
         "Use `vivarium dashboard --open` to open that URL in your browser",
@@ -704,6 +704,9 @@ describe("reference docs", () => {
       );
       expect(normalizedBody).toContain(
         "Clicking `Run agent` records the local run through `/run` and shows the run ID inline",
+      );
+      expect(normalizedBody).toContain(
+        "Clicking `Run Dream` posts to `/dream` and appends the Dream consolidation summary in chat",
       );
       expect(normalizedBody).toContain(
         "The dashboard also shows the latest local run summary after the daemon records a run",
@@ -1487,7 +1490,7 @@ describe("reference docs", () => {
     const body = existsSync(path) ? readFileSync(path, "utf8") : "";
     for (const term of [
       "curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh",
-      "VIVARIUM_DAEMON=launchd",
+      "bash -s -- --daemon launchd",
       "installed checkout",
       "branch `codex/local-agent-production-ready`",
       "clean status",
@@ -1516,9 +1519,13 @@ describe("reference docs", () => {
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
       "Memory: /Users/idanmann/.vivarium/state.db",
-      "`583 pass, 0 fail, 4786 expect calls`",
-      "build a simple agent end to end on my Mac",
-      "run-1779025625380-620",
+      "`604 pass, 0 fail, 5195 expect calls`",
+      "build a simple agent end to end",
+      "run-1779222075393-908",
+      "Gateway dashboard supports the local agent loop",
+      "TailAdmin-inspired `Vivarium Gateway`",
+      "Run Dream",
+      "Dream consolidated 23 local skills across coding.",
       "fresh temp install builds a simple agent end to end",
       "run-1779026348114-323",
       "Provider-profile runs use the live setup file",
@@ -1528,9 +1535,6 @@ describe("reference docs", () => {
       "Connect signup skips ready proof init",
       "Connect smoke blocked handoff points back to setup files",
       "Proof blocked handoff points back to setup files",
-      "connect-smoke setup-live guidance",
-      "connect-signup ready-proof-init cleanup",
-      "blocked-proof setup-live guidance",
       "paste values only into files still listed here",
       "bun run dependency:audit",
       "No vulnerabilities found",
@@ -1559,7 +1563,7 @@ describe("reference docs", () => {
       "current commit-pinned installer URL",
       "short default `vivarium daemon smoke` command",
       "custom daemon endpoints",
-      "branch protection remained intact",
+      "current collaborator list only returns `idanmann10`",
       "Operator Handoff",
       "Until PR #26 lands, use the branch-pinned pre-main handoff.",
       "After PR #26 lands, use the stable main installer.",

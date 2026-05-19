@@ -11,7 +11,7 @@ honest production-readiness boundary.
 Use the stable public `main` installer after PR #26 lands:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | VIVARIUM_DAEMON=launchd bash
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash -s -- --daemon launchd
 ```
 
 For the current pre-main review branch, generate the branch-pinned handoff from
@@ -26,9 +26,7 @@ current checkout commit instead of a stale value copied from this audit:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/<current-commit>/scripts/install.sh | \
-  VIVARIUM_AGENT_REF=codex/local-agent-production-ready \
-  VIVARIUM_DAEMON=launchd \
-  bash
+  bash -s -- --ref codex/local-agent-production-ready --daemon launchd
 ```
 
 The command installs the agent checkout at `~/.vivarium/vivarium-agent`, the
@@ -51,11 +49,12 @@ canonical world checkout at `~/.vivarium/the-world`, the CLI command at
 | Existing installs keep updating from GitHub | `scripts/install.test.ts` covers existing checkout remote normalization; the real installed checkout has `origin` set to `https://github.com/idanmann10/vivarium-agent.git`, and a fresh `vivarium update` completed `git pull --ff-only` plus `/Users/idanmann/.bun/bin/bun install --frozen-lockfile` | Complete |
 | Installed CLI wrapper uses the resolved Bun path | The branch-pinned installer was rerun on this Mac, and `/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun apps/cli/src/main.ts "$@"` instead of relying on `bun` being on `PATH` | Complete |
 | Real Mac installed checkout tracks the reviewed branch | Installed checkout `~/.vivarium/vivarium-agent` is on branch `codex/local-agent-production-ready` with a clean status after the branch-pinned installer refresh; `vivarium launch handoff` prints the exact current commit-pinned installer URL for the checkout being validated and uses the short default `vivarium daemon smoke` command while keeping explicit `--status-url` output for custom daemon endpoints | Complete |
-| Exact copy-paste install command works | The stable `curl -fsSL .../main/scripts/install.sh \| VIVARIUM_DAEMON=launchd bash` command remains the public handoff; branch-pinned installs are covered for pre-main validation while PR #26 is under review. A fresh temp-home run of the current commit-pinned GitHub installer cloned the agent/world repos, ran `bun install --frozen-lockfile`, initialized local state and the private live-readiness file, then the isolated installed CLI ran `fresh temp install builds a simple agent end to end` successfully as `run-1779026348114-323`; its isolated `vivarium status` reported that run from the temp state DB with success and score `0.8` | Complete |
+| Exact copy-paste install command works | The stable `curl -fsSL .../main/scripts/install.sh \| bash -s -- --daemon launchd` command remains the public handoff; branch-pinned installs are covered for pre-main validation while PR #26 is under review. A fresh temp-home run of the current commit-pinned GitHub installer cloned the agent/world repos, ran `bun install --frozen-lockfile`, initialized local state and the private live-readiness file, then the isolated installed CLI ran `fresh temp install builds a simple agent end to end` successfully as `run-1779026348114-323`; its isolated `vivarium status` reported that run from the temp state DB with success and score `0.8` | Complete |
 | CLI walkthrough explains the Mac daemon step | Installed `vivarium help` keeps the first-run path focused on `vivarium local` and `vivarium local run`, while exposing the short `vivarium daemon smoke` command for LaunchAgent verification; default Compose daemon docs now use the same short smoke command and reserve explicit `--status-url` examples for non-default endpoints | Complete |
 | LaunchAgent uses the resolved Bun path | `/Users/idanmann/Library/LaunchAgents/com.vivarium.agent.daemon.plist` runs `/Users/idanmann/.bun/bin/bun apps/daemon/src/main.ts` with `VIVARIUM_WORLD_ROOT=/Users/idanmann/.vivarium/the-world` | Complete |
 | Daemon is running with durable local memory | `vivarium daemon smoke` returned `Status: ok` and `Memory: /Users/idanmann/.vivarium/state.db`, proving the LaunchAgent daemon is backed by the same persistent SQLite state path as the installed CLI | Complete |
-| Local loop runs after install | Installed `/Users/idanmann/.local/bin/vivarium local run` is the current shorthand for the validated local run path and now defaults to the `build a simple agent end to end` goal with the `local-agent` identity; earlier installed smoke `run-1779019115256-512` recorded local-provider success, validation score `0.8`, 4 consulted skills, 2 consulted traces, and a matching `vivarium status` receipt. A later default-state end-to-end Mac smoke for `build a simple agent end to end on my Mac` succeeded as `run-1779025625380-620`; default `vivarium status` reported that run from `/Users/idanmann/.vivarium/state.db` with success and score `0.8` | Complete |
+| Local loop runs after install | Installed `/Users/idanmann/.local/bin/vivarium --setup` initialized `/Users/idanmann/.vivarium/state.db`, reported 21 starter skills and 4 starter traces, and printed `Dashboard: http://127.0.0.1:8787`; installed `/Users/idanmann/.local/bin/vivarium local run` then recorded `run-1779222075393-908` for `build a simple agent end to end` with local-provider success, validation score `0.8`, 6 consulted skills, 1 consulted trace, and a matching daemon smoke receipt from the durable default state | Complete |
+| Gateway dashboard supports the local agent loop | Installed daemon root `http://127.0.0.1:8787/` renders the TailAdmin-inspired `Vivarium Gateway` with `Command Bar`, `Run Control`, `Agent Workspace`, `Agent Loadout`, `Mission Board`, `Run Dream`, and `3D Agent World`; browser verification showed the world canvas rendering and clicking `Run Dream` appended `Dream consolidated 23 local skills across coding.` through `POST /dream` | Complete |
 | Provider-profile runs use the live setup file | Installed `vivarium local run --env-file <temp>/live-readiness.local.env --provider-profile openrouter` loaded `VIVARIUM_PROVIDER_PROFILES_PATH` from the private setup file, selected `openai-compat (openrouter/test-model)`, and blocked only because the provider credentials were not connected; the output did not ask for `--provider-profiles-path` or print the raw provider key environment variable | Complete |
 | Anthropic setup details match live setup | Installed `vivarium connect --details` and `vivarium doctor --live --details` both print the Anthropic configure command with `--capability chat --capability tools`, matching the provider profile shape that `vivarium connect setup --confirm-write` writes and `doctor --live` accepts; OpenRouter and private OpenAI-compatible setup details still use `--capability json_mode` | Complete |
 | Setup live skips already-configured local source files | Installed `vivarium setup live` on the reviewed branch reused `/Users/idanmann/.vivarium/live/live-readiness.local.env` and no longer listed names/world values as missing local source files when those values were already set in the setup file; it still listed provider account and internal credential files as waiting for real operator values | Complete |
@@ -66,8 +65,8 @@ canonical world checkout at `~/.vivarium/the-world`, the CLI command at
 | Status next commands preserve explicit paths | Installed custom-path smoke on `run-1779009935614-653` showed status next commands preserve explicit `--state-path` and `--live-env-path` values: `vivarium status --state-path <temp>/state.db --live-env-path <temp>/live-readiness.local.env` kept those values in its next `vivarium local run` command, and used `vivarium connect --env-file <temp>/live-readiness.local.env` for the matching live handoff | Complete |
 | focused help smokes match the Mac path | Installed `vivarium local run --help`, `vivarium local --help`, and `vivarium status --help` render focused run/setup/status usage, path flags, provider-profile/status/proof follow-ups, and no longer fall back to the global command table; the default simple-agent help and handoff surfaces now lead with `vivarium local run` because the goal defaults to `build a simple agent end to end` | Complete |
 | Branch-pinned review unblock stays safe | Branch-pinned `vivarium launch handoff` says `Invite one eligible non-author reviewer when GitHub reports REVIEW_REQUIRED.`, prints `gh pr view 26 --repo idanmann10/vivarium-agent --json reviewDecision,mergeStateStatus,reviewRequests` and `gh api repos/idanmann10/vivarium-agent/collaborators --jq '.[].login'` diagnostics, prints `gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/REVIEWER_GITHUB_USERNAME -f permission=push`, resolves the current branch PR through GitHub CLI when available so the reviewed branch now prints `gh pr edit 26 --repo idanmann10/vivarium-agent --add-reviewer REVIEWER_GITHUB_USERNAME`, falls back to `gh pr edit PR_NUMBER --repo idanmann10/vivarium-agent --add-reviewer REVIEWER_GITHUB_USERNAME` when no PR number is available, supports `vivarium launch handoff --pr-number 26 --reviewer REVIEWER_GITHUB_USERNAME` for exact reviewer commands, says the reviewer must accept the invite before the review request can satisfy branch protection when the collaborator list only shows the PR author, and warns not to lower branch protection or self-approve just to merge | Complete |
-| Local code gates pass | `bun run lint`, `bun run typecheck`, `bun run build`, `bun run knip`, `bun run public-release:scan`, `bun run format:check`, `bun run dependency:audit`, `git diff --check`, and `bun test` passed; the dependency audit reported `No vulnerabilities found`, and the full test suite reported `583 pass, 0 fail, 4786 expect calls` after the daemon host/port, branch-pinned dry-run, pre-main operator handoff cleanup, live env-file run cleanup, setup-live source-file cleanup, current-PR reviewer command cleanup, connect-signup source-file cleanup, connect-signup ready-proof-init cleanup, connect-smoke internal credential value cleanup, connect-smoke setup-live guidance, stored-credential plaintext cleanup, blocked-proof details handoff cleanup, blocked-proof setup-live guidance, executor-style terminal policy hardening, Anthropic setup detail cleanup, end-to-end Mac smoke audit cleanup, fresh temp-home install smoke audit cleanup, first-run simple-agent goal wording alignment, durable daemon state persistence, short installed daemon smoke guidance, short default launch-handoff daemon smoke guidance, short default Compose daemon smoke guidance, short default first-run local agent guidance, short local E2E demo run guidance, short installer run command guidance, and required-review diagnostics guidance | Complete |
-| PR checks pass | PR #26 has successful `verify`, `changeset`, `Analyze JavaScript and TypeScript`, and CodeQL checks at the validated PR head from this audit; auto-merge is enabled and still blocked only by required review | Complete |
+| Local code gates pass | `bun run lint`, `bun run typecheck`, `bun run build`, `bun run knip`, `bun run public-release:scan`, `bun run format:check`, `bun run dependency:audit`, `git diff --check`, and `bun test --timeout=120000` pass on the current validated branch. The dependency audit reports `No vulnerabilities found` after updating `turbo` to `2.9.14`, and the current full test suite reports `604 pass, 0 fail, 5195 expect calls` | Complete |
+| PR checks pass | PR #26 has successful `verify`, `changeset`, `Analyze JavaScript and TypeScript`, and CodeQL checks at head `e5349e47941850c134588eb3a44f9a65bc4bece9`; auto-merge is blocked only by required review | Complete |
 | Launch security posture is verified | `bun run launch:security-audit` returned `ok:true` for public agent/world repos, enabled branch protection, enabled secret scanning and push protection, and zero open Dependabot, secret scanning, or code scanning alerts | Complete |
 
 ## Remaining Blockers
@@ -92,9 +91,12 @@ The remaining blockers require:
 - Real v1 evidence for public contribution, published artifacts, curation stats,
   and the required two-week improvement evidence.
 
-The public agent repository and public world repository are public, PR #26 has
-auto-merge enabled but still needs the required review, and branch protection remained intact.
-The safe unblock is to invite one eligible non-author reviewer and request review:
+The public agent repository and public world repository are public, PR #26 is
+not a draft and all required checks pass, but branch protection still requires
+one approval. The current collaborator list only returns `idanmann10`, the PR
+author, so the review gate is not actionable from this checkout without first
+inviting an eligible non-author reviewer. The safe unblock is to invite one
+eligible reviewer and request review:
 
 ```bash
 vivarium launch handoff --pr-number 26 --reviewer REVIEWER_GITHUB_USERNAME
@@ -122,21 +124,20 @@ Then copy the printed branch-pinned install command. It is shaped like:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/<current-commit>/scripts/install.sh | \
-  VIVARIUM_AGENT_REF=codex/local-agent-production-ready \
-  VIVARIUM_DAEMON=launchd \
-  bash
+  bash -s -- --ref codex/local-agent-production-ready --daemon launchd
 ```
 
 After PR #26 lands, use the stable main installer.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | VIVARIUM_DAEMON=launchd bash
+curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash -s -- --daemon launchd
 ```
 
 Then run:
 
 ```bash
 vivarium local run
+vivarium dashboard --open
 vivarium daemon smoke
 vivarium connect
 vivarium doctor --live
