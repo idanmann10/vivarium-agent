@@ -87,21 +87,67 @@ function renderDashboard(daemon: DaemonServer): string {
       button, input, textarea { font: inherit; letter-spacing: 0; }
       a { color: #9adf9d; font-weight: 750; }
       .gateway-shell {
-        width: min(1480px, calc(100vw - 32px));
+        width: min(1540px, calc(100vw - 32px));
         min-height: calc(100vh - 32px);
         margin: 16px auto;
         display: grid;
-        grid-template-rows: auto 1fr;
+        grid-template-columns: 224px minmax(0, 1fr);
         gap: 16px;
       }
-      .topbar, .panel {
+      .workspace { display: grid; grid-template-rows: auto 1fr; gap: 16px; min-width: 0; }
+      .topbar, .panel, .sidebar {
         border: 1px solid rgba(224, 213, 184, 0.18);
         background: rgba(17, 24, 18, 0.84);
         box-shadow: 0 20px 80px rgba(0, 0, 0, 0.28);
         backdrop-filter: blur(18px);
       }
+      .sidebar {
+        position: sticky;
+        top: 16px;
+        align-self: start;
+        min-height: calc(100vh - 32px);
+        border-radius: 8px;
+        padding: 18px;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 18px;
+      }
+      .brand-mark {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #8ede92, #d9bd78);
+        color: #112016;
+        font-weight: 950;
+      }
+      .brand-stack { display: grid; gap: 10px; }
+      .brand-stack strong { color: #fff8df; font-size: 18px; }
+      .nav-list { display: grid; gap: 8px; align-content: start; }
+      .nav-item {
+        border: 1px solid rgba(224, 213, 184, 0.12);
+        border-radius: 8px;
+        padding: 10px 12px;
+        background: rgba(244, 241, 232, 0.045);
+        color: #ded5bd;
+        font-size: 13px;
+        font-weight: 850;
+      }
+      .nav-item.active {
+        border-color: rgba(142, 222, 146, 0.36);
+        background: rgba(79, 143, 91, 0.18);
+        color: #c7f6c9;
+      }
+      .sidebar-foot {
+        border-top: 1px solid rgba(224, 213, 184, 0.12);
+        padding-top: 14px;
+        color: #b8b39f;
+        font-size: 12px;
+        line-height: 1.45;
+      }
       .topbar {
-        min-height: 86px;
+        min-height: 88px;
         border-radius: 8px;
         padding: 18px 20px;
         display: flex;
@@ -117,7 +163,7 @@ function renderDashboard(daemon: DaemonServer): string {
         text-transform: uppercase;
       }
       h1, h2, h3, p { margin-top: 0; }
-      h1 { margin-bottom: 0; font-size: clamp(28px, 4vw, 54px); line-height: 0.95; letter-spacing: 0; }
+      h1 { margin-bottom: 0; font-size: clamp(30px, 3.6vw, 48px); line-height: 0.98; letter-spacing: 0; }
       h2 { margin-bottom: 12px; font-size: 16px; letter-spacing: 0; }
       h3 { margin-bottom: 6px; font-size: 14px; letter-spacing: 0; }
       .status-pill {
@@ -132,7 +178,7 @@ function renderDashboard(daemon: DaemonServer): string {
       }
       .gateway-grid {
         display: grid;
-        grid-template-columns: minmax(340px, 0.95fr) minmax(460px, 1.35fr) minmax(320px, 0.85fr);
+        grid-template-columns: minmax(280px, 0.95fr) minmax(390px, 1.45fr) minmax(240px, 0.82fr);
         gap: 16px;
         align-items: stretch;
       }
@@ -161,6 +207,7 @@ function renderDashboard(daemon: DaemonServer): string {
         overflow: auto;
         display: grid;
         gap: 10px;
+        align-content: start;
         padding-right: 4px;
       }
       .message {
@@ -170,7 +217,7 @@ function renderDashboard(daemon: DaemonServer): string {
         background: rgba(244, 241, 232, 0.055);
       }
       .message.agent { border-color: rgba(126, 220, 147, 0.24); background: rgba(57, 118, 73, 0.13); }
-      .message p { margin: 4px 0 0; overflow-wrap: anywhere; }
+      .message p { margin: 4px 0 0; line-height: 1.35; overflow-wrap: anywhere; }
       form { display: grid; gap: 10px; margin-top: 14px; }
       label { display: grid; gap: 6px; color: #c9c0a5; font-weight: 800; }
       textarea, input {
@@ -203,7 +250,21 @@ function renderDashboard(daemon: DaemonServer): string {
       .agent-card strong { display: block; margin-bottom: 4px; }
       .world-panel { min-height: 640px; position: relative; padding: 0; }
       .world-head { padding: 18px 18px 0; }
-      .scene-wrap { position: relative; min-height: 520px; }
+      .scene-wrap {
+        position: relative;
+        min-height: 520px;
+        border-top: 1px solid rgba(224, 213, 184, 0.1);
+        background: #07100d;
+      }
+      .scene-wrap::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(circle at 50% 38%, rgba(142, 222, 146, 0.16), transparent 34%),
+          linear-gradient(180deg, rgba(255, 248, 223, 0.04), transparent 38%);
+      }
       #world-scene { width: 100%; height: 520px; display: block; }
       .scene-hud {
         position: absolute;
@@ -229,12 +290,20 @@ function renderDashboard(daemon: DaemonServer): string {
         font-size: 12px;
       }
       @media (max-width: 1120px) {
+        .gateway-shell { grid-template-columns: 1fr; }
+        .sidebar {
+          position: static;
+          min-height: auto;
+          grid-template-rows: auto;
+        }
+        .nav-list { grid-template-columns: repeat(5, minmax(0, 1fr)); }
         .gateway-grid { grid-template-columns: 1fr; }
         .world-panel { min-height: auto; }
       }
       @media (max-width: 680px) {
         .gateway-shell { width: min(100% - 20px, 1480px); margin: 10px auto; }
         .topbar { align-items: flex-start; flex-direction: column; }
+        .nav-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .metric-grid, .scene-hud { grid-template-columns: 1fr; }
         #world-scene { height: 420px; }
       }
@@ -242,16 +311,38 @@ function renderDashboard(daemon: DaemonServer): string {
   </head>
   <body>
     <main class="gateway-shell" data-testid="gateway-shell">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">Local Runtime Gateway</p>
-          <h1>Vivarium Gateway</h1>
+      <aside class="sidebar" data-testid="gateway-sidebar">
+        <div class="brand-stack">
+          <div class="brand-mark">V</div>
+          <div>
+            <p class="eyebrow">Local Runtime</p>
+            <strong>Vivarium Gateway</strong>
+          </div>
         </div>
-        <div class="status-pill">Status: ${daemonStatus}</div>
-      </header>
-      <div class="gateway-grid">
+        <nav class="nav-list" aria-label="Gateway sections">
+          <a class="nav-item active" href="#command">Command Center</a>
+          <a class="nav-item" href="#chat">Chat</a>
+          <a class="nav-item" href="#agents">Agents</a>
+          <a class="nav-item" href="#world">World</a>
+          <a class="nav-item" href="#memory">Memory</a>
+        </nav>
+        <div class="sidebar-foot">
+          <strong>Status: ${daemonStatus}</strong><br>
+          Local URL: 127.0.0.1:8787<br>
+          Zero cloud required.
+        </div>
+      </aside>
+      <section class="workspace" id="command">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Command Center</p>
+            <h1>Vivarium Gateway</h1>
+          </div>
+          <div class="status-pill">Status: ${daemonStatus}</div>
+        </header>
+        <div class="gateway-grid">
         <section class="column">
-          <section class="panel">
+          <section class="panel" id="chat" data-testid="agent-command-panel">
             <div class="panel-header">
               <h2>Agent Chat</h2>
               <a href="/status">/status</a>
@@ -278,7 +369,7 @@ function renderDashboard(daemon: DaemonServer): string {
               <button type="submit">Run agent</button>
             </form>
           </section>
-          <section class="panel">
+          <section class="panel" id="memory">
             <div class="panel-header">
               <h2>World Telemetry</h2>
               <span>${status.confidenceBuckets} buckets</span>
@@ -296,15 +387,15 @@ function renderDashboard(daemon: DaemonServer): string {
             </div>
           </section>
         </section>
-        <section class="panel world-panel">
+        <section class="panel world-panel" id="world">
           <div class="world-head panel-header">
             <div>
-              <p class="eyebrow">Live Local World</p>
-              <h2>World View</h2>
+              <p class="eyebrow">World View</p>
+              <h2>3D Agent World</h2>
             </div>
             <span>4 agents online</span>
           </div>
-          <div class="scene-wrap">
+          <div class="scene-wrap" data-testid="world-canvas-viewport">
             <canvas id="world-scene" width="960" height="520" aria-label="Vivarium world view"></canvas>
             <div class="scene-hud">
               <div class="hud-item"><span>Daemon</span><strong>${daemonStatus}</strong></div>
@@ -314,16 +405,19 @@ function renderDashboard(daemon: DaemonServer): string {
           </div>
         </section>
         <section class="column">
-          <section class="panel">
+          <section class="panel" id="agents">
             <div class="panel-header">
-              <h2>Agent Roster</h2>
+              <div>
+                <p class="eyebrow">Agent Roster</p>
+                <h2>Agent Operations</h2>
+              </div>
               <span>runtime crew</span>
             </div>
             <div class="agent-list">
-              <article class="agent-card"><strong>Local Agent</strong><span>Runs deterministic goals through local memory.</span></article>
-              <article class="agent-card"><strong>Dream Worker</strong><span>Consolidates runs into skills, traces, and identity.</span></article>
-              <article class="agent-card"><strong>World Scout</strong><span>Tracks subscribed worlds, skills, and traces.</span></article>
-              <article class="agent-card"><strong>Safety Sentinel</strong><span>Keeps external tools behind policy checks.</span></article>
+              <article class="agent-card" data-agent-name="Local Agent"><strong>Local Agent</strong><span>Runs deterministic goals through local memory.</span></article>
+              <article class="agent-card" data-agent-name="Dream Worker"><strong>Dream Worker</strong><span>Consolidates runs into skills, traces, and identity.</span></article>
+              <article class="agent-card" data-agent-name="World Scout"><strong>World Scout</strong><span>Tracks subscribed worlds, skills, and traces.</span></article>
+              <article class="agent-card" data-agent-name="Safety Sentinel"><strong>Safety Sentinel</strong><span>Keeps external tools behind policy checks.</span></article>
             </div>
           </section>
           <section class="panel">
@@ -337,7 +431,8 @@ function renderDashboard(daemon: DaemonServer): string {
             </div>
           </section>
         </section>
-      </div>
+        </div>
+      </section>
     </main>
     <script>
       const form = document.getElementById("gateway-chat-form");
@@ -393,10 +488,16 @@ function renderDashboard(daemon: DaemonServer): string {
       const canvas = document.getElementById("world-scene");
       const ctx = canvas.getContext("2d");
       const agents = [
-        { name: "Local Agent", color: "#8ede92", orbit: 0.0 },
-        { name: "Dream Worker", color: "#d9bd78", orbit: 1.7 },
-        { name: "World Scout", color: "#76c7d9", orbit: 3.2 },
-        { name: "Safety Sentinel", color: "#e59a86", orbit: 4.7 },
+        { name: "Local Agent", color: "#8ede92", orbit: 0.0, task: "planning" },
+        { name: "Dream Worker", color: "#d9bd78", orbit: 1.7, task: "dreaming" },
+        { name: "World Scout", color: "#76c7d9", orbit: 3.2, task: "retrieving" },
+        { name: "Safety Sentinel", color: "#e59a86", orbit: 4.7, task: "guarding" },
+      ];
+      const worldTowers = [
+        { x: -2, y: -1, floors: 3, color: "#8ede92" },
+        { x: 1, y: -2, floors: 2, color: "#76c7d9" },
+        { x: 2, y: 1, floors: 4, color: "#d9bd78" },
+        { x: -1, y: 2, floors: 2, color: "#e59a86" },
       ];
       function resizeWorld() {
         const rect = canvas.getBoundingClientRect();
@@ -427,14 +528,81 @@ function renderDashboard(daemon: DaemonServer): string {
           ctx.stroke();
         }
       }
-      function drawAgent(agent, index, width, height, tick) {
+      function projectIso(tileX, tileY, width, height) {
+        return {
+          x: width * 0.5 + (tileX - tileY) * 58,
+          y: height * 0.56 + (tileX + tileY) * 29,
+        };
+      }
+      function drawDiamond(x, y, radiusX, radiusY, fill, stroke) {
+        ctx.beginPath();
+        ctx.moveTo(x, y - radiusY);
+        ctx.lineTo(x + radiusX, y);
+        ctx.lineTo(x, y + radiusY);
+        ctx.lineTo(x - radiusX, y);
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.stroke();
+      }
+      function drawWorldTower(tower, width, height, tick) {
+        const base = projectIso(tower.x, tower.y, width, height);
+        drawDiamond(base.x, base.y, 44, 22, "rgba(255, 248, 223, 0.055)", "rgba(255, 248, 223, 0.16)");
+        for (let floor = 0; floor < tower.floors; floor += 1) {
+          const lift = floor * 16;
+          ctx.fillStyle = floor === tower.floors - 1 ? tower.color : "rgba(255, 248, 223, 0.12)";
+          ctx.strokeStyle = "rgba(4, 8, 6, 0.42)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(base.x - 26, base.y - lift);
+          ctx.lineTo(base.x, base.y - 13 - lift);
+          ctx.lineTo(base.x + 26, base.y - lift);
+          ctx.lineTo(base.x, base.y + 13 - lift);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+        ctx.strokeStyle = tower.color;
+        ctx.globalAlpha = 0.34 + Math.sin(tick / 28 + tower.x) * 0.14;
+        ctx.beginPath();
+        ctx.moveTo(base.x, base.y - tower.floors * 16 - 18);
+        ctx.lineTo(width * 0.5, height * 0.27);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      function agentPosition(agent, index, width, height, tick) {
         const centerX = width * 0.5;
         const centerY = height * 0.57;
         const radiusX = width * (0.18 + index * 0.035);
         const radiusY = height * (0.09 + index * 0.018);
         const angle = tick / (1500 + index * 360) + agent.orbit;
-        const x = centerX + Math.cos(angle) * radiusX;
-        const y = centerY + Math.sin(angle) * radiusY;
+        return {
+          x: centerX + Math.cos(angle) * radiusX,
+          y: centerY + Math.sin(angle) * radiusY,
+          angle,
+        };
+      }
+      function drawAgentTrail(agent, index, width, height, tick) {
+        ctx.strokeStyle = agent.color;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.2;
+        ctx.beginPath();
+        for (let step = 0; step < 34; step += 1) {
+          const position = agentPosition(agent, index, width, height, tick - step * 70);
+          if (step === 0) {
+            ctx.moveTo(position.x, position.y);
+          } else {
+            ctx.lineTo(position.x, position.y);
+          }
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      function drawAgent(agent, index, width, height, tick) {
+        const position = agentPosition(agent, index, width, height, tick);
+        const x = position.x;
+        const y = position.y;
         ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
         ctx.beginPath();
         ctx.ellipse(x, y + 18, 24, 8, 0, 0, Math.PI * 2);
@@ -452,7 +620,16 @@ function renderDashboard(daemon: DaemonServer): string {
         ctx.stroke();
         ctx.fillStyle = "#fff8df";
         ctx.font = "700 12px ui-sans-serif, system-ui";
-        ctx.fillText(agent.name, x + 24, y + 4);
+        const labelX = x + 24;
+        const labelY = y - 12 + index * 12;
+        const labelWidth = Math.max(ctx.measureText(agent.name).width, ctx.measureText(agent.task).width) + 14;
+        ctx.fillStyle = "rgba(5, 10, 7, 0.72)";
+        ctx.fillRect(labelX - 6, labelY - 14, labelWidth, 34);
+        ctx.fillStyle = "#fff8df";
+        ctx.fillText(agent.name, labelX, labelY);
+        ctx.fillStyle = "#b8b39f";
+        ctx.font = "700 11px ui-sans-serif, system-ui";
+        ctx.fillText(agent.task, labelX, labelY + 14);
       }
       function drawWorld(time) {
         const size = resizeWorld();
@@ -471,6 +648,8 @@ function renderDashboard(daemon: DaemonServer): string {
         ctx.ellipse(width * 0.5, height * 0.58, width * 0.36, height * 0.17, 0, 0, Math.PI * 2);
         ctx.fill();
         drawGrid(width, height, tick);
+        worldTowers.forEach((tower) => drawWorldTower(tower, width, height, tick));
+        agents.forEach((agent, index) => drawAgentTrail(agent, index, width, height, time));
         agents.forEach((agent, index) => drawAgent(agent, index, width, height, time));
         requestAnimationFrame(drawWorld);
       }

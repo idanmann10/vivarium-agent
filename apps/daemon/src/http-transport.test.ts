@@ -37,9 +37,15 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain("<title>Vivarium Gateway</title>");
     expect(body).toContain("Vivarium Gateway");
     expect(body).toContain("Agent Chat");
+    expect(body).toContain("Command Center");
+    expect(body).toContain("Agent Operations");
     expect(body).toContain("World View");
+    expect(body).toContain("3D Agent World");
     expect(body).toContain("Agent Roster");
     expect(body).toContain("World Telemetry");
+    expect(body).toContain('data-testid="gateway-sidebar"');
+    expect(body).toContain('data-testid="agent-command-panel"');
+    expect(body).toContain('data-testid="world-canvas-viewport"');
     expect(body).toContain("Local Agent");
     expect(body).toContain("Dream Worker");
     expect(body).toContain("World Scout");
@@ -63,6 +69,8 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain('body.validation?.score ?? "recorded"');
     expect(body).toContain("requestAnimationFrame(drawWorld)");
     expect(body).toContain("drawAgent(");
+    expect(body).toContain("drawWorldTower(");
+    expect(body).toContain("drawAgentTrail(");
   });
 
   test("routes status, run, and dream requests to the daemon", async () => {
