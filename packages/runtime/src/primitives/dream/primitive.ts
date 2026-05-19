@@ -209,7 +209,10 @@ export function runDream({ state, domainStats }: DreamRequest): DreamResult {
       continue;
     }
 
-    if (shouldPruneLocalSkill({ lowerBound: lb, runsSinceLastUse: skill.lastUsedRunOffset })) {
+    if (
+      (skill.uses > 0 || skill.lastUsedRunOffset > 50) &&
+      shouldPruneLocalSkill({ lowerBound: lb, runsSinceLastUse: skill.lastUsedRunOffset })
+    ) {
       state.upsertLocalSkill({ ...skill, status: "archived", habitual: false });
       pruned.push(String(skill.id));
       continue;
