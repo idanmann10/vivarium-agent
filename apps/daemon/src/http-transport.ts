@@ -70,7 +70,7 @@ function compactPathLabel(path: string): string {
   return parts.at(-1) ?? path;
 }
 
-function renderDashboard(daemon: DaemonServer): string {
+function renderDashboard(daemon: DaemonServer, localUrl: string): string {
   const status = daemon.status();
   const statePath = status.statePath ?? "memory-only";
   const latestRun = latestRunText(status);
@@ -81,6 +81,7 @@ function renderDashboard(daemon: DaemonServer): string {
   const escapedLatestRun = escapeHtml(latestRun);
   const escapedLatestRunHud = escapeHtml(latestRunHud);
   const escapedStateHud = escapeHtml(stateHud);
+  const escapedLocalUrl = escapeHtml(localUrl);
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -555,7 +556,7 @@ function renderDashboard(daemon: DaemonServer): string {
         </nav>
         <div class="sidebar-foot">
           <strong>Status: ${daemonStatus}</strong><br>
-          Local URL: 127.0.0.1:8787<br>
+          Local URL: ${escapedLocalUrl}<br>
           Zero cloud required.
         </div>
       </aside>
@@ -1124,7 +1125,7 @@ export function createDaemonFetchHandler(daemon: DaemonServer): (request: Reques
       if (request.method !== "GET") {
         return jsonResponse({ error: "method not allowed" }, { status: 405 });
       }
-      return htmlResponse(renderDashboard(daemon));
+      return htmlResponse(renderDashboard(daemon, new URL(request.url).host));
     }
 
     if (path === "/status") {

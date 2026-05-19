@@ -192,6 +192,16 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain('<div class="hud-item"><span>State</span><strong>state.db</strong></div>');
   });
 
+  test("renders the dashboard local URL from the request origin", async () => {
+    const handler = createDaemonFetchHandler(createDaemonServer({ worldRoot: "../the-world" }));
+
+    const response = await handler(new Request("http://127.0.0.1:6543/"));
+    const body = await response.text();
+
+    expect(body).toContain("Local URL: 127.0.0.1:6543");
+    expect(body).not.toContain("Local URL: 127.0.0.1:8787");
+  });
+
   test("returns stable JSON errors for invalid transport requests", async () => {
     const handler = createDaemonFetchHandler(createDaemonServer({ worldRoot: "../the-world" }));
 
