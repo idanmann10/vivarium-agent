@@ -778,9 +778,9 @@ print_launch_sequence() {
   if [ "$daemon_mode" = "launchd" ]; then
     stage_label 3 "Open the dashboard"
     if [ "$daemon_host" = "127.0.0.1" ] && [ "$daemon_port" = "8787" ]; then
-      printf '      %q dashboard\n' "$command"
+      printf '      %q dashboard --open\n' "$command"
     else
-      printf '      %q dashboard --url %q\n' "$command" "http://$daemon_host:$daemon_port"
+      printf '      %q dashboard --open --url %q\n' "$command" "http://$daemon_host:$daemon_port"
     fi
     printf '      %q daemon smoke --status-url %q\n' "$command" "http://$daemon_host:$daemon_port/status"
     next_stage=4

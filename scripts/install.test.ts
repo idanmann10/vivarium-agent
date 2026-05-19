@@ -255,7 +255,7 @@ describe("install.sh", () => {
     expect(stdout).toContain("Daemon deployment: launchd");
     expect(stdout).toContain("[3] Open the dashboard");
     expect(stdout).toContain(
-      "/tmp/vivarium-flag-bin/vivarium dashboard --url http://127.0.0.1:9898",
+      "/tmp/vivarium-flag-bin/vivarium dashboard --open --url http://127.0.0.1:9898",
     );
     expect(stdout).toContain("vivarium daemon smoke --status-url http://127.0.0.1:9898/status");
     expect(stdout).toContain(
@@ -339,6 +339,20 @@ describe("install.sh", () => {
     expect(disabled).not.toContain("\u001b[");
   });
 
+  test("opens the default LaunchAgent dashboard from the installer handoff", () => {
+    const result = runInstallerDryRun({
+      VIVARIUM_DAEMON: "launchd",
+      VIVARIUM_INSTALL_DIR: "/tmp/vivarium-agent-install",
+      VIVARIUM_WORLD_ROOT: "/tmp/vivarium-world",
+    });
+    const stdout = result.stdout.toString();
+
+    expect(result.exitCode).toBe(0);
+    expect(stdout).toContain("[3] Open the dashboard");
+    expect(stdout).toContain("vivarium dashboard --open");
+    expect(stdout).not.toContain("vivarium dashboard --url http://127.0.0.1:8787");
+  });
+
   test("can dry-run an opt-in macOS LaunchAgent deployment", () => {
     const result = runInstallerDryRun({
       VIVARIUM_BIN_DIR: "/tmp/vivarium-bin",
@@ -362,11 +376,13 @@ describe("install.sh", () => {
       "Would run: launchctl kickstart -k gui/$UID/com.example.vivarium.daemon",
     );
     expect(stdout).toContain("vivarium daemon smoke --status-url http://127.0.0.1:9898/status");
-    expect(stdout).toContain("vivarium dashboard --url http://127.0.0.1:9898");
+    expect(stdout).toContain("vivarium dashboard --open --url http://127.0.0.1:9898");
     expect(stdout).toContain(
       "/tmp/vivarium-bin/vivarium daemon smoke --status-url http://127.0.0.1:9898/status",
     );
-    expect(stdout).toContain("/tmp/vivarium-bin/vivarium dashboard --url http://127.0.0.1:9898");
+    expect(stdout).toContain(
+      "/tmp/vivarium-bin/vivarium dashboard --open --url http://127.0.0.1:9898",
+    );
     expect(stdout).toContain(
       "Would run: /tmp/vivarium-bin/vivarium launch handoff --daemon-port 9898",
     );
