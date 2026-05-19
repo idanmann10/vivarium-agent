@@ -54,13 +54,33 @@ function latestRunText(status: ReturnType<DaemonServer["status"]>): string {
   return `${status.latestRun.goal} (${runStatus}${score})`;
 }
 
+function latestRunHudText(status: ReturnType<DaemonServer["status"]>): string {
+  if (status.latestRun === undefined) {
+    return "None yet";
+  }
+
+  const runStatus =
+    status.latestRun.success === null ? "running" : status.latestRun.success ? "success" : "blocked";
+  const score = status.latestRun.score === null ? "" : `, score ${status.latestRun.score}`;
+  return `${runStatus}${score}`;
+}
+
+function compactPathLabel(path: string): string {
+  const parts = path.split(/[\\/]/);
+  return parts.at(-1) ?? path;
+}
+
 function renderDashboard(daemon: DaemonServer): string {
   const status = daemon.status();
   const statePath = status.statePath ?? "memory-only";
   const latestRun = latestRunText(status);
+  const latestRunHud = latestRunHudText(status);
+  const stateHud = compactPathLabel(statePath);
   const daemonStatus = escapeHtml(status.status);
   const escapedStatePath = escapeHtml(statePath);
   const escapedLatestRun = escapeHtml(latestRun);
+  const escapedLatestRunHud = escapeHtml(latestRunHud);
+  const escapedStateHud = escapeHtml(stateHud);
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -399,8 +419,8 @@ function renderDashboard(daemon: DaemonServer): string {
             <canvas id="world-scene" width="960" height="520" aria-label="Vivarium world view"></canvas>
             <div class="scene-hud">
               <div class="hud-item"><span>Daemon</span><strong>${daemonStatus}</strong></div>
-              <div class="hud-item"><span>Latest</span><strong>${escapedLatestRun}</strong></div>
-              <div class="hud-item"><span>State</span><strong>${escapedStatePath}</strong></div>
+              <div class="hud-item"><span>Latest</span><strong>${escapedLatestRunHud}</strong></div>
+              <div class="hud-item"><span>State</span><strong>${escapedStateHud}</strong></div>
             </div>
           </div>
         </section>

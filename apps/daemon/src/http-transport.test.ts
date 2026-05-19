@@ -1,4 +1,7 @@
 import { createServer } from "node:net";
+import { mkdtempSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { describe, expect, test } from "bun:test";
 
 import { createDaemonFetchHandler, startDaemonHttpServer } from "./http-transport.js";
@@ -115,6 +118,27 @@ describe("createDaemonFetchHandler", () => {
       ),
     );
     expect(dream).toMatchObject({ identitySummary: expect.stringContaining("coding") });
+  });
+
+  test("keeps the world HUD compact while preserving detailed telemetry cards", async () => {
+    const statePath = join(mkdtempSync(join(tmpdir(), "vivarium-daemon-hud-")), "state.db");
+    const daemon = createDaemonServer({ statePath, worldRoot: "../the-world" });
+    const handler = createDaemonFetchHandler(daemon);
+
+    await handler(
+      new Request("http://daemon/run", {
+        method: "POST",
+        body: JSON.stringify({ goal: "write an intentionally long local agent goal", domain: "coding" }),
+      }),
+    );
+
+    const response = await handler(new Request("http://daemon/"));
+    const body = await response.text();
+
+    expect(body).toContain(`<div class="metric"><span>Memory</span><strong>${statePath}</strong></div>`);
+    expect(body).toContain("write an intentionally long local agent goal (success, score 0.8)");
+    expect(body).toContain('<div class="hud-item"><span>Latest</span><strong>success, score 0.8</strong></div>');
+    expect(body).toContain('<div class="hud-item"><span>State</span><strong>state.db</strong></div>');
   });
 
   test("returns stable JSON errors for invalid transport requests", async () => {
