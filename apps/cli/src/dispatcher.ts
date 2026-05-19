@@ -160,8 +160,16 @@ export interface CliDispatchResult {
   readonly output: string;
 }
 
+export interface DashboardOpenResult {
+  readonly exitCode: number;
+  readonly stderr?: string;
+}
+
+export type DashboardOpenRunner = (url: string) => DashboardOpenResult;
+
 export interface CliDispatchOptions {
   readonly credentialFetch?: NonNullable<ExternalToolAdapters["fetch"]>;
+  readonly dashboardOpenRunner?: DashboardOpenRunner;
   readonly doctorRunner?: DoctorCommandRunner;
   readonly env?: Readonly<Record<string, string | undefined>>;
   readonly providerFetch?: ProviderFetch;
@@ -271,7 +279,21 @@ function normalizedDashboardUrl(raw: string | undefined): string {
   return (raw ?? defaultDashboardUrl).replace(/\/$/, "");
 }
 
-function renderDashboardCommandResult(dashboardUrl: string): string {
+function defaultDashboardOpenRunner(url: string): DashboardOpenResult {
+  const command =
+    process.platform === "darwin"
+      ? ["open", url]
+      : process.platform === "win32"
+        ? ["cmd", "/c", "start", "", url]
+        : ["xdg-open", url];
+  const result = Bun.spawnSync(command, { stdout: "pipe", stderr: "pipe" });
+  return { exitCode: result.exitCode, stderr: result.stderr?.toString() };
+}
+
+function renderDashboardCommandResult(
+  dashboardUrl: string,
+  open?: { readonly ok: boolean; readonly error?: string },
+): string {
   const url = normalizedDashboardUrl(dashboardUrl);
   return [
     "Vivarium Dashboard",
@@ -279,8 +301,12 @@ function renderDashboardCommandResult(dashboardUrl: string): string {
     `Dashboard: ${url}`,
     `Status JSON: ${url}/status`,
     `Run API (POST): ${url}/run`,
+    ...(open === undefined
+      ? []
+      : [open.ok ? `Opened: ${url}` : `Open: blocked`, ...(open.error === undefined ? [] : [`Error: ${open.error}`])]),
     "",
-    "Next command:",
+    "Next commands:",
+    "  vivarium dashboard --open",
     "  vivarium daemon smoke",
     "",
   ].join("\n");
@@ -1227,6 +1253,14 @@ export async function dispatchCliCommand(
     }
     case "dashboard": {
       const dashboardUrl = normalizedDashboardUrl(value(flags, "url"));
+      if (flags.has("open")) {
+        const openResult = (options.dashboardOpenRunner ?? defaultDashboardOpenRunner)(dashboardUrl);
+        const open =
+          openResult.exitCode === 0
+            ? { ok: true as const }
+            : { ok: false as const, error: openResult.stderr ?? "Unable to open dashboard URL" };
+        return { command, result: { dashboardUrl, open }, output: renderDashboardCommandResult(dashboardUrl, open) };
+      }
       return { command, result: { dashboardUrl }, output: renderDashboardCommandResult(dashboardUrl) };
     }
     case "tools": {

@@ -85,6 +85,7 @@ without mutating local state.
 `vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon dashboard backed
 by `/status`. Install with `--daemon launchd` when you want that dashboard
 served automatically on macOS.
+Use `vivarium dashboard --open` to open that URL in your browser.
 The localhost dashboard includes a `Run agent` form with the default
 `build a simple agent end to end` goal. Clicking `Run agent` records the local
 run through `/run` and shows the run ID inline.
