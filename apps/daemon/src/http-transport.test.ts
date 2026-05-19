@@ -52,11 +52,31 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain("World Telemetry");
     expect(body).toContain('data-testid="gateway-sidebar"');
     expect(body).toContain('data-template="shadcn-dashboard-01"');
+    expect(body).toContain('data-template-source="https://ui.shadcn.com/blocks"');
+    expect(body).toContain('data-testid="site-header"');
+    expect(body).toContain('data-testid="gateway-tabs"');
+    expect(body).toContain('data-testid="dashboard-toolbar"');
+    expect(body).toContain('data-testid="health-strip"');
     expect(body).toContain('data-testid="dashboard-section-cards"');
     expect(body).toContain('data-testid="run-signal-chart"');
     expect(body).toContain('data-testid="activity-table"');
     expect(body).toContain('data-testid="agent-command-panel"');
     expect(body).toContain('data-testid="world-canvas-viewport"');
+    expect(body).toContain('data-testid="world-queue"');
+    expect(body).toContain('data-testid="agent-presets"');
+    expect(body).toContain("Gateway / Command Center");
+    expect(body).toContain("Overview");
+    expect(body).toContain("New run");
+    expect(body).toContain("Open status");
+    expect(body).toContain("System Health");
+    expect(body).toContain("Model Router");
+    expect(body).toContain("Tool Policy");
+    expect(body).toContain("Storage");
+    expect(body).toContain("Queued Work");
+    expect(body).toContain("Agent presets");
+    expect(body).toContain("Debug");
+    expect(body).toContain("Ship");
+    expect(body).toContain("Research");
     expect(body).toContain("Pipeline");
     expect(body).toContain("Stage");
     expect(body).toContain("Plan");
@@ -87,6 +107,18 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain('fetch("/run"');
     expect(body).toContain('"Run recorded"');
     expect(body).toContain('body.validation?.score ?? "recorded"');
+    expect(body).toContain('data-live-field="runs"');
+    expect(body).toContain('data-live-field="runs-label"');
+    expect(body).toContain('data-live-field="latest-score"');
+    expect(body).toContain('data-live-field="latest-run"');
+    expect(body).toContain('data-live-field="latest-hud"');
+    expect(body).toContain('data-live-field="confidence"');
+    expect(body).toContain("async function refreshGatewayTelemetry()");
+    expect(body).toContain('fetch("/status"');
+    expect(body).toContain("await refreshGatewayTelemetry();");
+    expect(body).toContain("const presetButtons = document.querySelectorAll");
+    expect(body).toContain("data-preset-goal");
+    expect(body).toContain("scrollIntoView");
     expect(body).toContain("requestAnimationFrame(drawWorld)");
     expect(body).toContain("drawAgent(");
     expect(body).toContain("drawWorldTower(");
@@ -154,7 +186,9 @@ describe("createDaemonFetchHandler", () => {
 
     expect(body).toContain(`<div class="metric"><span>Memory</span><strong>${statePath}</strong></div>`);
     expect(body).toContain("write an intentionally long local agent goal (success, score 0.8)");
-    expect(body).toContain('<div class="hud-item"><span>Latest</span><strong>success, score 0.8</strong></div>');
+    expect(body).toContain(
+      '<div class="hud-item"><span>Latest</span><strong data-live-field="latest-hud">success, score 0.8</strong></div>',
+    );
     expect(body).toContain('<div class="hud-item"><span>State</span><strong>state.db</strong></div>');
   });
 

@@ -175,6 +175,53 @@ function renderDashboard(daemon: DaemonServer): string {
         justify-content: space-between;
         gap: 16px;
       }
+      .header-copy { display: grid; gap: 4px; min-width: 0; }
+      .breadcrumb {
+        color: #b8b39f;
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .topbar-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .header-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        border: 1px solid rgba(224, 213, 184, 0.14);
+        border-radius: 8px;
+        padding: 4px;
+        background: rgba(244, 241, 232, 0.045);
+      }
+      .tab-pill,
+      .ghost-button {
+        min-height: 36px;
+        border: 1px solid rgba(224, 213, 184, 0.14);
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 8px 11px;
+        background: rgba(244, 241, 232, 0.055);
+        color: #ded5bd;
+        font-size: 12px;
+        font-weight: 850;
+        line-height: 1;
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+      .tab-pill.active,
+      .ghost-button.primary {
+        border-color: rgba(142, 222, 146, 0.34);
+        background: rgba(79, 143, 91, 0.18);
+        color: #c7f6c9;
+      }
       .eyebrow {
         margin: 0 0 6px;
         color: #d9bd78;
@@ -203,6 +250,32 @@ function renderDashboard(daemon: DaemonServer): string {
         align-items: stretch;
       }
       .dashboard-main { display: grid; gap: 16px; align-content: start; }
+      .health-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .health-card {
+        min-height: 84px;
+        border: 1px solid rgba(224, 213, 184, 0.13);
+        border-radius: 8px;
+        padding: 12px;
+        background: rgba(244, 241, 232, 0.052);
+      }
+      .health-card span,
+      .health-card small {
+        display: block;
+        color: #b8b39f;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .health-card strong {
+        display: block;
+        margin: 8px 0 4px;
+        color: #fff8df;
+        font-size: 16px;
+        overflow-wrap: anywhere;
+      }
       .section-heading {
         display: flex;
         align-items: end;
@@ -212,6 +285,18 @@ function renderDashboard(daemon: DaemonServer): string {
       }
       .section-heading h2 { margin-bottom: 0; font-size: 18px; }
       .section-heading span { color: #b8b39f; font-size: 12px; font-weight: 800; }
+      .toolbar-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .toolbar-row span {
+        border: 1px solid rgba(224, 213, 184, 0.13);
+        border-radius: 999px;
+        padding: 7px 10px;
+        background: rgba(244, 241, 232, 0.052);
+      }
       .section-cards {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -328,7 +413,7 @@ function renderDashboard(daemon: DaemonServer): string {
         color: #fff8df;
       }
       textarea { min-height: 92px; resize: vertical; }
-      button {
+      .primary-button {
         justify-self: start;
         border: 0;
         border-radius: 8px;
@@ -339,6 +424,23 @@ function renderDashboard(daemon: DaemonServer): string {
         cursor: pointer;
       }
       button:disabled { cursor: progress; opacity: 0.72; }
+      .preset-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin: 0 0 14px;
+      }
+      .preset-button {
+        border: 1px solid rgba(224, 213, 184, 0.14);
+        border-radius: 8px;
+        padding: 10px;
+        background: rgba(244, 241, 232, 0.055);
+        color: #fff8df;
+        cursor: pointer;
+        text-align: left;
+      }
+      .preset-button strong { display: block; margin-bottom: 4px; font-size: 13px; }
+      .preset-button span { display: block; color: #b8b39f; font-size: 11px; font-weight: 750; }
       .agent-list { display: grid; gap: 10px; }
       .agent-card {
         border: 1px solid rgba(224, 213, 184, 0.12);
@@ -347,6 +449,24 @@ function renderDashboard(daemon: DaemonServer): string {
         background: rgba(244, 241, 232, 0.055);
       }
       .agent-card strong { display: block; margin-bottom: 4px; }
+      .queue-list { display: grid; gap: 8px; }
+      .queue-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+        border: 1px solid rgba(224, 213, 184, 0.12);
+        border-radius: 8px;
+        padding: 11px 12px;
+        background: rgba(244, 241, 232, 0.055);
+      }
+      .queue-item strong {
+        display: block;
+        color: #fff8df;
+        font-size: 13px;
+        overflow-wrap: anywhere;
+      }
+      .queue-item span { display: block; color: #b8b39f; font-size: 11px; font-weight: 750; }
       .world-head { padding: 18px 18px 0; }
       .scene-wrap {
         position: relative;
@@ -397,20 +517,27 @@ function renderDashboard(daemon: DaemonServer): string {
         .nav-list { grid-template-columns: repeat(5, minmax(0, 1fr)); }
         .gateway-grid,
         .dashboard-content { grid-template-columns: 1fr; }
-        .section-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .section-cards,
+        .health-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .world-panel { min-height: auto; }
       }
       @media (max-width: 680px) {
         .gateway-shell { width: min(100% - 20px, 1480px); margin: 10px auto; }
         .topbar { align-items: flex-start; flex-direction: column; }
+        .topbar-actions,
+        .header-tabs { width: 100%; justify-content: flex-start; }
         .nav-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .metric-grid, .scene-hud, .section-cards { grid-template-columns: 1fr; }
+        .metric-grid,
+        .scene-hud,
+        .section-cards,
+        .health-strip,
+        .preset-grid { grid-template-columns: 1fr; }
         #world-scene { height: 420px; }
       }
     </style>
   </head>
   <body>
-    <main class="gateway-shell" data-testid="gateway-shell" data-template="shadcn-dashboard-01">
+    <main class="gateway-shell" data-testid="gateway-shell" data-template="shadcn-dashboard-01" data-template-source="https://ui.shadcn.com/blocks">
       <aside class="sidebar" data-testid="gateway-sidebar">
         <div class="brand-stack">
           <div class="brand-mark">V</div>
@@ -433,35 +560,72 @@ function renderDashboard(daemon: DaemonServer): string {
         </div>
       </aside>
       <section class="workspace" id="command">
-        <header class="topbar">
-          <div>
+        <header class="topbar" data-testid="site-header">
+          <div class="header-copy">
+            <div class="breadcrumb">Gateway / Command Center</div>
             <p class="eyebrow">Command Center</p>
             <h1>Vivarium Gateway</h1>
           </div>
-          <div class="status-pill">Status: ${daemonStatus}</div>
+          <div class="topbar-actions">
+            <nav class="header-tabs" data-testid="gateway-tabs" aria-label="Dashboard views">
+              <a class="tab-pill active" href="#command">Overview</a>
+              <a class="tab-pill" href="#world">World</a>
+              <a class="tab-pill" href="#activity">Runs</a>
+              <a class="tab-pill" href="#memory">Memory</a>
+            </nav>
+            <button type="button" class="ghost-button primary" data-scroll-target="chat">New run</button>
+            <a class="ghost-button" href="/status">Open status</a>
+            <div class="status-pill">Status: ${daemonStatus}</div>
+          </div>
         </header>
         <section class="dashboard-main">
+          <section class="health-strip" data-testid="health-strip" aria-label="System Health">
+            <article class="health-card">
+              <span>System Health</span>
+              <strong>${daemonStatus}</strong>
+              <small>daemon loop</small>
+            </article>
+            <article class="health-card">
+              <span>Model Router</span>
+              <strong>local-first</strong>
+              <small>provider-ready</small>
+            </article>
+            <article class="health-card">
+              <span>Tool Policy</span>
+              <strong>guarded</strong>
+              <small>external calls gated</small>
+            </article>
+            <article class="health-card">
+              <span>Storage</span>
+              <strong>${escapedStateHud}</strong>
+              <small>durable memory</small>
+            </article>
+          </section>
           <div class="section-heading">
             <div>
               <p class="eyebrow">World Telemetry</p>
               <h2>Operations Overview</h2>
             </div>
-            <span>Local dashboard pattern: sidebar, cards, chart, table</span>
+            <div class="toolbar-row" data-testid="dashboard-toolbar">
+              <span>Live local</span>
+              <span>Operator view</span>
+              <span>4 agents online</span>
+            </div>
           </div>
           <section class="section-cards" data-testid="dashboard-section-cards">
             <article class="section-card">
               <span>Total Runs</span>
-              <strong>${status.runs}</strong>
+              <strong data-live-field="runs">${status.runs}</strong>
               <p>Recorded local agent runs in durable memory.</p>
             </article>
             <article class="section-card">
               <span>Latest Score</span>
-              <strong>${escapedLatestRunHud}</strong>
+              <strong data-live-field="latest-score">${escapedLatestRunHud}</strong>
               <p>Last validation result from the local runtime.</p>
             </article>
             <article class="section-card">
               <span>Confidence</span>
-              <strong>${status.confidenceBuckets}</strong>
+              <strong data-live-field="confidence">${status.confidenceBuckets}</strong>
               <p>Prediction buckets available for Dream consolidation.</p>
             </article>
             <article class="section-card">
@@ -484,7 +648,7 @@ function renderDashboard(daemon: DaemonServer): string {
                   <canvas id="world-scene" width="960" height="520" aria-label="Vivarium world view"></canvas>
                   <div class="scene-hud">
                     <div class="hud-item"><span>Daemon</span><strong>${daemonStatus}</strong></div>
-                    <div class="hud-item"><span>Latest</span><strong>${escapedLatestRunHud}</strong></div>
+                    <div class="hud-item"><span>Latest</span><strong data-live-field="latest-hud">${escapedLatestRunHud}</strong></div>
                     <div class="hud-item"><span>State</span><strong>${escapedStateHud}</strong></div>
                   </div>
                 </div>
@@ -495,7 +659,7 @@ function renderDashboard(daemon: DaemonServer): string {
                     <p class="eyebrow">Pipeline</p>
                     <h2>Run Signal</h2>
                   </div>
-                  <span>${escapedLatestRunHud}</span>
+                  <span data-live-field="latest-hud">${escapedLatestRunHud}</span>
                 </div>
                 <svg class="run-chart" viewBox="0 0 640 180" role="img" aria-label="Run signal chart">
                   <line class="chart-grid" x1="24" y1="36" x2="616" y2="36"></line>
@@ -511,7 +675,7 @@ function renderDashboard(daemon: DaemonServer): string {
                   <circle class="chart-dot" cx="616" cy="34" r="5"></circle>
                 </svg>
               </section>
-              <section class="panel" data-testid="activity-table">
+              <section class="panel" id="activity" data-testid="activity-table">
                 <div class="panel-header">
                   <div>
                     <p class="eyebrow">Pipeline</p>
@@ -548,6 +712,11 @@ function renderDashboard(daemon: DaemonServer): string {
               </div>
               <a href="/status">/status</a>
             </div>
+            <div class="preset-grid" data-testid="agent-presets" aria-label="Agent presets">
+              <button type="button" class="preset-button" data-preset-goal="debug a failing local agent run" data-preset-domain="coding"><strong>Debug</strong><span>Trace a runtime issue</span></button>
+              <button type="button" class="preset-button" data-preset-goal="ship a simple local agent" data-preset-domain="coding"><strong>Ship</strong><span>Run the release path</span></button>
+              <button type="button" class="preset-button" data-preset-goal="research agent world state" data-preset-domain="research"><strong>Research</strong><span>Collect world signals</span></button>
+            </div>
             <div id="chat-log" class="chat-log" aria-live="polite">
               <article class="message agent">
                 <span class="message-role">Vivarium</span>
@@ -567,19 +736,19 @@ function renderDashboard(daemon: DaemonServer): string {
                 Domain
                 <input name="domain" aria-label="Domain" value="coding" autocomplete="off">
               </label>
-              <button type="submit">Run agent</button>
+              <button class="primary-button" type="submit">Run agent</button>
             </form>
               </section>
               <section class="panel" id="memory">
             <div class="panel-header">
               <h2>World Telemetry</h2>
-              <span>${status.confidenceBuckets} buckets</span>
+              <span data-live-field="confidence-label">${status.confidenceBuckets} buckets</span>
             </div>
             <div class="metric-grid">
               <div class="metric"><span>Memory</span><strong>${escapedStatePath}</strong></div>
-              <div class="metric"><span>Runs</span><strong>Runs: ${status.runs}</strong></div>
-              <div class="metric"><span>Latest run</span><strong>${escapedLatestRun}</strong></div>
-              <div class="metric"><span>Confidence</span><strong>${status.confidenceBuckets} buckets</strong></div>
+              <div class="metric"><span>Runs</span><strong data-live-field="runs-label">Runs: ${status.runs}</strong></div>
+              <div class="metric"><span>Latest run</span><strong data-live-field="latest-run">${escapedLatestRun}</strong></div>
+              <div class="metric"><span>Confidence</span><strong data-live-field="confidence-label">${status.confidenceBuckets} buckets</strong></div>
             </div>
             <div class="endpoint-list">
               <code>/status</code>
@@ -602,6 +771,20 @@ function renderDashboard(daemon: DaemonServer): string {
               <article class="agent-card" data-agent-name="Safety Sentinel"><strong>Safety Sentinel</strong><span>Keeps external tools behind policy checks.</span></article>
             </div>
               </section>
+              <section class="panel" data-testid="world-queue">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">World Queue</p>
+                <h2>Queued Work</h2>
+              </div>
+              <span>live loop</span>
+            </div>
+            <div class="queue-list">
+              <div class="queue-item"><div><strong>Prepare local workspace</strong><span>Tool Runtime</span></div><span class="status-badge">ready</span></div>
+              <div class="queue-item"><div><strong>Score next agent run</strong><span>Local Agent</span></div><span class="status-badge">ready</span></div>
+              <div class="queue-item"><div><strong>Dream memory update</strong><span>Dream Worker</span></div><span class="status-badge">idle</span></div>
+            </div>
+              </section>
               <section class="panel">
             <div class="panel-header">
               <h2>Latest Run</h2>
@@ -609,7 +792,7 @@ function renderDashboard(daemon: DaemonServer): string {
             </div>
             <div class="metric">
               <span>Run summary</span>
-              <strong>${escapedLatestRun}</strong>
+              <strong data-live-field="latest-run">${escapedLatestRun}</strong>
             </div>
               </section>
             </aside>
@@ -620,6 +803,23 @@ function renderDashboard(daemon: DaemonServer): string {
     <script>
       const form = document.getElementById("gateway-chat-form");
       const chatLog = document.getElementById("chat-log");
+      const goalInput = form.querySelector('textarea[name="goal"]');
+      const domainInput = form.querySelector('input[name="domain"]');
+      const presetButtons = document.querySelectorAll("[data-preset-goal]");
+      presetButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          goalInput.value = button.dataset.presetGoal ?? goalInput.value;
+          domainInput.value = button.dataset.presetDomain ?? domainInput.value;
+          document.getElementById("chat").scrollIntoView({ behavior: "smooth", block: "start" });
+          goalInput.focus();
+        });
+      });
+      document.querySelectorAll("[data-scroll-target]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const target = document.getElementById(button.dataset.scrollTarget);
+          target?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
       function addMessage(kind, role, text) {
         const message = document.createElement("article");
         message.className = "message " + kind;
@@ -632,6 +832,46 @@ function renderDashboard(daemon: DaemonServer): string {
         chatLog.append(message);
         chatLog.scrollTop = chatLog.scrollHeight;
         return textEl;
+      }
+      function latestRunTextFromStatus(latestRun) {
+        if (!latestRun) {
+          return "None yet";
+        }
+        const runStatus = latestRun.success === null ? "running" : latestRun.success ? "success" : "blocked";
+        const score = latestRun.score === null ? "" : ", score " + latestRun.score;
+        return latestRun.goal + " (" + runStatus + score + ")";
+      }
+      function latestRunHudTextFromStatus(latestRun) {
+        if (!latestRun) {
+          return "None yet";
+        }
+        const runStatus = latestRun.success === null ? "running" : latestRun.success ? "success" : "blocked";
+        const score = latestRun.score === null ? "" : ", score " + latestRun.score;
+        return runStatus + score;
+      }
+      function setLiveField(name, value) {
+        document.querySelectorAll('[data-live-field="' + name + '"]').forEach((element) => {
+          element.textContent = value;
+        });
+      }
+      async function refreshGatewayTelemetry() {
+        const response = await fetch("/status");
+        if (!response.ok) {
+          return;
+        }
+        const status = await response.json();
+        const runs = String(status.runs ?? 0);
+        const confidence = String(status.confidenceBuckets ?? 0);
+        const confidenceLabel = confidence + " buckets";
+        const latestRun = latestRunTextFromStatus(status.latestRun);
+        const latestHud = latestRunHudTextFromStatus(status.latestRun);
+        setLiveField("runs", runs);
+        setLiveField("runs-label", "Runs: " + runs);
+        setLiveField("latest-score", latestHud);
+        setLiveField("latest-hud", latestHud);
+        setLiveField("latest-run", latestRun);
+        setLiveField("confidence", confidence);
+        setLiveField("confidence-label", confidenceLabel);
       }
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -661,6 +901,7 @@ function renderDashboard(daemon: DaemonServer): string {
             "Run ID: " + body.runId,
             "Validation: " + (body.validation?.score ?? "recorded"),
           ].join("\\n");
+          await refreshGatewayTelemetry();
         } catch {
           pending.textContent = "Run failed";
         } finally {
