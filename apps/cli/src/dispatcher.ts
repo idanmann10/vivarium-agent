@@ -176,6 +176,8 @@ export interface CliDispatchOptions {
   readonly updateRunner?: UpdateCommandRunner;
 }
 
+const missingFlagValue = "\0missing-flag-value";
+
 type FlagMap = ReadonlyMap<string, readonly string[]>;
 
 const secretDirFiles = [
@@ -420,7 +422,7 @@ function parseFlags(argv: readonly string[]): {
     const next = argv[index + 1];
     const values = flags.get(key) ?? [];
     if (next === undefined || next.startsWith("--")) {
-      flags.set(key, [...values, "true"]);
+      flags.set(key, [...values, missingFlagValue]);
       continue;
     }
 
@@ -432,11 +434,20 @@ function parseFlags(argv: readonly string[]): {
 }
 
 function value(flags: FlagMap, name: string): string | undefined {
-  return flags.get(name)?.at(-1);
+  const raw = flags.get(name)?.at(-1);
+  if (raw === missingFlagValue) {
+    usage(`Missing value for --${name}`);
+  }
+  return raw;
 }
 
 function values(flags: FlagMap, name: string): readonly string[] {
-  return flags.get(name) ?? [];
+  return (flags.get(name) ?? []).map((raw) => {
+    if (raw === missingFlagValue) {
+      usage(`Missing value for --${name}`);
+    }
+    return raw;
+  });
 }
 
 function required(flags: FlagMap, name: string, nextCommands?: readonly string[]): string {

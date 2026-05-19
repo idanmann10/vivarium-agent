@@ -3180,6 +3180,24 @@ describe("dispatchCliCommand", () => {
     expect(result.output).not.toContain("REVIEWER_GITHUB_USERNAME");
   });
 
+  test("rejects missing launch handoff reviewer flag values", async () => {
+    try {
+      await dispatchCliCommand(["launch", "handoff", "--reviewer", "--pr-number", "26"]);
+      throw new Error("expected launch handoff to reject missing reviewer");
+    } catch (error) {
+      expect(error).toBeInstanceOf(CliUsageError);
+      expect((error as CliUsageError).message).toBe("Missing value for --reviewer");
+    }
+
+    try {
+      await dispatchCliCommand(["launch", "handoff", "--pr-number", "--reviewer", "startclaw-ai"]);
+      throw new Error("expected launch handoff to reject missing PR number");
+    } catch (error) {
+      expect(error).toBeInstanceOf(CliUsageError);
+      expect((error as CliUsageError).message).toBe("Missing value for --pr-number");
+    }
+  });
+
   test("routes live doctor checks through injected probes", async () => {
     await expect(
       dispatchCliCommand(["doctor", "--live", "--agent-root", "/agent", "--world-root", "/world"], {
