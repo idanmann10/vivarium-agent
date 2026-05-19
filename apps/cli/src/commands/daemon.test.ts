@@ -29,7 +29,7 @@ describe("daemonSmokeCommand", () => {
     expect(urls).toEqual(["http://daemon.test/status"]);
     const output = renderDaemonSmokeCommandResult(result);
     expect(output).toContain("Memory: /Users/tester/.vivarium/state.db");
-    expect(output).toContain("vivarium dashboard");
+    expect(output).toContain("vivarium dashboard --open");
     expect(output).toContain("vivarium status");
     expect(output).not.toContain("vivarium doctor --live");
   });

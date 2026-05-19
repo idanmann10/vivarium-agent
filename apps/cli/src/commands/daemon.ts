@@ -124,7 +124,7 @@ export function renderDaemonSmokeCommandResult(result: DaemonSmokeCommandResult)
           `Confidence buckets: ${result.confidenceBuckets}`,
           "",
           "Next commands:",
-          "  vivarium dashboard",
+          "  vivarium dashboard --open",
           "  vivarium status",
         ]
       : [
