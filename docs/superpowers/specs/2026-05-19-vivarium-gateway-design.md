@@ -8,6 +8,8 @@ Turn the daemon root page at `http://127.0.0.1:8787/` from a basic status page i
 
 This is a daemon-served gateway, not a new Next.js application. It should feel like a modern dashboard with chat, agents, and world state, while preserving the zero-extra-runtime Mac install path.
 
+Visual reference: use the TailAdmin Next.js dashboard shape, especially its dense sidebar, metric cards, AI/chat surfaces, and operations panels, while implementing the page as daemon-served HTML instead of adding a Next.js runtime.
+
 ## User Experience
 
 - The page title and primary screen name are `Vivarium Gateway`.

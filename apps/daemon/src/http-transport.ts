@@ -76,12 +76,19 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
   const latestRun = latestRunText(status);
   const latestRunHud = latestRunHudText(status);
   const stateHud = compactPathLabel(statePath);
+  const agentCount = status.status === "running" ? 4 : 0;
+  const dreamSummary =
+    status.confidenceBuckets > 0
+      ? `${status.confidenceBuckets} confidence buckets ready`
+      : "No dream cycle yet";
   const daemonStatus = escapeHtml(status.status);
   const escapedStatePath = escapeHtml(statePath);
   const escapedLatestRun = escapeHtml(latestRun);
   const escapedLatestRunHud = escapeHtml(latestRunHud);
   const escapedStateHud = escapeHtml(stateHud);
   const escapedLocalUrl = escapeHtml(localUrl);
+  const escapedAgentCount = escapeHtml(String(agentCount));
+  const escapedDreamSummary = escapeHtml(dreamSummary);
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -171,12 +178,19 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         min-height: 88px;
         border-radius: 8px;
         padding: 18px 20px;
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(220px, 0.9fr) minmax(280px, 1fr) auto;
         align-items: center;
-        justify-content: space-between;
         gap: 16px;
       }
       .header-copy { display: grid; gap: 4px; min-width: 0; }
+      .subhead {
+        max-width: 520px;
+        margin: 2px 0 0;
+        color: #b8b39f;
+        font-size: 13px;
+        line-height: 1.35;
+      }
       .breadcrumb {
         color: #b8b39f;
         font-size: 12px;
@@ -188,6 +202,36 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         align-items: center;
         justify-content: flex-end;
         gap: 8px;
+      }
+      .command-bar {
+        min-height: 56px;
+        width: 100%;
+        border: 1px solid rgba(224, 213, 184, 0.15);
+        border-radius: 8px;
+        padding: 10px 12px;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        background: rgba(4, 8, 6, 0.52);
+        color: #fff8df;
+        cursor: pointer;
+        text-align: left;
+      }
+      .command-bar span {
+        color: #d9bd78;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+      .command-bar strong { overflow-wrap: anywhere; }
+      kbd {
+        border: 1px solid rgba(224, 213, 184, 0.18);
+        border-radius: 6px;
+        padding: 4px 7px;
+        background: rgba(244, 241, 232, 0.07);
+        color: #b8b39f;
+        font: 800 11px ui-sans-serif, system-ui;
       }
       .header-tabs {
         display: flex;
@@ -315,6 +359,59 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .section-card span { color: #b8b39f; font-size: 12px; font-weight: 850; }
       .section-card strong { display: block; margin-top: 10px; color: #fff8df; font-size: 24px; line-height: 1; overflow-wrap: anywhere; }
       .section-card p { margin: 10px 0 0; color: #cfc7ae; font-size: 12px; line-height: 1.35; }
+      .run-control-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) repeat(3, minmax(0, 0.86fr));
+        gap: 10px;
+      }
+      .control-card {
+        min-height: 120px;
+        border: 1px solid rgba(224, 213, 184, 0.13);
+        border-radius: 8px;
+        padding: 14px;
+        display: grid;
+        align-content: space-between;
+        gap: 10px;
+        background: rgba(244, 241, 232, 0.052);
+      }
+      .control-card.featured {
+        background:
+          linear-gradient(135deg, rgba(118, 199, 217, 0.14), rgba(142, 222, 146, 0.1)),
+          rgba(244, 241, 232, 0.055);
+      }
+      .control-card span,
+      .control-card small {
+        display: block;
+        color: #b8b39f;
+        font-size: 11px;
+        font-weight: 850;
+      }
+      .control-card strong {
+        display: block;
+        color: #fff8df;
+        font-size: 19px;
+        line-height: 1.08;
+        overflow-wrap: anywhere;
+      }
+      .control-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .secondary-button {
+        min-height: 34px;
+        border: 1px solid rgba(224, 213, 184, 0.16);
+        border-radius: 8px;
+        padding: 8px 10px;
+        background: rgba(4, 8, 6, 0.58);
+        color: #fff8df;
+        font-weight: 850;
+        cursor: pointer;
+      }
+      .secondary-button.accent {
+        border-color: rgba(118, 199, 217, 0.34);
+        color: #c6f3ff;
+      }
       .dashboard-content {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
@@ -443,6 +540,11 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .preset-button strong { display: block; margin-bottom: 4px; font-size: 13px; }
       .preset-button span { display: block; color: #b8b39f; font-size: 11px; font-weight: 750; }
       .agent-list { display: grid; gap: 10px; }
+      .loadout-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
       .agent-card {
         border: 1px solid rgba(224, 213, 184, 0.12);
         border-radius: 8px;
@@ -450,6 +552,33 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         background: rgba(244, 241, 232, 0.055);
       }
       .agent-card strong { display: block; margin-bottom: 4px; }
+      .loadout-card {
+        border: 1px solid rgba(224, 213, 184, 0.12);
+        border-radius: 8px;
+        padding: 12px;
+        background: rgba(244, 241, 232, 0.055);
+      }
+      .loadout-card span {
+        display: inline-flex;
+        margin-bottom: 10px;
+        border-radius: 999px;
+        padding: 4px 8px;
+        background: rgba(118, 199, 217, 0.12);
+        color: #c6f3ff;
+        font-size: 11px;
+        font-weight: 850;
+      }
+      .loadout-card strong { display: block; margin-bottom: 5px; color: #fff8df; }
+      .loadout-card p { margin: 0; color: #b8b39f; font-size: 12px; line-height: 1.35; }
+      .mission-grid { display: grid; gap: 10px; }
+      .mission-card {
+        border: 1px solid rgba(224, 213, 184, 0.12);
+        border-radius: 8px;
+        padding: 12px;
+        background: rgba(244, 241, 232, 0.055);
+      }
+      .mission-card strong { display: block; color: #fff8df; }
+      .mission-card span { display: block; margin-top: 4px; color: #b8b39f; font-size: 12px; font-weight: 750; }
       .queue-list { display: grid; gap: 8px; }
       .queue-item {
         display: grid;
@@ -519,17 +648,21 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         .gateway-grid,
         .dashboard-content { grid-template-columns: 1fr; }
         .section-cards,
+        .run-control-grid,
         .health-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .world-panel { min-height: auto; }
       }
       @media (max-width: 680px) {
         .gateway-shell { width: min(100% - 20px, 1480px); margin: 10px auto; }
-        .topbar { align-items: flex-start; flex-direction: column; }
+        .topbar { align-items: flex-start; grid-template-columns: 1fr; }
         .topbar-actions,
+        .command-bar,
         .header-tabs { width: 100%; justify-content: flex-start; }
         .nav-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .metric-grid,
         .scene-hud,
+        .run-control-grid,
+        .loadout-grid,
         .section-cards,
         .health-strip,
         .preset-grid { grid-template-columns: 1fr; }
@@ -538,7 +671,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
     </style>
   </head>
   <body>
-    <main class="gateway-shell" data-testid="gateway-shell" data-template="shadcn-dashboard-01" data-template-source="https://ui.shadcn.com/blocks">
+    <main class="gateway-shell" data-testid="gateway-shell" data-template="tailadmin-nextjs-ai-dashboard" data-template-source="https://tailadmin.com/nextjs" data-template-preview="https://nextjs-demo.tailadmin.com/ai">
       <aside class="sidebar" data-testid="gateway-sidebar">
         <div class="brand-stack">
           <div class="brand-mark">V</div>
@@ -552,11 +685,13 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
           <a class="nav-item" href="#chat">Chat</a>
           <a class="nav-item" href="#agents">Agents</a>
           <a class="nav-item" href="#world">World</a>
+          <a class="nav-item" href="#mission-board">Mission Board</a>
           <a class="nav-item" href="#memory">Memory</a>
         </nav>
         <div class="sidebar-foot">
           <strong>Status: ${daemonStatus}</strong><br>
           Local URL: ${escapedLocalUrl}<br>
+          Template: TailAdmin Next.js<br>
           Zero cloud required.
         </div>
       </aside>
@@ -566,7 +701,13 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
             <div class="breadcrumb">Gateway / Command Center</div>
             <p class="eyebrow">Command Center</p>
             <h1>Vivarium Gateway</h1>
+            <p class="subhead">Agent Workspace for local chat, runs, world state, and Dream consolidation.</p>
           </div>
+          <button type="button" class="command-bar" data-testid="command-bar" data-scroll-target="chat">
+            <span>Command Bar</span>
+            <strong>Ask or run a goal</strong>
+            <kbd>Ctrl K</kbd>
+          </button>
           <div class="topbar-actions">
             <nav class="header-tabs" data-testid="gateway-tabs" aria-label="Dashboard views">
               <a class="tab-pill active" href="#command">Overview</a>
@@ -610,7 +751,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
             <div class="toolbar-row" data-testid="dashboard-toolbar">
               <span>Live local</span>
               <span>Operator view</span>
-              <span>4 agents online</span>
+              <span>${escapedAgentCount} agents online</span>
             </div>
           </div>
           <section class="section-cards" data-testid="dashboard-section-cards">
@@ -634,6 +775,42 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               <strong>${escapedStateHud}</strong>
               <p>${escapedStatePath}</p>
             </article>
+          </section>
+          <section class="panel run-control-panel" data-testid="run-control-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Run Control</p>
+                <h2>Agent Workspace</h2>
+              </div>
+              <span data-live-field="dream-summary">${escapedDreamSummary}</span>
+            </div>
+            <div class="run-control-grid">
+              <article class="control-card featured">
+                <span>Command Bar</span>
+                <strong>Ask or run a goal from the local daemon.</strong>
+                <div class="control-actions">
+                  <button type="button" class="secondary-button accent" data-scroll-target="chat">Ask or run a goal</button>
+                  <a class="secondary-button" href="/status">Status JSON</a>
+                </div>
+              </article>
+              <article class="control-card">
+                <span>Dream cycle</span>
+                <strong data-live-field="dream-summary">${escapedDreamSummary}</strong>
+                <div class="control-actions">
+                  <button type="button" id="gateway-dream-button" class="secondary-button accent">Run Dream</button>
+                </div>
+              </article>
+              <article class="control-card">
+                <span>Active Worlds</span>
+                <strong>local world</strong>
+                <small>memory graph on ${escapedStateHud}</small>
+              </article>
+              <article class="control-card">
+                <span>Agent Loadout</span>
+                <strong>${escapedAgentCount} operators ready</strong>
+                <small>planner, dream, scout, safety</small>
+              </article>
+            </div>
           </section>
           <div class="dashboard-content">
             <section class="primary-stack">
@@ -757,19 +934,33 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               <code>POST /dream</code>
             </div>
               </section>
-              <section class="panel" id="agents">
+              <section class="panel" id="agents" data-testid="agent-loadout">
             <div class="panel-header">
               <div>
                 <p class="eyebrow">Agent Roster</p>
-                <h2>Agent Operations</h2>
+                <h2>Agent Loadout</h2>
               </div>
-              <span>runtime crew</span>
+              <span>Agent Operations</span>
             </div>
-            <div class="agent-list">
-              <article class="agent-card" data-agent-name="Local Agent"><strong>Local Agent</strong><span>Runs deterministic goals through local memory.</span></article>
-              <article class="agent-card" data-agent-name="Dream Worker"><strong>Dream Worker</strong><span>Consolidates runs into skills, traces, and identity.</span></article>
-              <article class="agent-card" data-agent-name="World Scout"><strong>World Scout</strong><span>Tracks subscribed worlds, skills, and traces.</span></article>
-              <article class="agent-card" data-agent-name="Safety Sentinel"><strong>Safety Sentinel</strong><span>Keeps external tools behind policy checks.</span></article>
+            <div class="loadout-grid">
+              <article class="loadout-card" data-agent-name="Local Agent"><span>Planner</span><strong>Local Agent</strong><p>Runs deterministic goals through local memory.</p></article>
+              <article class="loadout-card" data-agent-name="Dream Worker"><span>Dream</span><strong>Dream Worker</strong><p>Consolidates runs into skills, traces, and identity.</p></article>
+              <article class="loadout-card" data-agent-name="World Scout"><span>World</span><strong>World Scout</strong><p>Tracks subscribed worlds, skills, and traces.</p></article>
+              <article class="loadout-card" data-agent-name="Safety Sentinel"><span>Safety</span><strong>Safety Sentinel</strong><p>Keeps external tools behind policy checks.</p></article>
+            </div>
+              </section>
+              <section class="panel" id="mission-board" data-testid="world-mission-board">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Mission Board</p>
+                <h2>Active Worlds</h2>
+              </div>
+              <span>local-first</span>
+            </div>
+            <div class="mission-grid">
+              <article class="mission-card"><strong>Build a simple agent</strong><span>Run, validate, then Dream the result into memory.</span></article>
+              <article class="mission-card"><strong>Inspect local world</strong><span>Use the world reader and trace store before external tools.</span></article>
+              <article class="mission-card"><strong>Publish proof later</strong><span>Keep live provider and public release gates separate from local runs.</span></article>
             </div>
               </section>
               <section class="panel" data-testid="world-queue">
@@ -806,6 +997,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       const chatLog = document.getElementById("chat-log");
       const goalInput = form.querySelector('textarea[name="goal"]');
       const domainInput = form.querySelector('input[name="domain"]');
+      const dreamButton = document.getElementById("gateway-dream-button");
       const presetButtons = document.querySelectorAll("[data-preset-goal]");
       presetButtons.forEach((button) => {
         button.addEventListener("click", () => {
@@ -855,6 +1047,24 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
           element.textContent = value;
         });
       }
+      function dreamSummaryFromStatus(status) {
+        const confidence = Number(status.confidenceBuckets ?? 0);
+        if (confidence > 0) {
+          return confidence + " confidence buckets ready";
+        }
+        return "No dream cycle yet";
+      }
+      function dreamPayloadFromStatus(status) {
+        const runs = Math.max(1, Number(status.runs ?? 0));
+        const latestSuccess = status.latestRun?.success;
+        return {
+          coding: {
+            runsCompleted: runs,
+            successRate: latestSuccess === false ? 0 : 1,
+            skillDiversity: Math.max(1, Number(status.confidenceBuckets ?? 0) + 1),
+          },
+        };
+      }
       async function refreshGatewayTelemetry() {
         const response = await fetch("/status");
         if (!response.ok) {
@@ -873,7 +1083,32 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         setLiveField("latest-run", latestRun);
         setLiveField("confidence", confidence);
         setLiveField("confidence-label", confidenceLabel);
+        setLiveField("dream-summary", dreamSummaryFromStatus(status));
+        return status;
       }
+      dreamButton?.addEventListener("click", async () => {
+        dreamButton.disabled = true;
+        const pending = addMessage("agent", "Vivarium", "Running Dream cycle...");
+        try {
+          const status = await refreshGatewayTelemetry();
+          const response = await fetch("/dream", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(dreamPayloadFromStatus(status ?? {})),
+          });
+          const body = await response.json();
+          if (!response.ok) {
+            pending.textContent = body.error ?? "Dream cycle failed";
+            return;
+          }
+          pending.textContent = body.identitySummary ?? "Dream cycle recorded";
+          await refreshGatewayTelemetry();
+        } catch {
+          pending.textContent = "Dream cycle failed";
+        } finally {
+          dreamButton.disabled = false;
+        }
+      });
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
         const button = form.querySelector("button");
