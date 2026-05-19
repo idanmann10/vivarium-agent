@@ -189,11 +189,12 @@ describe("dispatchCliCommand", () => {
     expect(result.output).not.toContain("Commands");
   });
 
-  test("routes dashboard to the local daemon dashboard URL", async () => {
+  test("routes dashboard to the local daemon gateway URL", async () => {
     const result = await dispatchCliCommand(["dashboard"]);
 
     expect(result.command).toBe("dashboard");
-    expect(result.output).toContain("Vivarium Dashboard");
+    expect(result.output).toContain("Vivarium Gateway");
+    expect(result.output).not.toContain("Vivarium Dashboard");
     expect(result.output).toContain("Dashboard: http://127.0.0.1:8787");
     expect(result.output).toContain("Status JSON: http://127.0.0.1:8787/status");
     expect(result.output).toContain("Run API (POST): http://127.0.0.1:8787/run");

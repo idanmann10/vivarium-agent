@@ -28,7 +28,7 @@ describe("helpCommand", () => {
         expect.objectContaining({ command: "vivarium onboard" }),
         expect.objectContaining({
           command: "vivarium --setup",
-          description: "Set up local memory and show the localhost dashboard path.",
+          description: "Set up local memory and show the localhost gateway path.",
         }),
         expect.objectContaining({
           command: "vivarium start",
@@ -38,6 +38,10 @@ describe("helpCommand", () => {
         expect.objectContaining({ command: "vivarium onboard live" }),
         expect.objectContaining({ command: "vivarium local" }),
         expect.objectContaining({ command: "vivarium local run" }),
+        expect.objectContaining({
+          command: "vivarium dashboard",
+          description: "Show the local daemon gateway URL.",
+        }),
         expect.objectContaining({ command: "vivarium setup" }),
         expect.objectContaining({ command: "vivarium status" }),
         expect.objectContaining({ command: "vivarium doctor" }),

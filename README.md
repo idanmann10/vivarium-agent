@@ -48,7 +48,7 @@ Interactive terminals use the branded ANSI theme automatically. Set `VIVARIUM_CO
 
 `vivarium --setup` is the shortest local setup path: it seeds local memory,
 stages the private live-readiness file for later, and prints the localhost
-dashboard URL. `vivarium start` remains the friendly alias for `vivarium local`;
+gateway URL. `vivarium start` remains the friendly alias for `vivarium local`;
 both commands seed the same starter memory, stage the same private
 live-readiness file, and print the local-first launch sequence. The installer
 runs the same quick setup automatically.
@@ -82,7 +82,7 @@ Use `vivarium status` after a run to confirm the latest local run goal, run ID,
 success state, and score from SQLite before moving on.
 Use `vivarium tools` to inspect external toolsets and safety policy posture
 without mutating local state.
-`vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon dashboard backed
+`vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon gateway backed
 by `/status`. Install with `--daemon launchd` when you want that dashboard
 served automatically on macOS.
 The daemon root is a `Vivarium Gateway` with agent chat, agent roster, world

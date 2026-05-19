@@ -296,8 +296,8 @@ function renderDashboardCommandResult(
 ): string {
   const url = normalizedDashboardUrl(dashboardUrl);
   return [
-    "Vivarium Dashboard",
-    "------------------",
+    "Vivarium Gateway",
+    "----------------",
     `Dashboard: ${url}`,
     `Status JSON: ${url}/status`,
     `Run API (POST): ${url}/run`,
@@ -1258,7 +1258,7 @@ export async function dispatchCliCommand(
         const open =
           openResult.exitCode === 0
             ? { ok: true as const }
-            : { ok: false as const, error: openResult.stderr ?? "Unable to open dashboard URL" };
+            : { ok: false as const, error: openResult.stderr ?? "Unable to open gateway URL" };
         return { command, result: { dashboardUrl, open }, output: renderDashboardCommandResult(dashboardUrl, open) };
       }
       return { command, result: { dashboardUrl }, output: renderDashboardCommandResult(dashboardUrl) };

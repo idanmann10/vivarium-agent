@@ -34,11 +34,11 @@ export type GithubSmokeHelpCommandResult = FocusedHelpCommandResult;
 export function helpCommand(): HelpCommandResult {
   return {
     commands: [
-      { command: "vivarium --setup", description: "Set up local memory and show the localhost dashboard path." },
+      { command: "vivarium --setup", description: "Set up local memory and show the localhost gateway path." },
       { command: "vivarium start", description: "Start guided local setup with the starter pack." },
       { command: "vivarium local", description: "Create the default local agent and starter memory." },
       { command: "vivarium local run", description: "Run the local agent offline with the built-in provider." },
-      { command: "vivarium dashboard", description: "Show the local daemon dashboard URL." },
+      { command: "vivarium dashboard", description: "Show the local daemon gateway URL." },
       { command: "vivarium onboard", description: "Run local onboarding with the starter pack." },
       {
         command: "vivarium setup live",

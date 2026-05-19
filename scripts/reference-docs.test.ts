@@ -688,10 +688,10 @@ describe("reference docs", () => {
         expect(body).toContain(command);
       }
       expect(normalizedBody).toContain(
-        "`vivarium --setup` is the shortest local setup path: it seeds local memory, stages the private live-readiness file for later, and prints the localhost dashboard URL",
+        "`vivarium --setup` is the shortest local setup path: it seeds local memory, stages the private live-readiness file for later, and prints the localhost gateway URL",
       );
       expect(normalizedBody).toContain(
-        "`vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon dashboard backed by `/status`",
+        "`vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon gateway backed by `/status`",
       );
       expect(normalizedBody).toContain(
         "The daemon root is a `Vivarium Gateway` with agent chat, agent roster, world telemetry, and a canvas world view",
@@ -1429,7 +1429,7 @@ describe("reference docs", () => {
       'vivarium dashboard\\n  vivarium daemon smoke\\n  vivarium local run --goal \\"try another small coding task\\"\\n  vivarium status --state-path <demo-state.db> --live-env-path <demo-live-readiness.local.env>',
     );
     expect(body).toContain(
-      "vivarium dashboard          Open the local dashboard URL.\\n  vivarium daemon smoke       Verify the local daemon.",
+      "vivarium dashboard          Open the local gateway URL.\\n  vivarium daemon smoke       Verify the local daemon.",
     );
     expect(body).not.toContain("vivarium model               Inspect provider profile readiness.");
     expect(body).not.toContain(

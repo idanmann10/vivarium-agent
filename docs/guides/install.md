@@ -102,7 +102,7 @@ Use `vivarium status` after a run to confirm the latest local run goal, run ID,
 success state, and score from SQLite before moving on.
 Use `vivarium tools` to inspect external toolsets and safety policy posture
 without mutating local state.
-`vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon dashboard backed
+`vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon gateway backed
 by `/status`. Install with `--daemon launchd` when you want that dashboard
 served automatically on macOS.
 The daemon root is a `Vivarium Gateway` with agent chat, agent roster, world
@@ -123,7 +123,7 @@ running outside the installed wrapper.
 `vivarium status --state-path <file> --live-env-path <file>` keeps those
 explicit paths in its next `vivarium local run` and `vivarium connect` commands,
 so custom-path smokes do not drift back to default state.
-`vivarium --setup` is the shortest local setup path: it seeds local memory, stages the private live-readiness file for later, and prints the localhost dashboard URL.
+`vivarium --setup` is the shortest local setup path: it seeds local memory, stages the private live-readiness file for later, and prints the localhost gateway URL.
 `vivarium start` remains the friendly alias for `vivarium local`; both commands seed the same starter memory, stage the same private live-readiness file, and print the local-first launch sequence.
 If you run `vivarium local run` before `vivarium start`, the command seeds the same starter memory, stages the private live-readiness file, and then runs the local agent against that durable state.
 If the local SQLite state file is invalid, `vivarium local run` stops before writing new run data, names the damaged path, and points you at `vivarium doctor` plus `vivarium local` so you can move the file aside and reseed it.
