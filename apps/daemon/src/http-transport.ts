@@ -350,6 +350,80 @@ function renderLiveRunStream(status: DashboardStatus): string {
     .join("");
 }
 
+function renderAgentBuilder(status: DashboardStatus): string {
+  const latestState = status.latestRun === undefined ? "ready" : formatRunState(status.latestRun.success);
+  const builderSteps = [
+    {
+      label: "Create agent",
+      title: status.memory.identityName ?? "local-agent",
+      detail: "Local identity, durable memory, and deterministic provider are staged.",
+      state: "ready",
+    },
+    {
+      label: "Pick skills",
+      title: `${status.skills.promoted}/${status.skills.total} promoted`,
+      detail: `${status.skills.habitual} habitual skills and ${status.skills.candidates} candidates available.`,
+      state: status.skills.total > 0 ? "loaded" : "seed",
+    },
+    {
+      label: "Run locally",
+      title: status.latestRun?.goal ?? "build a simple agent end to end",
+      detail: status.latestRun === undefined ? "Submit a goal in chat to produce a run trace." : `Last run ${status.latestRun.id}.`,
+      state: latestState,
+    },
+    {
+      label: "Review trace",
+      title: status.latestRun?.score === null || status.latestRun === undefined ? "waiting for score" : `score ${status.latestRun.score}`,
+      detail: `${status.memory.traceCandidates} trace candidates and ${status.confidenceBuckets} confidence buckets.`,
+      state: status.latestRun === undefined ? "idle" : "recorded",
+    },
+  ];
+
+  return builderSteps
+    .map(
+      (step, index) =>
+        `<article class="builder-step"><span class="step-index">${index + 1}</span><div><small>${escapeHtml(step.label)}</small><strong>${escapeHtml(step.title)}</strong><p>${escapeHtml(step.detail)}</p></div><b>${escapeHtml(step.state)}</b></article>`,
+    )
+    .join("");
+}
+
+function renderOperationsFeed(status: DashboardStatus): string {
+  const latest = status.latestRun;
+  const feed = [
+    {
+      label: "Runtime",
+      title: "Daemon online",
+      detail: `Status ${status.status}, memory ${compactPathLabel(status.statePath ?? "memory-only")}.`,
+      state: "live",
+    },
+    {
+      label: "Agent",
+      title: latest?.goal ?? "No local run yet",
+      detail: latest === undefined ? "Chat is ready to start the first goal." : `Run ${latest.id} in ${latest.domain}.`,
+      state: latest === undefined ? "idle" : formatRunState(latest.success),
+    },
+    {
+      label: "Dream",
+      title: status.confidenceBuckets > 0 ? "Confidence buckets ready" : "Dream waiting",
+      detail: `${status.skills.candidates} candidates, ${status.skills.archived} archived, ${status.skills.habitual} habitual.`,
+      state: status.confidenceBuckets > 0 ? "ready" : "standby",
+    },
+    {
+      label: "World",
+      title: `${status.domains.length} active domains`,
+      detail: `${status.memory.publishableArtifacts} publishables, ${status.memory.semanticFacts} facts.`,
+      state: status.domains.length > 0 ? "mapped" : "empty",
+    },
+  ];
+
+  return feed
+    .map(
+      (item) =>
+        `<div class="feed-item"><span>${escapeHtml(item.label)}</span><div><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.detail)}</small></div><b>${escapeHtml(item.state)}</b></div>`,
+    )
+    .join("");
+}
+
 function renderDashboard(daemon: DaemonServer, localUrl: string): string {
   const status = daemon.status();
   const statePath = status.statePath ?? "memory-only";
@@ -384,6 +458,8 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
   const agentDirectoryRows = renderAgentDirectoryRows(status);
   const agentStatusBoard = renderAgentStatusBoard(status);
   const liveRunStream = renderLiveRunStream(status);
+  const agentBuilder = renderAgentBuilder(status);
+  const operationsFeed = renderOperationsFeed(status);
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -529,11 +605,11 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         line-height: 1.45;
       }
       .topbar {
-        min-height: 88px;
+        min-height: 92px;
         border-radius: 8px;
-        padding: 18px 20px;
+        padding: 16px 18px;
         display: grid;
-        grid-template-columns: minmax(220px, 0.9fr) minmax(280px, 1fr) auto;
+        grid-template-columns: minmax(260px, 0.9fr) minmax(360px, 1fr) auto;
         align-items: center;
         gap: 16px;
       }
@@ -578,7 +654,11 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         font-weight: 900;
         text-transform: uppercase;
       }
-      .command-bar strong { overflow-wrap: anywhere; }
+      .command-bar strong {
+        min-width: 0;
+        line-height: 1.16;
+        overflow-wrap: anywhere;
+      }
       kbd {
         border: 1px solid rgba(224, 213, 184, 0.18);
         border-radius: 6px;
@@ -629,7 +709,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         text-transform: uppercase;
       }
       h1, h2, h3, p { margin-top: 0; }
-      h1 { margin-bottom: 0; font-size: clamp(30px, 3.6vw, 48px); line-height: 0.98; letter-spacing: 0; }
+      h1 { margin-bottom: 0; font-size: clamp(24px, 2.2vw, 32px); line-height: 1.05; letter-spacing: 0; }
       h2 { margin-bottom: 12px; font-size: 16px; letter-spacing: 0; }
       h3 { margin-bottom: 6px; font-size: 14px; letter-spacing: 0; }
       .status-pill {
@@ -717,6 +797,63 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         display: grid;
         grid-template-columns: minmax(0, 1.1fr) repeat(3, minmax(0, 0.86fr));
         gap: 10px;
+      }
+      .builder-panel {
+        display: grid;
+        gap: 14px;
+      }
+      .builder-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .builder-step {
+        min-height: 150px;
+        border: 1px solid rgba(224, 213, 184, 0.13);
+        border-radius: 8px;
+        padding: 14px;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 12px;
+        background: rgba(244, 241, 232, 0.052);
+      }
+      .builder-step .step-index {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: #2563eb;
+        color: #ffffff;
+        font-weight: 950;
+      }
+      .builder-step small,
+      .builder-step p,
+      .feed-item small {
+        display: block;
+        color: #b8b39f;
+        font-size: 11px;
+        font-weight: 780;
+        line-height: 1.35;
+      }
+      .builder-step strong {
+        display: block;
+        margin: 4px 0 8px;
+        color: #fff8df;
+        font-size: 14px;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+      }
+      .builder-step p { margin-bottom: 0; }
+      .builder-step b {
+        grid-column: 1 / -1;
+        justify-self: start;
+        border: 1px solid rgba(37, 99, 235, 0.26);
+        border-radius: 999px;
+        padding: 5px 9px;
+        background: rgba(37, 99, 235, 0.12);
+        color: #c6f3ff;
+        font-size: 11px;
       }
       .control-card {
         min-height: 120px;
@@ -876,6 +1013,33 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .run-stream {
         display: grid;
         gap: 10px;
+      }
+      .feed-list {
+        display: grid;
+        gap: 10px;
+      }
+      .feed-item {
+        border: 1px solid rgba(224, 213, 184, 0.12);
+        border-radius: 8px;
+        padding: 12px;
+        display: grid;
+        grid-template-columns: 68px minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+        background: rgba(244, 241, 232, 0.055);
+      }
+      .feed-item > span,
+      .feed-item b {
+        color: #b8b39f;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+      .feed-item strong {
+        display: block;
+        color: #fff8df;
+        font-size: 13px;
+        overflow-wrap: anywhere;
       }
       .stream-row {
         border: 1px solid rgba(224, 213, 184, 0.12);
@@ -1376,6 +1540,44 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         font-size: 11px;
         font-weight: 850;
       }
+      .world-state-legend {
+        position: absolute;
+        left: 16px;
+        bottom: 92px;
+        width: min(250px, calc(100% - 32px));
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 8px;
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+        background: rgba(15, 23, 42, 0.78);
+        color: #f8fafc;
+        box-shadow: 0 14px 36px rgba(2, 6, 23, 0.26);
+      }
+      .world-state-legend strong {
+        color: #ffffff;
+        font-size: 13px;
+      }
+      .legend-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 7px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        color: #dbeafe;
+        font-size: 11px;
+        font-weight: 850;
+      }
+      .legend-swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: var(--agent-color, #38bdf8);
+        box-shadow: 0 0 14px var(--agent-color, #38bdf8);
+      }
       :root {
         color-scheme: light;
         background: #f4f7fb;
@@ -1467,6 +1669,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .ghost-button,
       .health-card,
       .section-card,
+      .builder-step,
       .control-card,
       .metric,
       .message,
@@ -1475,6 +1678,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .party-card,
       .stack-item,
       .stream-row,
+      .feed-item,
       .loadout-card,
       .session-card,
       .template-card,
@@ -1535,6 +1739,22 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       }
       .stack-item b {
         color: #2563eb;
+      }
+      .builder-step strong,
+      .feed-item strong {
+        color: #0f172a;
+      }
+      .builder-step small,
+      .builder-step p,
+      .feed-item > span,
+      .feed-item small,
+      .feed-item b {
+        color: #64748b;
+      }
+      .builder-step b {
+        border-color: rgba(37, 99, 235, 0.18);
+        background: #eff6ff;
+        color: #1d4ed8;
       }
       .stream-dot {
         background: #2563eb;
@@ -1608,6 +1828,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         .dashboard-panels,
         .dashboard-content { grid-template-columns: 1fr; }
         .section-cards,
+        .builder-grid,
         .party-grid,
         .run-control-grid,
         .health-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1673,10 +1894,12 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         .session-grid,
         .party-grid,
         .section-cards,
+        .builder-grid,
         .health-strip,
         .preset-grid { grid-template-columns: 1fr; }
         .agent-mesh,
         .world-minimap,
+        .world-state-legend,
         .world-inspector {
           position: static;
           width: auto;
@@ -1684,6 +1907,9 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         }
         .stream-row {
           grid-template-columns: 12px minmax(0, 1fr);
+        }
+        .feed-item {
+          grid-template-columns: minmax(0, 1fr);
         }
         .stream-row > span:not(.stream-dot),
         .stream-row b {
@@ -1716,6 +1942,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
           <span class="nav-group-title">Operations</span>
           <a class="nav-item active" href="#command"><span class="nav-glyph">CC</span>Command Center</a>
           <a class="nav-item" href="#chat"><span class="nav-glyph">AI</span>Chat</a>
+          <a class="nav-item" href="#builder"><span class="nav-glyph">BL</span>Builder</a>
           <a class="nav-item" href="#agents"><span class="nav-glyph">AG</span>Agents</a>
           <span class="nav-group-title">World</span>
           <a class="nav-item" href="#world"><span class="nav-glyph">3D</span>World</a>
@@ -1733,6 +1960,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         <div class="sidebar-foot">
           <strong>Status: ${daemonStatus}</strong><br>
           Local URL: ${escapedLocalUrl}<br>
+          Template: TailAdmin Next.js + shadcn<br>
           Template Kit: TailAdmin Next.js + shadcn dashboard-01<br>
           Zero cloud required.
         </div>
@@ -1742,7 +1970,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
           <div class="header-copy">
             <div class="breadcrumb">Gateway / Command Center</div>
             <p class="eyebrow">Command Center</p>
-            <h1>Agent Control Room</h1>
+            <h1>Vivarium Gateway</h1>
             <p class="subhead">Agent Workspace for local chat, runs, world state, and Dream consolidation.</p>
           </div>
           <button type="button" class="command-bar" data-testid="command-bar" data-scroll-target="chat">
@@ -1868,6 +2096,18 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               </article>
             </div>
           </section>
+          <section class="panel builder-panel" id="builder" data-testid="agent-builder">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Agent Builder</p>
+                <h2>Build Pipeline</h2>
+              </div>
+              <span>Template: TailAdmin Next.js + shadcn</span>
+            </div>
+            <div class="builder-grid">
+              ${agentBuilder}
+            </div>
+          </section>
           <section class="dashboard-panels">
             <article class="panel" data-testid="agent-status-board">
               <div class="panel-header">
@@ -1893,6 +2133,18 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
                 <div class="stack-item"><div><strong>Provider Router</strong><small>Local deterministic profile now, live providers later.</small></div><b>ready</b></div>
                 <div class="stack-item"><div><strong>Tool Belt</strong><small>Self tools, safety gates, and daemon APIs.</small></div><b>guarded</b></div>
                 <div class="stack-item"><div><strong>World Memory</strong><small>${escapedStateHud}, ${escapedDomainCount} domains, ${escapedMemoryFacts} facts.</small></div><b>synced</b></div>
+              </div>
+            </article>
+            <article class="panel" data-testid="operations-feed">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Operations Feed</p>
+                  <h2>Live Control Feed</h2>
+                </div>
+                <span>local loop</span>
+              </div>
+              <div class="feed-list">
+                ${operationsFeed}
               </div>
             </article>
           </section>
@@ -1938,6 +2190,15 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
                       <span data-live-field="runs-label">Runs: ${status.runs}</span>
                       <span>${escapedAgentCount} agents</span>
                       <span data-live-field="confidence-label">${status.confidenceBuckets} buckets</span>
+                    </div>
+                  </div>
+                  <div class="world-state-legend" data-testid="world-state-legend" aria-label="State Legend">
+                    <strong>State Legend</strong>
+                    <div class="legend-grid">
+                      <span class="legend-item"><i class="legend-swatch" style="--agent-color: #22c55e;"></i>Planner</span>
+                      <span class="legend-item"><i class="legend-swatch" style="--agent-color: #38bdf8;"></i>World</span>
+                      <span class="legend-item"><i class="legend-swatch" style="--agent-color: #a78bfa;"></i>Dream</span>
+                      <span class="legend-item"><i class="legend-swatch" style="--agent-color: #f59e0b;"></i>Safety</span>
                     </div>
                   </div>
                   <div class="scene-hud">
@@ -2312,12 +2573,13 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
             pending.textContent = body.error ?? "Run failed";
             return;
           }
+          const status = await refreshGatewayTelemetry();
+          const validationScore = status?.latestRun?.score ?? body.validation?.score ?? "recorded";
           pending.textContent = [
             body.success ? "Run recorded" : "Run failed",
             "Run ID: " + body.runId,
-            "Validation: " + (body.validation?.score ?? "recorded"),
+            "Validation: " + validationScore,
           ].join("\\n");
-          await refreshGatewayTelemetry();
         } catch {
           pending.textContent = "Run failed";
         } finally {

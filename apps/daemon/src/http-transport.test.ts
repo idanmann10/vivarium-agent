@@ -62,12 +62,21 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain("Memory Facts");
     expect(body).toContain("Agent Control Room");
     expect(body).toContain("Command Deck");
+    expect(body).toContain("Agent Builder");
+    expect(body).toContain("Build Pipeline");
+    expect(body).toContain("Create agent");
+    expect(body).toContain("Pick skills");
+    expect(body).toContain("Run locally");
+    expect(body).toContain("Review trace");
+    expect(body).toContain("Operations Feed");
+    expect(body).toContain("Template: TailAdmin Next.js + shadcn");
     expect(body).toContain("Active Session");
     expect(body).toContain("Memory Layer");
     expect(body).toContain("Skill Runtime");
     expect(body).toContain("Live Agent Mesh");
     expect(body).toContain("World Minimap");
     expect(body).toContain("Canvas Layers");
+    expect(body).toContain("State Legend");
     expect(body).toContain("Recent Runs");
     expect(body).toContain('data-testid="template-reference-card"');
     expect(body).toContain('data-testid="gateway-sidebar"');
@@ -88,6 +97,8 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain('data-testid="health-strip"');
     expect(body).toContain('data-testid="dashboard-section-cards"');
     expect(body).toContain('data-testid="run-control-panel"');
+    expect(body).toContain('data-testid="agent-builder"');
+    expect(body).toContain('data-testid="operations-feed"');
     expect(body).toContain('data-testid="run-signal-chart"');
     expect(body).toContain('data-testid="activity-table"');
     expect(body).toContain('data-testid="recent-runs-table"');
@@ -97,6 +108,7 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain('data-testid="model-tool-stack"');
     expect(body).toContain('data-testid="live-run-stream"');
     expect(body).toContain('data-testid="world-inspector"');
+    expect(body).toContain('data-testid="world-state-legend"');
     expect(body).toContain('data-testid="agent-loadout"');
     expect(body).toContain('data-testid="agent-directory-table"');
     expect(body).toContain('data-testid="world-mission-board"');
@@ -161,7 +173,8 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain('fetch("/run"');
     expect(body).toContain('fetch("/dream"');
     expect(body).toContain('"Run recorded"');
-    expect(body).toContain('body.validation?.score ?? "recorded"');
+    expect(body).toContain('const status = await refreshGatewayTelemetry();');
+    expect(body).toContain('status?.latestRun?.score ?? body.validation?.score ?? "recorded"');
     expect(body).toContain('data-live-field="runs"');
     expect(body).toContain('data-live-field="runs-label"');
     expect(body).toContain('data-live-field="latest-score"');
