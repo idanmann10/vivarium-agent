@@ -155,6 +155,34 @@ function renderWorldQueue(status: DashboardStatus): string {
     .join("");
 }
 
+function renderSessionCards(status: DashboardStatus): string {
+  const latestState = status.latestRun === undefined ? "idle" : formatRunState(status.latestRun.success);
+  const sessions = [
+    {
+      label: "Active Session",
+      value: status.latestRun?.goal ?? "build a simple agent end to end",
+      detail: latestState,
+    },
+    {
+      label: "Memory Layer",
+      value: `${status.memory.semanticFacts} facts`,
+      detail: `${status.confidenceBuckets} confidence buckets`,
+    },
+    {
+      label: "Skill Runtime",
+      value: `${status.skills.promoted}/${status.skills.total}`,
+      detail: `${status.skills.candidates} candidates`,
+    },
+  ];
+
+  return sessions
+    .map(
+      (session) =>
+        `<article class="session-card"><span>${escapeHtml(session.label)}</span><strong>${escapeHtml(session.value)}</strong><small>${escapeHtml(session.detail)}</small></article>`,
+    )
+    .join("");
+}
+
 function renderAgentLoadout(status: DashboardStatus): string {
   const agents = [
     {
@@ -187,6 +215,51 @@ function renderAgentLoadout(status: DashboardStatus): string {
     .map(
       (agent) =>
         `<article class="loadout-card" data-agent-name="${escapeHtml(agent.name)}"><span>${escapeHtml(agent.label)}</span><strong>${escapeHtml(agent.name)}</strong><p><b>${escapeHtml(agent.metric)}</b> ${escapeHtml(agent.body)}</p></article>`,
+    )
+    .join("");
+}
+
+function renderAgentDirectoryRows(status: DashboardStatus): string {
+  const latestState = status.latestRun === undefined ? "idle" : formatRunState(status.latestRun.success);
+  const agents = [
+    {
+      initials: "LA",
+      name: "Local Agent",
+      lane: "Planning",
+      status: latestState,
+      queue: status.latestRun?.goal ?? "first local goal",
+      skill: `${status.runs} runs`,
+    },
+    {
+      initials: "DW",
+      name: "Dream Worker",
+      lane: "Memory",
+      status: status.confidenceBuckets > 0 ? "consolidating" : "idle",
+      queue: `${status.confidenceBuckets} buckets`,
+      skill: `${status.skills.promoted} promoted`,
+    },
+    {
+      initials: "WS",
+      name: "World Scout",
+      lane: "World",
+      status: status.domains.length > 0 ? "mapping" : "standby",
+      queue: `${status.domains.length} domains`,
+      skill: `${status.memory.publishableArtifacts} publishable`,
+    },
+    {
+      initials: "SS",
+      name: "Safety Sentinel",
+      lane: "Guardrail",
+      status: "guarded",
+      queue: `${status.memory.antiPatternCandidates} watched`,
+      skill: "policy",
+    },
+  ];
+
+  return agents
+    .map(
+      (agent) =>
+        `<tr><td><div class="roster-agent"><span class="roster-avatar">${escapeHtml(agent.initials)}</span><div><strong>${escapeHtml(agent.name)}</strong><small>${escapeHtml(agent.lane)}</small></div></div></td><td><span class="status-badge">${escapeHtml(agent.status)}</span></td><td>${escapeHtml(agent.queue)}</td><td>${escapeHtml(agent.skill)}</td></tr>`,
     )
     .join("");
 }
@@ -306,7 +379,9 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
   const domainCards = renderDomainCards(status.domains);
   const recentRunRows = renderRecentRunRows(status.recentRuns);
   const worldQueue = renderWorldQueue(status);
+  const sessionCards = renderSessionCards(status);
   const agentLoadout = renderAgentLoadout(status);
+  const agentDirectoryRows = renderAgentDirectoryRows(status);
   const agentStatusBoard = renderAgentStatusBoard(status);
   const liveRunStream = renderLiveRunStream(status);
   return `<!doctype html>
@@ -358,7 +433,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         border-radius: 8px;
         padding: 18px;
         display: grid;
-        grid-template-rows: auto 1fr auto;
+        grid-template-rows: auto auto minmax(0, 1fr) auto auto;
         gap: 18px;
       }
       .brand-mark {
@@ -374,20 +449,77 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .brand-stack { display: grid; gap: 10px; }
       .brand-stack strong { color: #fff8df; font-size: 18px; }
       .nav-list { display: grid; gap: 8px; align-content: start; }
+      .nav-group-title {
+        grid-column: 1 / -1;
+        margin-top: 6px;
+        color: #8f8a78;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
       .nav-item {
         min-width: 0;
         border: 1px solid rgba(224, 213, 184, 0.12);
         border-radius: 8px;
         padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
         background: rgba(244, 241, 232, 0.045);
         color: #ded5bd;
         font-size: 13px;
         font-weight: 850;
+        text-decoration: none;
+      }
+      .nav-glyph {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        display: grid;
+        flex: 0 0 auto;
+        place-items: center;
+        background: rgba(244, 241, 232, 0.07);
+        color: #d9bd78;
+        font-size: 11px;
+        font-weight: 950;
       }
       .nav-item.active {
         border-color: rgba(142, 222, 146, 0.36);
         background: rgba(79, 143, 91, 0.18);
         color: #c7f6c9;
+      }
+      .template-card {
+        border: 1px solid rgba(224, 213, 184, 0.12);
+        border-radius: 8px;
+        padding: 12px;
+        display: grid;
+        gap: 8px;
+        background: rgba(244, 241, 232, 0.052);
+      }
+      .template-card span {
+        color: #d9bd78;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+      .template-card strong {
+        color: #fff8df;
+        font-size: 13px;
+        line-height: 1.25;
+      }
+      .template-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .template-links a {
+        border: 1px solid rgba(224, 213, 184, 0.14);
+        border-radius: 999px;
+        padding: 5px 8px;
+        background: rgba(4, 8, 6, 0.34);
+        color: #c7f6c9;
+        font-size: 11px;
+        text-decoration: none;
       }
       .sidebar-foot {
         border-top: 1px solid rgba(224, 213, 184, 0.12);
@@ -867,6 +999,35 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         cursor: pointer;
       }
       button:disabled { cursor: progress; opacity: 0.72; }
+      .session-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+      .session-card {
+        min-height: 92px;
+        border: 1px solid rgba(224, 213, 184, 0.12);
+        border-radius: 8px;
+        padding: 10px;
+        display: grid;
+        align-content: space-between;
+        gap: 8px;
+        background: rgba(244, 241, 232, 0.055);
+      }
+      .session-card span,
+      .session-card small {
+        color: #b8b39f;
+        font-size: 11px;
+        font-weight: 850;
+        line-height: 1.25;
+      }
+      .session-card strong {
+        color: #fff8df;
+        font-size: 13px;
+        line-height: 1.18;
+        overflow-wrap: anywhere;
+      }
       .preset-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -916,6 +1077,77 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .loadout-card strong { display: block; margin-bottom: 5px; color: #fff8df; }
       .loadout-card p { margin: 0; color: #b8b39f; font-size: 12px; line-height: 1.35; }
       .loadout-card b { color: #fff8df; font-weight: 900; }
+      .roster-wrap {
+        width: 100%;
+        overflow: auto;
+        margin-top: 14px;
+      }
+      .roster-heading {
+        min-width: 560px;
+        border-bottom: 1px solid rgba(224, 213, 184, 0.12);
+        padding: 0 0 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .roster-heading strong {
+        color: #fff8df;
+        font-size: 13px;
+      }
+      .roster-heading span {
+        color: #b8b39f;
+        font-size: 11px;
+        font-weight: 850;
+      }
+      .roster-table {
+        width: 100%;
+        min-width: 560px;
+        border-collapse: collapse;
+      }
+      .roster-table th,
+      .roster-table td {
+        border-bottom: 1px solid rgba(224, 213, 184, 0.12);
+        padding: 11px 8px;
+        text-align: left;
+        vertical-align: middle;
+      }
+      .roster-table th {
+        color: #b8b39f;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+      .roster-table td {
+        color: #fff8df;
+        font-size: 12px;
+      }
+      .roster-agent {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .roster-agent strong,
+      .roster-agent small {
+        display: block;
+      }
+      .roster-agent small {
+        color: #b8b39f;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .roster-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: grid;
+        flex: 0 0 auto;
+        place-items: center;
+        background: linear-gradient(135deg, #2563eb, #06b6d4);
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 950;
+      }
       .mission-grid { display: grid; gap: 10px; }
       .mission-card {
         border: 1px solid rgba(224, 213, 184, 0.12);
@@ -1164,7 +1396,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         box-shadow: 0 18px 56px rgba(15, 23, 42, 0.08);
       }
       .sidebar {
-        grid-template-rows: auto auto 1fr auto;
+        grid-template-rows: auto auto minmax(0, 1fr) auto auto;
       }
       .brand-mark {
         background: linear-gradient(135deg, #111827, #2563eb 55%, #7c3aed);
@@ -1182,8 +1414,13 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .stack-item strong,
       .stream-row strong,
       .loadout-card strong,
+      .session-card strong,
+      .template-card strong,
+      .roster-heading strong,
       .mission-card strong,
       .queue-item strong,
+      .roster-agent strong,
+      .roster-table td,
       .activity-table td,
       .message p {
         color: #0f172a;
@@ -1208,8 +1445,15 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .stream-row > span:not(.stream-dot),
       .stream-row b,
       .loadout-card p,
+      .session-card span,
+      .session-card small,
+      .template-card span,
+      .roster-heading span,
       .mission-card span,
       .queue-item span,
+      .roster-table th,
+      .roster-agent small,
+      .nav-group-title,
       .activity-table th,
       label {
         color: #64748b;
@@ -1232,6 +1476,8 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .stack-item,
       .stream-row,
       .loadout-card,
+      .session-card,
+      .template-card,
       .mission-card,
       .queue-item,
       .endpoint-list code {
@@ -1245,6 +1491,10 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         border-color: rgba(37, 99, 235, 0.28);
         background: #eff6ff;
         color: #1d4ed8;
+      }
+      .nav-glyph {
+        background: #e2e8f0;
+        color: #2563eb;
       }
       .command-bar {
         border-color: #dbe3ef;
@@ -1267,10 +1517,18 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       }
       .toolbar-row span,
       .loadout-card span,
+      .template-links a,
       .status-badge {
         border-color: rgba(37, 99, 235, 0.18);
         background: #eff6ff;
         color: #1d4ed8;
+      }
+      .roster-table th,
+      .roster-table td {
+        border-bottom-color: #e2e8f0;
+      }
+      .roster-heading {
+        border-bottom-color: #e2e8f0;
       }
       .energy-track {
         background: #e2e8f0;
@@ -1412,6 +1670,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         .dashboard-panels,
         .run-control-grid,
         .loadout-grid,
+        .session-grid,
         .party-grid,
         .section-cards,
         .health-strip,
@@ -1454,13 +1713,23 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
           <small>${escapedStateHud}</small>
         </div>
         <nav class="nav-list" aria-label="Gateway sections">
-          <a class="nav-item active" href="#command">Command Center</a>
-          <a class="nav-item" href="#chat">Chat</a>
-          <a class="nav-item" href="#agents">Agents</a>
-          <a class="nav-item" href="#world">World</a>
-          <a class="nav-item" href="#mission-board">Mission Board</a>
-          <a class="nav-item" href="#memory">Memory</a>
+          <span class="nav-group-title">Operations</span>
+          <a class="nav-item active" href="#command"><span class="nav-glyph">CC</span>Command Center</a>
+          <a class="nav-item" href="#chat"><span class="nav-glyph">AI</span>Chat</a>
+          <a class="nav-item" href="#agents"><span class="nav-glyph">AG</span>Agents</a>
+          <span class="nav-group-title">World</span>
+          <a class="nav-item" href="#world"><span class="nav-glyph">3D</span>World</a>
+          <a class="nav-item" href="#mission-board"><span class="nav-glyph">MB</span>Mission Board</a>
+          <a class="nav-item" href="#memory"><span class="nav-glyph">DB</span>Memory</a>
         </nav>
+        <div class="template-card" data-testid="template-reference-card">
+          <span>Template Reference</span>
+          <strong>TailAdmin Next.js shell with shadcn dashboard blocks.</strong>
+          <div class="template-links">
+            <a href="https://tailadmin.com/nextjs">TailAdmin</a>
+            <a href="https://ui.shadcn.com/blocks">shadcn blocks</a>
+          </div>
+        </div>
         <div class="sidebar-foot">
           <strong>Status: ${daemonStatus}</strong><br>
           Local URL: ${escapedLocalUrl}<br>
@@ -1773,6 +2042,9 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               </div>
               <a href="/status">/status</a>
             </div>
+            <div class="session-grid" data-testid="chat-session-cards" aria-label="Session Snapshot">
+              ${sessionCards}
+            </div>
             <div class="preset-grid" data-testid="agent-presets" aria-label="Agent presets">
               <button type="button" class="preset-button" data-preset-goal="debug a failing local agent run" data-preset-domain="coding"><strong>Debug</strong><span>Trace a runtime issue</span></button>
               <button type="button" class="preset-button" data-preset-goal="ship a simple local agent" data-preset-domain="coding"><strong>Ship</strong><span>Run the release path</span></button>
@@ -1829,6 +2101,22 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
             </div>
             <div class="loadout-grid">
               ${agentLoadout}
+            </div>
+            <div class="roster-wrap" data-testid="agent-directory-table">
+              <div class="roster-heading"><strong>Agent Directory</strong><span>Live lanes and queues</span></div>
+              <table class="roster-table">
+                <thead>
+                  <tr>
+                    <th>Agent</th>
+                    <th>Status</th>
+                    <th>Queue</th>
+                    <th>Skill</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${agentDirectoryRows}
+                </tbody>
+              </table>
             </div>
               </section>
               <section class="panel" id="mission-board" data-testid="world-mission-board">

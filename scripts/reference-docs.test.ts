@@ -694,7 +694,7 @@ describe("reference docs", () => {
         "`vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon gateway backed by `/status`",
       );
       expect(normalizedBody).toContain(
-        "The daemon root is a TailAdmin-inspired `Vivarium Gateway` with agent chat, a command bar, run controls, agent loadout, mission board, world telemetry, and a canvas world view",
+        "The daemon root is a TailAdmin/shadcn-inspired `Vivarium Gateway` with agent chat, session cards, a command bar, run controls, Agent Party, Model + Tools, Live Run Stream, Agent Directory, World Inspector, world telemetry, and a canvas world view",
       );
       expect(normalizedBody).toContain(
         "Use `vivarium dashboard --open` to open that URL in your browser",
@@ -1524,7 +1524,7 @@ describe("reference docs", () => {
       "build a simple agent end to end",
       "current simple-agent run ID is intentionally not hardcoded",
       "Gateway dashboard supports the local agent loop",
-      "TailAdmin-inspired `Vivarium Gateway`",
+      "TailAdmin/shadcn-inspired `Vivarium Gateway`",
       "Run Dream",
       "Dream consolidated 23 local skills across coding.",
       "Run Dream preserves starter skills",
