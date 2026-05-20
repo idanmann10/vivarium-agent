@@ -191,6 +191,92 @@ function renderAgentLoadout(status: DashboardStatus): string {
     .join("");
 }
 
+function renderAgentStatusBoard(status: DashboardStatus): string {
+  const latestState = status.latestRun === undefined ? "idle" : formatRunState(status.latestRun.success);
+  const agents = [
+    {
+      initials: "LA",
+      role: "Planner",
+      name: "Local Agent",
+      state: latestState,
+      detail: status.latestRun?.goal ?? "Ready to build the first local agent.",
+      progress: status.latestRun === undefined ? 24 : 86,
+      color: "#2563eb",
+    },
+    {
+      initials: "DW",
+      role: "Memory",
+      name: "Dream Worker",
+      state: status.confidenceBuckets > 0 ? "consolidating" : "waiting",
+      detail: `${status.confidenceBuckets} confidence buckets, ${status.skills.candidates} candidates.`,
+      progress: Math.min(100, 32 + status.confidenceBuckets * 18 + status.skills.candidates * 6),
+      color: "#7c3aed",
+    },
+    {
+      initials: "WS",
+      role: "World",
+      name: "World Scout",
+      state: status.domains.length > 0 ? "mapping" : "standby",
+      detail: `${status.domains.length} domains and ${status.memory.publishableArtifacts} publishables.`,
+      progress: Math.min(100, 30 + status.domains.length * 16 + status.memory.publishableArtifacts * 8),
+      color: "#0891b2",
+    },
+    {
+      initials: "SS",
+      role: "Safety",
+      name: "Safety Sentinel",
+      state: "guarded",
+      detail: `${status.memory.antiPatternCandidates} anti-pattern candidates watched.`,
+      progress: 92,
+      color: "#ea580c",
+    },
+  ];
+
+  return agents
+    .map(
+      (agent) =>
+        `<article class="party-card" style="--agent-color: ${agent.color}; --agent-progress: ${agent.progress}%"><div class="party-avatar">${escapeHtml(agent.initials)}</div><div class="party-copy"><span>${escapeHtml(agent.role)}</span><strong>${escapeHtml(agent.name)}</strong><small>${escapeHtml(agent.detail)}</small></div><div class="party-state"><span class="status-badge">${escapeHtml(agent.state)}</span><div class="energy-track"><i></i></div></div></article>`,
+    )
+    .join("");
+}
+
+function renderLiveRunStream(status: DashboardStatus): string {
+  const latest = status.latestRun;
+  const stages = [
+    {
+      stage: "Plan",
+      owner: "Local Agent",
+      detail: latest?.goal ?? "Waiting for the first goal.",
+      state: latest === undefined ? "idle" : "ready",
+    },
+    {
+      stage: "Predict",
+      owner: "Provider Router",
+      detail: latest === undefined ? "Local deterministic profile is ready." : `Domain ${latest.domain}.`,
+      state: latest === undefined ? "idle" : "ready",
+    },
+    {
+      stage: "Execute",
+      owner: "Tool Belt",
+      detail: latest === undefined ? "Self tools are staged." : `Run ${latest.id}.`,
+      state: latest === undefined ? "idle" : formatRunState(latest.success),
+    },
+    {
+      stage: "Validate",
+      owner: "Safety Sentinel",
+      detail: latest === undefined ? "Score appears here after a run." : `Score ${formatScore(latest.score)}.`,
+      state: latest === undefined ? "idle" : latest.success === false ? "blocked" : "recorded",
+    },
+  ];
+
+  return stages
+    .map(
+      (stage) =>
+        `<div class="stream-row"><span class="stream-dot"></span><div><strong>${escapeHtml(stage.stage)}</strong><small>${escapeHtml(stage.detail)}</small></div><span>${escapeHtml(stage.owner)}</span><b>${escapeHtml(stage.state)}</b></div>`,
+    )
+    .join("");
+}
+
 function renderDashboard(daemon: DaemonServer, localUrl: string): string {
   const status = daemon.status();
   const statePath = status.statePath ?? "memory-only";
@@ -221,6 +307,8 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
   const recentRunRows = renderRecentRunRows(status.recentRuns);
   const worldQueue = renderWorldQueue(status);
   const agentLoadout = renderAgentLoadout(status);
+  const agentStatusBoard = renderAgentStatusBoard(status);
+  const liveRunStream = renderLiveRunStream(status);
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -546,6 +634,92 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         border-color: rgba(118, 199, 217, 0.34);
         color: #c6f3ff;
       }
+      .dashboard-panels {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+        gap: 16px;
+      }
+      .party-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .party-card {
+        min-height: 128px;
+        border: 1px solid rgba(224, 213, 184, 0.13);
+        border-radius: 8px;
+        padding: 12px;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 12px;
+        background: rgba(244, 241, 232, 0.055);
+      }
+      .party-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: var(--agent-color, #38bdf8);
+        color: #ffffff;
+        font-weight: 950;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+      }
+      .party-copy { min-width: 0; }
+      .party-copy span,
+      .party-copy small,
+      .stack-item small,
+      .stream-row small {
+        display: block;
+        color: #b8b39f;
+        font-size: 11px;
+        font-weight: 780;
+        line-height: 1.35;
+      }
+      .party-copy strong {
+        display: block;
+        margin: 3px 0 5px;
+        color: #fff8df;
+        font-size: 14px;
+      }
+      .party-state {
+        grid-column: 1 / -1;
+        display: grid;
+        gap: 8px;
+      }
+      .energy-track {
+        height: 8px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(224, 213, 184, 0.12);
+      }
+      .energy-track i {
+        display: block;
+        width: var(--agent-progress, 50%);
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--agent-color, #38bdf8), #fff8df);
+      }
+      .stack-list { display: grid; gap: 10px; }
+      .stack-item {
+        border: 1px solid rgba(224, 213, 184, 0.13);
+        border-radius: 8px;
+        padding: 12px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+        background: rgba(244, 241, 232, 0.055);
+      }
+      .stack-item strong {
+        display: block;
+        color: #fff8df;
+        font-size: 13px;
+      }
+      .stack-item b {
+        color: #c6f3ff;
+        font-size: 12px;
+      }
       .dashboard-content {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
@@ -567,6 +741,38 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .chart-area { fill: rgba(142, 222, 146, 0.12); }
       .chart-line { fill: none; stroke: #8ede92; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
       .chart-dot { fill: #fff8df; stroke: #8ede92; stroke-width: 3; }
+      .run-stream {
+        display: grid;
+        gap: 10px;
+      }
+      .stream-row {
+        border: 1px solid rgba(224, 213, 184, 0.12);
+        border-radius: 8px;
+        padding: 11px 12px;
+        display: grid;
+        grid-template-columns: 12px minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: 10px;
+        background: rgba(244, 241, 232, 0.055);
+      }
+      .stream-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #8ede92;
+        box-shadow: 0 0 18px rgba(142, 222, 146, 0.5);
+      }
+      .stream-row strong {
+        display: block;
+        color: #fff8df;
+        font-size: 13px;
+      }
+      .stream-row > span:not(.stream-dot),
+      .stream-row b {
+        color: #b8b39f;
+        font-size: 11px;
+        font-weight: 850;
+      }
       .activity-table-wrap { width: 100%; overflow: auto; }
       .activity-table {
         width: 100%;
@@ -904,6 +1110,40 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         border-radius: 999px;
         background: var(--agent-color, #38bdf8);
       }
+      .world-inspector {
+        position: absolute;
+        right: 16px;
+        bottom: 92px;
+        width: min(260px, calc(100% - 32px));
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 8px;
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+        background: rgba(15, 23, 42, 0.78);
+        color: #f8fafc;
+        box-shadow: 0 14px 36px rgba(2, 6, 23, 0.26);
+      }
+      .world-inspector strong {
+        color: #ffffff;
+        font-size: 13px;
+      }
+      .inspector-tabs,
+      .inspector-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .inspector-tabs span,
+      .inspector-metrics span {
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 999px;
+        padding: 6px 8px;
+        background: rgba(255, 255, 255, 0.08);
+        color: #dbeafe;
+        font-size: 11px;
+        font-weight: 850;
+      }
       :root {
         color-scheme: light;
         background: #f4f7fb;
@@ -938,6 +1178,9 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .section-card strong,
       .control-card strong,
       .metric strong,
+      .party-copy strong,
+      .stack-item strong,
+      .stream-row strong,
       .loadout-card strong,
       .mission-card strong,
       .queue-item strong,
@@ -958,6 +1201,12 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .metric span,
       .agent-card span,
       .message-role,
+      .party-copy span,
+      .party-copy small,
+      .stack-item small,
+      .stream-row small,
+      .stream-row > span:not(.stream-dot),
+      .stream-row b,
       .loadout-card p,
       .mission-card span,
       .queue-item span,
@@ -979,6 +1228,9 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .message,
       .preset-button,
       .agent-card,
+      .party-card,
+      .stack-item,
+      .stream-row,
       .loadout-card,
       .mission-card,
       .queue-item,
@@ -1019,6 +1271,16 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         border-color: rgba(37, 99, 235, 0.18);
         background: #eff6ff;
         color: #1d4ed8;
+      }
+      .energy-track {
+        background: #e2e8f0;
+      }
+      .stack-item b {
+        color: #2563eb;
+      }
+      .stream-dot {
+        background: #2563eb;
+        box-shadow: 0 0 18px rgba(37, 99, 235, 0.38);
       }
       .control-card.featured {
         background:
@@ -1085,8 +1347,10 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         }
         .nav-list { grid-template-columns: repeat(5, minmax(0, 1fr)); }
         .gateway-grid,
+        .dashboard-panels,
         .dashboard-content { grid-template-columns: 1fr; }
         .section-cards,
+        .party-grid,
         .run-control-grid,
         .health-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .world-panel { min-height: auto; }
@@ -1145,16 +1409,26 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         .nav-list { grid-template-columns: minmax(0, 1fr); }
         .metric-grid,
         .scene-hud,
+        .dashboard-panels,
         .run-control-grid,
         .loadout-grid,
+        .party-grid,
         .section-cards,
         .health-strip,
         .preset-grid { grid-template-columns: 1fr; }
         .agent-mesh,
-        .world-minimap {
+        .world-minimap,
+        .world-inspector {
           position: static;
           width: auto;
           margin: 10px 12px 0;
+        }
+        .stream-row {
+          grid-template-columns: 12px minmax(0, 1fr);
+        }
+        .stream-row > span:not(.stream-dot),
+        .stream-row b {
+          grid-column: 2;
         }
         .scene-layer-controls {
           width: 100%;
@@ -1165,7 +1439,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
     </style>
   </head>
   <body>
-    <main class="gateway-shell" data-testid="gateway-shell" data-template="tailadmin-nextjs-ai-dashboard" data-template-source="https://tailadmin.com/nextjs" data-template-preview="https://nextjs-demo.tailadmin.com/ai" data-block-reference="https://ui.shadcn.com/blocks">
+    <main class="gateway-shell" data-testid="gateway-shell" data-template="tailadmin-nextjs-ai-dashboard" data-template-source="https://tailadmin.com/nextjs" data-template-preview="https://nextjs-demo.tailadmin.com/ai" data-block-reference="https://ui.shadcn.com/blocks" data-shadcn-block="dashboard-01">
       <aside class="sidebar" data-testid="gateway-sidebar">
         <div class="brand-stack">
           <div class="brand-mark">V</div>
@@ -1190,7 +1464,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         <div class="sidebar-foot">
           <strong>Status: ${daemonStatus}</strong><br>
           Local URL: ${escapedLocalUrl}<br>
-          Template: TailAdmin Next.js<br>
+          Template Kit: TailAdmin Next.js + shadcn dashboard-01<br>
           Zero cloud required.
         </div>
       </aside>
@@ -1325,6 +1599,34 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               </article>
             </div>
           </section>
+          <section class="dashboard-panels">
+            <article class="panel" data-testid="agent-status-board">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Agent Operations</p>
+                  <h2>Agent Party</h2>
+                </div>
+                <span>${escapedAgentCount} online</span>
+              </div>
+              <div class="party-grid">
+                ${agentStatusBoard}
+              </div>
+            </article>
+            <article class="panel" data-testid="model-tool-stack">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Runtime Stack</p>
+                  <h2>Model + Tools</h2>
+                </div>
+                <span>local-first</span>
+              </div>
+              <div class="stack-list">
+                <div class="stack-item"><div><strong>Provider Router</strong><small>Local deterministic profile now, live providers later.</small></div><b>ready</b></div>
+                <div class="stack-item"><div><strong>Tool Belt</strong><small>Self tools, safety gates, and daemon APIs.</small></div><b>guarded</b></div>
+                <div class="stack-item"><div><strong>World Memory</strong><small>${escapedStateHud}, ${escapedDomainCount} domains, ${escapedMemoryFacts} facts.</small></div><b>synced</b></div>
+              </div>
+            </article>
+          </section>
           <div class="dashboard-content">
             <section class="primary-stack">
               <section class="panel world-panel featured" id="world">
@@ -1356,6 +1658,19 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
                       <span class="minimap-node" style="left: 38%; top: 70%; --agent-color: #f59e0b;"></span>
                     </div>
                   </div>
+                  <div class="world-inspector" data-testid="world-inspector" aria-label="World Inspector">
+                    <strong>World Inspector</strong>
+                    <div class="inspector-tabs">
+                      <span>Orbit Cam</span>
+                      <span>Trace Grid</span>
+                      <span>Agent Paths</span>
+                    </div>
+                    <div class="inspector-metrics">
+                      <span data-live-field="runs-label">Runs: ${status.runs}</span>
+                      <span>${escapedAgentCount} agents</span>
+                      <span data-live-field="confidence-label">${status.confidenceBuckets} buckets</span>
+                    </div>
+                  </div>
                   <div class="scene-hud">
                     <div class="hud-item"><span>Daemon</span><strong>${daemonStatus}</strong></div>
                     <div class="hud-item"><span>Latest</span><strong data-live-field="latest-hud">${escapedLatestRunHud}</strong></div>
@@ -1384,6 +1699,18 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
                   <circle class="chart-dot" cx="492" cy="52" r="5"></circle>
                   <circle class="chart-dot" cx="616" cy="34" r="5"></circle>
                 </svg>
+              </section>
+              <section class="panel" data-testid="live-run-stream">
+                <div class="panel-header">
+                  <div>
+                    <p class="eyebrow">Live Run Stream</p>
+                    <h2>Pipeline</h2>
+                  </div>
+                  <span data-live-field="latest-hud">${escapedLatestRunHud}</span>
+                </div>
+                <div class="run-stream">
+                  ${liveRunStream}
+                </div>
               </section>
               <section class="panel" id="activity" data-testid="activity-table">
                 <div class="panel-header">

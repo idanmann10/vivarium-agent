@@ -48,6 +48,11 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain("Agent Operations");
     expect(body).toContain("World View");
     expect(body).toContain("3D Agent World");
+    expect(body).toContain("Agent Party");
+    expect(body).toContain("Live Run Stream");
+    expect(body).toContain("World Inspector");
+    expect(body).toContain("Model + Tools");
+    expect(body).toContain("Template Kit");
     expect(body).toContain("Agent Roster");
     expect(body).toContain("World Telemetry");
     expect(body).toContain("Skill Memory");
@@ -68,6 +73,7 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain('data-template-source="https://tailadmin.com/nextjs"');
     expect(body).toContain('data-template-preview="https://nextjs-demo.tailadmin.com/ai"');
     expect(body).toContain('data-block-reference="https://ui.shadcn.com/blocks"');
+    expect(body).toContain('data-shadcn-block="dashboard-01"');
     expect(body).toContain('data-testid="site-header"');
     expect(body).toContain('data-testid="gateway-tabs"');
     expect(body).toContain('data-testid="command-bar"');
@@ -79,6 +85,10 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain('data-testid="activity-table"');
     expect(body).toContain('data-testid="recent-runs-table"');
     expect(body).toContain('data-testid="agent-command-panel"');
+    expect(body).toContain('data-testid="agent-status-board"');
+    expect(body).toContain('data-testid="model-tool-stack"');
+    expect(body).toContain('data-testid="live-run-stream"');
+    expect(body).toContain('data-testid="world-inspector"');
     expect(body).toContain('data-testid="agent-loadout"');
     expect(body).toContain('data-testid="world-mission-board"');
     expect(body).toContain('data-testid="world-canvas-viewport"');
@@ -116,6 +126,11 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain("Dream Worker");
     expect(body).toContain("World Scout");
     expect(body).toContain("Safety Sentinel");
+    expect(body).toContain("Provider Router");
+    expect(body).toContain("Tool Belt");
+    expect(body).toContain("World Memory");
+    expect(body).toContain("Orbit Cam");
+    expect(body).toContain("Trace Grid");
     expect(body).toContain('id="gateway-dream-button"');
     expect(body).toContain('<canvas id="world-scene"');
     expect(body).toContain('data-testid="gateway-shell"');
