@@ -70,6 +70,127 @@ function compactPathLabel(path: string): string {
   return parts.at(-1) ?? path;
 }
 
+type DashboardStatus = ReturnType<DaemonServer["status"]>;
+
+function formatPercent(value: number): string {
+  return `${Math.round(value * 100)}%`;
+}
+
+function formatRunState(success: boolean | null): string {
+  if (success === null) {
+    return "running";
+  }
+
+  return success ? "success" : "blocked";
+}
+
+function formatScore(score: number | null): string {
+  return score === null ? "recorded" : String(score);
+}
+
+function jsonForScript(value: unknown): string {
+  return JSON.stringify(value)
+    .replaceAll("<", "\\u003c")
+    .replaceAll(">", "\\u003e")
+    .replaceAll("&", "\\u0026");
+}
+
+function renderRecentRunRows(runs: DashboardStatus["recentRuns"]): string {
+  if (runs.length === 0) {
+    return `<tr><td>Waiting</td><td>No local runs yet</td><td><span class="status-badge muted">idle</span></td><td>Local Agent</td></tr>`;
+  }
+
+  return runs
+    .map((run) => {
+      const escapedGoal = escapeHtml(run.goal);
+      const escapedDomain = escapeHtml(run.domain);
+      const runState = formatRunState(run.success);
+      return `<tr><td>${escapedDomain}</td><td>${escapedGoal}</td><td><span class="status-badge">${runState}</span></td><td>score ${formatScore(run.score)}</td></tr>`;
+    })
+    .join("");
+}
+
+function renderDomainCards(domains: DashboardStatus["domains"]): string {
+  if (domains.length === 0) {
+    return `<article class="mission-card"><strong>coding</strong><span>No local runs yet. Start with the agent chat.</span></article>`;
+  }
+
+  return domains
+    .map((domain) => {
+      const latestGoal = domain.latestGoal ?? "No recent goal";
+      return `<article class="mission-card"><strong>${escapeHtml(domain.name)}</strong><span>${domain.runs} runs, ${domain.skills} skills, ${formatPercent(domain.successRate)} success. ${escapeHtml(latestGoal)}</span></article>`;
+    })
+    .join("");
+}
+
+function renderWorldQueue(status: DashboardStatus): string {
+  const queue = [
+    {
+      title: "Prepare local workspace",
+      owner: "Tool Runtime",
+      status: "ready",
+    },
+    {
+      title: status.latestRun?.goal ?? "Run the first local goal",
+      owner: "Local Agent",
+      status: status.latestRun === undefined ? "idle" : formatRunState(status.latestRun.success),
+    },
+    {
+      title: `${status.skills.candidates} candidate skills`,
+      owner: "Dream Worker",
+      status: status.skills.candidates > 0 ? "review" : "idle",
+    },
+    {
+      title: `${status.memory.publishableArtifacts} publishable artifacts`,
+      owner: "World Scout",
+      status: status.memory.publishableArtifacts > 0 ? "queued" : "clear",
+    },
+  ];
+
+  return queue
+    .map(
+      (item) =>
+        `<div class="queue-item"><div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.owner)}</span></div><span class="status-badge">${escapeHtml(item.status)}</span></div>`,
+    )
+    .join("");
+}
+
+function renderAgentLoadout(status: DashboardStatus): string {
+  const agents = [
+    {
+      label: "Planner",
+      name: "Local Agent",
+      metric: `${status.runs} runs`,
+      body: status.latestRun?.goal ?? "Ready to run the first local goal.",
+    },
+    {
+      label: "Dream",
+      name: "Dream Worker",
+      metric: `${status.skills.promoted}/${status.skills.total} promoted`,
+      body: `${status.skills.candidates} candidates and ${status.skills.habitual} habitual skills in memory.`,
+    },
+    {
+      label: "World",
+      name: "World Scout",
+      metric: `${status.domains.length} domains`,
+      body: `${status.memory.traceCandidates} trace candidates and ${status.memory.publishableArtifacts} publishables queued.`,
+    },
+    {
+      label: "Safety",
+      name: "Safety Sentinel",
+      metric: "guarded",
+      body: `${status.memory.antiPatternCandidates} anti-pattern candidates watched before external tools.`,
+    },
+  ];
+
+  return agents
+    .map(
+      (agent) =>
+        `<article class="loadout-card" data-agent-name="${escapeHtml(agent.name)}"><span>${escapeHtml(agent.label)}</span><strong>${escapeHtml(agent.name)}</strong><p><b>${escapeHtml(agent.metric)}</b> ${escapeHtml(agent.body)}</p></article>`,
+    )
+    .join("");
+}
+
 function renderDashboard(daemon: DaemonServer, localUrl: string): string {
   const status = daemon.status();
   const statePath = status.statePath ?? "memory-only";
@@ -89,6 +210,17 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
   const escapedLocalUrl = escapeHtml(localUrl);
   const escapedAgentCount = escapeHtml(String(agentCount));
   const escapedDreamSummary = escapeHtml(dreamSummary);
+  const dashboardStatusJson = jsonForScript(status);
+  const escapedSkillPromoted = escapeHtml(String(status.skills.promoted));
+  const escapedSkillTotal = escapeHtml(String(status.skills.total));
+  const escapedMemoryFacts = escapeHtml(String(status.memory.semanticFacts));
+  const escapedDomainCount = escapeHtml(String(status.domains.length));
+  const escapedPublishableCount = escapeHtml(String(status.memory.publishableArtifacts));
+  const escapedIdentityName = escapeHtml(status.memory.identityName ?? "local-agent");
+  const domainCards = renderDomainCards(status.domains);
+  const recentRunRows = renderRecentRunRows(status.recentRuns);
+  const worldQueue = renderWorldQueue(status);
+  const agentLoadout = renderAgentLoadout(status);
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -106,6 +238,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       body {
         margin: 0;
         min-height: 100vh;
+        overflow-x: hidden;
         background:
           linear-gradient(rgba(244, 241, 232, 0.025) 1px, transparent 1px),
           linear-gradient(90deg, rgba(244, 241, 232, 0.022) 1px, transparent 1px),
@@ -154,6 +287,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .brand-stack strong { color: #fff8df; font-size: 18px; }
       .nav-list { display: grid; gap: 8px; align-content: start; }
       .nav-item {
+        min-width: 0;
         border: 1px solid rgba(224, 213, 184, 0.12);
         border-radius: 8px;
         padding: 10px 12px;
@@ -297,7 +431,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .dashboard-main { display: grid; gap: 16px; align-content: start; }
       .health-strip {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 10px;
       }
       .health-card {
@@ -464,6 +598,11 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         font-weight: 850;
         white-space: nowrap;
       }
+      .status-badge.muted {
+        border-color: rgba(224, 213, 184, 0.16);
+        background: rgba(244, 241, 232, 0.055);
+        color: #b8b39f;
+      }
       .column { display: grid; gap: 16px; align-content: start; }
       .panel { border-radius: 8px; padding: 18px; overflow: hidden; }
       .panel-header {
@@ -570,6 +709,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       }
       .loadout-card strong { display: block; margin-bottom: 5px; color: #fff8df; }
       .loadout-card p { margin: 0; color: #b8b39f; font-size: 12px; line-height: 1.35; }
+      .loadout-card b { color: #fff8df; font-weight: 900; }
       .mission-grid { display: grid; gap: 10px; }
       .mission-card {
         border: 1px solid rgba(224, 213, 184, 0.12);
@@ -638,11 +778,12 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         font-size: 12px;
       }
       @media (max-width: 1120px) {
-        .gateway-shell { grid-template-columns: 1fr; }
+        .gateway-shell { grid-template-columns: minmax(0, 1fr); }
         .sidebar {
           position: static;
           min-height: auto;
           grid-template-rows: auto;
+          min-width: 0;
         }
         .nav-list { grid-template-columns: repeat(5, minmax(0, 1fr)); }
         .gateway-grid,
@@ -653,12 +794,57 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         .world-panel { min-height: auto; }
       }
       @media (max-width: 680px) {
-        .gateway-shell { width: min(100% - 20px, 1480px); margin: 10px auto; }
-        .topbar { align-items: flex-start; grid-template-columns: 1fr; }
-        .topbar-actions,
+        .gateway-shell {
+          width: calc(100vw - 20px);
+          max-width: calc(100vw - 20px);
+          margin: 10px auto;
+        }
+        .topbar {
+          align-items: flex-start;
+          grid-template-columns: minmax(0, 1fr);
+          min-width: 0;
+        }
+        .sidebar,
+        .workspace,
+        .panel,
+        .dashboard-main,
+        .nav-list {
+          max-width: 100%;
+          min-width: 0;
+        }
+        .nav-item {
+          white-space: normal;
+          overflow-wrap: anywhere;
+        }
+        .topbar-actions {
+          width: 100%;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+          justify-content: stretch;
+        }
         .command-bar,
         .header-tabs { width: 100%; justify-content: flex-start; }
-        .nav-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .command-bar {
+          grid-template-columns: minmax(0, 1fr) auto;
+        }
+        .command-bar span { grid-column: 1 / -1; }
+        .header-tabs {
+          grid-column: 1 / -1;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .tab-pill,
+        .ghost-button {
+          width: 100%;
+          white-space: normal;
+          text-align: center;
+        }
+        .status-pill {
+          grid-column: 1 / -1;
+          width: 100%;
+          min-width: 0;
+        }
+        .nav-list { grid-template-columns: minmax(0, 1fr); }
         .metric-grid,
         .scene-hud,
         .run-control-grid,
@@ -671,7 +857,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
     </style>
   </head>
   <body>
-    <main class="gateway-shell" data-testid="gateway-shell" data-template="tailadmin-nextjs-ai-dashboard" data-template-source="https://tailadmin.com/nextjs" data-template-preview="https://nextjs-demo.tailadmin.com/ai">
+    <main class="gateway-shell" data-testid="gateway-shell" data-template="tailadmin-nextjs-ai-dashboard" data-template-source="https://tailadmin.com/nextjs" data-template-preview="https://nextjs-demo.tailadmin.com/ai" data-block-reference="https://ui.shadcn.com/blocks">
       <aside class="sidebar" data-testid="gateway-sidebar">
         <div class="brand-stack">
           <div class="brand-mark">V</div>
@@ -738,6 +924,16 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               <small>external calls gated</small>
             </article>
             <article class="health-card">
+              <span>Skills</span>
+              <strong data-live-field="skills-label">${escapedSkillPromoted}/${escapedSkillTotal}</strong>
+              <small>promoted / total</small>
+            </article>
+            <article class="health-card">
+              <span>Memory Facts</span>
+              <strong data-live-field="memory-facts">${escapedMemoryFacts}</strong>
+              <small>${escapedIdentityName}</small>
+            </article>
+            <article class="health-card">
               <span>Storage</span>
               <strong>${escapedStateHud}</strong>
               <small>durable memory</small>
@@ -761,9 +957,9 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               <p>Recorded local agent runs in durable memory.</p>
             </article>
             <article class="section-card">
-              <span>Latest Score</span>
-              <strong data-live-field="latest-score">${escapedLatestRunHud}</strong>
-              <p>Last validation result from the local runtime.</p>
+              <span>Skill Memory</span>
+              <strong data-live-field="skills-total">${escapedSkillTotal}</strong>
+              <p><span data-live-field="skills-promoted">${escapedSkillPromoted}</span> promoted, ${status.skills.candidates} candidates, ${status.skills.archived} archived.</p>
             </article>
             <article class="section-card">
               <span>Confidence</span>
@@ -771,9 +967,9 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               <p>Prediction buckets available for Dream consolidation.</p>
             </article>
             <article class="section-card">
-              <span>State</span>
-              <strong>${escapedStateHud}</strong>
-              <p>${escapedStatePath}</p>
+              <span>World Domains</span>
+              <strong data-live-field="domain-count">${escapedDomainCount}</strong>
+              <p>${escapedPublishableCount} publishable artifacts waiting for a world target.</p>
             </article>
           </section>
           <section class="panel run-control-panel" data-testid="run-control-panel">
@@ -802,13 +998,13 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               </article>
               <article class="control-card">
                 <span>Active Worlds</span>
-                <strong>local world</strong>
+                <strong><span data-live-field="domain-count">${escapedDomainCount}</span> domains</strong>
                 <small>memory graph on ${escapedStateHud}</small>
               </article>
               <article class="control-card">
                 <span>Agent Loadout</span>
                 <strong>${escapedAgentCount} operators ready</strong>
-                <small>planner, dream, scout, safety</small>
+                <small><span data-live-field="skills-label">${escapedSkillPromoted}/${escapedSkillTotal}</span> skill memory</small>
               </article>
             </div>
           </section>
@@ -880,6 +1076,30 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
                   </table>
                 </div>
               </section>
+              <section class="panel" data-testid="recent-runs-table">
+                <div class="panel-header">
+                  <div>
+                    <p class="eyebrow">Local Memory</p>
+                    <h2>Recent Runs</h2>
+                  </div>
+                  <span data-live-field="runs-label">Runs: ${status.runs}</span>
+                </div>
+                <div class="activity-table-wrap">
+                  <table class="activity-table">
+                    <thead>
+                      <tr>
+                        <th>Domain</th>
+                        <th>Goal</th>
+                        <th>Status</th>
+                        <th>Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${recentRunRows}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
             </section>
             <aside class="aside-stack">
               <section class="panel" id="chat" data-testid="agent-command-panel">
@@ -927,6 +1147,8 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               <div class="metric"><span>Runs</span><strong data-live-field="runs-label">Runs: ${status.runs}</strong></div>
               <div class="metric"><span>Latest run</span><strong data-live-field="latest-run">${escapedLatestRun}</strong></div>
               <div class="metric"><span>Confidence</span><strong data-live-field="confidence-label">${status.confidenceBuckets} buckets</strong></div>
+              <div class="metric"><span>Skills</span><strong data-live-field="skills-label">${escapedSkillPromoted}/${escapedSkillTotal} promoted</strong></div>
+              <div class="metric"><span>Dream Candidates</span><strong>${status.memory.traceCandidates + status.memory.antiPatternCandidates}</strong></div>
             </div>
             <div class="endpoint-list">
               <code>/status</code>
@@ -943,10 +1165,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               <span>Agent Operations</span>
             </div>
             <div class="loadout-grid">
-              <article class="loadout-card" data-agent-name="Local Agent"><span>Planner</span><strong>Local Agent</strong><p>Runs deterministic goals through local memory.</p></article>
-              <article class="loadout-card" data-agent-name="Dream Worker"><span>Dream</span><strong>Dream Worker</strong><p>Consolidates runs into skills, traces, and identity.</p></article>
-              <article class="loadout-card" data-agent-name="World Scout"><span>World</span><strong>World Scout</strong><p>Tracks subscribed worlds, skills, and traces.</p></article>
-              <article class="loadout-card" data-agent-name="Safety Sentinel"><span>Safety</span><strong>Safety Sentinel</strong><p>Keeps external tools behind policy checks.</p></article>
+              ${agentLoadout}
             </div>
               </section>
               <section class="panel" id="mission-board" data-testid="world-mission-board">
@@ -958,9 +1177,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               <span>local-first</span>
             </div>
             <div class="mission-grid">
-              <article class="mission-card"><strong>Build a simple agent</strong><span>Run, validate, then Dream the result into memory.</span></article>
-              <article class="mission-card"><strong>Inspect local world</strong><span>Use the world reader and trace store before external tools.</span></article>
-              <article class="mission-card"><strong>Publish proof later</strong><span>Keep live provider and public release gates separate from local runs.</span></article>
+              ${domainCards}
             </div>
               </section>
               <section class="panel" data-testid="world-queue">
@@ -972,9 +1189,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               <span>live loop</span>
             </div>
             <div class="queue-list">
-              <div class="queue-item"><div><strong>Prepare local workspace</strong><span>Tool Runtime</span></div><span class="status-badge">ready</span></div>
-              <div class="queue-item"><div><strong>Score next agent run</strong><span>Local Agent</span></div><span class="status-badge">ready</span></div>
-              <div class="queue-item"><div><strong>Dream memory update</strong><span>Dream Worker</span></div><span class="status-badge">idle</span></div>
+              ${worldQueue}
             </div>
               </section>
               <section class="panel">
@@ -986,6 +1201,10 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               <span>Run summary</span>
               <strong data-live-field="latest-run">${escapedLatestRun}</strong>
             </div>
+            <div class="metric">
+              <span>Latest Score</span>
+              <strong data-live-field="latest-score">${escapedLatestRunHud}</strong>
+            </div>
               </section>
             </aside>
           </div>
@@ -993,6 +1212,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       </section>
     </main>
     <script>
+      window.__VIVARIUM_STATUS__ = ${dashboardStatusJson};
       const form = document.getElementById("gateway-chat-form");
       const chatLog = document.getElementById("chat-log");
       const goalInput = form.querySelector('textarea[name="goal"]');
@@ -1073,6 +1293,10 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         const status = await response.json();
         const runs = String(status.runs ?? 0);
         const confidence = String(status.confidenceBuckets ?? 0);
+        const skills = status.skills ?? {};
+        const memory = status.memory ?? {};
+        const promotedSkills = String(skills.promoted ?? 0);
+        const totalSkills = String(skills.total ?? 0);
         const confidenceLabel = confidence + " buckets";
         const latestRun = latestRunTextFromStatus(status.latestRun);
         const latestHud = latestRunHudTextFromStatus(status.latestRun);
@@ -1083,6 +1307,11 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         setLiveField("latest-run", latestRun);
         setLiveField("confidence", confidence);
         setLiveField("confidence-label", confidenceLabel);
+        setLiveField("skills-total", totalSkills);
+        setLiveField("skills-promoted", promotedSkills);
+        setLiveField("skills-label", promotedSkills + "/" + totalSkills + " promoted");
+        setLiveField("memory-facts", String(memory.semanticFacts ?? 0));
+        setLiveField("domain-count", String(status.domains?.length ?? 0));
         setLiveField("dream-summary", dreamSummaryFromStatus(status));
         return status;
       }

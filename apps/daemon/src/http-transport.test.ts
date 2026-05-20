@@ -50,10 +50,14 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain("3D Agent World");
     expect(body).toContain("Agent Roster");
     expect(body).toContain("World Telemetry");
+    expect(body).toContain("Skill Memory");
+    expect(body).toContain("Memory Facts");
+    expect(body).toContain("Recent Runs");
     expect(body).toContain('data-testid="gateway-sidebar"');
     expect(body).toContain('data-template="tailadmin-nextjs-ai-dashboard"');
     expect(body).toContain('data-template-source="https://tailadmin.com/nextjs"');
     expect(body).toContain('data-template-preview="https://nextjs-demo.tailadmin.com/ai"');
+    expect(body).toContain('data-block-reference="https://ui.shadcn.com/blocks"');
     expect(body).toContain('data-testid="site-header"');
     expect(body).toContain('data-testid="gateway-tabs"');
     expect(body).toContain('data-testid="command-bar"');
@@ -63,6 +67,7 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain('data-testid="run-control-panel"');
     expect(body).toContain('data-testid="run-signal-chart"');
     expect(body).toContain('data-testid="activity-table"');
+    expect(body).toContain('data-testid="recent-runs-table"');
     expect(body).toContain('data-testid="agent-command-panel"');
     expect(body).toContain('data-testid="agent-loadout"');
     expect(body).toContain('data-testid="world-mission-board"');
@@ -130,7 +135,13 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain('data-live-field="latest-hud"');
     expect(body).toContain('data-live-field="dream-summary"');
     expect(body).toContain('data-live-field="confidence"');
+    expect(body).toContain('data-live-field="skills-total"');
+    expect(body).toContain('data-live-field="skills-promoted"');
+    expect(body).toContain('data-live-field="skills-label"');
+    expect(body).toContain('data-live-field="memory-facts"');
+    expect(body).toContain('data-live-field="domain-count"');
     expect(body).toContain("async function refreshGatewayTelemetry()");
+    expect(body).toContain("window.__VIVARIUM_STATUS__");
     expect(body).toContain('fetch("/status"');
     expect(body).toContain("await refreshGatewayTelemetry();");
     expect(body).toContain("const presetButtons = document.querySelectorAll");
@@ -146,7 +157,25 @@ describe("createDaemonFetchHandler", () => {
     const handler = createDaemonFetchHandler(createDaemonServer({ worldRoot: "../the-world" }));
 
     const status = await json(await handler(new Request("http://daemon/status")));
-    expect(status).toMatchObject({ status: "running", runs: 0 });
+    expect(status).toMatchObject({
+      status: "running",
+      runs: 0,
+      skills: {
+        total: 0,
+        promoted: 0,
+        candidates: 0,
+        archived: 0,
+        habitual: 0,
+      },
+      memory: {
+        semanticFacts: 0,
+        traceCandidates: 0,
+        antiPatternCandidates: 0,
+        publishableArtifacts: 0,
+      },
+      domains: [],
+      recentRuns: [],
+    });
 
     const run = await json(
       await handler(
@@ -162,6 +191,8 @@ describe("createDaemonFetchHandler", () => {
     expect(statusAfterRun).toMatchObject({
       status: "running",
       runs: 1,
+      domains: [{ name: "coding", runs: 1, skills: 0, successRate: 1, latestGoal: "write a transport test" }],
+      recentRuns: [{ goal: "write a transport test", domain: "coding", success: true, score: 0.8 }],
       latestRun: {
         goal: "write a transport test",
         domain: "coding",
