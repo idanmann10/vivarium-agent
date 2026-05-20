@@ -777,6 +777,304 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         background: rgba(244, 241, 232, 0.055);
         font-size: 12px;
       }
+      .workspace-switcher {
+        align-self: start;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+        display: grid;
+        align-content: start;
+        gap: 3px;
+        background: #f8fafc;
+      }
+      .workspace-switcher span,
+      .workspace-switcher small,
+      .operator-profile span {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 850;
+        text-transform: uppercase;
+      }
+      .workspace-switcher strong,
+      .operator-profile strong {
+        color: #0f172a;
+        font-size: 13px;
+        overflow-wrap: anywhere;
+      }
+      .operator-profile {
+        min-height: 42px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 8px 10px;
+        display: grid;
+        align-content: center;
+        gap: 2px;
+        background: #ffffff;
+      }
+      .scene-layer-controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 6px;
+      }
+      .scene-layer-controls span {
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 999px;
+        padding: 6px 9px;
+        background: rgba(15, 23, 42, 0.68);
+        color: #dbeafe;
+        font-size: 11px;
+        font-weight: 850;
+      }
+      .agent-mesh {
+        position: absolute;
+        left: 16px;
+        top: 16px;
+        width: min(250px, calc(100% - 32px));
+        display: grid;
+        gap: 8px;
+        pointer-events: none;
+      }
+      .mesh-row {
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 8px;
+        padding: 8px 10px;
+        display: grid;
+        grid-template-columns: 10px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+        background: rgba(15, 23, 42, 0.74);
+        color: #f8fafc;
+        box-shadow: 0 14px 36px rgba(2, 6, 23, 0.26);
+      }
+      .mesh-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: var(--agent-color, #38bdf8);
+        box-shadow: 0 0 18px var(--agent-color, #38bdf8);
+      }
+      .mesh-row strong {
+        min-width: 0;
+        color: #ffffff;
+        font-size: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .mesh-row span:last-child {
+        color: #cbd5e1;
+        font-size: 11px;
+        font-weight: 850;
+      }
+      .world-minimap {
+        position: absolute;
+        right: 16px;
+        top: 16px;
+        width: 160px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 8px;
+        padding: 10px;
+        display: grid;
+        gap: 8px;
+        background: rgba(15, 23, 42, 0.74);
+        color: #f8fafc;
+        box-shadow: 0 14px 36px rgba(2, 6, 23, 0.26);
+      }
+      .world-minimap strong {
+        color: #ffffff;
+        font-size: 12px;
+      }
+      .minimap-grid {
+        position: relative;
+        height: 92px;
+        border-radius: 8px;
+        overflow: hidden;
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+          rgba(15, 23, 42, 0.72);
+        background-size: 23px 23px;
+      }
+      .minimap-node {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border: 2px solid rgba(255, 255, 255, 0.76);
+        border-radius: 999px;
+        background: var(--agent-color, #38bdf8);
+      }
+      :root {
+        color-scheme: light;
+        background: #f4f7fb;
+        color: #0f172a;
+      }
+      body {
+        background:
+          linear-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(15, 23, 42, 0.03) 1px, transparent 1px),
+          linear-gradient(180deg, #f8fafc 0%, #eef4ff 52%, #f8fafc 100%);
+        background-size: 42px 42px, 42px 42px, auto;
+        color: #0f172a;
+      }
+      a { color: #2563eb; }
+      .topbar, .panel, .sidebar {
+        border-color: #e2e8f0;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 18px 56px rgba(15, 23, 42, 0.08);
+      }
+      .sidebar {
+        grid-template-rows: auto auto 1fr auto;
+      }
+      .brand-mark {
+        background: linear-gradient(135deg, #111827, #2563eb 55%, #7c3aed);
+        color: #ffffff;
+      }
+      .brand-stack strong,
+      h1,
+      h2,
+      h3,
+      .health-card strong,
+      .section-card strong,
+      .control-card strong,
+      .metric strong,
+      .loadout-card strong,
+      .mission-card strong,
+      .queue-item strong,
+      .activity-table td,
+      .message p {
+        color: #0f172a;
+      }
+      .breadcrumb,
+      .subhead,
+      .sidebar-foot,
+      .health-card span,
+      .health-card small,
+      .section-heading span,
+      .section-card span,
+      .section-card p,
+      .control-card span,
+      .control-card small,
+      .metric span,
+      .agent-card span,
+      .message-role,
+      .loadout-card p,
+      .mission-card span,
+      .queue-item span,
+      .activity-table th,
+      label {
+        color: #64748b;
+      }
+      .eyebrow,
+      .command-bar span {
+        color: #2563eb;
+      }
+      .nav-item,
+      .tab-pill,
+      .ghost-button,
+      .health-card,
+      .section-card,
+      .control-card,
+      .metric,
+      .message,
+      .preset-button,
+      .agent-card,
+      .loadout-card,
+      .mission-card,
+      .queue-item,
+      .endpoint-list code {
+        border-color: #e2e8f0;
+        background: #f8fafc;
+        color: #334155;
+      }
+      .nav-item.active,
+      .tab-pill.active,
+      .ghost-button.primary {
+        border-color: rgba(37, 99, 235, 0.28);
+        background: #eff6ff;
+        color: #1d4ed8;
+      }
+      .command-bar {
+        border-color: #dbe3ef;
+        background: #ffffff;
+        color: #0f172a;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+      }
+      kbd {
+        border-color: #dbe3ef;
+        background: #f1f5f9;
+        color: #475569;
+      }
+      .header-tabs,
+      .status-pill {
+        border-color: #dbe3ef;
+        background: #f8fafc;
+      }
+      .status-pill {
+        color: #15803d;
+      }
+      .toolbar-row span,
+      .loadout-card span,
+      .status-badge {
+        border-color: rgba(37, 99, 235, 0.18);
+        background: #eff6ff;
+        color: #1d4ed8;
+      }
+      .control-card.featured {
+        background:
+          linear-gradient(135deg, rgba(37, 99, 235, 0.09), rgba(14, 165, 233, 0.08)),
+          #ffffff;
+      }
+      .secondary-button {
+        border-color: #dbe3ef;
+        background: #ffffff;
+        color: #0f172a;
+      }
+      .secondary-button.accent {
+        border-color: rgba(37, 99, 235, 0.28);
+        color: #1d4ed8;
+      }
+      textarea,
+      input {
+        border-color: #cbd5e1;
+        background: #ffffff;
+        color: #0f172a;
+      }
+      .primary-button {
+        background: linear-gradient(135deg, #2563eb, #06b6d4);
+        color: #ffffff;
+      }
+      .message.agent {
+        border-color: rgba(37, 99, 235, 0.2);
+        background: #eff6ff;
+      }
+      .chart-axis { stroke: rgba(15, 23, 42, 0.18); }
+      .chart-grid { stroke: rgba(15, 23, 42, 0.08); }
+      .chart-area { fill: rgba(37, 99, 235, 0.12); }
+      .chart-line { stroke: #2563eb; }
+      .chart-dot {
+        fill: #ffffff;
+        stroke: #2563eb;
+      }
+      .world-head {
+        background: linear-gradient(180deg, #111827, #0f172a);
+        color: #f8fafc;
+      }
+      .world-head h2,
+      .world-head .eyebrow,
+      .world-head span {
+        color: #f8fafc;
+      }
+      .scene-wrap {
+        border-top-color: rgba(255, 255, 255, 0.08);
+        background: #0f172a;
+      }
+      .hud-item {
+        border-color: rgba(255, 255, 255, 0.14);
+        background: rgba(15, 23, 42, 0.78);
+      }
+      .hud-item span { color: #cbd5e1; }
+      .hud-item strong { color: #ffffff; }
       @media (max-width: 1120px) {
         .gateway-shell { grid-template-columns: minmax(0, 1fr); }
         .sidebar {
@@ -852,6 +1150,16 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         .section-cards,
         .health-strip,
         .preset-grid { grid-template-columns: 1fr; }
+        .agent-mesh,
+        .world-minimap {
+          position: static;
+          width: auto;
+          margin: 10px 12px 0;
+        }
+        .scene-layer-controls {
+          width: 100%;
+          justify-content: flex-start;
+        }
         #world-scene { height: 420px; }
       }
     </style>
@@ -865,6 +1173,11 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
             <p class="eyebrow">Local Runtime</p>
             <strong>Vivarium Gateway</strong>
           </div>
+        </div>
+        <div class="workspace-switcher" data-testid="workspace-switcher">
+          <span>Workspace</span>
+          <strong>Agent Control Room</strong>
+          <small>${escapedStateHud}</small>
         </div>
         <nav class="nav-list" aria-label="Gateway sections">
           <a class="nav-item active" href="#command">Command Center</a>
@@ -886,7 +1199,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
           <div class="header-copy">
             <div class="breadcrumb">Gateway / Command Center</div>
             <p class="eyebrow">Command Center</p>
-            <h1>Vivarium Gateway</h1>
+            <h1>Agent Control Room</h1>
             <p class="subhead">Agent Workspace for local chat, runs, world state, and Dream consolidation.</p>
           </div>
           <button type="button" class="command-bar" data-testid="command-bar" data-scroll-target="chat">
@@ -903,6 +1216,10 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
             </nav>
             <button type="button" class="ghost-button primary" data-scroll-target="chat">New run</button>
             <a class="ghost-button" href="/status">Open status</a>
+            <div class="operator-profile" data-testid="operator-profile">
+              <span>Operator</span>
+              <strong>Local Mac</strong>
+            </div>
             <div class="status-pill">Status: ${daemonStatus}</div>
           </div>
         </header>
@@ -976,7 +1293,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
             <div class="panel-header">
               <div>
                 <p class="eyebrow">Run Control</p>
-                <h2>Agent Workspace</h2>
+                <h2>Command Deck</h2>
               </div>
               <span data-live-field="dream-summary">${escapedDreamSummary}</span>
             </div>
@@ -1016,10 +1333,29 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
                     <p class="eyebrow">World View</p>
                     <h2>3D Agent World</h2>
                   </div>
-                  <span>4 agents online</span>
+                  <div class="scene-layer-controls" data-testid="scene-layer-controls" aria-label="Canvas Layers">
+                    <span>Canvas Layers</span>
+                    <span>Agents</span>
+                    <span>Memory</span>
+                    <span>Runs</span>
+                  </div>
                 </div>
                 <div class="scene-wrap" data-testid="world-canvas-viewport">
                   <canvas id="world-scene" width="960" height="520" aria-label="Vivarium world view"></canvas>
+                  <div class="agent-mesh" data-testid="agent-mesh" aria-label="Live Agent Mesh">
+                    <div class="mesh-row" style="--agent-color: #22c55e;"><span class="mesh-dot"></span><strong>Local Agent</strong><span>planning</span></div>
+                    <div class="mesh-row" style="--agent-color: #38bdf8;"><span class="mesh-dot"></span><strong>World Scout</strong><span>retrieving</span></div>
+                    <div class="mesh-row" style="--agent-color: #a78bfa;"><span class="mesh-dot"></span><strong>Dream Worker</strong><span>consolidating</span></div>
+                  </div>
+                  <div class="world-minimap" data-testid="world-minimap" aria-label="World Minimap">
+                    <strong>World Minimap</strong>
+                    <div class="minimap-grid">
+                      <span class="minimap-node" style="left: 22%; top: 34%; --agent-color: #22c55e;"></span>
+                      <span class="minimap-node" style="left: 58%; top: 22%; --agent-color: #38bdf8;"></span>
+                      <span class="minimap-node" style="left: 72%; top: 62%; --agent-color: #a78bfa;"></span>
+                      <span class="minimap-node" style="left: 38%; top: 70%; --agent-color: #f59e0b;"></span>
+                    </div>
+                  </div>
                   <div class="scene-hud">
                     <div class="hud-item"><span>Daemon</span><strong>${daemonStatus}</strong></div>
                     <div class="hud-item"><span>Latest</span><strong data-live-field="latest-hud">${escapedLatestRunHud}</strong></div>
@@ -1377,16 +1713,16 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       const canvas = document.getElementById("world-scene");
       const ctx = canvas.getContext("2d");
       const agents = [
-        { name: "Local Agent", color: "#8ede92", orbit: 0.0, task: "planning" },
-        { name: "Dream Worker", color: "#d9bd78", orbit: 1.7, task: "dreaming" },
-        { name: "World Scout", color: "#76c7d9", orbit: 3.2, task: "retrieving" },
-        { name: "Safety Sentinel", color: "#e59a86", orbit: 4.7, task: "guarding" },
+        { name: "Local Agent", color: "#22c55e", orbit: 0.0, task: "planning" },
+        { name: "Dream Worker", color: "#a78bfa", orbit: 1.7, task: "dreaming" },
+        { name: "World Scout", color: "#38bdf8", orbit: 3.2, task: "retrieving" },
+        { name: "Safety Sentinel", color: "#f59e0b", orbit: 4.7, task: "guarding" },
       ];
       const worldTowers = [
-        { x: -2, y: -1, floors: 3, color: "#8ede92" },
-        { x: 1, y: -2, floors: 2, color: "#76c7d9" },
-        { x: 2, y: 1, floors: 4, color: "#d9bd78" },
-        { x: -1, y: 2, floors: 2, color: "#e59a86" },
+        { x: -2, y: -1, floors: 3, color: "#22c55e" },
+        { x: 1, y: -2, floors: 2, color: "#38bdf8" },
+        { x: 2, y: 1, floors: 4, color: "#a78bfa" },
+        { x: -1, y: 2, floors: 2, color: "#f59e0b" },
       ];
       function resizeWorld() {
         const rect = canvas.getBoundingClientRect();
@@ -1527,12 +1863,12 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         const tick = time / 32;
         ctx.clearRect(0, 0, width, height);
         const background = ctx.createLinearGradient(0, 0, width, height);
-        background.addColorStop(0, "#0d1712");
-        background.addColorStop(0.55, "#172313");
-        background.addColorStop(1, "#251812");
+        background.addColorStop(0, "#0f172a");
+        background.addColorStop(0.55, "#111827");
+        background.addColorStop(1, "#1e1b4b");
         ctx.fillStyle = background;
         ctx.fillRect(0, 0, width, height);
-        ctx.fillStyle = "rgba(142, 222, 146, 0.08)";
+        ctx.fillStyle = "rgba(56, 189, 248, 0.1)";
         ctx.beginPath();
         ctx.ellipse(width * 0.5, height * 0.58, width * 0.36, height * 0.17, 0, 0, Math.PI * 2);
         ctx.fill();

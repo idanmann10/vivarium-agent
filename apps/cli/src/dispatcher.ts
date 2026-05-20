@@ -325,6 +325,19 @@ function usage(message: string, nextCommands?: readonly string[]): never {
   throw new CliUsageError(message, nextCommands);
 }
 
+function cliVersion(): string {
+  const packageJson = JSON.parse(
+    readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+  ) as {
+    readonly version?: unknown;
+  };
+  return typeof packageJson.version === "string" ? packageJson.version : "0.0.0";
+}
+
+function renderVersionCommandResult(version: string): string {
+  return `vivarium ${version}\n`;
+}
+
 function configuredEnvValue(
   env: Readonly<Record<string, string | undefined>> | undefined,
   name: string,
@@ -1192,6 +1205,11 @@ export async function dispatchCliCommand(
   options: CliDispatchOptions = {},
 ): Promise<CliDispatchResult> {
   const [command, subcommand, ...rest] = argv;
+  if (command === "--version" || command === "-v") {
+    const result = { version: cliVersion() };
+    return { command: "version", result, output: renderVersionCommandResult(result.version) };
+  }
+
   if (command === undefined || command === "--help" || command === "-h") {
     const result = helpCommand();
     return { command: "help", result, output: renderHelpCommandResult(result) };
@@ -1265,6 +1283,10 @@ export async function dispatchCliCommand(
   }
 
   switch (command) {
+    case "version": {
+      const result = { version: cliVersion() };
+      return { command, result, output: renderVersionCommandResult(result.version) };
+    }
     case "help": {
       const result = helpCommand();
       return { command, result, output: renderHelpCommandResult(result) };

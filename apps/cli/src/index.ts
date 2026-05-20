@@ -26,6 +26,7 @@ export const cliCommands = [
   "status",
   "update",
   "doctor",
+  "version",
 ] as const;
 
 export type CliCommand = (typeof cliCommands)[number];

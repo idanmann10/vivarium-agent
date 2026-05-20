@@ -52,8 +52,18 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain("World Telemetry");
     expect(body).toContain("Skill Memory");
     expect(body).toContain("Memory Facts");
+    expect(body).toContain("Agent Control Room");
+    expect(body).toContain("Command Deck");
+    expect(body).toContain("Live Agent Mesh");
+    expect(body).toContain("World Minimap");
+    expect(body).toContain("Canvas Layers");
     expect(body).toContain("Recent Runs");
     expect(body).toContain('data-testid="gateway-sidebar"');
+    expect(body).toContain('data-testid="workspace-switcher"');
+    expect(body).toContain('data-testid="operator-profile"');
+    expect(body).toContain('data-testid="agent-mesh"');
+    expect(body).toContain('data-testid="world-minimap"');
+    expect(body).toContain('data-testid="scene-layer-controls"');
     expect(body).toContain('data-template="tailadmin-nextjs-ai-dashboard"');
     expect(body).toContain('data-template-source="https://tailadmin.com/nextjs"');
     expect(body).toContain('data-template-preview="https://nextjs-demo.tailadmin.com/ai"');

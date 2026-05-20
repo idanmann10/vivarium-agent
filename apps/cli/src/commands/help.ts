@@ -99,6 +99,10 @@ export function helpCommand(): HelpCommandResult {
         description: "Pull the latest agent and refresh dependencies.",
       },
       {
+        command: "vivarium version",
+        description: "Print the installed CLI version.",
+      },
+      {
         command: "vivarium world search --domain coding --query <query>",
         description: "Search world knowledge.",
       },

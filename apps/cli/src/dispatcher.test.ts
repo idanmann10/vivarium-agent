@@ -74,6 +74,15 @@ describe("dispatchCliCommand", () => {
     }
   });
 
+  test("routes version aliases to the installed CLI version", async () => {
+    for (const argv of [["--version"], ["version"]] as const) {
+      const result = await dispatchCliCommand(argv);
+
+      expect(result.command).toBe("version");
+      expect(result.output).toBe("vivarium 0.0.0\n");
+    }
+  });
+
   test("routes command-level help flags to the safe command guide", async () => {
     const result = await dispatchCliCommand(["run", "--help"]);
 

@@ -73,6 +73,10 @@ describe("helpCommand", () => {
         }),
         expect.objectContaining({ command: "vivarium launch handoff" }),
         expect.objectContaining({ command: "vivarium update" }),
+        expect.objectContaining({
+          command: "vivarium version",
+          description: "Print the installed CLI version.",
+        }),
       ]),
     );
     expect(output).toContain("Vivarium Agent");
@@ -104,6 +108,7 @@ describe("helpCommand", () => {
     expect(output).toContain("vivarium model");
     expect(output).toContain("vivarium tools");
     expect(output).toContain("vivarium help");
+    expect(output).toContain("vivarium version");
     expect(firstRunBlock).toContain("vivarium --setup");
     expect(firstRunBlock).not.toContain("vivarium start");
     expect(firstRunBlock).not.toContain("vivarium local\n");
