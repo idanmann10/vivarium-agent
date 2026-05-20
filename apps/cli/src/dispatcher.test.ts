@@ -3063,6 +3063,10 @@ describe("dispatchCliCommand", () => {
     expect(result.output).not.toContain("VIVARIUM_AGENT_REF=");
     expect(result.output).toContain("bash -s -- --daemon launchd");
     expect(result.output).not.toContain("VIVARIUM_DAEMON=launchd");
+    expect(result.output).toContain("vivarium --setup --open");
+    expect(result.output.indexOf("vivarium --setup --open")).toBeLessThan(
+      result.output.indexOf("vivarium local run"),
+    );
     expect(result.output).toContain("vivarium dashboard --open");
     expect(result.output).toContain("vivarium daemon smoke");
     expect(result.output).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");

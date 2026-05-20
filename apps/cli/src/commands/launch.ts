@@ -70,6 +70,14 @@ function dashboardOpenCommand(daemonHost: string, daemonPort: string): string {
   return `vivarium dashboard --open --url http://${daemonHost}:${daemonPort}`;
 }
 
+function setupOpenCommand(daemonHost: string, daemonPort: string): string {
+  if (daemonHost === defaultDaemonHost && daemonPort === defaultDaemonPort) {
+    return "vivarium --setup --open";
+  }
+
+  return `vivarium --setup --open --dashboard-url http://${daemonHost}:${daemonPort}`;
+}
+
 export function launchHandoffCommand(
   options: LaunchHandoffCommandOptions = {},
 ): LaunchHandoffCommandResult {
@@ -85,6 +93,7 @@ export function launchHandoffCommand(
   return {
     installCommand: installCommand(owner, repo, ref, scriptRef, daemonHost, daemonPort),
     postInstallCommands: [
+      setupOpenCommand(daemonHost, daemonPort),
       "vivarium local run",
       dashboardOpenCommand(daemonHost, daemonPort),
       daemonSmokeCommand(daemonHost, daemonPort),
@@ -118,8 +127,8 @@ export function launchHandoffCommand(
     ],
     ownerNextActions: [
       ref === defaultRef
-        ? "Run the stable main install command above, then run the local agent commands."
-        : "Run the branch-pinned install command above, then run the local agent commands.",
+        ? "Run the stable main install command above, then run the setup/open and local agent commands."
+        : "Run the branch-pinned install command above, then run the setup/open and local agent commands.",
       ...(ref === defaultRef
         ? []
         : [
