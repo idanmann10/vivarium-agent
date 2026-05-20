@@ -1434,6 +1434,7 @@ describe("reference docs", () => {
     expect(body).toContain(
       "vivarium dashboard --open   Open the local gateway URL.\\n  vivarium daemon smoke       Verify the local daemon.",
     );
+    expect(body).toContain("vivarium version");
     expect(body).not.toContain("vivarium model               Inspect provider profile readiness.");
     expect(body).not.toContain(
       "vivarium launch handoff      Review install and production boundaries.",
