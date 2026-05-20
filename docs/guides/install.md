@@ -78,7 +78,7 @@ After installation, reload your shell if needed and run:
 
 ```bash
 # [1] Set up Vivarium
-vivarium --setup
+vivarium --setup --open
 
 # [2] Run the local agent
 vivarium local run
@@ -127,7 +127,7 @@ running outside the installed wrapper.
 `vivarium status --state-path <file> --live-env-path <file>` keeps those
 explicit paths in its next `vivarium local run` and `vivarium connect` commands,
 so custom-path smokes do not drift back to default state.
-`vivarium --setup` is the shortest local setup path: it seeds local memory, stages the private live-readiness file for later, and prints the localhost gateway URL.
+`vivarium --setup --open` is the shortest local setup path: it seeds local memory, stages the private live-readiness file for later, and opens the localhost gateway URL. Use `vivarium --setup` when you only want the terminal output.
 `vivarium start` remains the friendly alias for `vivarium local`; both commands seed the same starter memory, stage the same private live-readiness file, and print the local-first launch sequence.
 If you run `vivarium local run` before `vivarium start`, the command seeds the same starter memory, stages the private live-readiness file, and then runs the local agent against that durable state.
 If the local SQLite state file is invalid, `vivarium local run` stops before writing new run data, names the damaged path, and points you at `vivarium doctor` plus `vivarium local` so you can move the file aside and reseed it.
@@ -149,6 +149,8 @@ export PATH="$HOME/.local/bin:$PATH"
 vivarium update
 vivarium help
 vivarium --setup
+# Or open the gateway immediately:
+vivarium --setup --open
 vivarium local run --goal "build a simple agent end to end"
 vivarium dashboard --open
 vivarium status

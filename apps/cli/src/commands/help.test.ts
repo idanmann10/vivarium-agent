@@ -27,8 +27,8 @@ describe("helpCommand", () => {
       expect.arrayContaining([
         expect.objectContaining({ command: "vivarium onboard" }),
         expect.objectContaining({
-          command: "vivarium --setup",
-          description: "Set up local memory and show the localhost gateway path.",
+          command: "vivarium --setup --open",
+          description: "Set up local memory and open the localhost gateway.",
         }),
         expect.objectContaining({
           command: "vivarium start",
@@ -82,7 +82,7 @@ describe("helpCommand", () => {
     expect(output).toContain("Vivarium Agent");
     expect(output).toContain("VIVARIUM // local memory // world culture");
     expect(output).toContain("First run");
-    expect(output).toContain("vivarium --setup");
+    expect(output).toContain("vivarium --setup --open");
     expect(output).toContain("vivarium start");
     expect(output).toContain("vivarium local");
     expect(output).toContain("vivarium local run");
@@ -109,7 +109,7 @@ describe("helpCommand", () => {
     expect(output).toContain("vivarium tools");
     expect(output).toContain("vivarium help");
     expect(output).toContain("vivarium version");
-    expect(firstRunBlock).toContain("vivarium --setup");
+    expect(firstRunBlock).toContain("vivarium --setup --open");
     expect(firstRunBlock).not.toContain("vivarium start");
     expect(firstRunBlock).not.toContain("vivarium local\n");
     expect(firstRunBlock).toContain("vivarium local run");

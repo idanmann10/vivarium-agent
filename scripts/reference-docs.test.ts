@@ -680,6 +680,7 @@ describe("reference docs", () => {
         "vivarium update",
         "vivarium help",
         "vivarium --setup",
+        "vivarium --setup --open",
         'vivarium local run --goal "build a simple agent end to end"',
         "vivarium dashboard --open",
         "vivarium status",
@@ -688,7 +689,7 @@ describe("reference docs", () => {
         expect(body).toContain(command);
       }
       expect(normalizedBody).toContain(
-        "`vivarium --setup` is the shortest local setup path: it seeds local memory, stages the private live-readiness file for later, and prints the localhost gateway URL",
+        "`vivarium --setup --open` is the shortest local setup path: it seeds local memory, stages the private live-readiness file for later, and opens the localhost gateway URL",
       );
       expect(normalizedBody).toContain(
         "`vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon gateway backed by `/status`",

@@ -1687,6 +1687,37 @@ describe("dispatchCliCommand", () => {
     expect(nextBlock).not.toContain("--live-env-path");
   });
 
+  test("routes top-level --setup --open through the dashboard opener", async () => {
+    const worldRoot = createWorldFixture();
+    const home = mkdtempSync(join(tmpdir(), "cli-dispatch-open-setup-home-"));
+    const opened: string[] = [];
+    const env = {
+      HOME: home,
+      VIVARIUM_DOMAIN: "coding",
+      VIVARIUM_WORLD_ROOT: worldRoot,
+      VIVARIUM_STATE_PATH: join(home, ".vivarium", "state.db"),
+      VIVARIUM_LIVE_ENV_PATH: join(home, ".vivarium", "live", "live-readiness.local.env"),
+    };
+
+    const setup = await dispatchCliCommand(["--setup", "--open"], {
+      env,
+      dashboardOpenRunner: (url) => {
+        opened.push(url);
+        return { exitCode: 0, stderr: "" };
+      },
+    });
+    const result = setup.result as SetupCommandResult;
+
+    expect(opened).toEqual(["http://127.0.0.1:8787"]);
+    expect(setup.command).toBe("setup");
+    expect(result.dashboardUrl).toBe("http://127.0.0.1:8787");
+    expect(result.dashboardOpen).toEqual({ ok: true });
+    expect(setup.output).toContain("Dashboard: http://127.0.0.1:8787");
+    expect(setup.output).toContain("Opened: http://127.0.0.1:8787");
+    expect(setup.output).toContain("vivarium local run");
+    expect(setup.output).toContain("vivarium daemon smoke");
+  });
+
   test("routes installed env defaults through local setup and default run", async () => {
     const worldRoot = mkdtempSync(join(tmpdir(), "cli-dispatch-install-env-world-"));
     const home = mkdtempSync(join(tmpdir(), "cli-dispatch-install-env-home-"));

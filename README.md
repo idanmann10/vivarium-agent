@@ -46,9 +46,10 @@ Interactive terminals use the branded ANSI theme automatically. Set `VIVARIUM_CO
 
 ## Terminal-first setup
 
-`vivarium --setup` is the shortest local setup path: it seeds local memory,
-stages the private live-readiness file for later, and prints the localhost
-gateway URL. `vivarium start` remains the friendly alias for `vivarium local`;
+`vivarium --setup --open` is the shortest local setup path: it seeds local memory,
+stages the private live-readiness file for later, and opens the localhost
+gateway URL. Use `vivarium --setup` when you only want the terminal output.
+`vivarium start` remains the friendly alias for `vivarium local`;
 both commands seed the same starter memory, stage the same private
 live-readiness file, and print the local-first launch sequence. The installer
 runs the same quick setup automatically.
@@ -57,7 +58,7 @@ After installation, reload your shell if needed and run:
 
 ```bash
 # [1] Set up Vivarium
-vivarium --setup
+vivarium --setup --open
 
 # [2] Run the local agent
 vivarium local run
@@ -129,6 +130,8 @@ export PATH="$HOME/.local/bin:$PATH"
 vivarium update
 vivarium help
 vivarium --setup
+# Or open the gateway immediately:
+vivarium --setup --open
 vivarium local run --goal "build a simple agent end to end"
 vivarium dashboard --open
 vivarium status

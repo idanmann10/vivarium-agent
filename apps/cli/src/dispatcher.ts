@@ -321,6 +321,16 @@ function renderDashboardCommandResult(
   ].join("\n");
 }
 
+function openDashboardUrl(
+  dashboardUrl: string,
+  options: CliDispatchOptions,
+): { readonly ok: boolean; readonly error?: string } {
+  const openResult = (options.dashboardOpenRunner ?? defaultDashboardOpenRunner)(dashboardUrl);
+  return openResult.exitCode === 0
+    ? { ok: true as const }
+    : { ok: false as const, error: openResult.stderr ?? "Unable to open gateway URL" };
+}
+
 function usage(message: string, nextCommands?: readonly string[]): never {
   throw new CliUsageError(message, nextCommands);
 }
@@ -1294,11 +1304,7 @@ export async function dispatchCliCommand(
     case "dashboard": {
       const dashboardUrl = normalizedDashboardUrl(value(flags, "url"));
       if (flags.has("open")) {
-        const openResult = (options.dashboardOpenRunner ?? defaultDashboardOpenRunner)(dashboardUrl);
-        const open =
-          openResult.exitCode === 0
-            ? { ok: true as const }
-            : { ok: false as const, error: openResult.stderr ?? "Unable to open gateway URL" };
+        const open = openDashboardUrl(dashboardUrl, options);
         return { command, result: { dashboardUrl, open }, output: renderDashboardCommandResult(dashboardUrl, open) };
       }
       return { command, result: { dashboardUrl }, output: renderDashboardCommandResult(dashboardUrl) };
@@ -1393,6 +1399,7 @@ export async function dispatchCliCommand(
       const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
       const agentName = value(flags, "agent-name");
       const liveEnvPath = value(flags, "live-env-path") ?? privateDefaultLiveEnvFile(options.env);
+      const dashboardUrl = normalizedDashboardUrl(value(flags, "dashboard-url"));
       const githubOwner = value(flags, "github-owner");
       const agentRepo = value(flags, "agent-repo");
       const worldRepo = value(flags, "world-repo");
@@ -1405,7 +1412,7 @@ export async function dispatchCliCommand(
         ...(worldRoot === undefined ? {} : { worldRoot }),
         statePath,
         quick: true,
-        dashboardUrl: normalizedDashboardUrl(value(flags, "dashboard-url")),
+        dashboardUrl,
         simpleLocalRunNextCommand: !hasAnyFlag(flags, [
           "domain",
           "primary-domain",
@@ -1423,6 +1430,11 @@ export async function dispatchCliCommand(
           ...(privateWorldRef === undefined ? {} : { privateWorldRef }),
         },
       });
+      if (booleanFlag(flags, "open")) {
+        const dashboardOpen = openDashboardUrl(dashboardUrl, options);
+        const openedResult = { ...result, dashboardOpen };
+        return { command: "setup", result: openedResult, output: renderSetupCommandResult(openedResult) };
+      }
       return { command: "setup", result, output: renderSetupCommandResult(result) };
     }
     case "onboard": {

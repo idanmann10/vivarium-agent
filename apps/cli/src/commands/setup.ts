@@ -46,6 +46,10 @@ export interface SetupCommandResult {
   readonly quickEnv?: LiveEnvInitCommandResult;
   readonly liveEnvFilePath: string;
   readonly dashboardUrl?: string;
+  readonly dashboardOpen?: {
+    readonly ok: boolean;
+    readonly error?: string;
+  };
   readonly nextCommands: readonly string[];
 }
 
@@ -427,6 +431,16 @@ export function renderSetupCommandResult(result: SetupCommandResult): string {
       : [
           `Dashboard: ${result.dashboardUrl}`,
           `Status JSON: ${result.dashboardUrl.replace(/\/$/, "")}/status`,
+          ...(result.dashboardOpen === undefined
+            ? []
+            : [
+                result.dashboardOpen.ok
+                  ? `Opened: ${result.dashboardUrl}`
+                  : "Open: blocked",
+                ...(result.dashboardOpen.error === undefined
+                  ? []
+                  : [`Error: ${result.dashboardOpen.error}`]),
+              ]),
         ]),
     "",
     ...renderLaunchSequence(result.nextCommands, { heading: "Next commands:" }),

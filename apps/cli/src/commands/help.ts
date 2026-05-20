@@ -34,7 +34,7 @@ export type GithubSmokeHelpCommandResult = FocusedHelpCommandResult;
 export function helpCommand(): HelpCommandResult {
   return {
     commands: [
-      { command: "vivarium --setup", description: "Set up local memory and show the localhost gateway path." },
+      { command: "vivarium --setup --open", description: "Set up local memory and open the localhost gateway." },
       { command: "vivarium start", description: "Start guided local setup with the starter pack." },
       { command: "vivarium local", description: "Create the default local agent and starter memory." },
       { command: "vivarium local run", description: "Run the local agent offline with the built-in provider." },
@@ -514,7 +514,7 @@ export function renderHelpCommandResult(result: HelpCommandResult): string {
   const commandWidth = Math.max(52, ...result.commands.map((item) => item.command.length)) + 2;
   const rows = result.commands.map((item) => `  ${item.command.padEnd(commandWidth)}${item.description}`);
   const firstRunCommands = [
-    "vivarium --setup",
+    "vivarium --setup --open",
     "vivarium local run",
     "vivarium dashboard --open",
     "vivarium daemon smoke",
