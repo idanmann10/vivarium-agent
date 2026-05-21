@@ -424,6 +424,47 @@ function renderOperationsFeed(status: DashboardStatus): string {
     .join("");
 }
 
+function renderActivityLanes(status: DashboardStatus): string {
+  const latestState = status.latestRun === undefined ? "idle" : formatRunState(status.latestRun.success);
+  const lanes = [
+    {
+      label: "Plan",
+      title: "Local Agent",
+      detail: status.latestRun?.goal ?? "Waiting for a goal.",
+      state: latestState,
+      count: status.runs,
+    },
+    {
+      label: "Memory",
+      title: "Dream Worker",
+      detail: `${status.skills.candidates} candidates, ${status.skills.habitual} habitual skills.`,
+      state: status.confidenceBuckets > 0 ? "consolidating" : "standby",
+      count: status.confidenceBuckets,
+    },
+    {
+      label: "World",
+      title: "World Scout",
+      detail: `${status.domains.length} domains mapped, ${status.memory.publishableArtifacts} publishables.`,
+      state: status.domains.length > 0 ? "mapping" : "standby",
+      count: status.domains.length,
+    },
+    {
+      label: "Safety",
+      title: "Safety Sentinel",
+      detail: `${status.memory.antiPatternCandidates} anti-pattern candidates watched.`,
+      state: "guarded",
+      count: status.memory.antiPatternCandidates,
+    },
+  ];
+
+  return lanes
+    .map(
+      (lane) =>
+        `<article class="lane-card"><div><span>${escapeHtml(lane.label)}</span><strong>${escapeHtml(lane.title)}</strong><p>${escapeHtml(lane.detail)}</p></div><b>${escapeHtml(lane.state)}</b><small>${lane.count}</small></article>`,
+    )
+    .join("");
+}
+
 function renderDashboard(daemon: DaemonServer, localUrl: string): string {
   const status = daemon.status();
   const statePath = status.statePath ?? "memory-only";
@@ -460,6 +501,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
   const liveRunStream = renderLiveRunStream(status);
   const agentBuilder = renderAgentBuilder(status);
   const operationsFeed = renderOperationsFeed(status);
+  const activityLanes = renderActivityLanes(status);
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -793,6 +835,260 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       .section-card span { color: #b8b39f; font-size: 12px; font-weight: 850; }
       .section-card strong { display: block; margin-top: 10px; color: #fff8df; font-size: 24px; line-height: 1; overflow-wrap: anywhere; }
       .section-card p { margin: 10px 0 0; color: #cfc7ae; font-size: 12px; line-height: 1.35; }
+      .live-workspace {
+        display: grid;
+        grid-template-columns: minmax(420px, 1.42fr) minmax(320px, 0.92fr);
+        gap: 16px;
+        align-items: stretch;
+      }
+      .ops-world-panel {
+        position: relative;
+        min-height: 520px;
+        padding: 0;
+        overflow: hidden;
+        background: #0f172a;
+      }
+      .ops-world-panel .world-head {
+        position: relative;
+        z-index: 2;
+      }
+      .ops-scene-shell {
+        position: relative;
+        min-height: 452px;
+        background: #0f172a;
+        overflow: hidden;
+      }
+      #world-ops-scene {
+        width: 100%;
+        height: 452px;
+        display: block;
+      }
+      .css-agent-world {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background:
+          linear-gradient(30deg, transparent 31%, rgba(148, 163, 184, 0.09) 32%, transparent 33%),
+          linear-gradient(150deg, transparent 31%, rgba(34, 197, 94, 0.08) 32%, transparent 33%);
+        background-size: 78px 78px;
+      }
+      .ops-world-node {
+        position: absolute;
+        width: 86px;
+        height: 44px;
+        transform: rotate(45deg) skew(-10deg, -10deg);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 8px;
+        background:
+          linear-gradient(135deg, var(--node-color, #38bdf8), rgba(255, 255, 255, 0.1)),
+          rgba(15, 23, 42, 0.64);
+        opacity: 0.86;
+        box-shadow: 0 20px 46px rgba(2, 6, 23, 0.28), 0 0 28px rgba(56, 189, 248, 0.24);
+      }
+      .ops-agent-sprite {
+        position: absolute;
+        width: 34px;
+        height: 34px;
+        border: 2px solid rgba(255, 255, 255, 0.76);
+        border-radius: 999px;
+        background: radial-gradient(circle at 30% 24%, #ffffff, var(--agent-color, #38bdf8) 42%, rgba(15, 23, 42, 0.62));
+        box-shadow: 0 16px 34px rgba(2, 6, 23, 0.34), 0 0 28px var(--agent-color, #38bdf8);
+        animation: spriteDrift 5.6s ease-in-out infinite;
+      }
+      .ops-agent-sprite::after {
+        content: attr(data-label);
+        position: absolute;
+        left: 26px;
+        top: -14px;
+        min-width: 56px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        padding: 4px 7px;
+        background: rgba(15, 23, 42, 0.74);
+        color: #f8fafc;
+        font-size: 11px;
+        font-weight: 850;
+      }
+      .ops-agent-sprite.planner { left: 27%; top: 55%; --agent-color: #22c55e; }
+      .ops-agent-sprite.world { left: 45%; top: 40%; --agent-color: #38bdf8; animation-delay: -1.3s; }
+      .ops-agent-sprite.dream { left: 63%; top: 55%; --agent-color: #a78bfa; animation-delay: -2.1s; }
+      .ops-agent-sprite.safety { left: 77%; top: 66%; --agent-color: #f59e0b; animation-delay: -3.2s; }
+      .ops-world-node.plan { left: 22%; top: 62%; --node-color: #22c55e; }
+      .ops-world-node.world { left: 41%; top: 49%; --node-color: #38bdf8; }
+      .ops-world-node.dream { left: 60%; top: 61%; --node-color: #a78bfa; }
+      .ops-world-node.safety { left: 73%; top: 72%; --node-color: #f59e0b; }
+      @keyframes spriteDrift {
+        0%, 100% { transform: translate3d(0, 0, 0); }
+        50% { transform: translate3d(12px, -18px, 0); }
+      }
+      .ops-hud {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        z-index: 2;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .ops-hud-card,
+      .ops-agent-pill {
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 8px;
+        background: rgba(15, 23, 42, 0.78);
+        box-shadow: 0 16px 40px rgba(2, 6, 23, 0.24);
+        color: #f8fafc;
+      }
+      .ops-hud-card {
+        min-height: 68px;
+        padding: 10px;
+      }
+      .ops-hud-card span,
+      .ops-agent-pill span {
+        display: block;
+        color: #cbd5e1;
+        font-size: 11px;
+        font-weight: 850;
+      }
+      .ops-hud-card strong {
+        display: block;
+        margin-top: 5px;
+        color: #ffffff;
+        font-size: 15px;
+        overflow-wrap: anywhere;
+      }
+      .ops-agent-stack {
+        position: absolute;
+        z-index: 2;
+        top: 18px;
+        right: 18px;
+        width: min(230px, calc(100% - 36px));
+        display: grid;
+        gap: 8px;
+      }
+      .ops-agent-pill {
+        padding: 9px 10px;
+        display: grid;
+        grid-template-columns: 10px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+      }
+      .ops-agent-pill i {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: var(--agent-color, #38bdf8);
+        box-shadow: 0 0 16px var(--agent-color, #38bdf8);
+      }
+      .ops-agent-pill strong {
+        min-width: 0;
+        color: #ffffff;
+        font-size: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .quick-stack {
+        display: grid;
+        gap: 16px;
+        align-content: start;
+      }
+      .quick-chat-console {
+        min-height: 320px;
+      }
+      .quick-chat-log {
+        min-height: 102px;
+        display: grid;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .quick-message {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 10px;
+        background: #f8fafc;
+      }
+      .quick-message strong {
+        display: block;
+        color: #0f172a;
+        font-size: 12px;
+      }
+      .quick-message span {
+        display: block;
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 760;
+        line-height: 1.35;
+      }
+      .quick-form-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 112px;
+        gap: 8px;
+      }
+      .quick-form-grid label:first-child {
+        grid-column: 1 / -1;
+      }
+      .quick-form-grid textarea {
+        min-height: 76px;
+      }
+      .quick-form-grid .primary-button {
+        align-self: end;
+        justify-self: stretch;
+        min-height: 40px;
+      }
+      .agent-activity-kanban {
+        display: grid;
+        gap: 10px;
+      }
+      .lane-card {
+        min-height: 88px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        background: #f8fafc;
+      }
+      .lane-card span,
+      .lane-card p,
+      .lane-card small {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 820;
+        line-height: 1.35;
+      }
+      .lane-card strong {
+        display: block;
+        margin-top: 3px;
+        color: #0f172a;
+        font-size: 14px;
+      }
+      .lane-card p {
+        margin: 6px 0 0;
+      }
+      .lane-card b {
+        align-self: start;
+        border: 1px solid rgba(37, 99, 235, 0.18);
+        border-radius: 999px;
+        padding: 5px 8px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 11px;
+      }
+      .lane-card small {
+        grid-column: 1 / -1;
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: #e2e8f0;
+        color: #334155;
+        font-weight: 950;
+      }
       .run-control-grid {
         display: grid;
         grid-template-columns: minmax(0, 1.1fr) repeat(3, minmax(0, 0.86fr));
@@ -1825,6 +2121,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         }
         .nav-list { grid-template-columns: repeat(5, minmax(0, 1fr)); }
         .gateway-grid,
+        .live-workspace,
         .dashboard-panels,
         .dashboard-content { grid-template-columns: 1fr; }
         .section-cards,
@@ -1898,6 +2195,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         .health-strip,
         .preset-grid { grid-template-columns: 1fr; }
         .agent-mesh,
+        .ops-agent-stack,
         .world-minimap,
         .world-state-legend,
         .world-inspector {
@@ -1920,6 +2218,16 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
           justify-content: flex-start;
         }
         #world-scene { height: 420px; }
+        #world-ops-scene { height: 360px; }
+        .ops-scene-shell { min-height: 360px; }
+        .ops-hud {
+          position: static;
+          margin: 10px 12px 12px;
+          grid-template-columns: 1fr;
+        }
+        .quick-form-grid {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
@@ -2059,6 +2367,86 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               <strong data-live-field="domain-count">${escapedDomainCount}</strong>
               <p>${escapedPublishableCount} publishable artifacts waiting for a world target.</p>
             </article>
+          </section>
+          <section class="live-workspace" data-testid="live-workspace" aria-label="Live Workspace">
+            <article class="panel ops-world-panel" data-testid="world-ops-panel">
+              <div class="world-head panel-header">
+                <div>
+                  <p class="eyebrow">Live Workspace</p>
+                  <h2>Agent World</h2>
+                </div>
+                <div class="scene-layer-controls" aria-label="World controls">
+                  <span>Orbit Cam</span>
+                  <span>Trace Grid</span>
+                  <span>Agent Paths</span>
+                </div>
+              </div>
+              <div class="ops-scene-shell">
+                <canvas id="world-ops-scene" width="920" height="452" aria-label="Live agent world" data-world-canvas="ops"></canvas>
+                <div class="css-agent-world" data-testid="css-agent-world" aria-hidden="true">
+                  <span class="ops-world-node plan"></span>
+                  <span class="ops-world-node world"></span>
+                  <span class="ops-world-node dream"></span>
+                  <span class="ops-world-node safety"></span>
+                  <span class="ops-agent-sprite planner" data-label="Plan"></span>
+                  <span class="ops-agent-sprite world" data-label="World"></span>
+                  <span class="ops-agent-sprite dream" data-label="Dream"></span>
+                  <span class="ops-agent-sprite safety" data-label="Safe"></span>
+                </div>
+                <div class="ops-agent-stack" aria-label="Active agents">
+                  <div class="ops-agent-pill" style="--agent-color: #22c55e;"><i></i><strong>Local Agent</strong><span>plan</span></div>
+                  <div class="ops-agent-pill" style="--agent-color: #38bdf8;"><i></i><strong>World Scout</strong><span>read</span></div>
+                  <div class="ops-agent-pill" style="--agent-color: #a78bfa;"><i></i><strong>Dream Worker</strong><span>learn</span></div>
+                  <div class="ops-agent-pill" style="--agent-color: #f59e0b;"><i></i><strong>Safety Sentinel</strong><span>guard</span></div>
+                </div>
+                <div class="ops-hud">
+                  <div class="ops-hud-card"><span>Latest Run</span><strong data-live-field="latest-hud">${escapedLatestRunHud}</strong></div>
+                  <div class="ops-hud-card"><span>Runs</span><strong data-live-field="runs-label">Runs: ${status.runs}</strong></div>
+                  <div class="ops-hud-card"><span>Skills</span><strong data-live-field="skills-label">${escapedSkillPromoted}/${escapedSkillTotal} promoted</strong></div>
+                  <div class="ops-hud-card"><span>World</span><strong><span data-live-field="domain-count">${escapedDomainCount}</span> domains</strong></div>
+                </div>
+              </div>
+            </article>
+            <div class="quick-stack">
+              <article class="panel quick-chat-console" data-testid="quick-chat-console">
+                <div class="panel-header">
+                  <div>
+                    <p class="eyebrow">Agent Chat</p>
+                    <h2>Quick Chat</h2>
+                  </div>
+                  <span>POST /run</span>
+                </div>
+                <div class="quick-chat-log" aria-live="polite">
+                  <div class="quick-message"><strong>Vivarium</strong><span>Send a goal and watch it land in local memory.</span></div>
+                  <div class="quick-message"><strong>Operator</strong><span>${escapeHtml(status.latestRun?.goal ?? "build a simple agent end to end")}</span></div>
+                </div>
+                <form id="gateway-quick-chat-form">
+                  <div class="quick-form-grid">
+                    <label>
+                      Goal
+                      <textarea name="goal" aria-label="Quick goal" autocomplete="off">${escapeHtml(status.latestRun?.goal ?? "build a simple agent end to end")}</textarea>
+                    </label>
+                    <label>
+                      Domain
+                      <input name="domain" aria-label="Quick domain" value="${escapeHtml(status.latestRun?.domain ?? "coding")}" autocomplete="off">
+                    </label>
+                    <button class="primary-button" type="submit">Run agent</button>
+                  </div>
+                </form>
+              </article>
+              <article class="panel" data-testid="agent-activity-kanban">
+                <div class="panel-header">
+                  <div>
+                    <p class="eyebrow">Activity Lanes</p>
+                    <h2>Agent Operations</h2>
+                  </div>
+                  <span>${escapedAgentCount} online</span>
+                </div>
+                <div class="agent-activity-kanban">
+                  ${activityLanes}
+                </div>
+              </article>
+            </div>
           </section>
           <section class="panel run-control-panel" data-testid="run-control-panel">
             <div class="panel-header">
@@ -2426,15 +2814,28 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
     <script>
       window.__VIVARIUM_STATUS__ = ${dashboardStatusJson};
       const form = document.getElementById("gateway-chat-form");
+      const quickForm = document.getElementById("gateway-quick-chat-form");
       const chatLog = document.getElementById("chat-log");
       const goalInput = form.querySelector('textarea[name="goal"]');
       const domainInput = form.querySelector('input[name="domain"]');
       const dreamButton = document.getElementById("gateway-dream-button");
       const presetButtons = document.querySelectorAll("[data-preset-goal]");
+      const runForms = [form, quickForm].filter(Boolean);
+      function updateRunInputs(goal, domain) {
+        runForms.forEach((runForm) => {
+          const goalField = runForm.querySelector('textarea[name="goal"]');
+          const domainField = runForm.querySelector('input[name="domain"]');
+          if (goalField) {
+            goalField.value = goal;
+          }
+          if (domainField) {
+            domainField.value = domain;
+          }
+        });
+      }
       presetButtons.forEach((button) => {
         button.addEventListener("click", () => {
-          goalInput.value = button.dataset.presetGoal ?? goalInput.value;
-          domainInput.value = button.dataset.presetDomain ?? domainInput.value;
+          updateRunInputs(button.dataset.presetGoal ?? goalInput.value, button.dataset.presetDomain ?? domainInput.value);
           document.getElementById("chat").scrollIntoView({ behavior: "smooth", block: "start" });
           goalInput.focus();
         });
@@ -2550,42 +2951,50 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
           dreamButton.disabled = false;
         }
       });
-      form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const button = form.querySelector("button");
-        const data = new FormData(form);
-        const goal = String(data.get("goal") ?? "");
-        const domain = String(data.get("domain") ?? "");
-        button.disabled = true;
-        addMessage("", "Operator", goal);
-        const pending = addMessage("agent", "Vivarium", "Running local agent...");
-        try {
-          const response = await fetch("/run", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({
-              goal,
-              domain,
-            }),
-          });
-          const body = await response.json();
-          if (!response.ok) {
-            pending.textContent = body.error ?? "Run failed";
-            return;
-          }
-          const status = await refreshGatewayTelemetry();
-          const validationScore = status?.latestRun?.score ?? body.validation?.score ?? "recorded";
-          pending.textContent = [
-            body.success ? "Run recorded" : "Run failed",
-            "Run ID: " + body.runId,
-            "Validation: " + validationScore,
-          ].join("\\n");
-        } catch {
-          pending.textContent = "Run failed";
-        } finally {
-          button.disabled = false;
+      function bindRunForm(runForm) {
+        if (!runForm) {
+          return;
         }
-      });
+        runForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const button = runForm.querySelector("button");
+          const data = new FormData(runForm);
+          const goal = String(data.get("goal") ?? "");
+          const domain = String(data.get("domain") ?? "");
+          updateRunInputs(goal, domain);
+          button.disabled = true;
+          addMessage("", "Operator", goal);
+          const pending = addMessage("agent", "Vivarium", "Running local agent...");
+          try {
+            const response = await fetch("/run", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                goal,
+                domain,
+              }),
+            });
+            const body = await response.json();
+            if (!response.ok) {
+              pending.textContent = body.error ?? "Run failed";
+              return;
+            }
+            const status = await refreshGatewayTelemetry();
+            const validationScore = status?.latestRun?.score ?? body.validation?.score ?? "recorded";
+            pending.textContent = [
+              body.success ? "Run recorded" : "Run failed",
+              "Run ID: " + body.runId,
+              "Validation: " + validationScore,
+            ].join("\\n");
+          } catch {
+            pending.textContent = "Run failed";
+          } finally {
+            button.disabled = false;
+          }
+        });
+      }
+      bindRunForm(form);
+      bindRunForm(document.getElementById("gateway-quick-chat-form"));
 
       const canvas = document.getElementById("world-scene");
       const ctx = canvas.getContext("2d");
@@ -2756,6 +3165,90 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         requestAnimationFrame(drawWorld);
       }
       requestAnimationFrame(drawWorld);
+      const opsCanvas = document.getElementById("world-ops-scene");
+      function drawOpsWorld(time) {
+        if (!opsCanvas) {
+          return;
+        }
+        const opsCtx = opsCanvas.getContext("2d");
+        const rect = opsCanvas.getBoundingClientRect();
+        const ratio = window.devicePixelRatio || 1;
+        const width = Math.max(520, Math.floor(rect.width));
+        const height = Math.max(320, Math.floor(rect.height));
+        if (opsCanvas.width !== width * ratio || opsCanvas.height !== height * ratio) {
+          opsCanvas.width = width * ratio;
+          opsCanvas.height = height * ratio;
+        }
+        opsCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        opsCtx.clearRect(0, 0, width, height);
+        const sky = opsCtx.createLinearGradient(0, 0, width, height);
+        sky.addColorStop(0, "#020617");
+        sky.addColorStop(0.48, "#0f172a");
+        sky.addColorStop(1, "#172554");
+        opsCtx.fillStyle = sky;
+        opsCtx.fillRect(0, 0, width, height);
+        const pulse = Math.sin(time / 620) * 0.5 + 0.5;
+        opsCtx.fillStyle = "rgba(56, 189, 248, 0.09)";
+        opsCtx.beginPath();
+        opsCtx.ellipse(width * 0.5, height * 0.58, width * 0.36, height * (0.17 + pulse * 0.02), 0, 0, Math.PI * 2);
+        opsCtx.fill();
+        opsCtx.lineWidth = 1;
+        for (let line = -width; line < width * 2; line += 48) {
+          opsCtx.strokeStyle = "rgba(148, 163, 184, 0.18)";
+          opsCtx.beginPath();
+          opsCtx.moveTo(line + ((time / 42) % 48), height * 0.36);
+          opsCtx.lineTo(line + width * 0.5 + ((time / 42) % 48), height * 0.92);
+          opsCtx.stroke();
+          opsCtx.strokeStyle = "rgba(34, 197, 94, 0.16)";
+          opsCtx.beginPath();
+          opsCtx.moveTo(line - ((time / 42) % 48), height * 0.36);
+          opsCtx.lineTo(line - width * 0.5 - ((time / 42) % 48), height * 0.92);
+          opsCtx.stroke();
+        }
+        const nodes = [
+          { x: width * 0.26, y: height * 0.57, color: "#22c55e", label: "Plan" },
+          { x: width * 0.45, y: height * 0.44, color: "#38bdf8", label: "World" },
+          { x: width * 0.64, y: height * 0.55, color: "#a78bfa", label: "Dream" },
+          { x: width * 0.78, y: height * 0.67, color: "#f59e0b", label: "Safe" },
+        ];
+        opsCtx.strokeStyle = "rgba(226, 232, 240, 0.22)";
+        opsCtx.lineWidth = 2;
+        opsCtx.beginPath();
+        nodes.forEach((node, index) => {
+          if (index === 0) {
+            opsCtx.moveTo(node.x, node.y);
+          } else {
+            opsCtx.lineTo(node.x, node.y);
+          }
+        });
+        opsCtx.stroke();
+        nodes.forEach((node, index) => {
+          const orbit = time / (820 + index * 110) + index;
+          const bob = Math.sin(orbit) * 10;
+          opsCtx.fillStyle = "rgba(2, 6, 23, 0.42)";
+          opsCtx.beginPath();
+          opsCtx.ellipse(node.x, node.y + 22, 32, 10, 0, 0, Math.PI * 2);
+          opsCtx.fill();
+          const glow = opsCtx.createRadialGradient(node.x - 5, node.y - 8 + bob, 4, node.x, node.y + bob, 34);
+          glow.addColorStop(0, "#ffffff");
+          glow.addColorStop(0.34, node.color);
+          glow.addColorStop(1, "rgba(15, 23, 42, 0.1)");
+          opsCtx.fillStyle = glow;
+          opsCtx.beginPath();
+          opsCtx.arc(node.x, node.y + bob, 22, 0, Math.PI * 2);
+          opsCtx.fill();
+          opsCtx.strokeStyle = node.color;
+          opsCtx.lineWidth = 2;
+          opsCtx.stroke();
+          opsCtx.fillStyle = "rgba(15, 23, 42, 0.74)";
+          opsCtx.fillRect(node.x - 29, node.y + 34 + bob, 58, 25);
+          opsCtx.fillStyle = "#f8fafc";
+          opsCtx.font = "800 12px ui-sans-serif, system-ui";
+          opsCtx.fillText(node.label, node.x - 18, node.y + 51 + bob);
+        });
+        requestAnimationFrame(drawOpsWorld);
+      }
+      requestAnimationFrame(drawOpsWorld);
     </script>
   </body>
 </html>`;
