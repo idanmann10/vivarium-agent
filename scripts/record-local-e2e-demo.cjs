@@ -72,6 +72,7 @@ const steps = [
   localCliStep(["help"]),
   localCliStep([
     "--setup",
+    "--open",
     "--domain",
     "coding",
     "--world-root",

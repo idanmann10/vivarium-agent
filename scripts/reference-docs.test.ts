@@ -695,7 +695,7 @@ describe("reference docs", () => {
         "`vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon gateway backed by `/status`",
       );
       expect(normalizedBody).toContain(
-        "The daemon root is a TailAdmin/shadcn-inspired `Vivarium Gateway` with a first-screen Live Workspace, Quick Chat, Agent World, Activity Lanes, run controls, Dream controls, Agent Directory, world telemetry, and a game-like agent world canvas with CSS fallback sprites",
+        "The daemon root is a TailAdmin/shadcn-inspired `Vivarium Gateway` with a first-screen Live Workspace that puts Quick Chat beside Agent World, Activity Lanes, an Agent Dock, a Quest Log, run controls, Dream controls, Agent Directory, world telemetry, and a game-like agent world canvas with CSS fallback sprites",
       );
       expect(normalizedBody).toContain(
         "Use `vivarium dashboard --open` to open that URL in your browser",
@@ -1425,6 +1425,11 @@ describe("reference docs", () => {
     expect(body).not.toContain("build a tiny local agent");
     expect(body).toContain("Run ID: run-demo-000");
     expect(body).toContain("Readiness file: <demo-live-readiness.local.env>");
+    expect(body).toContain(
+      "$ vivarium --setup --open --domain coding --world-root <demo-world> --state-path <demo-state.db> --live-env-path <demo-live-readiness.local.env>",
+    );
+    expect(body).not.toContain("$ vivarium --setup --domain");
+    expect(body).toContain("Opened: http://127.0.0.1:8787");
     expect(body).toContain("--world-root <demo-world>");
     expect(body).toContain("--live-env-path <demo-live-readiness.local.env>");
     expect(body).not.toContain('vivarium local run --goal \\"build a simple agent end to end\\"');
@@ -1521,7 +1526,7 @@ describe("reference docs", () => {
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
       "Memory: /Users/idanmann/.vivarium/state.db",
-      "`607 pass, 0 fail, 5307 expect calls`",
+      "`607 pass, 0 fail, 5319 expect calls`",
       "build a simple agent end to end",
       "current simple-agent run ID is intentionally not hardcoded",
       "Gateway dashboard supports the local agent loop",

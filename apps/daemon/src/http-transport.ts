@@ -843,7 +843,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       }
       .ops-world-panel {
         position: relative;
-        min-height: 520px;
+        min-height: 496px;
         padding: 0;
         overflow: hidden;
         background: #0f172a;
@@ -854,13 +854,13 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
       }
       .ops-scene-shell {
         position: relative;
-        min-height: 452px;
+        min-height: 428px;
         background: #0f172a;
         overflow: hidden;
       }
       #world-ops-scene {
         width: 100%;
-        height: 452px;
+        height: 428px;
         display: block;
       }
       .css-agent-world {
@@ -988,6 +988,97 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+      .ops-quest-log {
+        position: absolute;
+        z-index: 2;
+        left: 18px;
+        top: 18px;
+        width: min(236px, calc(100% - 36px));
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 8px;
+        padding: 11px;
+        display: grid;
+        gap: 8px;
+        background: rgba(15, 23, 42, 0.78);
+        box-shadow: 0 18px 44px rgba(2, 6, 23, 0.28);
+        color: #f8fafc;
+      }
+      .ops-quest-log strong {
+        color: #ffffff;
+        font-size: 13px;
+      }
+      .ops-quest-log span {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 7px;
+        color: #cbd5e1;
+        font-size: 11px;
+        font-weight: 850;
+        line-height: 1.25;
+      }
+      .ops-quest-log span::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        margin-top: 3px;
+        border-radius: 999px;
+        background: #22c55e;
+        box-shadow: 0 0 14px rgba(34, 197, 94, 0.56);
+      }
+      .ops-agent-dock {
+        position: absolute;
+        z-index: 2;
+        left: 18px;
+        right: 18px;
+        bottom: 96px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 8px;
+        padding: 10px;
+        display: grid;
+        grid-template-columns: auto repeat(4, minmax(0, 1fr));
+        align-items: center;
+        gap: 8px;
+        background: rgba(15, 23, 42, 0.78);
+        box-shadow: 0 18px 44px rgba(2, 6, 23, 0.28);
+      }
+      .ops-agent-dock > span {
+        color: #cbd5e1;
+        font-size: 11px;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+      .dock-agent {
+        min-width: 0;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 8px;
+        padding: 8px 9px;
+        display: grid;
+        gap: 3px;
+        background: rgba(255, 255, 255, 0.08);
+        color: #ffffff;
+        cursor: pointer;
+        text-align: left;
+      }
+      .dock-agent strong,
+      .dock-agent small {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .dock-agent strong {
+        color: #ffffff;
+        font-size: 12px;
+      }
+      .dock-agent small {
+        color: #cbd5e1;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .dock-agent.active {
+        border-color: rgba(34, 197, 94, 0.42);
+        background: rgba(34, 197, 94, 0.16);
       }
       .quick-stack {
         display: grid;
@@ -2196,12 +2287,17 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
         .preset-grid { grid-template-columns: 1fr; }
         .agent-mesh,
         .ops-agent-stack,
+        .ops-quest-log,
+        .ops-agent-dock,
         .world-minimap,
         .world-state-legend,
         .world-inspector {
           position: static;
           width: auto;
           margin: 10px 12px 0;
+        }
+        .ops-agent-dock {
+          grid-template-columns: 1fr;
         }
         .stream-row {
           grid-template-columns: 12px minmax(0, 1fr);
@@ -2335,39 +2431,6 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
               <small>durable memory</small>
             </article>
           </section>
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">World Telemetry</p>
-              <h2>Operations Overview</h2>
-            </div>
-            <div class="toolbar-row" data-testid="dashboard-toolbar">
-              <span>Live local</span>
-              <span>Operator view</span>
-              <span>${escapedAgentCount} agents online</span>
-            </div>
-          </div>
-          <section class="section-cards" data-testid="dashboard-section-cards">
-            <article class="section-card">
-              <span>Total Runs</span>
-              <strong data-live-field="runs">${status.runs}</strong>
-              <p>Recorded local agent runs in durable memory.</p>
-            </article>
-            <article class="section-card">
-              <span>Skill Memory</span>
-              <strong data-live-field="skills-total">${escapedSkillTotal}</strong>
-              <p><span data-live-field="skills-promoted">${escapedSkillPromoted}</span> promoted, ${status.skills.candidates} candidates, ${status.skills.archived} archived.</p>
-            </article>
-            <article class="section-card">
-              <span>Confidence</span>
-              <strong data-live-field="confidence">${status.confidenceBuckets}</strong>
-              <p>Prediction buckets available for Dream consolidation.</p>
-            </article>
-            <article class="section-card">
-              <span>World Domains</span>
-              <strong data-live-field="domain-count">${escapedDomainCount}</strong>
-              <p>${escapedPublishableCount} publishable artifacts waiting for a world target.</p>
-            </article>
-          </section>
           <section class="live-workspace" data-testid="live-workspace" aria-label="Live Workspace">
             <article class="panel ops-world-panel" data-testid="world-ops-panel">
               <div class="world-head panel-header">
@@ -2376,7 +2439,7 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
                   <h2>Agent World</h2>
                 </div>
                 <div class="scene-layer-controls" aria-label="World controls">
-                  <span>Orbit Cam</span>
+                  <span>World Camera</span>
                   <span>Trace Grid</span>
                   <span>Agent Paths</span>
                 </div>
@@ -2398,6 +2461,19 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
                   <div class="ops-agent-pill" style="--agent-color: #38bdf8;"><i></i><strong>World Scout</strong><span>read</span></div>
                   <div class="ops-agent-pill" style="--agent-color: #a78bfa;"><i></i><strong>Dream Worker</strong><span>learn</span></div>
                   <div class="ops-agent-pill" style="--agent-color: #f59e0b;"><i></i><strong>Safety Sentinel</strong><span>guard</span></div>
+                </div>
+                <div class="ops-quest-log" data-testid="quest-log" aria-label="Quest Log">
+                  <strong>Quest Log</strong>
+                  <span>Run selected goal through Plan, Predict, Execute, Validate.</span>
+                  <span>Watch agents move through world memory and skill lanes.</span>
+                  <span>Review score, Dream summary, and publishable artifacts.</span>
+                </div>
+                <div class="ops-agent-dock" data-testid="agent-dock" aria-label="Agent Dock">
+                  <span>Agent Dock</span>
+                  <button type="button" class="dock-agent active" data-preset-goal="build a simple agent end to end" data-preset-domain="coding"><strong>Planner</strong><small>goal ready</small></button>
+                  <button type="button" class="dock-agent" data-preset-goal="research agent world state" data-preset-domain="research"><strong>Scout</strong><small>world scan</small></button>
+                  <button type="button" class="dock-agent" data-preset-goal="consolidate useful skills from the last run" data-preset-domain="coding"><strong>Dream</strong><small>memory loop</small></button>
+                  <button type="button" class="dock-agent" data-preset-goal="debug a failing local agent run" data-preset-domain="coding"><strong>Safety</strong><small>guarded</small></button>
                 </div>
                 <div class="ops-hud">
                   <div class="ops-hud-card"><span>Latest Run</span><strong data-live-field="latest-hud">${escapedLatestRunHud}</strong></div>
@@ -2447,6 +2523,39 @@ function renderDashboard(daemon: DaemonServer, localUrl: string): string {
                 </div>
               </article>
             </div>
+          </section>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">World Telemetry</p>
+              <h2>Operations Overview</h2>
+            </div>
+            <div class="toolbar-row" data-testid="dashboard-toolbar">
+              <span>Live local</span>
+              <span>Operator view</span>
+              <span>${escapedAgentCount} agents online</span>
+            </div>
+          </div>
+          <section class="section-cards" data-testid="dashboard-section-cards">
+            <article class="section-card">
+              <span>Total Runs</span>
+              <strong data-live-field="runs">${status.runs}</strong>
+              <p>Recorded local agent runs in durable memory.</p>
+            </article>
+            <article class="section-card">
+              <span>Skill Memory</span>
+              <strong data-live-field="skills-total">${escapedSkillTotal}</strong>
+              <p><span data-live-field="skills-promoted">${escapedSkillPromoted}</span> promoted, ${status.skills.candidates} candidates, ${status.skills.archived} archived.</p>
+            </article>
+            <article class="section-card">
+              <span>Confidence</span>
+              <strong data-live-field="confidence">${status.confidenceBuckets}</strong>
+              <p>Prediction buckets available for Dream consolidation.</p>
+            </article>
+            <article class="section-card">
+              <span>World Domains</span>
+              <strong data-live-field="domain-count">${escapedDomainCount}</strong>
+              <p>${escapedPublishableCount} publishable artifacts waiting for a world target.</p>
+            </article>
           </section>
           <section class="panel run-control-panel" data-testid="run-control-panel">
             <div class="panel-header">

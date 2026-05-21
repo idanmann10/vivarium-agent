@@ -34,7 +34,10 @@ describe("local e2e demo recorder", () => {
     expect(JSON.parse(headerLine ?? "")).toMatchObject({ version: 2, width: 120, height: 36, timestamp: 0 });
 
     const text = eventLines.map((line) => JSON.parse(line)[2]).join("");
-    expect(text).toContain("$ vivarium --setup");
+    expect(text).toContain(
+      "$ vivarium --setup --open --domain coding --world-root <demo-world> --state-path <demo-state.db> --live-env-path <demo-live-readiness.local.env>",
+    );
+    expect(text).not.toContain("$ vivarium --setup --domain");
     expect(text).not.toContain("$ vivarium start");
     expect(text).toContain("[1] Set up Vivarium");
     expect(text).toContain("[3] Open the dashboard");

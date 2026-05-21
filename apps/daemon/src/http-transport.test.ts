@@ -69,6 +69,8 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain('data-testid="world-ops-panel"');
     expect(body).toContain('data-testid="quick-chat-console"');
     expect(body).toContain('data-testid="agent-activity-kanban"');
+    expect(body).toContain('data-testid="quest-log"');
+    expect(body).toContain('data-testid="agent-dock"');
     expect(body).toContain('data-testid="css-agent-world"');
     expect(body).toContain('class="ops-agent-sprite planner"');
     expect(body).toContain('<canvas id="world-ops-scene"');
@@ -93,6 +95,9 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain("World Minimap");
     expect(body).toContain("Canvas Layers");
     expect(body).toContain("State Legend");
+    expect(body).toContain("Quest Log");
+    expect(body).toContain("Agent Dock");
+    expect(body).toContain("World Camera");
     expect(body).toContain("Recent Runs");
     expect(body).toContain('data-testid="template-reference-card"');
     expect(body).toContain('data-testid="gateway-sidebar"');
@@ -214,6 +219,12 @@ describe("createDaemonFetchHandler", () => {
     expect(body).toContain("drawAgent(");
     expect(body).toContain("drawWorldTower(");
     expect(body).toContain("drawAgentTrail(");
+
+    const liveWorkspace = body.indexOf('data-testid="live-workspace"');
+    const sectionCards = body.indexOf('data-testid="dashboard-section-cards"');
+    expect(liveWorkspace).toBeGreaterThan(-1);
+    expect(sectionCards).toBeGreaterThan(-1);
+    expect(liveWorkspace).toBeLessThan(sectionCards);
   });
 
   test("routes status, run, and dream requests to the daemon", async () => {

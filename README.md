@@ -87,9 +87,10 @@ without mutating local state.
 by `/status`. Install with `--daemon launchd` when you want that dashboard
 served automatically on macOS.
 The daemon root is a TailAdmin/shadcn-inspired `Vivarium Gateway` with a
-first-screen Live Workspace, Quick Chat, Agent World, Activity Lanes, run
-controls, Dream controls, Agent Directory, world telemetry, and a game-like
-agent world canvas with CSS fallback sprites.
+first-screen Live Workspace that puts Quick Chat beside Agent World, Activity
+Lanes, an Agent Dock, a Quest Log, run controls, Dream controls, Agent
+Directory, world telemetry, and a game-like agent world canvas with CSS
+fallback sprites.
 Use `vivarium dashboard --open` to open that URL in your browser.
 The localhost dashboard includes Quick Chat and Operator Console `Run agent`
 forms with the default `build a simple agent end to end` goal. Clicking
