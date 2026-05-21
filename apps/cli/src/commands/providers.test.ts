@@ -3,9 +3,66 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
-import { configureProviderProfileCommand, listProviderProfilesCommand, providerSmokeCommand } from "./providers.js";
+import {
+  configureProviderProfileCommand,
+  listProviderProfilesCommand,
+  providerSmokeCommand,
+  renderProviderProfilesCommandResult,
+  renderProviderSmokeCommandResult,
+} from "./providers.js";
 
 describe("providerSmokeCommand", () => {
+  test("points empty provider profile guidance at connect setup", () => {
+    const profilesPath = join(mkdtempSync(join(tmpdir(), "provider-profiles-empty-")), "profiles.json");
+    const output = renderProviderProfilesCommandResult(listProviderProfilesCommand({ profilesPath }));
+
+    expect(output).toContain("Profiles: 0");
+    expect(output).toContain("vivarium connect signup");
+    expect(output).toContain("vivarium connect fill");
+    expect(output).toContain("vivarium connect setup --confirm-write");
+    expect(output).toContain(
+      [
+        "Next commands:",
+        "  vivarium connect signup",
+        "  vivarium connect fill",
+        "  vivarium connect setup --confirm-write",
+      ].join("\n"),
+    );
+    expect(output).not.toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");
+  });
+
+  test("points blocked provider smoke guidance at connect fill and smoke", async () => {
+    const output = renderProviderSmokeCommandResult(
+      await providerSmokeCommand({
+        kind: "openai-compat",
+        apiKeyEnv: "OPENROUTER_API_KEY",
+        model: "openrouter/test-model",
+        baseUrl: "https://openrouter.example",
+        env: {},
+        fetch: async () => {
+          throw new Error("fetch should not run without an API key");
+        },
+      }),
+    );
+
+    expect(output).toContain("Status: blocked");
+    expect(output).toContain("vivarium connect signup");
+    expect(output).toContain("vivarium connect fill");
+    expect(output).toContain("vivarium connect setup --confirm-write");
+    expect(output).toContain("vivarium connect smoke");
+    expect(output).toContain(
+      [
+        "Next commands:",
+        "  vivarium connect signup",
+        "  vivarium connect fill",
+        "  vivarium connect setup --confirm-write",
+        "  vivarium connect smoke",
+      ].join("\n"),
+    );
+    expect(output).not.toContain("Export the missing provider value");
+    expect(output).not.toContain("OPENROUTER_API_KEY");
+  });
+
   test("returns a missing-env result without making a provider call", async () => {
     const result = await providerSmokeCommand({
       kind: "openai",

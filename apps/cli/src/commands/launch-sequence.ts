@@ -10,30 +10,65 @@ export interface RenderLaunchSequenceOptions {
 
 const launchCommandStages: readonly LaunchCommandStage[] = [
   {
-    label: "Initialize local memory",
-    matches: (command) => command.startsWith("vivarium setup") && !command.includes("--env-file"),
+    label: "Set up Vivarium",
+    matches: (command) => command === "vivarium --setup" || command.startsWith("vivarium --setup "),
   },
   {
-    label: "Prove the local loop",
-    matches: (command) => command.startsWith("vivarium run "),
+    label: "Start Vivarium",
+    matches: (command) => command === "vivarium start" || command.startsWith("vivarium start "),
+  },
+  {
+    label: "Initialize local memory",
+    matches: (command) =>
+      command === "vivarium local" ||
+      command === "vivarium onboard" ||
+      (command.startsWith("vivarium setup") &&
+        !command.startsWith("vivarium setup live") &&
+        !command.includes("--env-file")),
+  },
+  {
+    label: "Run the local agent",
+    matches: (command) => command === "vivarium local run" || command.startsWith("vivarium local run ") || command.startsWith("vivarium run "),
   },
   {
     label: "Prepare live readiness",
     matches: (command) =>
       command.startsWith("vivarium live env-init ") ||
+      command.startsWith("vivarium live setup ") ||
+      command === "vivarium onboard live" ||
+      command === "vivarium setup live" ||
+      command.startsWith("vivarium setup live ") ||
+      command === "vivarium connect" ||
+      (command.startsWith("vivarium connect ") && !command.startsWith("vivarium connect smoke")) ||
       (command.startsWith("vivarium setup") && command.includes("--env-file")),
   },
   {
-    label: "Inspect configured models",
+    label: "Load live settings",
+    matches: (command) => command.startsWith("source "),
+  },
+  {
+    label: "Inspect provider readiness",
     matches: (command) => command.startsWith("vivarium model"),
   },
   {
+    label: "Run live smoke tests",
+    matches: (command) =>
+      command.startsWith("vivarium connect smoke") ||
+      command.startsWith("vivarium providers smoke") ||
+      command.startsWith("vivarium credentials smoke"),
+  },
+  {
     label: "Prepare live evidence",
-    matches: (command) => command.startsWith("vivarium live evidence-init"),
+    matches: (command) =>
+      command.startsWith("vivarium live evidence-init") || command.startsWith("vivarium proof"),
   },
   {
     label: "Run the readiness gate",
     matches: (command) => command.startsWith("vivarium doctor"),
+  },
+  {
+    label: "Open the dashboard",
+    matches: (command) => command === "vivarium dashboard" || command.startsWith("vivarium dashboard "),
   },
   {
     label: "Verify the Mac daemon",
@@ -41,12 +76,15 @@ const launchCommandStages: readonly LaunchCommandStage[] = [
   },
   {
     label: "Review launch handoff",
-    matches: (command) => command === "vivarium launch handoff",
+    matches: (command) => command === "vivarium launch handoff" || command.startsWith("vivarium launch handoff "),
   },
   {
     label: "Keep moving",
     matches: (command) =>
-      command === "vivarium status" || command === "vivarium help" || command === "vivarium update",
+      command === "vivarium status" ||
+      command === "vivarium tools" ||
+      command === "vivarium help" ||
+      command === "vivarium update",
   },
 ];
 

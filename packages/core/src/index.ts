@@ -22,6 +22,13 @@ export type {
 export { err, ok } from "./result.js";
 export type { Result } from "./result.js";
 export { KERNEL, kernelLines } from "./kernel.js";
+export {
+  daemonHostError,
+  daemonPortError,
+  isValidDaemonHost,
+  parseDaemonHost,
+  parseDaemonPort,
+} from "./daemon-config.js";
 export { episodeShapeManifest } from "./types/episode.js";
 export {
   CLAUDE_AGENT_TOOLSET_TYPE,

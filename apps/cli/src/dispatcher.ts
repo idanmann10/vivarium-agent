@@ -1,11 +1,20 @@
-import type {
-  Capability,
-  CostClass,
-  CredentialKind,
-  Visibility,
+import {
+  daemonHostError,
+  daemonPortError,
+  parseDaemonHost,
+  parseDaemonPort,
+  type Capability,
+  type CostClass,
+  type CredentialKind,
+  type Visibility,
 } from "../../../packages/core/src/index.js";
+import type { ProviderFetch } from "../../../packages/providers/src/index.js";
+import { SQLiteStateRepository } from "../../../packages/state/src/index.js";
+import type { ExternalToolAdapters } from "../../../packages/tools/src/index.js";
 import type { HttpMethod } from "../../../packages/tools/src/external/index.js";
-import { existsSync, readFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import {
   addCredentialCommand,
   credentialSmokeCommand,
@@ -14,6 +23,23 @@ import {
   renderCredentialSmokeCommandResult,
   renderListCredentialsCommandResult,
 } from "./commands/credentials.js";
+import {
+  connectCommand,
+  connectFillCommand,
+  connectSignupCommand,
+  connectSmokeCommand,
+  connectWizardCommand,
+  type ConnectSecretFile,
+  type ConnectSecretFiles,
+  type ConnectFillValues,
+  renderConnectInitCommandResult,
+  renderConnectCommandResult,
+  renderConnectFillCommandResult,
+  renderConnectSignupCommandResult,
+  renderConnectSetupCommandResult,
+  renderConnectSmokeCommandResult,
+  renderConnectWizardCommandResult,
+} from "./commands/connect.js";
 import {
   curriculumAdvanceCommand,
   curriculumProgressCommand,
@@ -38,7 +64,32 @@ import {
   renderGitHubSmokeCommandResult,
   renderGitHubWorkflowRunsCommandResult,
 } from "./commands/github.js";
-import { helpCommand, renderHelpCommandResult } from "./commands/help.js";
+import {
+  connectFillHelpCommand,
+  connectSetupHelpCommand,
+  connectSmokeHelpCommand,
+  daemonSmokeHelpCommand,
+  githubSmokeHelpCommand,
+  helpCommand,
+  launchHandoffHelpCommand,
+  localRunHelpCommand,
+  localSetupHelpCommand,
+  proofInitHelpCommand,
+  renderConnectFillHelpCommandResult,
+  renderConnectSetupHelpCommandResult,
+  renderConnectSmokeHelpCommandResult,
+  renderDaemonSmokeHelpCommandResult,
+  renderGithubSmokeHelpCommandResult,
+  renderHelpCommandResult,
+  renderLaunchHandoffHelpCommandResult,
+  renderLocalRunHelpCommandResult,
+  renderLocalSetupHelpCommandResult,
+  renderProofInitHelpCommandResult,
+  renderSetupHelpCommandResult,
+  renderStatusHelpCommandResult,
+  setupHelpCommand,
+  statusHelpCommand,
+} from "./commands/help.js";
 import {
   identityHistoryCommand,
   identityStageCommand,
@@ -67,6 +118,12 @@ import {
   renderPublishTraceCommandResult,
 } from "./commands/publish.js";
 import {
+  proofCommand,
+  proofInitCommand,
+  renderProofCommandResult,
+  renderProofInitCommandResult,
+} from "./commands/proof.js";
+import {
   configureProviderProfileCommand,
   listProviderProfilesCommand,
   providerSmokeCommand,
@@ -78,6 +135,7 @@ import { renderRunCommandResult, runCommand, type RunProviderKind } from "./comm
 import { renderSetupCommandResult, setupCommand } from "./commands/setup.js";
 import { listSkillsCommand, renderListSkillsCommandResult } from "./commands/skills.js";
 import { renderStatusCommandResult, statusCommand } from "./commands/status.js";
+import { renderToolsCommandResult, toolsCommand } from "./commands/tools.js";
 import {
   renderUpdateCommandResult,
   updateCommand,
@@ -102,13 +160,81 @@ export interface CliDispatchResult {
   readonly output: string;
 }
 
+export interface DashboardOpenResult {
+  readonly exitCode: number;
+  readonly stderr?: string;
+}
+
+export type DashboardOpenRunner = (url: string) => DashboardOpenResult;
+
 export interface CliDispatchOptions {
+  readonly credentialFetch?: NonNullable<ExternalToolAdapters["fetch"]>;
+  readonly dashboardOpenRunner?: DashboardOpenRunner;
   readonly doctorRunner?: DoctorCommandRunner;
   readonly env?: Readonly<Record<string, string | undefined>>;
+  readonly providerFetch?: ProviderFetch;
   readonly updateRunner?: UpdateCommandRunner;
 }
 
+const missingFlagValue = "\0missing-flag-value";
+
 type FlagMap = ReadonlyMap<string, readonly string[]>;
+
+const secretDirFiles = [
+  { label: "Agent repo name", name: "agent-repo-name.txt", envKeys: ["VIVARIUM_AGENT_REPO_NAME"] },
+  { label: "World repo name", name: "world-repo-name.txt", envKeys: ["VIVARIUM_WORLD_REPO_NAME"] },
+  {
+    label: "Canonical world ref",
+    name: "canonical-world-ref.txt",
+    envKeys: ["VIVARIUM_CANONICAL_WORLD_REF"],
+  },
+  {
+    label: "Private world ref",
+    name: "private-world-ref.txt",
+    envKeys: ["VIVARIUM_PRIVATE_WORLD_REF"],
+  },
+  { label: "GitHub token", name: "github-token.key", envKeys: ["GITHUB_TOKEN", "GH_TOKEN"] },
+  { label: "GitHub owner", name: "github-owner.txt", envKeys: ["VIVARIUM_GITHUB_OWNER"] },
+  {
+    label: "GitHub repository ID",
+    name: "github-repository-id.txt",
+    envKeys: ["VIVARIUM_GITHUB_REPOSITORY_ID"],
+  },
+  {
+    label: "GitHub Discussion category ID",
+    name: "github-discussion-category-id.txt",
+    envKeys: ["VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID"],
+  },
+  { label: "Anthropic API key", name: "anthropic.key", envKeys: ["ANTHROPIC_API_KEY"] },
+  { label: "OpenRouter API key", name: "openrouter.key", envKeys: ["OPENROUTER_API_KEY"] },
+  { label: "Private model API key", name: "private-oai.key", envKeys: ["VIVARIUM_OAI_COMPAT_API_KEY"] },
+  {
+    label: "Private model base URL",
+    name: "private-base-url.txt",
+    envKeys: ["VIVARIUM_OAI_COMPAT_BASE_URL"],
+  },
+  { label: "Private model name", name: "private-model.txt", envKeys: ["VIVARIUM_OAI_COMPAT_MODEL"] },
+  {
+    label: "Private model context window",
+    name: "private-context-window.txt",
+    envKeys: ["VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW"],
+  },
+  {
+    label: "Credential master key",
+    name: "credential-master.key",
+    envKeys: ["VIVARIUM_CREDENTIALS_MASTER_KEY"],
+  },
+  {
+    label: "Internal API token",
+    name: "internal-api.token",
+    envKeys: ["VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE"],
+  },
+  {
+    label: "Internal API health URL",
+    name: "internal-health-url.txt",
+    envKeys: ["VIVARIUM_INTERNAL_API_HEALTH_URL"],
+  },
+] as const;
 
 export class CliUsageError extends Error {
   readonly nextCommands: readonly string[];
@@ -124,9 +250,186 @@ function shellQuote(value: string): string {
   return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
 }
 
+function statusCommandForRun(
+  explicitStatePath: string | undefined,
+  explicitLiveEnvPath: string | undefined,
+): string {
+  return [
+    "vivarium status",
+    ...(explicitStatePath === undefined ? [] : [`--state-path ${shellQuote(explicitStatePath)}`]),
+    ...(explicitLiveEnvPath === undefined ? [] : [`--live-env-path ${shellQuote(explicitLiveEnvPath)}`]),
+  ].join(" ");
+}
+
+function setupLiveResumeCommand(flags: FlagMap): string {
+  const setupDir = value(flags, "setup-dir");
+  const secretsDir = value(flags, "secrets-dir");
+  return [
+    "vivarium setup live",
+    ...(setupDir === undefined ? [] : [`--setup-dir ${shellQuote(setupDir)}`]),
+    ...(secretsDir === undefined ? [] : [`--secrets-dir ${shellQuote(secretsDir)}`]),
+  ].join(" ");
+}
+
+function hasAnyFlag(flags: FlagMap, names: readonly string[]): boolean {
+  return names.some((name) => flags.has(name));
+}
+
+const defaultDashboardUrl = "http://127.0.0.1:8787";
+
+function normalizedDashboardUrl(raw: string | undefined): string {
+  return (raw ?? defaultDashboardUrl).replace(/\/$/, "");
+}
+
+function defaultDashboardOpenRunner(url: string): DashboardOpenResult {
+  const command =
+    process.platform === "darwin"
+      ? ["open", url]
+      : process.platform === "win32"
+        ? ["cmd", "/c", "start", "", url]
+        : ["xdg-open", url];
+  const result = Bun.spawnSync(command, { stdout: "pipe", stderr: "pipe" });
+  return { exitCode: result.exitCode, stderr: result.stderr?.toString() };
+}
+
+function renderDashboardCommandResult(
+  dashboardUrl: string,
+  open?: { readonly ok: boolean; readonly error?: string },
+): string {
+  const url = normalizedDashboardUrl(dashboardUrl);
+  const isDefaultDashboard = url === defaultDashboardUrl;
+  const dashboardCommand = isDefaultDashboard
+    ? "vivarium dashboard --open"
+    : `vivarium dashboard --open --url ${shellQuote(url)}`;
+  const daemonSmokeCommand = isDefaultDashboard
+    ? "vivarium daemon smoke"
+    : `vivarium daemon smoke --status-url ${shellQuote(`${url}/status`)}`;
+  return [
+    "Vivarium Gateway",
+    "----------------",
+    `Dashboard: ${url}`,
+    `Status JSON: ${url}/status`,
+    `Run API (POST): ${url}/run`,
+    ...(open === undefined
+      ? []
+      : [open.ok ? `Opened: ${url}` : `Open: blocked`, ...(open.error === undefined ? [] : [`Error: ${open.error}`])]),
+    "",
+    "Next commands:",
+    `  ${dashboardCommand}`,
+    `  ${daemonSmokeCommand}`,
+    "",
+  ].join("\n");
+}
+
+function openDashboardUrl(
+  dashboardUrl: string,
+  options: CliDispatchOptions,
+): { readonly ok: boolean; readonly error?: string } {
+  const openResult = (options.dashboardOpenRunner ?? defaultDashboardOpenRunner)(dashboardUrl);
+  return openResult.exitCode === 0
+    ? { ok: true as const }
+    : { ok: false as const, error: openResult.stderr ?? "Unable to open gateway URL" };
+}
+
 function usage(message: string, nextCommands?: readonly string[]): never {
   throw new CliUsageError(message, nextCommands);
 }
+
+function cliVersion(): string {
+  const packageJson = JSON.parse(
+    readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+  ) as {
+    readonly version?: unknown;
+  };
+  return typeof packageJson.version === "string" ? packageJson.version : "0.0.0";
+}
+
+function renderVersionCommandResult(version: string): string {
+  return `vivarium ${version}\n`;
+}
+
+function configuredEnvValue(
+  env: Readonly<Record<string, string | undefined>> | undefined,
+  name: string,
+): string | undefined {
+  const value = env?.[name] ?? process.env[name];
+  return value === undefined || value.length === 0 ? undefined : value;
+}
+
+function defaultDomain(env: Readonly<Record<string, string | undefined>> | undefined): string {
+  return configuredEnvValue(env, "VIVARIUM_DOMAIN") ?? "coding";
+}
+
+function defaultWorldRoot(env: Readonly<Record<string, string | undefined>> | undefined): string | undefined {
+  return configuredEnvValue(env, "VIVARIUM_WORLD_ROOT");
+}
+
+function defaultStatePath(env: Readonly<Record<string, string | undefined>> | undefined): string {
+  return configuredEnvValue(env, "VIVARIUM_STATE_PATH") ?? join(defaultVivariumHome(env), ".vivarium", "state.db");
+}
+
+interface GitCheckoutRef {
+  readonly ref: string;
+  readonly scriptRef: string;
+}
+
+function gitOutput(args: readonly string[], cwd: string): string | undefined {
+  const result = Bun.spawnSync(["git", ...args], {
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  if (result.exitCode !== 0) {
+    return undefined;
+  }
+  const text = result.stdout.toString().trim();
+  return text.length === 0 ? undefined : text;
+}
+
+function ghOutput(args: readonly string[], cwd: string): string | undefined {
+  const result = Bun.spawnSync(["gh", ...args], {
+    cwd,
+    env: process.env,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  if (result.exitCode !== 0) {
+    return undefined;
+  }
+  const text = result.stdout.toString().trim();
+  return text.length === 0 ? undefined : text;
+}
+
+function currentPreMainCheckoutRef(cwd: string): GitCheckoutRef | undefined {
+  const branch = gitOutput(["rev-parse", "--abbrev-ref", "HEAD"], cwd);
+  if (branch === undefined || branch === "main" || branch === "master") {
+    return undefined;
+  }
+  const commit = gitOutput(["rev-parse", "HEAD"], cwd);
+  if (commit === undefined) {
+    return undefined;
+  }
+  return {
+    ref: branch === "HEAD" ? commit : branch,
+    scriptRef: commit,
+  };
+}
+
+function currentPullRequestNumber(cwd: string): string | undefined {
+  const number = ghOutput(["pr", "view", "--json", "number", "--jq", ".number"], cwd);
+  return number !== undefined && /^[1-9]\d*$/.test(number) ? number : undefined;
+}
+
+const connectSetupNextCommands = [
+  "vivarium connect signup",
+  "vivarium connect fill",
+  "vivarium connect setup --confirm-write",
+] as const;
+
+const connectSmokeNextCommands = [
+  ...connectSetupNextCommands,
+  "vivarium connect smoke",
+] as const;
 
 function parseFlags(argv: readonly string[]): {
   readonly positionals: readonly string[];
@@ -149,7 +452,7 @@ function parseFlags(argv: readonly string[]): {
     const next = argv[index + 1];
     const values = flags.get(key) ?? [];
     if (next === undefined || next.startsWith("--")) {
-      flags.set(key, [...values, "true"]);
+      flags.set(key, [...values, missingFlagValue]);
       continue;
     }
 
@@ -161,15 +464,337 @@ function parseFlags(argv: readonly string[]): {
 }
 
 function value(flags: FlagMap, name: string): string | undefined {
-  return flags.get(name)?.at(-1);
+  const raw = flags.get(name)?.at(-1);
+  if (raw === missingFlagValue) {
+    usage(`Missing value for --${name}`);
+  }
+  return raw;
 }
 
 function values(flags: FlagMap, name: string): readonly string[] {
-  return flags.get(name) ?? [];
+  return (flags.get(name) ?? []).map((raw) => {
+    if (raw === missingFlagValue) {
+      usage(`Missing value for --${name}`);
+    }
+    return raw;
+  });
 }
 
-function required(flags: FlagMap, name: string): string {
-  return value(flags, name) ?? usage(`Missing required --${name}`);
+function required(flags: FlagMap, name: string, nextCommands?: readonly string[]): string {
+  return value(flags, name) ?? usage(`Missing required --${name}`, nextCommands);
+}
+
+function valueOrFileInDir(
+  flags: FlagMap,
+  name: string,
+  fileName: string,
+  directory: string | undefined,
+  defaultFileName: string,
+): string | undefined {
+  const direct = value(flags, name);
+  if (direct !== undefined) {
+    return direct;
+  }
+
+  const explicitPath = value(flags, fileName);
+  if (explicitPath !== undefined) {
+    const explicitValue = readFileSync(explicitPath, "utf8").trim();
+    return explicitValue.length === 0 ? undefined : explicitValue;
+  }
+
+  const path = directory === undefined ? undefined : join(directory, defaultFileName);
+  if (path === undefined) {
+    return undefined;
+  }
+
+  try {
+    const fileValue = readFileSync(path, "utf8").trim();
+    return fileValue.length === 0 ? undefined : fileValue;
+  } catch (error) {
+    if ((error as { readonly code?: unknown }).code === "ENOENT") {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
+function scaffoldSecretFiles(
+  directory: string | undefined,
+  resumeCommand: string | undefined,
+  setupEnv: Readonly<Record<string, string | undefined>> | undefined = undefined,
+): ConnectSecretFiles | undefined {
+  if (directory === undefined) {
+    return undefined;
+  }
+
+  mkdirSync(directory, { recursive: true });
+  return {
+    directory,
+    ...(resumeCommand === undefined ? {} : { resumeCommand }),
+    files: secretDirFiles.flatMap((file): ConnectSecretFile[] => {
+      const path = join(directory, file.name);
+      const configuredInSetupFile = hasConcreteSetupValue(setupEnv, file.envKeys);
+      try {
+        const body = readFileSync(path, "utf8");
+        if (body.trim().length === 0 && configuredInSetupFile) {
+          return [];
+        }
+        return [{
+          label: file.label,
+          path,
+          status: "existing" as const,
+          ready: body.trim().length > 0,
+        }];
+      } catch (error) {
+        if ((error as { readonly code?: unknown }).code !== "ENOENT") {
+          throw error;
+        }
+      }
+
+      if (configuredInSetupFile) {
+        return [];
+      }
+
+      try {
+        writeFileSync(path, "", { encoding: "utf8", flag: "wx", mode: 0o600 });
+        chmodSync(path, 0o600);
+        return [{ label: file.label, path, status: "created" as const, ready: false }];
+      } catch (error) {
+        if ((error as { readonly code?: unknown }).code !== "EEXIST") {
+          throw error;
+        }
+        const body = readFileSync(path, "utf8");
+        if (body.trim().length === 0 && configuredInSetupFile) {
+          return [];
+        }
+        return [{
+          label: file.label,
+          path,
+          status: "existing" as const,
+          ready: body.trim().length > 0,
+        }];
+      }
+    }),
+  };
+}
+
+function hasConcreteSetupValue(
+  setupEnv: Readonly<Record<string, string | undefined>> | undefined,
+  keys: readonly string[],
+): boolean {
+  if (setupEnv === undefined) {
+    return false;
+  }
+
+  return keys.some((key) => {
+    const value = setupEnv[key]?.trim();
+    return value !== undefined && value.length > 0 && !/^<[^>]+>$/.test(value);
+  });
+}
+
+function connectFillValuesFromFlags(flags: FlagMap): Partial<Record<keyof ConnectFillValues, string>> {
+  const fillValues: Partial<Record<keyof ConnectFillValues, string>> = {};
+  const secretsDir = value(flags, "secrets-dir");
+  const agentRepoName = valueOrFileInDir(
+    flags,
+    "agent-repo",
+    "agent-repo-file",
+    secretsDir,
+    "agent-repo-name.txt",
+  );
+  const worldRepoName = valueOrFileInDir(
+    flags,
+    "world-repo",
+    "world-repo-file",
+    secretsDir,
+    "world-repo-name.txt",
+  );
+  const canonicalWorldRef = valueOrFileInDir(
+    flags,
+    "canonical-world-ref",
+    "canonical-world-ref-file",
+    secretsDir,
+    "canonical-world-ref.txt",
+  );
+  const privateWorldRef = valueOrFileInDir(
+    flags,
+    "private-world-ref",
+    "private-world-ref-file",
+    secretsDir,
+    "private-world-ref.txt",
+  );
+  const githubToken = valueOrFileInDir(
+    flags,
+    "github-token",
+    "github-token-file",
+    secretsDir,
+    "github-token.key",
+  );
+  const githubOwner = valueOrFileInDir(
+    flags,
+    "github-owner",
+    "github-owner-file",
+    secretsDir,
+    "github-owner.txt",
+  );
+  const githubRepositoryId = valueOrFileInDir(
+    flags,
+    "github-repository-id",
+    "github-repository-id-file",
+    secretsDir,
+    "github-repository-id.txt",
+  );
+  const githubDiscussionCategoryId = valueOrFileInDir(
+    flags,
+    "github-discussion-category-id",
+    "github-discussion-category-id-file",
+    secretsDir,
+    "github-discussion-category-id.txt",
+  );
+  const anthropicApiKey = valueOrFileInDir(
+    flags,
+    "anthropic-key",
+    "anthropic-key-file",
+    secretsDir,
+    "anthropic.key",
+  );
+  const openRouterApiKey = valueOrFileInDir(
+    flags,
+    "openrouter-key",
+    "openrouter-key-file",
+    secretsDir,
+    "openrouter.key",
+  );
+  const privateOaiCompatApiKey = valueOrFileInDir(
+    flags,
+    "private-key",
+    "private-key-file",
+    secretsDir,
+    "private-oai.key",
+  );
+  const privateOaiCompatBaseUrl = valueOrFileInDir(
+    flags,
+    "private-base-url",
+    "private-base-url-file",
+    secretsDir,
+    "private-base-url.txt",
+  );
+  const privateOaiCompatModel = valueOrFileInDir(
+    flags,
+    "private-model",
+    "private-model-file",
+    secretsDir,
+    "private-model.txt",
+  );
+  const privateOaiCompatContextWindow = valueOrFileInDir(
+    flags,
+    "private-context-window",
+    "private-context-window-file",
+    secretsDir,
+    "private-context-window.txt",
+  );
+  const setupDir = value(flags, "setup-dir");
+  const providerProfilesPath =
+    value(flags, "provider-profiles-path") ??
+    (setupDir === undefined ? undefined : join(setupDir, "provider-profiles.json"));
+  const credentialsPath =
+    value(flags, "credentials-path") ??
+    (setupDir === undefined ? undefined : join(setupDir, "credentials.enc"));
+  const credentialsMasterKey = valueOrFileInDir(
+    flags,
+    "credential-master-key",
+    "credential-master-key-file",
+    secretsDir,
+    "credential-master.key",
+  );
+  const internalApiCredentialName =
+    value(flags, "internal-credential-name") ??
+    (setupDir === undefined ? undefined : "INTERNAL_API_TOKEN");
+  const internalApiCredentialValue = valueOrFileInDir(
+    flags,
+    "internal-token",
+    "internal-token-file",
+    secretsDir,
+    "internal-api.token",
+  );
+  const internalApiHealthUrl = valueOrFileInDir(
+    flags,
+    "internal-health-url",
+    "internal-health-url-file",
+    secretsDir,
+    "internal-health-url.txt",
+  );
+  const v1EvidencePath =
+    value(flags, "evidence-path") ??
+    (setupDir === undefined ? undefined : join(setupDir, "v1-evidence.json"));
+  if (agentRepoName !== undefined) {
+    fillValues.agentRepoName = agentRepoName;
+  }
+  if (worldRepoName !== undefined) {
+    fillValues.worldRepoName = worldRepoName;
+  }
+  if (canonicalWorldRef !== undefined) {
+    fillValues.canonicalWorldRef = canonicalWorldRef;
+  }
+  if (privateWorldRef !== undefined) {
+    fillValues.privateWorldRef = privateWorldRef;
+  }
+  if (githubToken !== undefined) {
+    fillValues.githubToken = githubToken;
+  }
+  if (githubOwner !== undefined) {
+    fillValues.githubOwner = githubOwner;
+  }
+  if (githubRepositoryId !== undefined) {
+    fillValues.githubRepositoryId = githubRepositoryId;
+  }
+  if (githubDiscussionCategoryId !== undefined) {
+    fillValues.githubDiscussionCategoryId = githubDiscussionCategoryId;
+  }
+  if (anthropicApiKey !== undefined) {
+    fillValues.anthropicApiKey = anthropicApiKey;
+  }
+  if (openRouterApiKey !== undefined) {
+    fillValues.openRouterApiKey = openRouterApiKey;
+  }
+  if (privateOaiCompatApiKey !== undefined) {
+    fillValues.privateOaiCompatApiKey = privateOaiCompatApiKey;
+  }
+  if (privateOaiCompatBaseUrl !== undefined) {
+    fillValues.privateOaiCompatBaseUrl = privateOaiCompatBaseUrl;
+  }
+  if (privateOaiCompatModel !== undefined) {
+    fillValues.privateOaiCompatModel = privateOaiCompatModel;
+  }
+  if (privateOaiCompatContextWindow !== undefined) {
+    fillValues.privateOaiCompatContextWindow = privateOaiCompatContextWindow;
+  }
+  if (providerProfilesPath !== undefined) {
+    fillValues.providerProfilesPath = providerProfilesPath;
+  }
+  if (credentialsPath !== undefined) {
+    fillValues.credentialsPath = credentialsPath;
+  }
+  if (credentialsMasterKey !== undefined) {
+    fillValues.credentialsMasterKey = credentialsMasterKey;
+  }
+  if (internalApiCredentialName !== undefined) {
+    fillValues.internalApiCredentialName = internalApiCredentialName;
+  }
+  if (internalApiCredentialValue !== undefined) {
+    fillValues.internalApiCredentialValue = internalApiCredentialValue;
+  }
+  if (internalApiHealthUrl !== undefined) {
+    fillValues.internalApiHealthUrl = internalApiHealthUrl;
+  }
+  if (v1EvidencePath !== undefined) {
+    fillValues.v1EvidencePath = v1EvidencePath;
+  }
+  return fillValues;
+}
+
+function hasConnectFillValues(values: Partial<Record<keyof ConnectFillValues, string>>): boolean {
+  return Object.keys(values).length > 0;
 }
 
 function integerFlag(flags: FlagMap, name: string): number | undefined {
@@ -185,8 +810,40 @@ function integerFlag(flags: FlagMap, name: string): number | undefined {
   return parsed;
 }
 
+function daemonPortFlag(flags: FlagMap): string | undefined {
+  const raw = value(flags, "daemon-port");
+  if (raw === undefined) {
+    return undefined;
+  }
+
+  try {
+    parseDaemonPort(raw);
+  } catch {
+    usage(daemonPortError.replace("VIVARIUM_DAEMON_PORT", "--daemon-port"));
+  }
+  return raw;
+}
+
+function daemonHostFlag(flags: FlagMap): string | undefined {
+  const raw = value(flags, "daemon-host");
+  if (raw === undefined) {
+    return undefined;
+  }
+
+  try {
+    parseDaemonHost(raw);
+  } catch {
+    usage(daemonHostError.replace("VIVARIUM_DAEMON_HOST", "--daemon-host"));
+  }
+  return raw;
+}
+
 function booleanFlag(flags: FlagMap, name: string): boolean {
   return flags.has(name);
+}
+
+function hasHelpRequest(argv: readonly string[]): boolean {
+  return argv.includes("--help") || argv.includes("-h");
 }
 
 function stripEnvQuotes(value: string): string {
@@ -216,13 +873,14 @@ function interpolateEnvValue(
 function readEnvFile(
   path: string,
   baseEnv: Readonly<Record<string, string | undefined>>,
+  missingNextCommands: readonly string[] = [
+    `vivarium connect init --path ${shellQuote(path)}`,
+    "vivarium help",
+  ],
 ): Readonly<Record<string, string | undefined>> {
   const env: Record<string, string | undefined> = { ...baseEnv };
   if (!existsSync(path)) {
-    usage(`Missing env file: ${path}`, [
-      `vivarium live env-init --path ${shellQuote(path)}`,
-      "vivarium help",
-    ]);
+    usage(`Missing env file: ${path}`, missingNextCommands);
   }
   const body = readFileSync(path, "utf8");
 
@@ -252,14 +910,379 @@ function readEnvFile(
   return env;
 }
 
+function withDefaultFlag(flags: FlagMap, name: string, defaultValue: string | undefined): FlagMap {
+  if (defaultValue === undefined || flags.has(name)) {
+    return flags;
+  }
+
+  const next = new Map(flags);
+  next.set(name, [defaultValue]);
+  return next;
+}
+
+function defaultVivariumHome(env: Readonly<Record<string, string | undefined>> | undefined): string {
+  return env?.HOME ?? process.env.HOME ?? homedir();
+}
+
+function configuredVivariumHome(env: Readonly<Record<string, string | undefined>> | undefined): string | undefined {
+  return env === undefined ? process.env.HOME ?? homedir() : env.HOME;
+}
+
+function privateDefaultLiveEnvFile(env: Readonly<Record<string, string | undefined>> | undefined): string | undefined {
+  const configured = configuredEnvValue(env, "VIVARIUM_LIVE_ENV_PATH");
+  if (configured !== undefined) {
+    return configured;
+  }
+
+  const home = configuredVivariumHome(env);
+  return home === undefined ? undefined : join(home, ".vivarium", "live", "live-readiness.local.env");
+}
+
+function defaultBunCommand(env: Readonly<Record<string, string | undefined>> | undefined): string {
+  return configuredEnvValue(env, "VIVARIUM_BUN_PATH") ?? process.execPath;
+}
+
+function isDefaultLiveEnvFile(path: string): boolean {
+  return path === "live-readiness.local.env" || path.endsWith("/.vivarium/live/live-readiness.local.env");
+}
+
+function existingDefaultLiveEnvFile(env: Readonly<Record<string, string | undefined>> | undefined): string | undefined {
+  const privateDefault = privateDefaultLiveEnvFile(env);
+  if (privateDefault !== undefined && existsSync(privateDefault)) {
+    return privateDefault;
+  }
+
+  const localDefault = "live-readiness.local.env";
+  if (existsSync(localDefault)) {
+    return localDefault;
+  }
+
+  return undefined;
+}
+
+type LocalStateSeedStatus = "seeded" | "unseeded" | "invalid";
+
+function localStateSeedStatus(statePath: string): LocalStateSeedStatus {
+  if (!existsSync(statePath)) {
+    return "unseeded";
+  }
+
+  let state: SQLiteStateRepository | undefined;
+  try {
+    state = new SQLiteStateRepository(statePath);
+    const identity = state.getIdentity();
+    const hasIdentity = identity !== undefined && identity.name.trim().length > 0;
+    const hasStarterSkill = state.listLocalSkills().some(
+      (skill) =>
+        skill.status === "promoted" &&
+        skill.domain.trim().length > 0 &&
+        skill.body.trim().length > 0,
+    );
+    return hasIdentity && hasStarterSkill ? "seeded" : "unseeded";
+  } catch {
+    return "invalid";
+  } finally {
+    state?.close();
+  }
+}
+
+function bootstrapLocalRunState(options: {
+  readonly statePath: string;
+  readonly domain: string | undefined;
+  readonly agentName: string | undefined;
+  readonly worldRoot: string | undefined;
+  readonly liveEnvPath: string | undefined;
+}): void {
+  const stateStatus = localStateSeedStatus(options.statePath);
+  if (stateStatus === "invalid") {
+    localStateInvalidUsage(options.statePath);
+  }
+
+  if (stateStatus === "unseeded") {
+    runInitCommand({
+      primaryDomain: options.domain ?? "coding",
+      bindGithubIdentity: false,
+      ...(options.agentName === undefined ? {} : { agentName: options.agentName }),
+      ...(options.worldRoot === undefined ? {} : { worldRoot: options.worldRoot }),
+      statePath: options.statePath,
+    });
+  }
+
+  if (options.liveEnvPath !== undefined && !existsSync(options.liveEnvPath)) {
+    liveEnvInitCommand({ path: options.liveEnvPath });
+  }
+}
+
+function localStateInvalidUsage(statePath: string): never {
+  usage(
+    `Local state is invalid: ${statePath}. Move the invalid local SQLite state aside, then run vivarium local to create a fresh local memory database.`,
+    ["vivarium doctor", "vivarium local", "vivarium help"],
+  );
+}
+
+function guardLocalSetupState(statePath: string): void {
+  if (localStateSeedStatus(statePath) === "invalid") {
+    localStateInvalidUsage(statePath);
+  }
+}
+
+function writableDefaultLiveEnvFile(env: Readonly<Record<string, string | undefined>> | undefined): string {
+  return existingDefaultLiveEnvFile(env) ?? "live-readiness.local.env";
+}
+
+const githubDefaultTokenEnv = "GITHUB_TOKEN";
+const githubOwnerEnv = "VIVARIUM_GITHUB_OWNER";
+const githubAgentRepoEnv = "VIVARIUM_AGENT_REPO_NAME";
+const githubWorldRepoEnv = "VIVARIUM_WORLD_REPO_NAME";
+const githubRepositoryIdEnv = "VIVARIUM_GITHUB_REPOSITORY_ID";
+const githubDiscussionCategoryIdEnv = "VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID";
+const githubDefaultDiscussionTitle = "RFC 0001: Phase 0 Bootstrap";
+const githubDefaultSetupNextCommands = [
+  "vivarium connect signup",
+  "vivarium setup live",
+  "vivarium connect",
+] as const;
+
+function isPlaceholderValue(value: string): boolean {
+  return /^<[^>]+>$/.test(value.trim());
+}
+
+function githubCommandEnv(
+  flags: FlagMap,
+  options: CliDispatchOptions,
+): Readonly<Record<string, string | undefined>> {
+  const envFile = value(flags, "env-file") ?? existingDefaultLiveEnvFile(options.env);
+  return envFile === undefined ? (options.env ?? process.env) : readEnvFile(envFile, options.env ?? process.env);
+}
+
+function flagOrEnvValue(
+  flags: FlagMap,
+  flagName: string,
+  env: Readonly<Record<string, string | undefined>>,
+  envName: string,
+): string | undefined {
+  const explicit = value(flags, flagName)?.trim();
+  if (explicit !== undefined && explicit.length > 0) {
+    return explicit;
+  }
+
+  const fallback = env[envName]?.trim();
+  if (fallback === undefined || fallback.length === 0 || isPlaceholderValue(fallback)) {
+    return undefined;
+  }
+
+  return fallback;
+}
+
+function requiredGithubFlagOrEnv(
+  flags: FlagMap,
+  flagName: string,
+  env: Readonly<Record<string, string | undefined>>,
+  envName: string,
+  label: string,
+): string {
+  return (
+    flagOrEnvValue(flags, flagName, env, envName) ??
+    usage(
+      `Missing GitHub ${label}. Run vivarium connect signup, fill the generated local file, then rerun vivarium setup live.`,
+      githubDefaultSetupNextCommands,
+    )
+  );
+}
+
+function githubTokenEnv(flags: FlagMap): string {
+  return value(flags, "token-env") ?? githubDefaultTokenEnv;
+}
+
+function githubRepoEnvForTarget(flags: FlagMap): string {
+  const target = value(flags, "target") ?? "world";
+  if (target === "agent") {
+    return githubAgentRepoEnv;
+  }
+  if (target === "world") {
+    return githubWorldRepoEnv;
+  }
+
+  usage('Invalid GitHub --target. Use "agent" or "world".');
+}
+
+function githubDiscussionBody(flags: FlagMap): string {
+  const explicit = value(flags, "body");
+  if (explicit !== undefined) {
+    return explicit;
+  }
+
+  usage(
+    "Missing GitHub discussion body. Pass --body with the reviewed discussion text.",
+    githubDefaultSetupNextCommands,
+  );
+}
+
+function dispatchConnectWizard(
+  command: CliCommand,
+  flags: FlagMap,
+  options: CliDispatchOptions,
+  defaults: {
+    readonly path?: string;
+    readonly resumeCommand?: string;
+    readonly setupDir?: string;
+    readonly secretsDir?: string;
+  } = {},
+): CliDispatchResult {
+  let wizardFlags = withDefaultFlag(flags, "setup-dir", defaults.setupDir);
+  wizardFlags = withDefaultFlag(wizardFlags, "secrets-dir", defaults.secretsDir);
+  wizardFlags = withDefaultFlag(wizardFlags, "path", defaults.path);
+
+  const githubOwner = value(wizardFlags, "github-owner");
+  const agentRepo = value(wizardFlags, "agent-repo");
+  const worldRepo = value(wizardFlags, "world-repo");
+  const canonicalWorldRef = value(wizardFlags, "canonical-world-ref");
+  const privateWorldRef = value(wizardFlags, "private-world-ref");
+  const wizardEnvFile = value(wizardFlags, "path") ?? value(wizardFlags, "env-file") ?? "live-readiness.local.env";
+  const setupDir = value(wizardFlags, "setup-dir");
+  const existingSetupEnv = existsSync(wizardEnvFile)
+    ? readEnvFile(wizardEnvFile, options.env ?? process.env)
+    : undefined;
+  const secretFiles = scaffoldSecretFiles(
+    value(wizardFlags, "secrets-dir"),
+    defaults.resumeCommand,
+    existingSetupEnv,
+  );
+  const fillValues = connectFillValuesFromFlags(wizardFlags);
+  const initResult =
+    existsSync(wizardEnvFile) && !booleanFlag(wizardFlags, "overwrite")
+      ? undefined
+      : liveEnvInitCommand({
+          path: wizardEnvFile,
+          overwrite: booleanFlag(wizardFlags, "overwrite"),
+          prefill: {
+            ...(githubOwner === undefined ? {} : { githubOwner }),
+            ...(agentRepo === undefined ? {} : { agentRepo }),
+            ...(worldRepo === undefined ? {} : { worldRepo }),
+            ...(canonicalWorldRef === undefined ? {} : { canonicalWorldRef }),
+            ...(privateWorldRef === undefined ? {} : { privateWorldRef }),
+          },
+        });
+  const fillResult =
+    initResult?.ok === false || !hasConnectFillValues(fillValues)
+      ? undefined
+      : connectFillCommand({
+          envFilePath: wizardEnvFile,
+          values: fillValues,
+        });
+  const setupResult =
+    booleanFlag(wizardFlags, "confirm-write") &&
+    initResult?.ok !== false &&
+    fillResult?.ok !== false
+      ? liveSetupCommand({
+          env: readEnvFile(wizardEnvFile, options.env ?? process.env),
+          confirmWrite: true,
+        })
+      : undefined;
+  const result = connectWizardCommand(
+    initResult === undefined
+      ? {
+          envFilePath: wizardEnvFile,
+          setupFileStatus: "existing",
+          ...(setupDir === undefined ? {} : { setupDir }),
+          ...(secretFiles === undefined ? {} : { secretFiles }),
+          ...(fillResult === undefined ? {} : { fillResult }),
+          ...(setupResult === undefined ? {} : { setupResult }),
+        }
+      : initResult.ok
+        ? {
+            envFilePath: initResult.path,
+            setupFileStatus: "created",
+            ...(setupDir === undefined ? {} : { setupDir }),
+            mode: initResult.mode,
+            templatePath: initResult.templatePath,
+            prefilled: initResult.prefilled,
+            ...(secretFiles === undefined ? {} : { secretFiles }),
+            ...(fillResult === undefined ? {} : { fillResult }),
+            ...(setupResult === undefined ? {} : { setupResult }),
+          }
+        : {
+            envFilePath: initResult.path,
+            setupFileStatus: "blocked",
+            error: initResult.error,
+          },
+  );
+  return { command, result, output: renderConnectWizardCommandResult(result) };
+}
+
 export async function dispatchCliCommand(
   argv: readonly string[],
   options: CliDispatchOptions = {},
 ): Promise<CliDispatchResult> {
   const [command, subcommand, ...rest] = argv;
+  if (command === "--version" || command === "-v") {
+    const result = { version: cliVersion() };
+    return { command: "version", result, output: renderVersionCommandResult(result.version) };
+  }
+
   if (command === undefined || command === "--help" || command === "-h") {
     const result = helpCommand();
     return { command: "help", result, output: renderHelpCommandResult(result) };
+  }
+
+  if (command === "local" && subcommand === "run" && hasHelpRequest(rest)) {
+    const result = localRunHelpCommand();
+    return { command: "help", result, output: renderLocalRunHelpCommandResult(result) };
+  }
+
+  if (command === "local" && hasHelpRequest(argv.slice(1))) {
+    const result = localSetupHelpCommand();
+    return { command: "help", result, output: renderLocalSetupHelpCommandResult(result) };
+  }
+
+  if (command === "setup" && (subcommand === undefined || subcommand.startsWith("--")) && hasHelpRequest(argv.slice(1))) {
+    const result = setupHelpCommand();
+    return { command: "help", result, output: renderSetupHelpCommandResult(result) };
+  }
+
+  if (command === "status" && hasHelpRequest(argv.slice(1))) {
+    const result = statusHelpCommand();
+    return { command: "help", result, output: renderStatusHelpCommandResult(result) };
+  }
+
+  if (command === "launch" && subcommand === "handoff" && hasHelpRequest(rest)) {
+    const result = launchHandoffHelpCommand();
+    return { command: "help", result, output: renderLaunchHandoffHelpCommandResult(result) };
+  }
+
+  if (command === "daemon" && subcommand === "smoke" && hasHelpRequest(rest)) {
+    const result = daemonSmokeHelpCommand();
+    return { command: "help", result, output: renderDaemonSmokeHelpCommandResult(result) };
+  }
+
+  if (command === "connect" && subcommand === "fill" && hasHelpRequest(rest)) {
+    const result = connectFillHelpCommand();
+    return { command: "help", result, output: renderConnectFillHelpCommandResult(result) };
+  }
+
+  if (command === "connect" && subcommand === "setup" && hasHelpRequest(rest)) {
+    const result = connectSetupHelpCommand();
+    return { command: "help", result, output: renderConnectSetupHelpCommandResult(result) };
+  }
+
+  if (command === "connect" && subcommand === "smoke" && hasHelpRequest(rest)) {
+    const result = connectSmokeHelpCommand();
+    return { command: "help", result, output: renderConnectSmokeHelpCommandResult(result) };
+  }
+
+  if (command === "proof" && subcommand === "init" && hasHelpRequest(rest)) {
+    const result = proofInitHelpCommand();
+    return { command: "help", result, output: renderProofInitHelpCommandResult(result) };
+  }
+
+  if (command === "github" && subcommand === "smoke" && hasHelpRequest(rest)) {
+    const result = githubSmokeHelpCommand();
+    return { command: "help", result, output: renderGithubSmokeHelpCommandResult(result) };
+  }
+
+  if (command === "tools" && hasHelpRequest(argv.slice(1))) {
+    const result = toolsCommand();
+    return { command, result, output: renderToolsCommandResult(result) };
   }
 
   const commandArgs = (subcommand?.startsWith("--") ?? true) ? argv.slice(1) : rest;
@@ -270,9 +1293,25 @@ export async function dispatchCliCommand(
   }
 
   switch (command) {
+    case "version": {
+      const result = { version: cliVersion() };
+      return { command, result, output: renderVersionCommandResult(result.version) };
+    }
     case "help": {
       const result = helpCommand();
       return { command, result, output: renderHelpCommandResult(result) };
+    }
+    case "dashboard": {
+      const dashboardUrl = normalizedDashboardUrl(value(flags, "url"));
+      if (flags.has("open")) {
+        const open = openDashboardUrl(dashboardUrl, options);
+        return { command, result: { dashboardUrl, open }, output: renderDashboardCommandResult(dashboardUrl, open) };
+      }
+      return { command, result: { dashboardUrl }, output: renderDashboardCommandResult(dashboardUrl) };
+    }
+    case "tools": {
+      const result = toolsCommand();
+      return { command, result, output: renderToolsCommandResult(result) };
     }
     case "launch": {
       if (subcommand !== "handoff") {
@@ -280,41 +1319,271 @@ export async function dispatchCliCommand(
       }
       const owner = value(flags, "owner");
       const repo = value(flags, "repo");
-      const ref = value(flags, "ref");
+      const explicitRef = value(flags, "ref");
+      const explicitScriptRef = value(flags, "script-ref");
+      const daemonHost = daemonHostFlag(flags);
+      const daemonPort = daemonPortFlag(flags);
+      const reviewPrNumber = value(flags, "pr-number");
+      const reviewerUsername = value(flags, "reviewer");
+      const cwd = process.cwd();
+      const detectedRef =
+        explicitRef === undefined && explicitScriptRef === undefined
+          ? currentPreMainCheckoutRef(cwd)
+          : undefined;
+      const ref = explicitRef ?? detectedRef?.ref;
+      const scriptRef = explicitScriptRef ?? detectedRef?.scriptRef;
+      const detectedReviewPrNumber =
+        reviewPrNumber ?? (detectedRef === undefined ? undefined : currentPullRequestNumber(cwd));
       const result = launchHandoffCommand({
         ...(owner === undefined ? {} : { owner }),
         ...(repo === undefined ? {} : { repo }),
         ...(ref === undefined ? {} : { ref }),
+        ...(scriptRef === undefined ? {} : { scriptRef }),
+        ...(daemonHost === undefined ? {} : { daemonHost }),
+        ...(daemonPort === undefined ? {} : { daemonPort }),
+        ...(detectedReviewPrNumber === undefined ? {} : { reviewPrNumber: detectedReviewPrNumber }),
+        ...(reviewerUsername === undefined ? {} : { reviewerUsername }),
       });
       return { command, result, output: renderLaunchHandoffCommandResult(result) };
     }
     case "init": {
-      const worldRoot = value(flags, "world-root");
-      const statePath = value(flags, "state-path");
+      const worldRoot = value(flags, "world-root") ?? defaultWorldRoot(options.env);
+      const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
+      const agentName = value(flags, "agent-name");
+      guardLocalSetupState(statePath);
       const result = runInitCommand({
-        primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? "coding",
+        primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? defaultDomain(options.env),
         bindGithubIdentity: booleanFlag(flags, "bind-github"),
+        ...(agentName === undefined ? {} : { agentName }),
         providerProfiles: values(flags, "provider"),
         credentialNames: values(flags, "credential"),
         ...(worldRoot === undefined ? {} : { worldRoot }),
-        ...(statePath === undefined ? {} : { statePath }),
+        statePath,
       });
       return { command, result, output: renderInitCommandResult(result) };
     }
-    case "setup": {
-      const worldRoot = value(flags, "world-root");
-      const statePath = value(flags, "state-path");
-      const envFile = value(flags, "env-file");
-      const liveEnvPath = value(flags, "live-env-path");
+    case "start": {
+      if (subcommand !== undefined && !subcommand.startsWith("--")) {
+        usage('Unknown start subcommand. Use "vivarium start".');
+      }
+
+      const worldRoot = value(flags, "world-root") ?? defaultWorldRoot(options.env);
+      const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
+      const agentName = value(flags, "agent-name");
+      const liveEnvPath = value(flags, "live-env-path") ?? privateDefaultLiveEnvFile(options.env);
       const githubOwner = value(flags, "github-owner");
       const agentRepo = value(flags, "agent-repo");
       const worldRepo = value(flags, "world-repo");
       const canonicalWorldRef = value(flags, "canonical-world-ref");
       const privateWorldRef = value(flags, "private-world-ref");
+      guardLocalSetupState(statePath);
       const result = setupCommand({
-        primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? "coding",
+        primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? defaultDomain(options.env),
+        ...(agentName === undefined ? {} : { agentName }),
         ...(worldRoot === undefined ? {} : { worldRoot }),
-        ...(statePath === undefined ? {} : { statePath }),
+        statePath,
+        quick: true,
+        ...(liveEnvPath === undefined ? {} : { liveEnvPath }),
+        prefill: {
+          ...(githubOwner === undefined ? {} : { githubOwner }),
+          ...(agentRepo === undefined ? {} : { agentRepo }),
+          ...(worldRepo === undefined ? {} : { worldRepo }),
+          ...(canonicalWorldRef === undefined ? {} : { canonicalWorldRef }),
+          ...(privateWorldRef === undefined ? {} : { privateWorldRef }),
+        },
+      });
+      return { command, result, output: renderSetupCommandResult(result) };
+    }
+    case "--setup": {
+      const worldRoot = value(flags, "world-root") ?? defaultWorldRoot(options.env);
+      const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
+      const agentName = value(flags, "agent-name");
+      const liveEnvPath = value(flags, "live-env-path") ?? privateDefaultLiveEnvFile(options.env);
+      const dashboardUrl = normalizedDashboardUrl(value(flags, "dashboard-url"));
+      const githubOwner = value(flags, "github-owner");
+      const agentRepo = value(flags, "agent-repo");
+      const worldRepo = value(flags, "world-repo");
+      const canonicalWorldRef = value(flags, "canonical-world-ref");
+      const privateWorldRef = value(flags, "private-world-ref");
+      guardLocalSetupState(statePath);
+      const result = setupCommand({
+        primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? defaultDomain(options.env),
+        ...(agentName === undefined ? {} : { agentName }),
+        ...(worldRoot === undefined ? {} : { worldRoot }),
+        statePath,
+        quick: true,
+        dashboardUrl,
+        simpleLocalRunNextCommand: !hasAnyFlag(flags, [
+          "domain",
+          "primary-domain",
+          "agent-name",
+          "world-root",
+          "state-path",
+          "live-env-path",
+        ]),
+        ...(liveEnvPath === undefined ? {} : { liveEnvPath }),
+        prefill: {
+          ...(githubOwner === undefined ? {} : { githubOwner }),
+          ...(agentRepo === undefined ? {} : { agentRepo }),
+          ...(worldRepo === undefined ? {} : { worldRepo }),
+          ...(canonicalWorldRef === undefined ? {} : { canonicalWorldRef }),
+          ...(privateWorldRef === undefined ? {} : { privateWorldRef }),
+        },
+      });
+      if (booleanFlag(flags, "open")) {
+        const dashboardOpen = openDashboardUrl(dashboardUrl, options);
+        const openedResult = { ...result, dashboardOpen };
+        return { command: "setup", result: openedResult, output: renderSetupCommandResult(openedResult) };
+      }
+      return { command: "setup", result, output: renderSetupCommandResult(result) };
+    }
+    case "onboard": {
+      if (subcommand === "live") {
+        const home = defaultVivariumHome(options.env);
+        const setupDir = value(flags, "setup-dir") ?? join(home, ".vivarium", "live");
+        return dispatchConnectWizard(command, flags, options, {
+          path: join(setupDir, "live-readiness.local.env"),
+          resumeCommand: setupLiveResumeCommand(flags),
+          setupDir,
+          secretsDir: join(home, ".vivarium", "secrets"),
+        });
+      }
+
+      const worldRoot = value(flags, "world-root") ?? defaultWorldRoot(options.env);
+      const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
+      const agentName = value(flags, "agent-name");
+      const liveEnvPath = value(flags, "live-env-path") ?? privateDefaultLiveEnvFile(options.env);
+      const githubOwner = value(flags, "github-owner");
+      const agentRepo = value(flags, "agent-repo");
+      const worldRepo = value(flags, "world-repo");
+      const canonicalWorldRef = value(flags, "canonical-world-ref");
+      const privateWorldRef = value(flags, "private-world-ref");
+      guardLocalSetupState(statePath);
+      const result = setupCommand({
+        primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? defaultDomain(options.env),
+        ...(agentName === undefined ? {} : { agentName }),
+        ...(worldRoot === undefined ? {} : { worldRoot }),
+        statePath,
+        quick: true,
+        ...(liveEnvPath === undefined ? {} : { liveEnvPath }),
+        prefill: {
+          ...(githubOwner === undefined ? {} : { githubOwner }),
+          ...(agentRepo === undefined ? {} : { agentRepo }),
+          ...(worldRepo === undefined ? {} : { worldRepo }),
+          ...(canonicalWorldRef === undefined ? {} : { canonicalWorldRef }),
+          ...(privateWorldRef === undefined ? {} : { privateWorldRef }),
+        },
+      });
+      return { command, result, output: renderSetupCommandResult(result) };
+    }
+    case "local": {
+      if (subcommand === undefined || subcommand.startsWith("--")) {
+        const worldRoot = value(flags, "world-root") ?? defaultWorldRoot(options.env);
+        const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
+        const agentName = value(flags, "agent-name");
+        const liveEnvPath = value(flags, "live-env-path") ?? privateDefaultLiveEnvFile(options.env);
+        const githubOwner = value(flags, "github-owner");
+        const agentRepo = value(flags, "agent-repo");
+        const worldRepo = value(flags, "world-repo");
+        const canonicalWorldRef = value(flags, "canonical-world-ref");
+        const privateWorldRef = value(flags, "private-world-ref");
+        guardLocalSetupState(statePath);
+        const result = setupCommand({
+          primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? defaultDomain(options.env),
+          ...(agentName === undefined ? {} : { agentName }),
+          ...(worldRoot === undefined ? {} : { worldRoot }),
+          statePath,
+          quick: true,
+          ...(liveEnvPath === undefined ? {} : { liveEnvPath }),
+          prefill: {
+            ...(githubOwner === undefined ? {} : { githubOwner }),
+            ...(agentRepo === undefined ? {} : { agentRepo }),
+            ...(worldRepo === undefined ? {} : { worldRepo }),
+            ...(canonicalWorldRef === undefined ? {} : { canonicalWorldRef }),
+            ...(privateWorldRef === undefined ? {} : { privateWorldRef }),
+          },
+        });
+        return { command, result, output: renderSetupCommandResult(result) };
+      }
+
+      if (subcommand === "run") {
+        const explicitDomain = value(flags, "domain");
+        const agentName = value(flags, "agent-name");
+        const explicitStatePath = value(flags, "state-path");
+        const explicitLiveEnvPath = value(flags, "live-env-path");
+        const envFile = value(flags, "env-file");
+        const runEnv =
+          envFile === undefined ? options.env : readEnvFile(envFile, options.env ?? process.env);
+        const domain = explicitDomain ?? defaultDomain(runEnv);
+        const worldRoot = value(flags, "world-root") ?? defaultWorldRoot(runEnv);
+        const worldSubscriptionsPath =
+          value(flags, "world-subscriptions-path") ??
+          (runEnv ?? process.env).VIVARIUM_WORLD_SUBSCRIPTIONS_PATH;
+        const statePath = explicitStatePath ?? defaultStatePath(runEnv);
+        const liveEnvPath = explicitLiveEnvPath ?? privateDefaultLiveEnvFile(runEnv);
+        const providerKind = value(flags, "provider-kind") as RunProviderKind | undefined;
+        const providerApiKeyEnv = value(flags, "provider-api-key-env");
+        const providerModel = value(flags, "provider-model");
+        const providerBaseUrl = value(flags, "provider-base-url");
+        const providerProfilesPath =
+          value(flags, "provider-profiles-path") ??
+          (runEnv ?? process.env).VIVARIUM_PROVIDER_PROFILES_PATH;
+        const providerProfile = value(flags, "provider-profile");
+        const availableToolsets = values(flags, "available-toolset");
+        const availableTools = values(flags, "available-tool");
+        bootstrapLocalRunState({ statePath, domain, agentName, worldRoot, liveEnvPath });
+        const result = await runCommand({
+          goal: value(flags, "goal") ?? "build a simple agent end to end",
+          ...(agentName === undefined ? {} : { agentName }),
+          ...(domain === undefined ? {} : { domain }),
+          ...(worldRoot === undefined ? {} : { worldRoot }),
+          ...(worldSubscriptionsPath === undefined ? {} : { worldSubscriptionsPath }),
+          ...(statePath === undefined ? {} : { statePath }),
+          statusCommand: statusCommandForRun(explicitStatePath, explicitLiveEnvPath),
+          ...(booleanFlag(flags, "force-failure") ? { forceFailure: true } : {}),
+          ...(providerKind === undefined ? {} : { providerKind }),
+          ...(providerApiKeyEnv === undefined ? {} : { providerApiKeyEnv }),
+          ...(providerModel === undefined ? {} : { providerModel }),
+          ...(providerBaseUrl === undefined ? {} : { providerBaseUrl }),
+          ...(providerProfilesPath === undefined ? {} : { providerProfilesPath }),
+          ...(providerProfile === undefined ? {} : { providerProfile }),
+          ...(availableToolsets.length === 0 ? {} : { availableToolsets }),
+          ...(availableTools.length === 0 ? {} : { availableTools }),
+          ...(runEnv === undefined ? {} : { env: runEnv }),
+        });
+        return { command, result, output: renderRunCommandResult(result) };
+      }
+
+      usage('Unknown local subcommand. Use "run" or pass setup flags.');
+    }
+    case "setup": {
+      if (subcommand === "live") {
+        const home = defaultVivariumHome(options.env);
+        const setupDir = value(flags, "setup-dir") ?? join(home, ".vivarium", "live");
+        return dispatchConnectWizard(command, flags, options, {
+          path: join(setupDir, "live-readiness.local.env"),
+          resumeCommand: setupLiveResumeCommand(flags),
+          setupDir,
+          secretsDir: join(home, ".vivarium", "secrets"),
+        });
+      }
+
+      const worldRoot = value(flags, "world-root") ?? defaultWorldRoot(options.env);
+      const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
+      const agentName = value(flags, "agent-name");
+      const envFile = value(flags, "env-file");
+      const liveEnvPath = value(flags, "live-env-path") ?? privateDefaultLiveEnvFile(options.env);
+      const githubOwner = value(flags, "github-owner");
+      const agentRepo = value(flags, "agent-repo");
+      const worldRepo = value(flags, "world-repo");
+      const canonicalWorldRef = value(flags, "canonical-world-ref");
+      const privateWorldRef = value(flags, "private-world-ref");
+      guardLocalSetupState(statePath);
+      const result = setupCommand({
+        primaryDomain: value(flags, "domain") ?? value(flags, "primary-domain") ?? defaultDomain(options.env),
+        ...(agentName === undefined ? {} : { agentName }),
+        ...(worldRoot === undefined ? {} : { worldRoot }),
+        statePath,
         ...(booleanFlag(flags, "quick") ? { quick: true } : {}),
         ...(liveEnvPath === undefined ? {} : { liveEnvPath }),
         prefill: {
@@ -336,7 +1605,9 @@ export async function dispatchCliCommand(
     }
     case "model": {
       const profilesPath = value(flags, "profiles-path");
-      const envFile = value(flags, "env-file");
+      const explicitEnvFile = value(flags, "env-file");
+      const envFile =
+        explicitEnvFile ?? (profilesPath === undefined ? existingDefaultLiveEnvFile(options.env) : undefined);
       const env =
         envFile === undefined
           ? (options.env ?? process.env)
@@ -350,29 +1621,183 @@ export async function dispatchCliCommand(
         result,
         output: renderModelCommandResult(
           result,
-          envFile === undefined ? {} : { envFilePath: envFile },
+          {
+            ...(envFile === undefined ? {} : { envFilePath: envFile }),
+            ...(booleanFlag(flags, "details") || booleanFlag(flags, "verbose")
+              ? { showDetails: true }
+              : {}),
+          },
         ),
       };
     }
+    case "connect": {
+      const connectSubcommand = subcommand?.startsWith("--") === true ? undefined : subcommand;
+      const explicitEnvFile = value(flags, "env-file");
+      const envFile = explicitEnvFile ?? existingDefaultLiveEnvFile(options.env);
+      const writableEnvFile = explicitEnvFile ?? writableDefaultLiveEnvFile(options.env);
+      const showDetails = booleanFlag(flags, "details") || booleanFlag(flags, "verbose");
+      if (connectSubcommand === "init") {
+        const githubOwner = value(flags, "github-owner");
+        const agentRepo = value(flags, "agent-repo");
+        const worldRepo = value(flags, "world-repo");
+        const canonicalWorldRef = value(flags, "canonical-world-ref");
+        const privateWorldRef = value(flags, "private-world-ref");
+        const result = liveEnvInitCommand({
+          path: value(flags, "path") ?? "live-readiness.local.env",
+          overwrite: booleanFlag(flags, "overwrite"),
+          prefill: {
+            ...(githubOwner === undefined ? {} : { githubOwner }),
+            ...(agentRepo === undefined ? {} : { agentRepo }),
+            ...(worldRepo === undefined ? {} : { worldRepo }),
+            ...(canonicalWorldRef === undefined ? {} : { canonicalWorldRef }),
+            ...(privateWorldRef === undefined ? {} : { privateWorldRef }),
+          },
+        });
+        return { command, result, output: renderConnectInitCommandResult(result) };
+      }
+      if (connectSubcommand === "signup") {
+        const signupSetupStatus =
+          envFile === undefined
+            ? undefined
+            : connectCommand({
+                envFilePath: envFile,
+                env: readEnvFile(envFile, options.env ?? process.env),
+                pathExists: existsSync,
+              }).setupStatus;
+        const result = connectSignupCommand({
+          ...(signupSetupStatus === undefined ? {} : { setupStatus: signupSetupStatus }),
+        });
+        return { command, result, output: renderConnectSignupCommandResult(result) };
+      }
+      if (connectSubcommand === "wizard") {
+        return dispatchConnectWizard(command, flags, options, { path: writableEnvFile });
+      }
+      if (connectSubcommand === "setup") {
+        const setupEnvFile = writableEnvFile;
+        const result = liveSetupCommand({
+          env: readEnvFile(setupEnvFile, options.env ?? process.env),
+          confirmWrite: booleanFlag(flags, "confirm-write"),
+        });
+        return {
+          command,
+          result,
+          output:
+            result.ok || result.requiresConfirmation === true
+              ? renderLiveSetupCommandResult(result, { envFilePath: setupEnvFile })
+              : renderConnectSetupCommandResult(result, { envFilePath: setupEnvFile, showDetails }),
+        };
+      }
+      if (connectSubcommand === "fill") {
+        const fillEnvFile = writableEnvFile;
+        const fillValues = connectFillValuesFromFlags(flags);
+        const result = connectFillCommand({
+          envFilePath: fillEnvFile,
+          values: fillValues,
+        });
+        return {
+          command,
+          result,
+          output: renderConnectFillCommandResult(result, { showDetails }),
+        };
+      }
+      if (connectSubcommand === "smoke") {
+        const smokeEnvFile = writableEnvFile;
+        const result = await connectSmokeCommand({
+          env: readEnvFile(
+            smokeEnvFile,
+            options.env ?? process.env,
+            isDefaultLiveEnvFile(smokeEnvFile)
+              ? [
+                  "vivarium setup live",
+                  "vivarium connect",
+                  "vivarium connect smoke",
+                  "vivarium help",
+                ]
+              : [
+                  `vivarium connect init --path ${shellQuote(smokeEnvFile)}`,
+                  "vivarium help",
+                ],
+          ),
+          ...(options.providerFetch === undefined ? {} : { providerFetch: options.providerFetch }),
+          ...(options.credentialFetch === undefined ? {} : { credentialFetch: options.credentialFetch }),
+        });
+        return {
+          command,
+          result,
+          output: renderConnectSmokeCommandResult(result, { envFilePath: smokeEnvFile, showDetails }),
+        };
+      }
+      if (connectSubcommand !== undefined) {
+        usage('Unknown connect subcommand. Use "wizard", "init", "signup", "fill", "setup", "smoke", or pass --env-file.');
+      }
+      const env =
+        envFile === undefined
+          ? undefined
+          : readEnvFile(envFile, options.env ?? process.env);
+      const result = connectCommand({
+        showDetails,
+        ...(envFile === undefined ? {} : { envFilePath: envFile }),
+        ...(env === undefined ? {} : { env }),
+        pathExists: existsSync,
+      });
+      return { command, result, output: renderConnectCommandResult(result) };
+    }
+    case "proof": {
+      const envFile = value(flags, "env-file") ?? writableDefaultLiveEnvFile(options.env);
+      const showDetails = booleanFlag(flags, "details") || booleanFlag(flags, "verbose");
+      if (subcommand === "init") {
+        const env = existsSync(envFile) ? readEnvFile(envFile, options.env ?? process.env) : undefined;
+        const result = proofInitCommand({
+          envFilePath: envFile,
+          showDetails,
+          overwrite: booleanFlag(flags, "overwrite"),
+          ...(env === undefined ? {} : { env }),
+        });
+        return { command, result, output: renderProofInitCommandResult(result) };
+      }
+      if (subcommand !== undefined && !subcommand.startsWith("--")) {
+        usage('Unknown proof subcommand. Use "init" or pass --env-file.');
+      }
+      const env = existsSync(envFile) ? readEnvFile(envFile, options.env ?? process.env) : undefined;
+      const result = proofCommand({
+        envFilePath: envFile,
+        showDetails,
+        ...(env === undefined ? {} : { env }),
+        pathExists: existsSync,
+      });
+      return { command, result, output: renderProofCommandResult(result) };
+    }
     case "run": {
-      const domain = value(flags, "domain");
-      const worldRoot = value(flags, "world-root");
-      const worldSubscriptionsPath = value(flags, "world-subscriptions-path");
-      const statePath = value(flags, "state-path");
+      const explicitDomain = value(flags, "domain");
+      const agentName = value(flags, "agent-name");
+      const envFile = value(flags, "env-file");
+      const runEnv =
+        envFile === undefined ? options.env : readEnvFile(envFile, options.env ?? process.env);
+      const domain = explicitDomain ?? defaultDomain(runEnv);
+      const worldRoot = value(flags, "world-root") ?? defaultWorldRoot(runEnv);
+      const statePath = value(flags, "state-path") ?? defaultStatePath(runEnv);
+      const liveEnvPath = value(flags, "live-env-path") ?? envFile ?? privateDefaultLiveEnvFile(runEnv);
+      const worldSubscriptionsPath =
+        value(flags, "world-subscriptions-path") ??
+        (runEnv ?? process.env).VIVARIUM_WORLD_SUBSCRIPTIONS_PATH;
       const providerKind = value(flags, "provider-kind") as RunProviderKind | undefined;
       const providerApiKeyEnv = value(flags, "provider-api-key-env");
       const providerModel = value(flags, "provider-model");
       const providerBaseUrl = value(flags, "provider-base-url");
-      const providerProfilesPath = value(flags, "provider-profiles-path");
+      const providerProfilesPath =
+        value(flags, "provider-profiles-path") ??
+        (runEnv ?? process.env).VIVARIUM_PROVIDER_PROFILES_PATH;
       const providerProfile = value(flags, "provider-profile");
       const availableToolsets = values(flags, "available-toolset");
       const availableTools = values(flags, "available-tool");
       const result = await runCommand({
         goal: required(flags, "goal"),
+        ...(agentName === undefined ? {} : { agentName }),
         ...(domain === undefined ? {} : { domain }),
         ...(worldRoot === undefined ? {} : { worldRoot }),
         ...(worldSubscriptionsPath === undefined ? {} : { worldSubscriptionsPath }),
         ...(statePath === undefined ? {} : { statePath }),
+        statusCommand: statusCommandForRun(statePath, liveEnvPath),
         ...(booleanFlag(flags, "force-failure") ? { forceFailure: true } : {}),
         ...(providerKind === undefined ? {} : { providerKind }),
         ...(providerApiKeyEnv === undefined ? {} : { providerApiKeyEnv }),
@@ -382,18 +1807,19 @@ export async function dispatchCliCommand(
         ...(providerProfile === undefined ? {} : { providerProfile }),
         ...(availableToolsets.length === 0 ? {} : { availableToolsets }),
         ...(availableTools.length === 0 ? {} : { availableTools }),
+        ...(runEnv === undefined ? {} : { env: runEnv }),
       });
       return { command, result, output: renderRunCommandResult(result) };
     }
     case "credentials": {
       if (subcommand === "add") {
         const result = addCredentialCommand({
-          credentialsPath: required(flags, "path"),
-          masterKey: required(flags, "master-key"),
-          kind: required(flags, "kind") as CredentialKind,
-          name: required(flags, "name"),
-          purpose: required(flags, "purpose"),
-          value: required(flags, "value"),
+          credentialsPath: required(flags, "path", connectSetupNextCommands),
+          masterKey: required(flags, "master-key", connectSetupNextCommands),
+          kind: required(flags, "kind", connectSetupNextCommands) as CredentialKind,
+          name: required(flags, "name", connectSetupNextCommands),
+          purpose: required(flags, "purpose", connectSetupNextCommands),
+          value: required(flags, "value", connectSetupNextCommands),
           scopes: values(flags, "scope"),
         });
         return { command, result, output: renderAddCredentialCommandResult(result) };
@@ -401,8 +1827,8 @@ export async function dispatchCliCommand(
 
       if (subcommand === "list") {
         const result = listCredentialsCommand({
-          credentialsPath: required(flags, "path"),
-          masterKey: required(flags, "master-key"),
+          credentialsPath: required(flags, "path", connectSetupNextCommands),
+          masterKey: required(flags, "master-key", connectSetupNextCommands),
         });
         return { command, result, output: renderListCredentialsCommandResult(result) };
       }
@@ -411,10 +1837,10 @@ export async function dispatchCliCommand(
         const method = value(flags, "method") as HttpMethod | undefined;
         const body = value(flags, "body");
         const result = await credentialSmokeCommand({
-          credentialsPath: required(flags, "path"),
-          masterKey: required(flags, "master-key"),
-          name: required(flags, "name"),
-          url: required(flags, "url"),
+          credentialsPath: required(flags, "path", connectSmokeNextCommands),
+          masterKey: required(flags, "master-key", connectSmokeNextCommands),
+          name: required(flags, "name", connectSmokeNextCommands),
+          url: required(flags, "url", connectSmokeNextCommands),
           ...(method === undefined ? {} : { method }),
           ...(body === undefined ? {} : { body }),
         });
@@ -622,25 +2048,25 @@ export async function dispatchCliCommand(
         const baseUrl = value(flags, "base-url");
         const contextWindow = integerFlag(flags, "context-window");
         if (contextWindow === undefined) {
-          usage("Missing required --context-window");
+          usage("Missing required --context-window", connectSetupNextCommands);
         }
         const result = configureProviderProfileCommand({
-          profilesPath: required(flags, "profiles-path"),
-          name: required(flags, "name"),
-          kind: required(flags, "kind") as ProviderSmokeKind,
-          apiKeyEnv: required(flags, "api-key-env"),
-          model: required(flags, "model"),
+          profilesPath: required(flags, "profiles-path", connectSetupNextCommands),
+          name: required(flags, "name", connectSetupNextCommands),
+          kind: required(flags, "kind", connectSetupNextCommands) as ProviderSmokeKind,
+          apiKeyEnv: required(flags, "api-key-env", connectSetupNextCommands),
+          model: required(flags, "model", connectSetupNextCommands),
           ...(baseUrl === undefined ? {} : { baseUrl }),
           capabilities: values(flags, "capability") as readonly Capability[],
           contextWindow,
-          costClass: required(flags, "cost-class") as CostClass,
+          costClass: required(flags, "cost-class", connectSetupNextCommands) as CostClass,
         });
         return { command, result, output: renderProviderProfilesCommandResult(result) };
       }
 
       if (subcommand === "list") {
         const result = listProviderProfilesCommand({
-          profilesPath: required(flags, "profiles-path"),
+          profilesPath: required(flags, "profiles-path", connectSetupNextCommands),
         });
         return { command, result, output: renderProviderProfilesCommandResult(result) };
       }
@@ -667,39 +2093,70 @@ export async function dispatchCliCommand(
       return { command, result, output: renderProviderSmokeCommandResult(result) };
     }
     case "github": {
+      const githubEnv = githubCommandEnv(flags, options);
+      const owner = requiredGithubFlagOrEnv(
+        flags,
+        "owner",
+        githubEnv,
+        githubOwnerEnv,
+        "owner",
+      );
+      const repo = requiredGithubFlagOrEnv(
+        flags,
+        "repo",
+        githubEnv,
+        githubRepoEnvForTarget(flags),
+        "repository name",
+      );
+      const tokenEnv = githubTokenEnv(flags);
       if (subcommand === "smoke") {
         const result = await githubSmokeCommand({
-          owner: required(flags, "owner"),
-          repo: required(flags, "repo"),
-          tokenEnv: required(flags, "token-env"),
+          owner,
+          repo,
+          tokenEnv,
+          env: githubEnv,
         });
         return { command, result, output: renderGitHubSmokeCommandResult(result) };
       }
 
       if (subcommand === "discussion") {
         const result = await githubDiscussionCommand({
-          owner: required(flags, "owner"),
-          repo: required(flags, "repo"),
-          tokenEnv: required(flags, "token-env"),
-          repositoryId: required(flags, "repository-id"),
-          categoryId: required(flags, "category-id"),
-          title: required(flags, "title"),
-          body: required(flags, "body"),
+          owner,
+          repo,
+          tokenEnv,
+          repositoryId: requiredGithubFlagOrEnv(
+            flags,
+            "repository-id",
+            githubEnv,
+            githubRepositoryIdEnv,
+            "repository ID",
+          ),
+          categoryId: requiredGithubFlagOrEnv(
+            flags,
+            "category-id",
+            githubEnv,
+            githubDiscussionCategoryIdEnv,
+            "Discussion category ID",
+          ),
+          title: value(flags, "title") ?? githubDefaultDiscussionTitle,
+          body: githubDiscussionBody(flags),
           confirmWrite: booleanFlag(flags, "confirm-write"),
+          env: githubEnv,
         });
         return { command, result, output: renderGitHubDiscussionCommandResult(result) };
       }
 
       if (subcommand === "pull-request") {
         const result = await githubPullRequestCommand({
-          owner: required(flags, "owner"),
-          repo: required(flags, "repo"),
-          tokenEnv: required(flags, "token-env"),
+          owner,
+          repo,
+          tokenEnv,
           title: required(flags, "title"),
           body: required(flags, "body"),
           head: required(flags, "head"),
           base: required(flags, "base"),
           confirmWrite: booleanFlag(flags, "confirm-write"),
+          env: githubEnv,
         });
         return { command, result, output: renderGitHubPullRequestCommandResult(result) };
       }
@@ -708,11 +2165,12 @@ export async function dispatchCliCommand(
         const branch = value(flags, "branch");
         const limit = integerFlag(flags, "limit");
         const result = await githubWorkflowRunsCommand({
-          owner: required(flags, "owner"),
-          repo: required(flags, "repo"),
-          tokenEnv: required(flags, "token-env"),
+          owner,
+          repo,
+          tokenEnv,
           ...(branch === undefined ? {} : { branch }),
           ...(limit === undefined ? {} : { limit }),
+          env: githubEnv,
         });
         return { command, result, output: renderGitHubWorkflowRunsCommandResult(result) };
       }
@@ -770,31 +2228,52 @@ export async function dispatchCliCommand(
       usage('Unknown live subcommand. Use "env-init", "setup", or "evidence-init".');
     }
     case "status": {
-      const result = statusCommand();
+      const explicitStatePath = value(flags, "state-path");
+      const explicitLiveEnvPath = value(flags, "live-env-path") ?? value(flags, "env-file");
+      const statePath = explicitStatePath ?? defaultStatePath(options.env);
+      const liveEnvPath = explicitLiveEnvPath ?? privateDefaultLiveEnvFile(options.env);
+      const result = statusCommand({
+        statePath,
+        ...(liveEnvPath === undefined ? {} : { liveEnvPath }),
+        explicitStatePath: explicitStatePath !== undefined,
+        explicitLiveEnvPath: explicitLiveEnvPath !== undefined,
+      });
       return { command, result, output: renderStatusCommandResult(result) };
     }
     case "update": {
       const result = updateCommand({
         agentRoot: value(flags, "agent-root") ?? process.cwd(),
+        bunCommand: defaultBunCommand(options.env),
         ...(options.updateRunner === undefined ? {} : { runner: options.updateRunner }),
       });
       return { command, result, output: renderUpdateCommandResult(result) };
     }
     case "doctor": {
       const agentRoot = value(flags, "agent-root");
-      const worldRoot = value(flags, "world-root");
-      const envFile = value(flags, "env-file");
+      const worldRoot = value(flags, "world-root") ?? defaultWorldRoot(options.env);
+      const statePath = value(flags, "state-path") ?? defaultStatePath(options.env);
+      const liveMode = booleanFlag(flags, "live");
+      const explicitEnvFile = value(flags, "env-file");
+      const envFile =
+        explicitEnvFile ?? (liveMode ? existingDefaultLiveEnvFile(options.env) : undefined);
       const env =
         envFile === undefined ? options.env : readEnvFile(envFile, options.env ?? process.env);
       const result = doctorCommand({
-        ...(booleanFlag(flags, "live") ? { mode: "live-readiness" } : {}),
+        ...(liveMode ? { mode: "live-readiness" } : {}),
         ...(agentRoot === undefined ? {} : { agentRoot }),
         ...(worldRoot === undefined ? {} : { worldRoot }),
+        ...(liveMode ? {} : { statePath }),
         ...(options.doctorRunner === undefined ? {} : { runner: options.doctorRunner }),
         ...(env === undefined ? {} : { env }),
         ...(envFile === undefined ? {} : { envFilePath: envFile }),
       });
-      return { command, result, output: renderDoctorCommandResult(result) };
+      return {
+        command,
+        result,
+        output: renderDoctorCommandResult(result, {
+          showDetails: booleanFlag(flags, "details") || booleanFlag(flags, "verbose"),
+        }),
+      };
     }
     default:
       usage(`Unknown command "${command}"`);

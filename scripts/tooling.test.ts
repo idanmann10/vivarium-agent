@@ -54,6 +54,19 @@ describe("root toolchain wiring", () => {
     expect(scripts?.["format:check"]).toContain("oxfmt --check");
   });
 
+  test("exposes the CLI from a source checkout without a global install", () => {
+    const scripts = rootPackage().scripts;
+
+    expect(scripts?.vivarium).toBe("bun apps/cli/src/main.ts");
+    expect(scripts?.local).toBe(
+      "bun apps/cli/src/main.ts local --world-root ../the-world --state-path .vivarium/state.db",
+    );
+    expect(scripts?.["local:run"]).toBe(
+      "bun apps/cli/src/main.ts local run --world-root ../the-world --state-path .vivarium/state.db",
+    );
+    expect(scripts?.quickstart).toBe("bun run local && bun run local:run");
+  });
+
   test("exposes a public release safety scan", () => {
     const scripts = rootPackage().scripts;
 
@@ -71,7 +84,7 @@ describe("root toolchain wiring", () => {
     expect(installer).toContain("VIVARIUM_INSTALL_DIR");
     expect(installer).toContain("VIVARIUM_BIN_DIR");
     expect(installer).toContain("Command path:");
-    expect(installer).toContain("setup_args=(apps/cli/src/main.ts setup");
+    expect(installer).toContain("setup_args=(apps/cli/src/main.ts local");
     expect(installer).toContain("--github-owner");
     expect(installer).toContain("--canonical-world-ref");
   });
@@ -88,6 +101,12 @@ describe("root toolchain wiring", () => {
     expect(scripts?.["launch:security-audit"]).toBe("bun run scripts/launch-security-audit.ts");
     expect(scripts?.["format:check"]).toContain("scripts/launch-security-audit.ts");
     expect(scripts?.["format:check"]).toContain("scripts/launch-security-audit.test.ts");
+  });
+
+  test("exposes a dependency audit gate", () => {
+    const scripts = rootPackage().scripts;
+
+    expect(scripts?.["dependency:audit"]).toBe("bun audit");
   });
 
   test("exposes a workspace-aware Knip dependency gate", () => {

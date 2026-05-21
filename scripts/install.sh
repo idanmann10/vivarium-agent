@@ -8,7 +8,24 @@ usage() {
 Vivarium Agent installer
 
 Usage:
-  bash scripts/install.sh [--dry-run]
+  bash scripts/install.sh [--dry-run] [options]
+
+Options:
+  --dry-run                         Print the install plan without writing files.
+  --ref <ref>                       Agent git branch, tag, or commit to checkout.
+  --repo <url>                      Agent repository URL.
+  --dir <path>                      Agent checkout directory.
+  --bin-dir <path>                  Directory for the vivarium command.
+  --world-repo <url>                World repository URL.
+  --world-root <path>               World checkout directory.
+  --domain <name>                   Initial setup domain.
+  --state-path <path>               State database path.
+  --live-env-path <path>            Live readiness env path.
+  --daemon <none|launchd>           Optional daemon deployment mode.
+  --daemon-host <host>              Local daemon bind host.
+  --daemon-port <port>              Local daemon port.
+  --color <always|never>            Control ANSI output.
+  --theme <vivarium|matrix|amber>   ASCII-art color theme.
 
 Environment:
   VIVARIUM_REPO_URL           Agent repository URL.
@@ -19,9 +36,11 @@ Environment:
   VIVARIUM_WORLD_ROOT         World checkout directory.
   VIVARIUM_DAEMON             Set to launchd to install and start the macOS daemon.
   VIVARIUM_DAEMON_LABEL       macOS LaunchAgent label.
+  VIVARIUM_DAEMON_HOST        Local daemon bind host.
   VIVARIUM_DAEMON_PORT        Local daemon port.
   VIVARIUM_DOMAIN             Initial setup domain.
-  VIVARIUM_STATE_PATH         State database path relative to the agent checkout.
+  VIVARIUM_STATE_PATH         State database path. Defaults to ~/.vivarium/state.db.
+  VIVARIUM_LIVE_ENV_PATH      Live readiness env path. Defaults to ~/.vivarium/live/live-readiness.local.env.
   VIVARIUM_GITHUB_OWNER       Prefill non-secret live env GitHub owner.
   VIVARIUM_AGENT_REPO_NAME    Prefill non-secret live env agent repository name.
   VIVARIUM_WORLD_REPO_NAME    Prefill non-secret live env world repository name.
@@ -32,20 +51,117 @@ Environment:
 
 Example:
   curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh | bash
+  bash scripts/install.sh --ref main --daemon launchd
 EOF
 }
 
-for arg in "$@"; do
-  case "$arg" in
+require_arg() {
+  local flag="$1"
+  local value="${2:-}"
+
+  if [ "$value" = "" ]; then
+    echo "Missing value for $flag" >&2
+    usage >&2
+    exit 2
+  fi
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
     --dry-run)
       dry_run=1
+      shift
+      ;;
+    --ref)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_AGENT_REF="$2"
+      export VIVARIUM_AGENT_REF
+      shift 2
+      ;;
+    --repo)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_REPO_URL="$2"
+      export VIVARIUM_REPO_URL
+      shift 2
+      ;;
+    --dir)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_INSTALL_DIR="$2"
+      export VIVARIUM_INSTALL_DIR
+      shift 2
+      ;;
+    --bin-dir)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_BIN_DIR="$2"
+      export VIVARIUM_BIN_DIR
+      shift 2
+      ;;
+    --world-repo)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_WORLD_REPO_URL="$2"
+      export VIVARIUM_WORLD_REPO_URL
+      shift 2
+      ;;
+    --world-root)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_WORLD_ROOT="$2"
+      export VIVARIUM_WORLD_ROOT
+      shift 2
+      ;;
+    --domain)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_DOMAIN="$2"
+      export VIVARIUM_DOMAIN
+      shift 2
+      ;;
+    --state-path)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_STATE_PATH="$2"
+      export VIVARIUM_STATE_PATH
+      shift 2
+      ;;
+    --live-env-path)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_LIVE_ENV_PATH="$2"
+      export VIVARIUM_LIVE_ENV_PATH
+      shift 2
+      ;;
+    --daemon)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_DAEMON="$2"
+      export VIVARIUM_DAEMON
+      shift 2
+      ;;
+    --daemon-host)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_DAEMON_HOST="$2"
+      export VIVARIUM_DAEMON_HOST
+      shift 2
+      ;;
+    --daemon-port)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_DAEMON_PORT="$2"
+      export VIVARIUM_DAEMON_PORT
+      shift 2
+      ;;
+    --color)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_COLOR="$2"
+      export VIVARIUM_COLOR
+      shift 2
+      ;;
+    --theme)
+      require_arg "$1" "${2:-}"
+      VIVARIUM_THEME="$2"
+      export VIVARIUM_THEME
+      shift 2
       ;;
     -h | --help)
       usage
       exit 0
       ;;
     *)
-      echo "Unknown argument: $arg" >&2
+      echo "Unknown argument: $1" >&2
       usage >&2
       exit 2
       ;;
@@ -144,12 +260,14 @@ daemon_plist_path="$launch_agents_dir/$daemon_label.plist"
 daemon_log_dir="$home_dir/.vivarium/logs"
 bun_command="${VIVARIUM_BUN_PATH:-bun}"
 domain="${VIVARIUM_DOMAIN:-coding}"
-state_path="${VIVARIUM_STATE_PATH:-.vivarium/state.db}"
+state_path="${VIVARIUM_STATE_PATH:-$home_dir/.vivarium/state.db}"
+live_env_path="${VIVARIUM_LIVE_ENV_PATH:-$home_dir/.vivarium/live/live-readiness.local.env}"
 github_owner="${VIVARIUM_GITHUB_OWNER:-}"
 agent_repo_name="${VIVARIUM_AGENT_REPO_NAME:-}"
 world_repo_name="${VIVARIUM_WORLD_REPO_NAME:-}"
 canonical_world_ref="${VIVARIUM_CANONICAL_WORLD_REF:-}"
 private_world_ref="${VIVARIUM_PRIVATE_WORLD_REF:-}"
+starter_goal="build a simple agent end to end"
 
 if [ "$github_owner" = "" ]; then
   github_owner="$(github_owner_from_url "$repo_url" || true)"
@@ -239,13 +357,132 @@ banner() {
 }
 
 need_command() {
-  if ! command -v "$1" >/dev/null 2>&1; then
-    echo "Missing required command: $1" >&2
-    if [ "$1" = "bun" ]; then
+  local command_name="$1"
+  local dependency="${2:-$1}"
+
+  if ! command -v "$command_name" >/dev/null 2>&1; then
+    echo "Missing required command: $command_name" >&2
+    if [ "$dependency" = "git" ]; then
+      echo "Install Git first. On macOS, run: xcode-select --install" >&2
+      echo "Then rerun the Vivarium installer." >&2
+    fi
+    if [ "$dependency" = "bun" ]; then
       echo "Install Bun first: https://bun.sh/docs/installation" >&2
+      echo "Command: curl -fsSL https://bun.sh/install | bash" >&2
+      echo "Then reload your shell and rerun the Vivarium installer." >&2
+    fi
+    if [ "$dependency" = "launchctl" ]; then
+      echo "VIVARIUM_DAEMON=launchd requires macOS launchctl." >&2
+      echo "Restore PATH so launchctl is available, or rerun without VIVARIUM_DAEMON=launchd." >&2
+      echo "Then rerun the Vivarium installer." >&2
     fi
     exit 1
   fi
+}
+
+validate_daemon_mode() {
+  if [ "$daemon_mode" = "none" ] || [ "$daemon_mode" = "launchd" ]; then
+    return 0
+  fi
+
+  echo "Invalid VIVARIUM_DAEMON: $daemon_mode" >&2
+  echo "Supported values: none, launchd" >&2
+  exit 2
+}
+
+invalid_daemon_host() {
+  echo "Invalid VIVARIUM_DAEMON_HOST: $daemon_host" >&2
+  echo "VIVARIUM_DAEMON_HOST must be a hostname or IPv4 address without a scheme, path, port, or spaces." >&2
+  exit 2
+}
+
+is_valid_ipv4_address() {
+  local host="$1"
+  local octets
+  local octet
+
+  [[ "$host" =~ ^[0-9]+(\.[0-9]+){3}$ ]] || return 1
+
+  IFS=. read -r -a octets <<<"$host"
+  for octet in "${octets[@]}"; do
+    if [ "${#octet}" -gt 1 ] && [[ "$octet" == 0* ]]; then
+      return 1
+    fi
+    if [ "$octet" -lt 0 ] || [ "$octet" -gt 255 ]; then
+      return 1
+    fi
+  done
+}
+
+is_valid_hostname() {
+  local host="$1"
+  local labels
+  local label
+
+  if [ "$host" = "localhost" ]; then
+    return 0
+  fi
+
+  if [ "${#host}" -gt 253 ]; then
+    return 1
+  fi
+
+  IFS=. read -r -a labels <<<"$host"
+  for label in "${labels[@]}"; do
+    [[ "$label" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$ ]] || return 1
+  done
+}
+
+validate_daemon_host() {
+  if [ "$daemon_mode" != "launchd" ]; then
+    return 0
+  fi
+
+  case "$daemon_host" in
+    "" | *://* | */* | *\\* | *:* | *"?"* | *"#"* | *"["* | *"]"* | *"@"* | *[[:space:]]* | *.)
+      invalid_daemon_host
+      ;;
+  esac
+
+  if [[ "$daemon_host" =~ ^[0-9]+(\.[0-9]+){3}$ ]]; then
+    is_valid_ipv4_address "$daemon_host" || invalid_daemon_host
+    return 0
+  fi
+
+  is_valid_hostname "$daemon_host" || invalid_daemon_host
+}
+
+validate_daemon_port() {
+  if [ "$daemon_mode" != "launchd" ]; then
+    return 0
+  fi
+
+  case "$daemon_port" in
+    "" | *[!0-9]* | 0[0-9]*)
+      echo "Invalid VIVARIUM_DAEMON_PORT: $daemon_port" >&2
+      echo "VIVARIUM_DAEMON_PORT must be an integer from 1 to 65535." >&2
+      exit 2
+      ;;
+  esac
+
+  if [ "$daemon_port" -lt 1 ] || [ "$daemon_port" -gt 65535 ]; then
+    echo "Invalid VIVARIUM_DAEMON_PORT: $daemon_port" >&2
+    echo "VIVARIUM_DAEMON_PORT must be an integer from 1 to 65535." >&2
+    exit 2
+  fi
+}
+
+preflight_launchd() {
+  if [ "$daemon_mode" != "launchd" ]; then
+    return 0
+  fi
+
+  if [ "$(uname -s)" != "Darwin" ]; then
+    echo "VIVARIUM_DAEMON=launchd requires macOS." >&2
+    exit 1
+  fi
+
+  need_command launchctl launchctl
 }
 
 run() {
@@ -306,6 +543,18 @@ checkout_default_branch() {
   fi
 }
 
+checkout_ref() {
+  local destination="$1"
+  local ref="$2"
+
+  if git -C "$destination" show-ref --verify --quiet "refs/remotes/origin/$ref"; then
+    run git -C "$destination" checkout -B "$ref" "origin/$ref"
+    return 0
+  fi
+
+  run git -C "$destination" checkout "$ref"
+}
+
 checkout_or_update() {
   local repo="$1"
   local destination="$2"
@@ -323,7 +572,7 @@ checkout_or_update() {
 
     if [ "$ref" != "" ]; then
       run git -C "$destination" fetch --all --prune
-      run git -C "$destination" checkout "$ref"
+      checkout_ref "$destination" "$ref"
       if [ "$dry_run" -eq 0 ]; then
         upstream="$(git -C "$destination" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
         if [ "$upstream" != "" ]; then
@@ -354,12 +603,14 @@ checkout_or_update() {
   run git clone "$repo" "$destination"
   if [ "$ref" != "" ]; then
     run git -C "$destination" fetch --all --prune
-    run git -C "$destination" checkout "$ref"
-    if [ "$dry_run" -eq 0 ]; then
-      upstream="$(git -C "$destination" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
-      if [ "$upstream" != "" ]; then
-        run git -C "$destination" pull --ff-only
-      fi
+    if [ "$dry_run" -eq 1 ]; then
+      echo "Would run: git -C $destination checkout $ref"
+      return 0
+    fi
+    checkout_ref "$destination" "$ref"
+    upstream="$(git -C "$destination" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
+    if [ "$upstream" != "" ]; then
+      run git -C "$destination" pull --ff-only
     fi
   fi
 }
@@ -395,7 +646,11 @@ write_vivarium_command() {
     printf '#!/usr/bin/env bash\n'
     printf 'set -euo pipefail\n'
     printf 'cd %q\n' "$install_dir"
-    printf 'exec bun apps/cli/src/main.ts "$@"\n'
+    printf 'if [ "${VIVARIUM_DOMAIN:-}" = "" ]; then export VIVARIUM_DOMAIN=%q; fi\n' "$domain"
+    printf 'if [ "${VIVARIUM_WORLD_ROOT:-}" = "" ]; then export VIVARIUM_WORLD_ROOT=%q; fi\n' "$world_root"
+    printf 'if [ "${VIVARIUM_STATE_PATH:-}" = "" ]; then export VIVARIUM_STATE_PATH=%q; fi\n' "$state_path"
+    printf 'if [ "${VIVARIUM_LIVE_ENV_PATH:-}" = "" ]; then export VIVARIUM_LIVE_ENV_PATH=%q; fi\n' "$live_env_path"
+    printf 'exec %q apps/cli/src/main.ts "$@"\n' "$bun_command"
   } >"$command_path"
   chmod +x "$command_path"
 }
@@ -451,6 +706,8 @@ write_launch_agent() {
     <string>$(xml_escape "$daemon_host")</string>
     <key>VIVARIUM_DAEMON_PORT</key>
     <string>$(xml_escape "$daemon_port")</string>
+    <key>VIVARIUM_STATE_PATH</key>
+    <string>$(xml_escape "$state_path")</string>
     <key>VIVARIUM_WORLD_ROOT</key>
     <string>$(xml_escape "$world_root")</string>
   </dict>
@@ -478,34 +735,81 @@ stage_label() {
   paint_line 33 "  [$1] $2"
 }
 
+print_launch_handoff_command() {
+  local command="$1"
+
+  printf '      %q launch handoff' "$command"
+  if [ "$daemon_host" != "127.0.0.1" ]; then
+    printf ' --daemon-host %q' "$daemon_host"
+  fi
+  if [ "$daemon_port" != "8787" ]; then
+    printf ' --daemon-port %q' "$daemon_port"
+  fi
+  printf '\n'
+}
+
+run_launch_handoff_summary() {
+  if [ "$daemon_host" != "127.0.0.1" ] && [ "$daemon_port" != "8787" ]; then
+    run "$command_path" launch handoff --daemon-host "$daemon_host" --daemon-port "$daemon_port"
+    return 0
+  fi
+
+  if [ "$daemon_host" != "127.0.0.1" ]; then
+    run "$command_path" launch handoff --daemon-host "$daemon_host"
+    return 0
+  fi
+
+  if [ "$daemon_port" != "8787" ]; then
+    run "$command_path" launch handoff --daemon-port "$daemon_port"
+    return 0
+  fi
+
+  run "$command_path" launch handoff
+}
+
 print_launch_sequence() {
   local command="$1"
-  local keep_moving_stage=6
+  local next_stage=3
 
-  stage_label 1 "Prove the local loop"
-  printf '      %q run --goal "validate local setup" --state-path %q\n' "$command" "$state_path"
-  stage_label 2 "Prepare live readiness"
-  printf '      Edit live-readiness.local.env locally. Keep it out of git.\n'
-  printf '      %q setup --env-file live-readiness.local.env --domain %q --world-root %q --state-path %q\n' "$command" "$domain" "$world_root" "$state_path"
-  printf '      %q setup --env-file live-readiness.local.env --domain %q --world-root %q --state-path %q --confirm-write\n' "$command" "$domain" "$world_root" "$state_path"
-  stage_label 3 "Inspect configured models"
-  printf '      %q model --env-file live-readiness.local.env\n' "$command"
-  stage_label 4 "Prepare live evidence"
-  printf '      %q live evidence-init --path v1-evidence.json\n' "$command"
-  stage_label 5 "Run the readiness gate"
-  printf '      %q doctor --live --env-file live-readiness.local.env\n' "$command"
+  stage_label 1 "Set up Vivarium"
+  printf '      %q --setup\n' "$command"
+  stage_label 2 "Run the local agent"
+  printf '      %q local run\n' "$command"
   if [ "$daemon_mode" = "launchd" ]; then
-    stage_label 6 "Verify the Mac daemon"
+    stage_label 3 "Open the dashboard"
+    if [ "$daemon_host" = "127.0.0.1" ] && [ "$daemon_port" = "8787" ]; then
+      printf '      %q dashboard --open\n' "$command"
+    else
+      printf '      %q dashboard --open --url %q\n' "$command" "http://$daemon_host:$daemon_port"
+    fi
     printf '      %q daemon smoke --status-url %q\n' "$command" "http://$daemon_host:$daemon_port/status"
-    keep_moving_stage=7
+    next_stage=4
   fi
-  stage_label "$keep_moving_stage" "Review launch handoff"
-  printf '      %q launch handoff\n' "$command"
-  keep_moving_stage=$((keep_moving_stage + 1))
-  stage_label "$keep_moving_stage" "Keep moving"
+  stage_label "$next_stage" "Review launch handoff"
+  print_launch_handoff_command "$command"
+  next_stage=$((next_stage + 1))
+  stage_label "$next_stage" "Keep moving"
   printf '      %q status\n' "$command"
+  printf '      %q tools\n' "$command"
   printf '      %q help\n' "$command"
   printf '      %q update\n' "$command"
+}
+
+print_live_setup_sequence() {
+  local command="$1"
+
+  stage_label 1 "Generate local setup files"
+  printf '      %q setup live\n' "$command"
+  stage_label 2 "Open account and key handoff"
+  printf '      %q connect signup\n' "$command"
+  stage_label 3 "Review readiness"
+  printf '      %q connect\n' "$command"
+  printf '      %q connect setup --confirm-write\n' "$command"
+  stage_label 4 "Prove live readiness"
+  printf '      %q connect smoke\n' "$command"
+  printf '      %q proof init\n' "$command"
+  printf '      %q proof\n' "$command"
+  printf '      %q doctor --live\n' "$command"
 }
 
 banner
@@ -519,11 +823,17 @@ echo "World directory: $world_root"
 echo "World repository: $world_repo_url"
 echo "Domain: $domain"
 echo "State path: $state_path"
+echo "Live readiness path: $live_env_path"
 echo
 
+validate_daemon_mode
+validate_daemon_host
+validate_daemon_port
+
 if [ "$dry_run" -eq 0 ]; then
-  need_command git
-  need_command bun
+  need_command git git
+  need_command "$bun_command" bun
+  preflight_launchd
   bun_command="${VIVARIUM_BUN_PATH:-$(command -v bun)}"
 fi
 
@@ -537,11 +847,12 @@ if [ "$dry_run" -eq 0 ]; then
   cd "$install_dir"
 fi
 
-run bun install --frozen-lockfile
+run "$bun_command" install --frozen-lockfile
 run mkdir -p "$bin_dir"
 write_vivarium_command
 run mkdir -p "$(dirname "$state_path")"
-setup_args=(apps/cli/src/main.ts setup --quick --domain "$domain" --world-root "$world_root" --state-path "$state_path")
+run mkdir -p "$(dirname "$live_env_path")"
+setup_args=(apps/cli/src/main.ts local --domain "$domain" --world-root "$world_root" --state-path "$state_path" --live-env-path "$live_env_path")
 if [ "$github_owner" != "" ]; then
   setup_args+=(--github-owner "$github_owner")
 fi
@@ -557,7 +868,7 @@ fi
 if [ "$private_world_ref" != "" ]; then
   setup_args+=(--private-world-ref "$private_world_ref")
 fi
-run bun "${setup_args[@]}"
+run "$bun_command" "${setup_args[@]}"
 write_launch_agent
 
 echo
@@ -567,7 +878,13 @@ echo
 echo "Command path fallback:"
 print_launch_sequence "$command_path"
 echo
+echo "Live setup when ready:"
+print_live_setup_sequence "vivarium"
+echo
+echo "Live setup fallback:"
+print_live_setup_sequence "$command_path"
+echo
 echo "Launch handoff summary:"
-run "$command_path" launch handoff
+run_launch_handoff_summary
 echo
 echo "If 'vivarium' is not found, add $bin_dir to PATH or run a command path above."

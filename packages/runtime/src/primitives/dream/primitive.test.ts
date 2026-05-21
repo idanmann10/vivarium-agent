@@ -75,6 +75,46 @@ describe("runDream", () => {
     expect(state.listLocalSkills().find((skill) => String(skill.id) === "coding.weak")?.status).toBe("archived");
   });
 
+  test("keeps unused promoted starter skills active until they have evidence or go stale", () => {
+    const state = new InMemoryStateRepository();
+    state.setIdentity({
+      agentId: agentId("agent-dream"),
+      name: "agent-dream",
+      devStages: { coding: "newborn" },
+      runsCompleted: 0,
+      summary: "Newborn local agent.",
+      updatedAt: "local",
+    });
+    state.upsertLocalSkill({
+      id: skillId("coding.starter"),
+      name: "Starter Skill",
+      domain: "coding",
+      status: "promoted",
+      uses: 0,
+      helped: 0,
+      lastUsedRunOffset: 0,
+      habitual: false,
+      body: "A starter skill that has not been tested yet.",
+    });
+
+    const result = runDream({
+      state,
+      domainStats: {
+        coding: {
+          runsCompleted: 1,
+          successRate: 1,
+          skillDiversity: 1,
+        },
+      },
+    });
+
+    expect(result.pruned).not.toContain("coding.starter");
+    expect(state.listLocalSkills().find((skill) => String(skill.id) === "coding.starter")).toMatchObject({
+      status: "promoted",
+      body: "A starter skill that has not been tested yet.",
+    });
+  });
+
   test("generates anti-pattern and annotated trace candidates from run history", () => {
     const state = new InMemoryStateRepository();
     const failedRun = runId("run-dream-failed");

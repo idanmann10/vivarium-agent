@@ -6,6 +6,9 @@ describe("Vivarium terminal branding", () => {
   test("renders a dense ASCII art terminal wordmark", () => {
     const mark = renderVivariumGlobe();
 
+    expect(mark).toContain("      .-\"\"\"-.");
+    expect(mark).toContain("   .-'  .-.  '-.");
+    expect(mark).toContain("  /  .-(   )-.  \\");
     expect(mark).toContain("__      __");
     expect(mark).toContain("VIVARIUM // local memory // world culture");
     expect(
@@ -35,15 +38,15 @@ describe("Vivarium terminal branding", () => {
       "Vivarium Setup",
       "--------------",
       "Next commands:",
-      "  [1] Prove the local loop",
-      '      vivarium run --goal "validate local setup"',
+      "  [1] Run the local agent",
+      "      vivarium local run",
       "",
     ].join("\n");
     const themed = applyVivariumTerminalTheme(output, { env: { VIVARIUM_COLOR: "always" } });
 
-    expect(themed).toContain("\u001b[33m  [1] Prove the local loop\u001b[0m");
+    expect(themed).toContain("\u001b[33m  [1] Run the local agent\u001b[0m");
     expect(themed).toContain(
-      '\u001b[36m      vivarium run --goal "validate local setup"\u001b[0m',
+      "\u001b[36m      vivarium local run\u001b[0m",
     );
   });
 

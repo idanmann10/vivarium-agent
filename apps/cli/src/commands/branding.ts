@@ -1,5 +1,8 @@
 export function renderVivariumGlobe(): string {
   return [
+    '      .-"""-.',
+    "   .-'  .-.  '-.",
+    "  /  .-(   )-.  \\",
     " __      __ _____ __      __    _     ____  ___  _   _  __  __",
     " \\ \\    / /|_   _|\\ \\    / /   / \\   |  _ \\|_ _|| | | ||  \\/  |",
     "  \\ \\  / /   | |   \\ \\  / /   / _ \\  | |_) || | | | | || |\\/| |",
@@ -50,9 +53,9 @@ const ansi = {
 type VivariumTerminalThemeName = "vivarium" | "amber" | "matrix";
 
 const globePalettes: Record<VivariumTerminalThemeName, readonly string[]> = {
-  vivarium: [ansi.cyan, ansi.cyan, ansi.blue, ansi.magenta, ansi.blue, ansi.gold],
-  amber: [ansi.gold, ansi.gold, ansi.yellow, ansi.gold, ansi.yellow, ansi.gold],
-  matrix: [ansi.green, ansi.green, ansi.green, ansi.green, ansi.green, ansi.green],
+  vivarium: [ansi.cyan, ansi.cyan, ansi.cyan, ansi.cyan, ansi.cyan, ansi.blue, ansi.magenta, ansi.blue, ansi.gold],
+  amber: [ansi.gold, ansi.gold, ansi.yellow, ansi.gold, ansi.gold, ansi.yellow, ansi.gold, ansi.yellow, ansi.gold],
+  matrix: [ansi.green, ansi.green, ansi.green, ansi.green, ansi.green, ansi.green, ansi.green, ansi.green, ansi.green],
 } as const;
 
 function paint(text: string, style: string): string {

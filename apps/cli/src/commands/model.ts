@@ -5,19 +5,17 @@ export type ModelCommandProblem =
   | "missing_profiles_path"
   | "no_profiles"
   | "missing_expected_profiles"
+  | "missing_profile_secrets"
   | "invalid_profiles";
+
+export type ModelSecretStatus = "configured" | "missing" | "placeholder";
 
 export type ModelProfileSummary = Pick<
   ProviderProfile,
-  | "name"
-  | "kind"
-  | "apiKeyEnv"
-  | "model"
-  | "baseUrl"
-  | "capabilities"
-  | "contextWindow"
-  | "costClass"
->;
+  "name" | "kind" | "apiKeyEnv" | "model" | "baseUrl" | "capabilities" | "contextWindow" | "costClass"
+> & {
+  readonly secretStatus: ModelSecretStatus;
+};
 
 export interface ModelCommandOptions {
   readonly profilesPath?: string;
@@ -30,12 +28,48 @@ export interface ModelCommandResult {
   readonly profiles: readonly ModelProfileSummary[];
   readonly expectedProfiles?: readonly string[];
   readonly missingProfiles?: readonly string[];
+  readonly missingSecretProfiles?: readonly string[];
   readonly problem?: ModelCommandProblem;
   readonly error?: string;
 }
 
 function shellQuote(value: string): string {
   return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
+}
+
+function isDefaultLiveEnvFile(envFilePath: string): boolean {
+  return (
+    envFilePath === "live-readiness.local.env" ||
+    envFilePath.endsWith("/.vivarium/live/live-readiness.local.env")
+  );
+}
+
+function connectCommand(envFilePath: string): string {
+  return isDefaultLiveEnvFile(envFilePath)
+    ? "vivarium connect"
+    : `vivarium connect --env-file ${envFilePath}`;
+}
+
+function connectSignupCommand(): string {
+  return "vivarium connect signup";
+}
+
+function connectFillCommand(envFilePath: string): string {
+  return isDefaultLiveEnvFile(envFilePath)
+    ? "vivarium connect fill"
+    : `vivarium connect fill --env-file ${envFilePath}`;
+}
+
+function connectSetupCommand(envFilePath: string): string {
+  return isDefaultLiveEnvFile(envFilePath)
+    ? "vivarium connect setup --confirm-write"
+    : `vivarium connect setup --env-file ${envFilePath} --confirm-write`;
+}
+
+function modelCommandLine(envFilePath: string): string {
+  return isDefaultLiveEnvFile(envFilePath)
+    ? "vivarium model"
+    : `vivarium model --env-file ${envFilePath}`;
 }
 
 function envProfilesPath(env: Readonly<Record<string, string | undefined>>): string | undefined {
@@ -48,6 +82,11 @@ function envProfileName(env: Readonly<Record<string, string | undefined>>, name:
   return value === undefined || value.length === 0 || /^<[^>]+>$/.test(value) ? undefined : value;
 }
 
+function isPlaceholderValue(value: string): boolean {
+  const trimmed = value.trim();
+  return trimmed.length === 0 || /^<[^>]+>$/.test(trimmed) || /^replace[-_ ]me$/i.test(trimmed);
+}
+
 function expectedProfiles(env: Readonly<Record<string, string | undefined>>): readonly string[] {
   return [
     envProfileName(env, "VIVARIUM_ANTHROPIC_PROVIDER_PROFILE"),
@@ -56,11 +95,23 @@ function expectedProfiles(env: Readonly<Record<string, string | undefined>>): re
   ].filter((value): value is string => value !== undefined);
 }
 
-function profileSummary(profile: ProviderProfile): ModelProfileSummary {
+function profileSecretStatus(
+  profile: ProviderProfile,
+  env: Readonly<Record<string, string | undefined>>,
+): ModelSecretStatus {
+  const value = env[profile.apiKeyEnv];
+  if (value === undefined) {
+    return "missing";
+  }
+  return isPlaceholderValue(value) ? "placeholder" : "configured";
+}
+
+function profileSummary(profile: ProviderProfile, env: Readonly<Record<string, string | undefined>>): ModelProfileSummary {
   return {
     name: profile.name,
     kind: profile.kind,
     apiKeyEnv: profile.apiKeyEnv,
+    secretStatus: profileSecretStatus(profile, env),
     model: profile.model,
     ...(profile.baseUrl === undefined ? {} : { baseUrl: profile.baseUrl }),
     capabilities: profile.capabilities,
@@ -78,7 +129,7 @@ export function modelCommand(options: ModelCommandOptions = {}): ModelCommandRes
   }
 
   try {
-    const profiles = listProviderProfilesCommand({ profilesPath }).profiles.map(profileSummary);
+    const profiles = listProviderProfilesCommand({ profilesPath }).profiles.map((profile) => profileSummary(profile, env));
     if (profiles.length === 0) {
       return { ok: false, profilesPath, profiles, problem: "no_profiles" };
     }
@@ -96,6 +147,20 @@ export function modelCommand(options: ModelCommandOptions = {}): ModelCommandRes
       };
     }
 
+    const missingSecretProfiles = profiles
+      .filter((profile) => profile.secretStatus !== "configured")
+      .map((profile) => profile.name);
+    if (missingSecretProfiles.length > 0) {
+      return {
+        ok: false,
+        profilesPath,
+        profiles,
+        expectedProfiles: expected,
+        missingSecretProfiles,
+        problem: "missing_profile_secrets",
+      };
+    }
+
     return expected.length === 0
       ? { ok: true, profilesPath, profiles }
       : { ok: true, profilesPath, profiles, expectedProfiles: expected };
@@ -110,22 +175,44 @@ export function modelCommand(options: ModelCommandOptions = {}): ModelCommandRes
   }
 }
 
-function renderModelProfile(profile: ModelProfileSummary): readonly string[] {
+interface RenderModelCommandOptions {
+  readonly envFilePath?: string;
+  readonly showDetails?: boolean;
+}
+
+function renderModelProfile(
+  profile: ModelProfileSummary,
+  options: RenderModelCommandOptions,
+): readonly string[] {
+  const secretLine =
+    options.showDetails === true
+      ? `       Env: ${profile.apiKeyEnv} (${profile.secretStatus})`
+      : `       Secret: ${renderSecretStatus(profile.secretStatus)}`;
   return [
-    `  [ok] ${profile.name}`,
+    `  [${profile.secretStatus === "configured" ? "ok" : "needs"}] ${profile.name}`,
     `       Kind: ${profile.kind}`,
     `       Model: ${profile.model}`,
     ...(profile.baseUrl === undefined ? [] : [`       Base URL: ${profile.baseUrl}`]),
-    `       Env: ${profile.apiKeyEnv}`,
+    secretLine,
     `       Context: ${profile.contextWindow}`,
     `       Cost: ${profile.costClass}`,
     `       Capabilities: ${profile.capabilities.join(", ")}`,
   ];
 }
 
+function renderSecretStatus(status: ModelSecretStatus): string {
+  if (status === "configured") {
+    return "configured by environment";
+  }
+  if (status === "placeholder") {
+    return "placeholder provider key";
+  }
+  return "missing provider key";
+}
+
 function renderModelGuidance(
   result: ModelCommandResult,
-  options: { readonly envFilePath?: string },
+  options: { readonly envFilePath?: string; readonly showDetails?: boolean },
 ): readonly string[] {
   const envFilePath = shellQuote(options.envFilePath ?? "live-readiness.local.env");
 
@@ -142,19 +229,32 @@ function renderModelGuidance(
     return [
       "Next steps:",
       `  No provider profiles found at: ${result.profilesPath}`,
-      `  Fill ${envFilePath}, then write the guarded setup files:`,
-      `  vivarium live setup --env-file ${envFilePath} --confirm-write`,
-      "  Or add one profile with: vivarium providers configure ...",
+      "  Open account and key handoff:",
+      `  ${connectSignupCommand()}`,
+      "  Fill common provider values through the setup helper:",
+      `  ${connectFillCommand(envFilePath)}`,
+      "  Then write the guarded setup files:",
+      `  ${connectSetupCommand(envFilePath)}`,
+      ...(options.showDetails === true
+        ? ["  Or add one profile with: vivarium providers configure ..."]
+        : []),
       "  Guide: docs/guides/configure-providers.md",
     ];
   }
 
   return [
     "Next steps:",
-    "  Set VIVARIUM_PROVIDER_PROFILES_PATH, pass --profiles-path <path>,",
-    "  or load a readiness file:",
-    `  vivarium model --env-file ${envFilePath}`,
-    `  vivarium live setup --env-file ${envFilePath} --confirm-write`,
+    "  Start guided live setup:",
+    "  vivarium setup live",
+    "  Review provider readiness and open account/key handoff:",
+    `  ${connectCommand(envFilePath)}`,
+    `  ${connectSignupCommand()}`,
+    "  Fill provider values:",
+    `  ${connectFillCommand(envFilePath)}`,
+    "  Then write the provider profiles:",
+    `  ${connectSetupCommand(envFilePath)}`,
+    `  Then inspect provider readiness: ${modelCommandLine(envFilePath)}`,
+    "  Manual override: pass --profiles-path <path>.",
     "  Guide: docs/guides/configure-providers.md",
   ];
 }
@@ -175,16 +275,54 @@ function renderMissingProfiles(
     ...result.missingProfiles.map((profile) => `  [fix] ${profile}`),
     "",
     "Next steps:",
-    `  Re-run guarded setup after filling ${envFilePath}:`,
-    `  vivarium live setup --env-file ${envFilePath} --confirm-write`,
-    `  Then inspect again: vivarium model --env-file ${envFilePath}`,
+    "  Open account and key handoff:",
+    `  ${connectSignupCommand()}`,
+    "  Paste missing provider values into generated local setup files:",
+    "  vivarium setup live",
+    "  For scripted updates:",
+    `  ${connectFillCommand(envFilePath)}`,
+    "  Then re-run guarded setup:",
+    `  ${connectSetupCommand(envFilePath)}`,
+    `  Then inspect again: ${modelCommandLine(envFilePath)}`,
+  ];
+}
+
+function renderMissingProfileSecrets(
+  result: ModelCommandResult,
+  options: { readonly envFilePath?: string; readonly showDetails?: boolean },
+): readonly string[] {
+  const envFilePath = shellQuote(options.envFilePath ?? "live-readiness.local.env");
+
+  if (result.problem !== "missing_profile_secrets" || result.missingSecretProfiles === undefined) {
+    return [];
+  }
+
+  return [
+    "",
+    "Provider secrets need attention:",
+    ...result.missingSecretProfiles.map((profile) => `  [fix] ${profile}`),
+    "",
+    "Next steps:",
+    "  Open account and key handoff:",
+    `  ${connectSignupCommand()}`,
+    "  Paste provider keys into generated local setup files:",
+    "  vivarium setup live",
+    "  For scripted updates:",
+    `  ${connectFillCommand(envFilePath)}`,
+    "  Then re-run guarded setup:",
+    `  ${connectSetupCommand(envFilePath)}`,
+    "  Then run live smoke tests:",
+    "  vivarium connect smoke",
+    ...(options.showDetails === true ? ["  Or smoke one profile with: vivarium providers smoke ..."] : []),
   ];
 }
 
 export function renderModelCommandResult(
   result: ModelCommandResult,
-  options: { readonly envFilePath?: string } = {},
+  options: RenderModelCommandOptions = {},
 ): string {
+  const hiddenProfileDetails = result.profiles.length > 0 && options.showDetails !== true;
+  const hiddenSetupDetails = result.profiles.length === 0 && options.showDetails !== true;
   return [
     renderVivariumGlobe(),
     "",
@@ -194,8 +332,22 @@ export function renderModelCommandResult(
     `Profiles path: ${result.profilesPath ?? "not set"}`,
     "",
     ...(result.profiles.length > 0
-      ? ["Profiles:", ...result.profiles.flatMap(renderModelProfile), ...renderMissingProfiles(result, options)]
+      ? [
+          "Profiles:",
+          ...result.profiles.flatMap((profile) => renderModelProfile(profile, options)),
+          ...renderMissingProfiles(result, options),
+          ...renderMissingProfileSecrets(result, options),
+        ]
       : renderModelGuidance(result, options)),
+    ...(hiddenProfileDetails || hiddenSetupDetails
+      ? [
+          "",
+          "Details:",
+          hiddenProfileDetails
+            ? "  Re-run with --details to show exact provider secret env names."
+            : "  Re-run with --details to show low-level provider profile commands.",
+        ]
+      : []),
     "",
   ].join("\n");
 }

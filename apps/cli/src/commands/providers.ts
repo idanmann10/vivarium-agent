@@ -229,8 +229,10 @@ export function renderProviderProfilesCommandResult(result: ProviderProfilesComm
     ...(result.profiles.length === 0
       ? [
           "",
-          "Next command:",
-          "  vivarium live setup --env-file live-readiness.local.env --confirm-write",
+          "Next commands:",
+          "  vivarium connect signup",
+          "  vivarium connect fill",
+          "  vivarium connect setup --confirm-write",
         ]
       : ["", ...result.profiles.flatMap(renderProviderProfile)]),
     "",
@@ -349,6 +351,12 @@ export async function providerSmokeCommand(options: ProviderSmokeCommandOptions)
   }
 }
 
+function friendlyProviderSmokeError(error: string): string {
+  return error.startsWith("Missing provider environment variable:")
+    ? "Provider setup is incomplete."
+    : error;
+}
+
 export function renderProviderSmokeCommandResult(result: ProviderSmokeCommandResult): string {
   return [
     renderVivariumGlobe(),
@@ -364,13 +372,16 @@ export function renderProviderSmokeCommandResult(result: ProviderSmokeCommandRes
           `Preview: ${result.responsePreview}`,
           "",
           "Next command:",
-          "  vivarium doctor --live --env-file live-readiness.local.env",
+          "  vivarium doctor --live",
         ]
       : [
-          `Error: ${result.error}`,
+          `Error: ${friendlyProviderSmokeError(result.error)}`,
           "",
-          "Next command:",
-          "  Export the missing provider value, then rerun provider smoke.",
+          "Next commands:",
+          "  vivarium connect signup",
+          "  vivarium connect fill",
+          "  vivarium connect setup --confirm-write",
+          "  vivarium connect smoke",
         ]),
     "",
   ].join("\n");

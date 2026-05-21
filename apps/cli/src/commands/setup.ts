@@ -25,6 +25,7 @@ export type SetupDiskSpaceProbe = (path: string) => SetupDiskSpace;
 
 export interface SetupCommandOptions {
   readonly primaryDomain: string;
+  readonly agentName?: string;
   readonly worldRoot?: string;
   readonly statePath?: string;
   readonly envFilePath?: string;
@@ -32,8 +33,10 @@ export interface SetupCommandOptions {
   readonly confirmWrite?: boolean;
   readonly quick?: boolean;
   readonly liveEnvPath?: string;
+  readonly dashboardUrl?: string;
   readonly prefill?: LiveEnvPrefillOptions;
   readonly diskSpaceProbe?: SetupDiskSpaceProbe;
+  readonly simpleLocalRunNextCommand?: boolean;
 }
 
 export interface SetupCommandResult {
@@ -42,6 +45,11 @@ export interface SetupCommandResult {
   readonly live?: LiveSetupCommandResult;
   readonly quickEnv?: LiveEnvInitCommandResult;
   readonly liveEnvFilePath: string;
+  readonly dashboardUrl?: string;
+  readonly dashboardOpen?: {
+    readonly ok: boolean;
+    readonly error?: string;
+  };
   readonly nextCommands: readonly string[];
 }
 
@@ -68,19 +76,35 @@ function setupNextCommands(
   live: LiveSetupCommandResult | undefined,
   quickEnv: LiveEnvInitCommandResult | undefined,
 ): readonly string[] {
-  const runCommand = commandWithFlags("run", {
-    goal: "validate local setup",
+  const liveRunPath = quickEnv?.path ?? options.liveEnvPath ?? options.envFilePath;
+  const explicitRunCommand = commandWithFlags("local run", {
     domain: options.primaryDomain,
+    "agent-name": options.agentName,
     "state-path": local.statePath,
-    ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
+    "world-root": local.worldRoot,
+    "live-env-path": liveRunPath,
   });
+  const runCommand = options.simpleLocalRunNextCommand === true ? "vivarium local run" : explicitRunCommand;
   const liveEnvFilePath = options.envFilePath ?? quickEnv?.path ?? defaultLiveEnvFilePath;
   const modelCommand = commandWithFlags("model", { "env-file": liveEnvFilePath });
-  const evidenceCommand = commandWithFlags("live evidence-init", { path: "v1-evidence.json" });
+  const smokeCommand = commandWithFlags("connect smoke", { "env-file": liveEnvFilePath });
+  const proofCommand = commandWithFlags("proof", { "env-file": liveEnvFilePath });
   const doctorCommand = commandWithFlags("doctor", { live: true, "env-file": liveEnvFilePath });
 
+  if (options.dashboardUrl !== undefined) {
+    return [
+      runCommand,
+      "vivarium dashboard --open",
+      "vivarium daemon smoke",
+      "vivarium status",
+      "vivarium tools",
+      "vivarium help",
+      "vivarium update",
+    ];
+  }
+
   if (options.envFilePath !== undefined && live?.ok === true) {
-    return [runCommand, modelCommand, evidenceCommand, doctorCommand];
+    return [runCommand, modelCommand, smokeCommand, proofCommand, doctorCommand];
   }
 
   if (
@@ -98,7 +122,8 @@ function setupNextCommands(
         "confirm-write": true,
       }),
       modelCommand,
-      evidenceCommand,
+      smokeCommand,
+      proofCommand,
       doctorCommand,
     ];
   }
@@ -113,7 +138,8 @@ function setupNextCommands(
         "state-path": local.statePath,
       }),
       modelCommand,
-      evidenceCommand,
+      smokeCommand,
+      proofCommand,
       doctorCommand,
     ];
   }
@@ -121,44 +147,21 @@ function setupNextCommands(
   if (quickEnv !== undefined) {
     return [
       runCommand,
-      commandWithFlags("setup", {
-        "env-file": quickEnv.path,
-        domain: options.primaryDomain,
-        ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
-        "state-path": local.statePath,
-      }),
-      commandWithFlags("setup", {
-        "env-file": quickEnv.path,
-        domain: options.primaryDomain,
-        ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
-        "state-path": local.statePath,
-        "confirm-write": true,
-      }),
-      modelCommand,
-      evidenceCommand,
-      doctorCommand,
+      "vivarium launch handoff",
+      "vivarium status",
+      "vivarium tools",
+      "vivarium help",
+      "vivarium update",
     ];
   }
 
   return [
     runCommand,
-    commandWithFlags("live env-init", { path: defaultLiveEnvFilePath }),
-    commandWithFlags("setup", {
-      "env-file": defaultLiveEnvFilePath,
-      domain: options.primaryDomain,
-      ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
-      "state-path": local.statePath,
-    }),
-    commandWithFlags("setup", {
-      "env-file": defaultLiveEnvFilePath,
-      domain: options.primaryDomain,
-      ...(options.worldRoot === undefined ? {} : { "world-root": options.worldRoot }),
-      "state-path": local.statePath,
-      "confirm-write": true,
-    }),
-    modelCommand,
-    evidenceCommand,
-    doctorCommand,
+    "vivarium launch handoff",
+    "vivarium status",
+    "vivarium tools",
+    "vivarium help",
+    "vivarium update",
   ];
 }
 
@@ -174,7 +177,7 @@ function bytes(value: number): string {
 }
 
 function defaultStatePath(): string {
-  return join(homedir(), ".the-agent", "state.db");
+  return join(process.env.HOME ?? homedir(), ".vivarium", "state.db");
 }
 
 function existingProbePath(path: string): string {
@@ -221,6 +224,7 @@ export function setupCommand(options: SetupCommandOptions): SetupCommandResult {
   const local = runInitCommand({
     primaryDomain: options.primaryDomain,
     bindGithubIdentity: false,
+    ...(options.agentName === undefined ? {} : { agentName: options.agentName }),
     ...(options.worldRoot === undefined ? {} : { worldRoot: options.worldRoot }),
     ...(options.statePath === undefined ? {} : { statePath: options.statePath }),
   });
@@ -245,36 +249,47 @@ export function setupCommand(options: SetupCommandOptions): SetupCommandResult {
     ...(live === undefined ? {} : { live }),
     ...(quickEnv === undefined ? {} : { quickEnv }),
     liveEnvFilePath,
+    ...(options.dashboardUrl === undefined ? {} : { dashboardUrl: options.dashboardUrl }),
     nextCommands: setupNextCommands(options, local, live, quickEnv),
   };
 }
 
-function renderQuickEnvSummary(quickEnv: LiveEnvInitCommandResult | undefined): readonly string[] {
+function renderQuickEnvSummary(
+  quickEnv: LiveEnvInitCommandResult | undefined,
+  options: { readonly showLiveHandoff?: boolean } = {},
+): readonly string[] {
+  const showLiveHandoff = options.showLiveHandoff ?? true;
   if (quickEnv === undefined) {
     return [];
   }
 
   if (quickEnv.ok) {
     return [
-      "Live env quick start: written",
-      `Env file: ${quickEnv.path}`,
+      "Local setup is ready now.",
+      "Live readiness: staged for later",
+      `Readiness file: ${quickEnv.path}`,
       `Permissions: ${quickEnv.mode}`,
       ...(quickEnv.prefilled.length === 0 ? [] : [`Prefilled: ${quickEnv.prefilled.join(", ")}`]),
-      `Fill live settings: edit ${quickEnv.path} locally. Keep it out of git.`,
+      ...(showLiveHandoff
+        ? ["Use vivarium launch handoff when you are ready for provider keys and live evidence."]
+        : []),
     ];
   }
 
   if (isExistingLiveEnv(quickEnv)) {
     return [
-      "Live env quick start: already exists",
-      `Env file: ${quickEnv.path}`,
-      `Fill live settings: edit ${quickEnv.path} locally. Keep it out of git.`,
+      "Local setup is ready now.",
+      "Live readiness: already staged",
+      `Readiness file: ${quickEnv.path}`,
+      ...(showLiveHandoff
+        ? ["Use vivarium launch handoff when you are ready for provider keys and live evidence."]
+        : []),
     ];
   }
 
   return [
-    "Live env quick start: blocked",
-    `Env file: ${quickEnv.path}`,
+    "Live readiness: blocked",
+    `Readiness file: ${quickEnv.path}`,
     `Error: ${quickEnv.error}`,
   ];
 }
@@ -403,13 +418,30 @@ export function renderSetupCommandResult(result: SetupCommandResult): string {
     "",
     "Vivarium Setup",
     "--------------",
+    `Agent: ${result.local.agentName}`,
     `Local state initialized: ${result.local.statePath}`,
     `Domain: ${result.local.primaryDomain}`,
     `Starter skills: ${result.local.starterSkills.length}`,
     `Starter traces: ${result.local.starterTraces.length}`,
     ...(result.quickEnv === undefined
       ? renderLiveSummary(result.live, result.liveEnvFilePath)
-      : renderQuickEnvSummary(result.quickEnv)),
+      : renderQuickEnvSummary(result.quickEnv, { showLiveHandoff: result.dashboardUrl === undefined })),
+    ...(result.dashboardUrl === undefined
+      ? []
+      : [
+          `Dashboard: ${result.dashboardUrl}`,
+          `Status JSON: ${result.dashboardUrl.replace(/\/$/, "")}/status`,
+          ...(result.dashboardOpen === undefined
+            ? []
+            : [
+                result.dashboardOpen.ok
+                  ? `Opened: ${result.dashboardUrl}`
+                  : "Open: blocked",
+                ...(result.dashboardOpen.error === undefined
+                  ? []
+                  : [`Error: ${result.dashboardOpen.error}`]),
+              ]),
+        ]),
     "",
     ...renderLaunchSequence(result.nextCommands, { heading: "Next commands:" }),
     "",

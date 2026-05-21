@@ -1,8 +1,13 @@
 export const cliCommands = [
+  "start",
+  "local",
+  "onboard",
   "setup",
   "init",
   "run",
   "dream",
+  "connect",
+  "proof",
   "skills",
   "world",
   "providers",
@@ -16,9 +21,12 @@ export const cliCommands = [
   "curriculum",
   "help",
   "model",
+  "tools",
+  "dashboard",
   "status",
   "update",
   "doctor",
+  "version",
 ] as const;
 
 export type CliCommand = (typeof cliCommands)[number];
@@ -31,8 +39,64 @@ export { renderRunCommandResult, runCommand } from "./commands/run.js";
 export type { RunCommandOptions, RunCommandResult, RunProviderKind } from "./commands/run.js";
 export { dreamCommand, renderDreamCommandResult } from "./commands/dream.js";
 export type { DreamCommandOptions } from "./commands/dream.js";
-export { helpCommand, renderHelpCommandResult } from "./commands/help.js";
-export type { HelpCommandItem, HelpCommandResult } from "./commands/help.js";
+export {
+  connectCommand,
+  connectSignupCommand,
+  connectSmokeCommand,
+  renderConnectCommandResult,
+  renderConnectInitCommandResult,
+  renderConnectSignupCommandResult,
+  renderConnectSmokeCommandResult,
+} from "./commands/connect.js";
+export type {
+  ConnectCommandOptions,
+  ConnectCommandResult,
+  ConnectProvider,
+  ConnectSignupCommandResult,
+  ConnectSmokeCommandOptions,
+  ConnectSmokeCommandResult,
+} from "./commands/connect.js";
+export {
+  proofCommand,
+  proofInitCommand,
+  renderProofCommandResult,
+  renderProofInitCommandResult,
+} from "./commands/proof.js";
+export type {
+  ProofCheck,
+  ProofCommandOptions,
+  ProofCommandResult,
+  ProofInitCommandOptions,
+  ProofInitCommandResult,
+  ProofManifestStatus,
+} from "./commands/proof.js";
+export {
+  daemonSmokeHelpCommand,
+  helpCommand,
+  launchHandoffHelpCommand,
+  localRunHelpCommand,
+  localSetupHelpCommand,
+  renderDaemonSmokeHelpCommandResult,
+  renderHelpCommandResult,
+  renderLaunchHandoffHelpCommandResult,
+  renderLocalRunHelpCommandResult,
+  renderLocalSetupHelpCommandResult,
+  renderSetupHelpCommandResult,
+  renderStatusHelpCommandResult,
+  setupHelpCommand,
+  statusHelpCommand,
+} from "./commands/help.js";
+export type {
+  FocusedHelpCommandResult,
+  DaemonSmokeHelpCommandResult,
+  HelpCommandItem,
+  HelpCommandResult,
+  LaunchHandoffHelpCommandResult,
+  LocalRunHelpCommandResult,
+  LocalSetupHelpCommandResult,
+  SetupHelpCommandResult,
+  StatusHelpCommandResult,
+} from "./commands/help.js";
 export { launchHandoffCommand, renderLaunchHandoffCommandResult } from "./commands/launch.js";
 export type { LaunchHandoffCommandOptions, LaunchHandoffCommandResult } from "./commands/launch.js";
 export { modelCommand, renderModelCommandResult } from "./commands/model.js";
@@ -42,6 +106,8 @@ export type {
   ModelCommandResult,
   ModelProfileSummary,
 } from "./commands/model.js";
+export { renderToolsCommandResult, toolsCommand } from "./commands/tools.js";
+export type { ToolsCommandResult, ToolsToolsetSummary } from "./commands/tools.js";
 export { renderStatusCommandResult, statusCommand } from "./commands/status.js";
 export { renderUpdateCommandResult, updateCommand } from "./commands/update.js";
 export type {

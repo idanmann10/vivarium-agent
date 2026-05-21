@@ -16,6 +16,7 @@ for local use without claiming the full `goal.md` v1 cultural-transmission loop 
    bun run test
    bun run build
    bun run format:check
+   bun run dependency:audit
    ```
 
 3. Confirm changesets are present for package, CLI, or operator-facing changes:

@@ -12,9 +12,8 @@ Run the readiness check from `the-agent`:
 
 ```bash
 vivarium doctor --live \
-  --env-file live-readiness.local.env \
-  --agent-root /Users/idanmann/Vivarium/the-agent \
-  --world-root /Users/idanmann/Vivarium/the-world
+  --agent-root "$HOME/.vivarium/vivarium-agent" \
+  --world-root "$HOME/.vivarium/the-world"
 ```
 
 When the repos use the standard sibling layout, `doctor --live` can infer
@@ -26,95 +25,105 @@ Path-based checks report `:unavailable` when the env var is set but the expected
 When the world subscription registry exists, canonical/private world refs also report `:unavailable` if the configured refs are not present in that registry.
 For live-readiness mode, the JSON result also includes `nextActions` for every non-passing check. Each action names the failed check, the env vars or command needed to clear it, and the guide section to read before making live changes.
 
-Use `live env-init` to create `live-readiness.local.env` from the tracked
-environment skeleton with `0600` permissions before filling values. Then pass it
-to `doctor --live` with `--env-file live-readiness.local.env`; that filename is
-ignored because filled copies contain provider keys, GitHub tokens, and internal
-API metadata.
+Use `vivarium setup live` to create or reuse
+`~/.vivarium/live/live-readiness.local.env` from the tracked environment
+skeleton with `0600` permissions, open the provider signup handoff, and stage
+the default private setup directories before filling values. Then run
+`doctor --live`; filled copies are ignored because they contain provider keys,
+GitHub tokens, and internal API metadata.
+`vivarium onboard live` remains available as the same live setup wizard.
+`vivarium connect signup` shows a local value map for generated files such as
+`~/.vivarium/secrets/github-token.key` and
+`~/.vivarium/secrets/private-context-window.txt`, so setup stays in paste-once
+local files instead of shell exports.
 
 ```bash
-vivarium live env-init --path live-readiness.local.env
+vivarium setup live
 ```
+
+Use `vivarium connect wizard` only when you need custom paths. Use
+`connect init` only when you want the lower-level file creation step without the
+combined signup handoff.
 
 When `--env-file` is used, `doctor --live` reports `liveEnvFile.permissions:insecure` until group and world permissions are removed from the filled file.
 
-The setup commands below use shell variables from that same file. Before running those commands, load the filled file into a trusted local shell:
-
-```bash
-source live-readiness.local.env
-```
-
 ## Current Production Blocker Map
 
-As of the current Mac install, doctor --live reports `31 passing, 22 blocked`
-until these operator-owned inputs are real and verified:
+Default private setup file status on the current Mac install: doctor --live reports `36 passing, 17 blocked` until the operator-owned inputs are real and verified:
+The current live unlock checklist is Provider accounts: 8 blockers, Internal credential: 3 blockers, and V1 evidence: 6 blockers.
+Most remaining blockers currently report `needs real values` or `missing`.
 
-| Area | Needed to clear it |
+| Area | Current status |
 | --- | --- |
-| Model providers | Saved Anthropic/OpenRouter profile metadata is configured; real Anthropic/OpenRouter API keys, a private OpenAI-compatible key/base/model/context/profile, and successful provider smoke calls are still required. |
-| Internal credential smoke | A local encrypted credential store, master key, internal API credential value, health URL, and a successful `credentials smoke` result. |
-| GitHub live checks | The local env has a keychain-backed `GITHUB_TOKEN`, repository IDs, a visible RFC Discussion, and successful latest `main` CI checks for both repos; v1 public contribution evidence is still tracked in the v1 evidence manifest. |
-| V1 evidence manifest | Real multi-day goal evidence, provider and credential smoke transcripts, Dream artifacts, public contribution evidence, published canonical-world artifacts, curation stats, and the required two-week follow-up evidence. |
+| Model providers | Real Anthropic/OpenRouter keys, private OpenAI-compatible endpoint key/base/model/context values, and successful provider smoke calls are still required. |
+| Internal credential smoke | The internal API credential value, internal API health URL, and encrypted credential smoke must still be supplied and verified. |
+| V1 evidence manifest | Provider and credential smoke transcripts, public contribution evidence, published canonical-world artifacts, curation stats, and the required two-week follow-up evidence are still required. |
 
-The Mac installer and handoff PRs have already merged through protected `main`
-with required status checks and non-author review. Future PRs should keep using
-that branch-protection path; it is not one of the current `doctor --live`
-blockers.
+Already clear: final repository names, canonical/private world subscription refs,
+GitHub auth/public release checks, Phase 0 Discussion evidence, and latest
+agent/world CI evidence are configured enough that they are not in the current
+live doctor blocker list.
+
+Stable public installer use starts after the reviewed installer branch lands on
+`main`. For pre-main validation, run `vivarium launch handoff` from the
+installed checkout to get the current commit-pinned branch installer. PR review
+status belongs in the active PR or audit, not this evergreen guide; review
+state is not one of the current `doctor --live` blockers.
 
 ## Operator Unlock Key Map
 
-The live env file keeps secret, machine-local, and evidence-path values out of
-the public installer. Fill the groups in this order when clearing
-`doctor --live`:
+The private setup file keeps secret, machine-local, and evidence-path values out
+of the public installer. Use these friendly surfaces first when clearing
+`doctor --live`; exact setup keys stay in the later manual reference sections.
 
-| Group | Keys | What they unlock |
+| Group | Friendly path | What it unlocks |
 | --- | --- | --- |
-| Provider keys/models | `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, `VIVARIUM_OAI_COMPAT_API_KEY`, `VIVARIUM_ANTHROPIC_MODEL`, `VIVARIUM_OPENROUTER_MODEL`, `VIVARIUM_OPENROUTER_BASE_URL`, `VIVARIUM_OAI_COMPAT_BASE_URL`, and context-window vars | Real LLM calls and provider smoke tests. |
-| Provider profiles | `VIVARIUM_PROVIDER_PROFILES_PATH`, `VIVARIUM_ANTHROPIC_PROVIDER_PROFILE`, `VIVARIUM_OPENROUTER_PROVIDER_PROFILE`, `VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE` | Saved profile names and paths that let runs reuse the same checked provider setup. |
-| Encrypted credentials/internal API | `VIVARIUM_CREDENTIALS_PATH`, `VIVARIUM_CREDENTIALS_MASTER_KEY`, `VIVARIUM_INTERNAL_API_CREDENTIAL_NAME`, `VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE`, `VIVARIUM_INTERNAL_API_HEALTH_URL` | A local encrypted credential store and a health check that proves secret injection works without printing the secret. |
-| GitHub/public release | `GITHUB_TOKEN`, `GH_TOKEN`, `VIVARIUM_GITHUB_OWNER`, `VIVARIUM_AGENT_REPO_NAME`, `VIVARIUM_WORLD_REPO_NAME`, `VIVARIUM_GITHUB_REPOSITORY_ID`, `VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID` | GitHub auth, Discussions, PRs, workflow checks, and protected public release evidence. |
-| World subscriptions | `VIVARIUM_WORLD_SUBSCRIPTIONS_PATH`, `VIVARIUM_CANONICAL_WORLD_REF`, `VIVARIUM_PRIVATE_WORLD_REF` | Retrieval from the canonical world and private fork, including second-install pull checks. |
-| V1 evidence manifest | `VIVARIUM_V1_EVIDENCE_PATH` | The inspectable manifest that links real goals, smokes, Dream artifacts, public contribution evidence, curation stats, and the two-week improvement evidence. |
+| Repository names | `vivarium setup live`, paste the final agent/world repo names into the generated local setup files, then rerun `vivarium setup live`. | Stable public names for GitHub remotes, CI checks, Discussions, PRs, and evidence URLs. |
+| Provider accounts and models | `vivarium connect signup`, paste provider keys and private endpoint settings into the generated local setup files, then rerun `vivarium setup live`; use `vivarium connect fill` only for scripted updates. | Real LLM calls and provider smoke tests. |
+| Provider profiles | `vivarium connect setup --confirm-write`, then `vivarium connect smoke`. | Saved profile names and paths that let runs reuse the same checked provider setup. |
+| Encrypted credentials/internal API | `vivarium connect signup`, paste the credential master key, internal API token, and health URL into the generated local setup files, rerun `vivarium setup live`, then `vivarium connect setup --confirm-write`. | A local encrypted credential store and a health check that proves secret injection works without printing the secret. |
+| GitHub/public release | `vivarium connect signup`, paste the GitHub token, owner, repository ID, and Discussion category ID into the generated local setup files, then run `vivarium github smoke`, `vivarium github discussion --confirm-write`, and `vivarium github workflow-runs`. | GitHub auth, Discussions, PRs, workflow checks, and protected public release evidence. |
+| World subscriptions | `vivarium setup live`, paste canonical and private refs into the generated local setup files, rerun setup, then save them with `vivarium world subscribe`. | Retrieval from the canonical world and private fork, including second-install pull checks. |
+| V1 evidence manifest | Run `vivarium proof init`, fill real evidence, then rerun `vivarium proof` before `vivarium doctor --live`. | The inspectable manifest that links real goals, smokes, Dream artifacts, public contribution evidence, curation stats, and the two-week improvement evidence. |
 
 ## Naming Gate
 
-`goal.md` still treats `the-agent` and `the-world` as temporary names. Choose final names before
-creating canonical GitHub repositories so local paths, README titles, package metadata, remote URLs,
-and public Discussion/PR links do not need a second migration.
+The public repository names are `vivarium-agent` and `vivarium-world`. The
+installed checkout paths still use `~/.vivarium/vivarium-agent` and
+`~/.vivarium/the-world`; treat those as local directory names, not unfinished
+public branding.
 
-Record the decision before adding remotes:
+For the default public setup, put those repo names and the GitHub owner in the
+generated local setup files, then rerun setup:
 
 ```text
-agent repo name: <final-agent-repo>
-world repo name: <final-world-repo>
-canonical owner: <github-owner-or-org>
-private fork owner: <github-owner-or-org>
+~/.vivarium/secrets/agent-repo-name.txt
+~/.vivarium/secrets/world-repo-name.txt
+~/.vivarium/secrets/github-owner.txt
 ```
-
-Export the final names for `doctor --live`:
 
 ```bash
-export VIVARIUM_AGENT_REPO_NAME=<final-agent-repo>
-export VIVARIUM_WORLD_REPO_NAME=<final-world-repo>
+vivarium setup live
 ```
 
-After names are chosen, either keep the local checkout paths as compatibility aliases or rename the
-directories and update commands that reference `/Users/idanmann/Vivarium/the-agent` and
-`/Users/idanmann/Vivarium/the-world`.
+Use different names only for a fork or a separately branded deployment. If you
+do, update the generated setup files, GitHub remotes, package/docs metadata, and
+public Discussion/PR evidence together so `doctor --live` checks one coherent
+owner/repo target.
 
 ## Git Remotes
 
 Both repos need canonical GitHub remotes before Discussions, PRs, auto-merge, and cross-install pulls can be verified.
 
 ```bash
-git -C /Users/idanmann/Vivarium/the-agent remote add origin git@github.com:<owner>/<agent-repo>.git
-git -C /Users/idanmann/Vivarium/the-world remote add origin git@github.com:<owner>/<world-repo>.git
-git -C /Users/idanmann/Vivarium/the-agent remote -v
-git -C /Users/idanmann/Vivarium/the-world remote -v
+git -C "$HOME/.vivarium/vivarium-agent" remote add origin git@github.com:<owner>/<agent-repo>.git
+git -C "$HOME/.vivarium/the-world" remote add origin git@github.com:<owner>/<world-repo>.git
+git -C "$HOME/.vivarium/vivarium-agent" remote -v
+git -C "$HOME/.vivarium/the-world" remote -v
 ```
 
 Replace `<agent-repo>` and `<world-repo>` with the names chosen in the naming gate.
-After `VIVARIUM_GITHUB_OWNER`, `VIVARIUM_AGENT_REPO_NAME`, and `VIVARIUM_WORLD_REPO_NAME` are set,
+After the owner, agent repo name, and world repo name are set,
 `doctor --live` reports `agent.remote:mismatch` or `world.remote:mismatch` when a configured remote
 does not point at the expected `<owner>/<repo>` target.
 
@@ -123,38 +132,151 @@ does not point at the expected `<owner>/<repo>` target.
 At least one real model provider key is enough for a first smoke call. The v1 done scenario requires Anthropic,
 OpenRouter, and a private OAI-compatible endpoint for a fine-tune.
 
+Start with `vivarium setup live` for the default private layout: local setup
+files under `~/.vivarium/secrets`, generated setup artifacts under
+`~/.vivarium/live`, and guided live setup in one command.
+Then run `vivarium connect signup` for provider account links and the private
+endpoint handoff before filling local setup files.
+
+Use `vivarium connect wizard` only when you want to choose paths instead of
+accepting those defaults. It
+creates or reuses the private setup file, shows public key links and the private
+endpoint handoff without raw setup fields, writes friendly file-backed setup
+values when you pass them, writes generated artifact paths under one setup directory,
+and can perform the guarded setup write when you pass `--confirm-write`. When
+the files under `--secrets-dir` are missing, the wizard creates empty local setup
+files for repo metadata, world refs, GitHub metadata, provider keys, private
+endpoint settings, and internal credentials:
+
+```text
+~/.vivarium/secrets/agent-repo-name.txt
+~/.vivarium/secrets/world-repo-name.txt
+~/.vivarium/secrets/canonical-world-ref.txt
+~/.vivarium/secrets/private-world-ref.txt
+~/.vivarium/secrets/github-token.key
+~/.vivarium/secrets/github-owner.txt
+~/.vivarium/secrets/github-repository-id.txt
+~/.vivarium/secrets/github-discussion-category-id.txt
+~/.vivarium/secrets/anthropic.key
+~/.vivarium/secrets/openrouter.key
+~/.vivarium/secrets/private-oai.key
+~/.vivarium/secrets/private-base-url.txt
+~/.vivarium/secrets/private-model.txt
+~/.vivarium/secrets/private-context-window.txt
+~/.vivarium/secrets/credential-master.key
+~/.vivarium/secrets/internal-api.token
+~/.vivarium/secrets/internal-health-url.txt
+```
+
+Paste real values into those files, then rerun the same wizard command. Then
+use the connect dashboard for missing names/world, GitHub/public release,
+provider, internal credential, and evidence labels in plain language; exact
+setup keys stay behind `--details`.
+
 ```bash
+vivarium setup live
+vivarium connect signup
+# Paste values into ~/.vivarium/secrets/*, then:
+vivarium setup live
+vivarium connect
+vivarium connect setup --confirm-write
+vivarium connect smoke
+```
+
+`vivarium connect` reports names/world readiness, GitHub/public release
+readiness, provider readiness, encrypted internal credential readiness, and
+evidence-manifest file readiness without printing raw env-key wiring.
+`doctor --live` checks the required v1 evidence content after the file exists.
+Without `--confirm-write`, `vivarium connect setup` reports what it would write
+and exits without creating files.
+`connect fill` updates names/world, GitHub/public release, provider, internal credential, and evidence values by friendly setup labels before setup. It writes only to the private
+local readiness file and redacts those values from terminal output.
+Use file-backed inputs so the values do not sit in shell history:
+
+```bash
+vivarium connect fill \
+  --secrets-dir ~/.vivarium/secrets \
+  --setup-dir ~/.vivarium/live \
+  --private-base-url https://private.example/v1 \
+  --private-model private-model \
+  --private-context-window 128000 \
+  --internal-health-url https://internal.example/health
+```
+
+Keep those scratch local setup files private and remove them after the encrypted
+store has been written.
+
+When you did not pass `--confirm-write` to the wizard, create the live provider
+profile file, encrypted credential store, and evidence manifest skeleton from
+the filled env file:
+
+```bash
+vivarium connect setup \
+  --confirm-write
+vivarium connect smoke
+vivarium proof init
+vivarium proof
+```
+
+The setup dry run includes the target provider profile path, credential store path, provider profile names, and credential name so you can verify the env file before any secret-bearing local files are created.
+New env files already include public Anthropic and OpenRouter model defaults;
+operators should normally only change those when intentionally routing to a
+different public model.
+It also checks the internal API health URL required by the later credential smoke, but does not store that URL in the encrypted credential file.
+If the v1 evidence path is filled, the confirmed setup also creates the
+evidence manifest skeleton when the file does not already exist. `vivarium proof init`
+is the friendly repair path when the setup file already points at a missing
+manifest.
+`vivarium connect smoke --env-file` then runs the saved Anthropic, OpenRouter,
+private OpenAI-compatible, and encrypted internal credential smokes through the
+same filled setup file without showing raw env-key commands. Re-run it with
+`--details` only when you need the exact lower-level smoke commands.
+`vivarium proof --env-file` summarizes the v1 evidence checklist in plain
+language before `doctor --live`; re-run it with `--details` only when you need
+the exact manifest section keys.
+OpenRouter, private OpenAI-compatible, and internal health URLs must be complete `http://` or `https://` URLs.
+
+### Manual env-key reference
+
+Use this reference when you need to audit the private readiness file, run
+lower-level commands manually, or understand what `connect fill` writes.
+The lower-level commands in this section use shell variables from that same
+filled file. Load it only in a trusted local shell when you need the manual
+env-key path:
+
+```bash
+source ~/.vivarium/live/live-readiness.local.env
+```
+
+```bash
+export VIVARIUM_AGENT_REPO_NAME=<final-agent-repo>
+export VIVARIUM_WORLD_REPO_NAME=<final-world-repo>
+export VIVARIUM_GITHUB_OWNER=<owner>
+export VIVARIUM_WORLD_SUBSCRIPTIONS_PATH="$HOME/.vivarium/live/world-subscriptions.json"
+export VIVARIUM_CANONICAL_WORLD_REF=<canonical-world-remote-url>
+export VIVARIUM_PRIVATE_WORLD_REF=<private-world-remote-url>
+export VIVARIUM_GITHUB_REPOSITORY_ID=<repository-node-id>
+export VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID=<discussion-category-node-id>
+export GITHUB_TOKEN=<redacted>
+export GH_TOKEN="$GITHUB_TOKEN"
 export ANTHROPIC_API_KEY=<redacted>
 export OPENROUTER_API_KEY=<redacted>
 export VIVARIUM_OAI_COMPAT_API_KEY=<redacted>
 export VIVARIUM_OAI_COMPAT_BASE_URL=<private-oai-compatible-base-url>
 export VIVARIUM_OAI_COMPAT_MODEL=<private-fine-tune-model>
 export VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW=<private-context-window>
-export VIVARIUM_PROVIDER_PROFILES_PATH=/Users/idanmann/.codex/memories/vivarium-provider-profiles.json
+export VIVARIUM_PROVIDER_PROFILES_PATH="$HOME/.vivarium/live/provider-profiles.json"
 export VIVARIUM_ANTHROPIC_PROVIDER_PROFILE=anthropic-main
 export VIVARIUM_ANTHROPIC_MODEL=<anthropic-model>
 export VIVARIUM_ANTHROPIC_CONTEXT_WINDOW=<anthropic-context-window>
 export VIVARIUM_OPENROUTER_PROVIDER_PROFILE=openrouter
 export VIVARIUM_OPENROUTER_MODEL=<openrouter-model>
-export VIVARIUM_OPENROUTER_BASE_URL=<openrouter-base-url>
+export VIVARIUM_OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 export VIVARIUM_OPENROUTER_CONTEXT_WINDOW=<openrouter-context-window>
 export VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE=private-finetune
 ```
 
 Keep secrets out of git and shell history where possible.
-
-Create the live provider profile file and encrypted credential store from the filled env file:
-
-```bash
-vivarium live setup \
-  --env-file live-readiness.local.env \
-  --confirm-write
-```
-
-Without `--confirm-write`, this command reports what it would write and exits without creating files.
-The dry run includes the target provider profile path, credential store path, provider profile names, and credential name so you can verify the env file before any secret-bearing local files are created.
-It also checks the internal API health URL required by the later credential smoke, but does not store that URL in the encrypted credential file.
-OpenRouter, private OpenAI-compatible, and internal health URLs must be complete `http://` or `https://` URLs.
 
 You can also save profiles individually. `docs/guides/configure-providers.md` shows the full Anthropic, OpenRouter, and private-compatible profile setup required before `doctor --live` is clear:
 
@@ -212,22 +334,54 @@ vivarium providers smoke \
 After smoke succeeds, run a real goal through the same provider path:
 
 ```bash
-vivarium run \
+vivarium local run \
   --goal "<small real coding goal>" \
   --domain coding \
-  --world-root /Users/idanmann/Vivarium/the-world \
+  --world-root "$HOME/.vivarium/the-world" \
   --state-path /tmp/vivarium-live-state.db \
-  --provider-profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
-  --provider-profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
+  --env-file "$HOME/.vivarium/live/live-readiness.local.env" \
+  --provider-profile openrouter
 ```
 
-One-off run flags also remain available. Use `--provider-kind openai` or `--provider-kind anthropic` without `--provider-base-url` for first-party providers.
+`--env-file` lets the run read `VIVARIUM_PROVIDER_PROFILES_PATH` plus the
+provider key environment values from the same local setup file used by
+`vivarium connect` and `vivarium doctor --live`. One-off run flags also remain
+available. Use `--provider-kind openai` or `--provider-kind anthropic` without
+`--provider-base-url` for first-party providers.
 
 `doctor --live` expects `VIVARIUM_PROVIDER_PROFILES_PATH` to point at the file created by `providers configure`, checks that each `VIVARIUM_*_PROVIDER_PROFILE` value is present in that file, and runs the three saved-profile smoke probes. It reports `provider.anthropicSmoke:ok`, `provider.openrouterSmoke:ok`, and `provider.privateOaiCompatSmoke:ok` only when those provider calls succeed.
 
 ## Internal API Credential
 
-After adding an internal API credential, smoke it through the encrypted keychain and HTTP dispatcher:
+Use the same friendly setup path for the internal API credential. Add the
+credential master key, internal API token, and health URL to the local setup
+files created by `vivarium setup live`; run `vivarium connect signup` for the
+internal credential handoff before filling `credential-master.key`,
+`internal-api.token`, and `internal-health-url.txt`. Then rerun setup:
+
+```bash
+vivarium setup live
+vivarium connect signup
+```
+
+Review the dashboard and write the encrypted credential store:
+
+```bash
+vivarium connect
+vivarium connect setup --confirm-write
+```
+
+Then smoke the saved credential without printing the secret:
+
+```bash
+vivarium connect smoke
+```
+
+The smoke result reports status and a response preview without returning the
+secret value.
+
+Low-level credential commands remain available when you need to debug or script
+the encrypted keychain and HTTP dispatcher directly:
 
 ```bash
 vivarium credentials add \
@@ -246,12 +400,10 @@ vivarium credentials smoke \
   --method GET
 ```
 
-The smoke result reports status and a response preview without returning the secret value.
-
 Export the stable credential metadata for `doctor --live`:
 
 ```bash
-export VIVARIUM_CREDENTIALS_PATH=/Users/idanmann/.codex/memories/vivarium-credentials.enc
+export VIVARIUM_CREDENTIALS_PATH="$HOME/.vivarium/live/credentials.enc"
 export VIVARIUM_CREDENTIALS_MASTER_KEY=<local-master-key>
 export VIVARIUM_INTERNAL_API_CREDENTIAL_NAME=INTERNAL_API_TOKEN
 export VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE=<redacted-internal-api-token>
@@ -262,14 +414,51 @@ export VIVARIUM_INTERNAL_API_HEALTH_URL=<internal-health-url>
 
 ## GitHub Auth
 
-GitHub writes need a valid authenticated CLI session or token environment. Use one of these paths:
+GitHub writes need a valid authenticated CLI session or token. The default
+setup path keeps the token and GitHub target metadata in generated local setup
+files. Run `vivarium connect signup` for the GitHub/public release handoff
+before filling them:
+
+```text
+~/.vivarium/secrets/github-token.key
+~/.vivarium/secrets/github-owner.txt
+~/.vivarium/secrets/github-repository-id.txt
+~/.vivarium/secrets/github-discussion-category-id.txt
+```
+
+```bash
+vivarium connect signup
+vivarium setup live
+gh auth status
+```
+
+You can also use the GitHub CLI session directly:
 
 ```bash
 gh auth login -h github.com
 gh auth status
 ```
 
-or:
+The token must be able to create Discussions, branches, pull requests, issues,
+and read workflow state for the chosen world remote. The stable GitHub target
+metadata is written into the private readiness file when you rerun `vivarium
+setup live` after filling the local setup files. After that, the default GitHub
+commands read the target metadata from local setup:
+
+```bash
+vivarium github smoke
+vivarium github discussion --confirm-write
+vivarium github workflow-runs --target agent --branch main --limit 1
+vivarium github workflow-runs --target world --branch main --limit 1
+```
+
+`vivarium github smoke` reports repository visibility, default branch,
+Discussions availability, and token permissions when GitHub returns them.
+`vivarium github discussion --confirm-write` opens the `RFC 0001: Phase 0
+Bootstrap` Discussion from the canonical world proposal body. The workflow
+commands check the latest `main` runs for the agent and world repos.
+
+Low-level token path:
 
 ```bash
 export GITHUB_TOKEN=<redacted>
@@ -277,17 +466,7 @@ export GH_TOKEN=<redacted>
 gh auth status
 ```
 
-The token must be able to create Discussions, branches, pull requests, issues, and read workflow state for the chosen world remote.
-
-Export the stable GitHub target metadata for `doctor --live` and the Discussion command:
-
-```bash
-export VIVARIUM_GITHUB_OWNER=<owner>
-export VIVARIUM_GITHUB_REPOSITORY_ID=<repository-node-id>
-export VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID=<discussion-category-node-id>
-```
-
-Then run a read-only GitHub smoke check:
+For custom GitHub targets, pass explicit owner, repo, and token flags:
 
 ```bash
 vivarium github smoke \
@@ -295,8 +474,6 @@ vivarium github smoke \
   --repo <world-repo> \
   --token-env GITHUB_TOKEN
 ```
-
-The command reports repository visibility, default branch, Discussions availability, and token permissions when GitHub returns them.
 
 Open the Phase 0 RFC Discussion only after the target repository ID and Discussion category ID are known:
 
@@ -308,7 +485,7 @@ vivarium github discussion \
   --repository-id <repository-node-id> \
   --category-id <discussion-category-node-id> \
   --title "Phase 0 Bootstrap RFC" \
-  --body "$(cat /Users/idanmann/Vivarium/the-world/proposals/0001-phase-0-bootstrap-rfc.md)" \
+  --body "$(cat "$HOME/.vivarium/the-world/proposals/0001-phase-0-bootstrap-rfc.md")" \
   --confirm-write
 ```
 
@@ -318,7 +495,7 @@ Without `--confirm-write`, the command refuses before reading credentials or cal
 canonical world repo. If it reports `github.discussion:missing`, create the Discussion or verify the
 configured owner/world repo points at the canonical public world.
 
-The live doctor also checks the latest `main` GitHub Actions CI run for both the agent and world repos:
+The manual CI equivalent uses `gh` directly:
 
 ```bash
 gh run list --repo "$VIVARIUM_GITHUB_OWNER/$VIVARIUM_AGENT_REPO_NAME" --branch main --workflow CI --limit 1
@@ -451,11 +628,17 @@ bun run launch:security-audit
 
 After the canonical world and a private fork are available locally, save both subscriptions and verify that retrieval searches both while preserving source labels:
 
-```bash
-export VIVARIUM_WORLD_SUBSCRIPTIONS_PATH=/Users/idanmann/.codex/memories/vivarium-world-subscriptions.json
-export VIVARIUM_CANONICAL_WORLD_REF=<canonical-world-remote-url>
-export VIVARIUM_PRIVATE_WORLD_REF=<private-world-remote-url>
+```text
+~/.vivarium/secrets/canonical-world-ref.txt
+~/.vivarium/secrets/private-world-ref.txt
 ```
+
+```bash
+vivarium setup live
+```
+
+For custom paths or manual verification, load the filled readiness file first so
+the subscription commands can read the configured refs.
 
 ```bash
 vivarium world subscribe \
@@ -490,14 +673,17 @@ vivarium world search \
 Use the same saved registry for real runs:
 
 ```bash
-vivarium run \
+vivarium local run \
   --goal "<small real coding goal>" \
   --domain coding \
   --state-path /tmp/vivarium-live-state.db \
-  --world-subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" \
-  --provider-profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" \
-  --provider-profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"
+  --env-file "$HOME/.vivarium/live/live-readiness.local.env" \
+  --provider-profile openrouter
 ```
+
+When `--env-file` is present, runs also pick up
+`VIVARIUM_WORLD_SUBSCRIPTIONS_PATH`, so the saved canonical/private world
+registry is used without another path flag.
 
 For one-off checks without writing the registry, repeated roots still work:
 
@@ -546,17 +732,35 @@ docker-compose version
 At least one Compose command must succeed. Then verify the daemon supervisor:
 
 ```bash
-docker compose -f /Users/idanmann/Vivarium/the-agent/docker-compose.yml config
-docker compose -f /Users/idanmann/Vivarium/the-agent/docker-compose.yml up --build vivarium-daemon
-vivarium daemon smoke --status-url http://127.0.0.1:8787/status
+docker compose -f "$HOME/.vivarium/vivarium-agent/docker-compose.yml" config
+docker compose -f "$HOME/.vivarium/vivarium-agent/docker-compose.yml" up --build vivarium-daemon
+vivarium daemon smoke
 ```
 
 ## V1 Evidence Manifest
 
-`doctor --live` checks setup prerequisites and the live evidence required by `goal.md` before it can report v1 readiness. Keep the evidence manifest outside git if it contains private links, internal run summaries, or customer data:
+`doctor --live` checks setup prerequisites and the live evidence required by
+`goal.md` before it can report v1 readiness. Use the generated setup file first:
 
 ```bash
-export VIVARIUM_V1_EVIDENCE_PATH=/Users/idanmann/.codex/memories/vivarium-v1-evidence.json
+vivarium proof init
+vivarium proof
+```
+
+`connect setup --confirm-write` creates the
+evidence manifest skeleton when the setup file points at an evidence path and
+the file does not already exist. Use `vivarium proof init` to create or repair
+the skeleton from the setup file without typing the manifest env key. Use
+`vivarium proof` while filling the manifest to see the remaining evidence
+categories without raw section keys; add `--details` when you need the exact
+JSON section names.
+
+Keep the evidence manifest outside git if it contains private links, internal
+run summaries, or customer data. Low-level commands remain available when you
+need to repair a manifest independently from the setup file:
+
+```bash
+export VIVARIUM_V1_EVIDENCE_PATH="$HOME/.vivarium/live/v1-evidence.json"
 vivarium live evidence-init --path "$VIVARIUM_V1_EVIDENCE_PATH"
 ```
 
@@ -744,19 +948,23 @@ the contributor.
 After the external prerequisites are configured:
 
 1. Re-run `doctor --live` to confirm the setup blockers that remain.
-2. Run `live setup --env-file live-readiness.local.env` without `--confirm-write`; fill every missing, copied-template, or invalid value until the dry run reports the exact provider profile path, credential store path, profile names, and credential name it would create.
-3. Run `live setup --env-file live-readiness.local.env --confirm-write` to save the provider profile file and encrypted credential store.
-4. Run `providers smoke --profile` for the Anthropic, OpenRouter, and private OpenAI-compatible profiles.
-5. Run `credentials smoke` for the encrypted internal API credential.
-6. Run `run` with `--provider-profiles-path`, `--provider-profile`, and `--world-subscriptions-path` against a small real goal.
-7. Run `github smoke` for the canonical world remote.
-8. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.
-9. Create a live world contribution PR from a generated artifact with `github pull-request --confirm-write`.
-10. Verify the world workflows and trust gates on GitHub with `github workflow-runs`.
-11. Save canonical and private fork subscriptions with `world subscribe`, then verify retrieval with `world search --subscriptions-path`.
-12. Pull the accepted contribution into a second local install with `world transmission-smoke`.
-13. Run the Compose daemon and verify `/status` with `daemon smoke`.
-14. Initialize `VIVARIUM_V1_EVIDENCE_PATH` with `live evidence-init`, then fill it with the real v1 loop evidence collected during the week-long and two-week follow-up windows.
-15. Re-run `doctor --live`; do not claim v1 live verification until all setup and `v1.*` checks report configured, ok, or installed.
+2. Run `setup live` for provider account links, setup-file creation/reuse, local setup files, the private endpoint handoff, and optional `--confirm-write` setup.
+3. Run `connect` to see the plain-language names/world, GitHub/public release, provider, internal credential, and evidence labels.
+4. Paste missing repo, GitHub, world, provider, internal, path, and credential-name values into the generated local setup files, then rerun `setup live`.
+5. Re-run `connect`; repeat the local setup file pass until the dashboard reports the names/world, GitHub/public release, provider, internal credential, and evidence file setup sections ready.
+6. Run `connect setup --confirm-write` if the wizard did not already confirm the write, saving the provider profile file, encrypted credential store, and evidence manifest skeleton.
+7. Run `connect smoke` for the Anthropic, OpenRouter, private OpenAI-compatible, and encrypted internal credential smokes.
+8. Run `proof init` if the evidence manifest skeleton is missing.
+9. Run `proof` to review the plain-language v1 evidence checklist.
+10. Run `run` with `--env-file`, `--provider-profile`, and the saved world/provider paths from the setup file against a small real goal.
+11. Run `github smoke` for the canonical world remote.
+12. Open the Phase 0 RFC Discussion in the world remote with `github discussion --confirm-write`.
+13. Create a live world contribution PR from a generated artifact with `github pull-request --confirm-write`.
+14. Verify the world workflows and trust gates on GitHub with `github workflow-runs`.
+15. Save canonical and private fork subscriptions with `world subscribe`, then verify retrieval with `world search --subscriptions-path`.
+16. Pull the accepted contribution into a second local install with `world transmission-smoke`.
+17. Run the Compose daemon and verify `/status` with `daemon smoke`.
+18. Fill the evidence manifest with the real v1 loop evidence collected during the week-long and two-week follow-up windows.
+19. Re-run `proof`, then `doctor --live`; do not claim v1 live verification until all setup and `v1.*` checks report configured, ok, or installed.
 
 Record the resulting command output in `docs/superpowers/audits/2026-05-10-v1-completion-audit-refresh.md`.

@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, extname, isAbsolute, join, resolve } from "node:path";
+import { SQLiteStateRepository } from "../../../../packages/state/src/index.js";
 import { renderVivariumGlobe } from "./branding.js";
 
 export interface DoctorResult {
@@ -13,14 +14,20 @@ export interface DoctorNextAction {
   readonly action: string;
   readonly env?: readonly string[];
   readonly command?: string;
+  readonly detailCommand?: string;
   readonly guide: string;
   readonly completionGuide?: string;
+}
+
+export interface RenderDoctorCommandOptions {
+  readonly showDetails?: boolean;
 }
 
 interface DoctorNextActionContext {
   readonly agentRoot: string;
   readonly worldRoot: string;
   readonly envFilePath?: string;
+  readonly checks?: readonly string[];
 }
 
 interface V1EvidenceReferenceContext {
@@ -55,6 +62,7 @@ export interface DoctorCommandOptions {
   readonly mode?: "offline-local" | "live-readiness";
   readonly agentRoot?: string;
   readonly worldRoot?: string;
+  readonly statePath?: string;
   readonly nowMillis?: number;
   readonly env?: Readonly<Record<string, string | undefined>>;
   readonly envFilePath?: string;
@@ -1249,12 +1257,26 @@ function internalApiCredentialValueCheck(
     return "internalApi.credentialValue:configured";
   }
 
-  const credentialsPath = textValue(env[credentialsPathEnv]);
-  if (credentialsPath !== undefined && existsSync(credentialsPath)) {
+  if (storedCredentialSmokeInputsReady(env)) {
     return "internalApi.credentialValue:configured";
   }
 
   return `internalApi.credentialValue:${status}`;
+}
+
+function storedCredentialSmokeInputsReady(
+  env: Readonly<Record<string, string | undefined>>,
+): boolean {
+  const credentialsPath = textValue(env[credentialsPathEnv]);
+  if (credentialsPath === undefined || !existsSync(credentialsPath)) {
+    return false;
+  }
+
+  return (
+    textValue(env[credentialsMasterKeyEnv]) !== undefined &&
+    textValue(env[internalApiCredentialNameEnv]) !== undefined &&
+    isHttpUrlValue(textValue(env[internalApiHealthUrlEnv]) ?? "")
+  );
 }
 
 function credentialSmokeCheck(
@@ -1462,15 +1484,288 @@ function dockerCheck(
 }
 
 function isPassingCheck(check: string): boolean {
-  return check.endsWith(":configured") || check.endsWith(":ok") || check.endsWith(":installed");
+  return (
+    check.endsWith(":configured") ||
+    check.endsWith(":ok") ||
+    check.endsWith(":installed") ||
+    check.endsWith(":in-memory") ||
+    check.endsWith(":local") ||
+    check.endsWith(":filesystem")
+  );
 }
 
-function renderDoctorAction(action: DoctorNextAction): readonly string[] {
+function isDetailedCommand(command: string): boolean {
+  return command.includes("$") || command.includes("VIVARIUM_") || command.includes("<filled-env-file>");
+}
+
+function actionHasHiddenDetails(action: DoctorNextAction): boolean {
+  return (
+    action.env !== undefined ||
+    action.detailCommand !== undefined ||
+    (action.command !== undefined && isDetailedCommand(action.command))
+  );
+}
+
+const friendlyDoctorCheckNames: Readonly<Record<string, string>> = {
+  state: "Local state",
+  "agent.name": "Agent repository name",
+  "world.name": "World repository name",
+  "liveEnvFile.permissions": "Setup file permissions",
+  "agent.remote": "Agent GitHub remote",
+  "world.remote": "World GitHub remote",
+  "world.subscriptionsPath": "World subscription registry",
+  "world.canonicalRef": "Canonical world subscription",
+  "world.privateForkRef": "Private world subscription",
+  "provider.env": "Model provider connection",
+  "provider.anthropic": "Anthropic connection",
+  "provider.anthropicModel": "Anthropic model",
+  "provider.anthropicContextWindow": "Anthropic context window",
+  "provider.openrouter": "OpenRouter connection",
+  "provider.openrouterModel": "OpenRouter model",
+  "provider.openrouterBaseUrl": "OpenRouter base URL",
+  "provider.openrouterContextWindow": "OpenRouter context window",
+  "provider.privateOaiCompat": "Private model endpoint",
+  "provider.privateOaiCompatContextWindow": "Private model context window",
+  "provider.profilesPath": "Provider profile store",
+  "provider.anthropicProfile": "Anthropic provider profile",
+  "provider.openrouterProfile": "OpenRouter provider profile",
+  "provider.privateOaiCompatProfile": "Private model provider profile",
+  "provider.anthropicSmoke": "Anthropic smoke test",
+  "provider.openrouterSmoke": "OpenRouter smoke test",
+  "provider.privateOaiCompatSmoke": "Private model smoke test",
+  "credentials.path": "Encrypted credential store",
+  "credentials.masterKey": "Credential store master key",
+  "internalApi.credentialName": "Internal API credential name",
+  "internalApi.credentialValue": "Internal API credential value",
+  "internalApi.healthUrl": "Internal API health URL",
+  "credentials.smoke": "Internal API credential smoke test",
+  "github.env": "GitHub token",
+  "github.owner": "GitHub owner",
+  "github.repositoryId": "GitHub repository ID",
+  "github.discussionCategoryId": "GitHub Discussion category",
+  "github.auth": "GitHub authentication",
+  "github.discussion": "Phase 0 GitHub Discussion",
+  "github.agentCi": "Agent CI",
+  "github.worldCi": "World CI",
+  docker: "Docker",
+  "docker.compose": "Docker Compose",
+  "v1.evidencePath": "V1 evidence manifest",
+  "v1.starterPack": "Starter pack evidence",
+  "v1.realGoals": "Real coding goals",
+  "v1.providerSmokes": "Provider smoke evidence",
+  "v1.internalCredentialSmoke": "Internal credential smoke evidence",
+  "v1.worldSubscriptions": "World subscription evidence",
+  "v1.behaviorLoop": "Behavior loop evidence",
+  "v1.dreamArtifacts": "Dream artifact evidence",
+  "v1.publicContribution": "Public contribution evidence",
+  "v1.publishedArtifacts": "Published artifact evidence",
+  "v1.curationStats": "Curation stats evidence",
+  "v1.twoWeekImprovement": "Two-week improvement evidence",
+};
+
+const friendlyDoctorStatuses: Readonly<Record<string, string>> = {
+  configured: "configured",
+  local: "local",
+  filesystem: "filesystem",
+  "in-memory": "in-memory",
+  missing: "missing",
+  placeholder: "needs real values",
+  unavailable: "not created yet",
+  uninitialized: "needs local setup",
+  invalid: "invalid",
+  failed: "failed",
+  mismatch: "mismatch",
+  pending: "pending",
+};
+
+const defaultLocalSetupFilesByCheckName: Readonly<Record<string, readonly string[]>> = {
+  "agent.name": ["~/.vivarium/secrets/agent-repo-name.txt"],
+  "world.name": ["~/.vivarium/secrets/world-repo-name.txt"],
+  "world.canonicalRef": ["~/.vivarium/secrets/canonical-world-ref.txt"],
+  "world.privateForkRef": ["~/.vivarium/secrets/private-world-ref.txt"],
+  "provider.env": [
+    "~/.vivarium/secrets/anthropic.key",
+    "~/.vivarium/secrets/openrouter.key",
+    "~/.vivarium/secrets/private-oai.key",
+    "~/.vivarium/secrets/private-base-url.txt",
+    "~/.vivarium/secrets/private-model.txt",
+    "~/.vivarium/secrets/private-context-window.txt",
+  ],
+  "provider.anthropic": ["~/.vivarium/secrets/anthropic.key"],
+  "provider.openrouter": ["~/.vivarium/secrets/openrouter.key"],
+  "provider.privateOaiCompat": [
+    "~/.vivarium/secrets/private-oai.key",
+    "~/.vivarium/secrets/private-base-url.txt",
+    "~/.vivarium/secrets/private-model.txt",
+    "~/.vivarium/secrets/private-context-window.txt",
+  ],
+  "provider.privateOaiCompatContextWindow": [
+    "~/.vivarium/secrets/private-context-window.txt",
+  ],
+  "credentials.masterKey": ["~/.vivarium/secrets/credential-master.key"],
+  "internalApi.credentialValue": ["~/.vivarium/secrets/internal-api.token"],
+  "internalApi.healthUrl": ["~/.vivarium/secrets/internal-health-url.txt"],
+  "github.env": ["~/.vivarium/secrets/github-token.key"],
+  "github.owner": ["~/.vivarium/secrets/github-owner.txt"],
+  "github.repositoryId": ["~/.vivarium/secrets/github-repository-id.txt"],
+  "github.discussionCategoryId": ["~/.vivarium/secrets/github-discussion-category-id.txt"],
+  "github.auth": ["~/.vivarium/secrets/github-token.key"],
+};
+
+const doctorUnlockGroups: readonly {
+  readonly name: string;
+  readonly matches: (checkName: string) => boolean;
+}[] = [
+  {
+    name: "Local runtime",
+    matches: (checkName) => checkName === "state",
+  },
+  {
+    name: "Setup file",
+    matches: (checkName) => checkName.startsWith("liveEnvFile."),
+  },
+  {
+    name: "Names and worlds",
+    matches: (checkName) =>
+      [
+        "agent.name",
+        "world.name",
+        "agent.remote",
+        "world.remote",
+        "world.subscriptionsPath",
+        "world.canonicalRef",
+        "world.privateForkRef",
+      ].includes(checkName),
+  },
+  {
+    name: "Provider accounts",
+    matches: (checkName) => checkName.startsWith("provider."),
+  },
+  {
+    name: "Internal credential",
+    matches: (checkName) => checkName.startsWith("credentials.") || checkName.startsWith("internalApi."),
+  },
+  {
+    name: "GitHub/public release",
+    matches: (checkName) => checkName.startsWith("github."),
+  },
+  {
+    name: "Runtime services",
+    matches: (checkName) => checkName === "docker" || checkName === "docker.compose",
+  },
+  {
+    name: "V1 evidence",
+    matches: (checkName) => checkName.startsWith("v1."),
+  },
+];
+
+function fallbackDoctorCheckName(name: string): string {
+  return name
+    .replace(/^v1\./, "V1 ")
+    .replace(/\./g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function renderDoctorCheckLabel(check: string, options: RenderDoctorCommandOptions): string {
+  if (options.showDetails === true) {
+    return check;
+  }
+
+  const [name = check, status] = check.split(":");
+  const friendlyName = friendlyDoctorCheckNames[name] ?? fallbackDoctorCheckName(name);
+  if (status === undefined) {
+    return friendlyName;
+  }
+
+  return `${friendlyName}: ${friendlyDoctorStatuses[status] ?? status}`;
+}
+
+function doctorBlockerCountLabel(count: number): string {
+  return count === 1 ? "1 blocker" : `${count} blockers`;
+}
+
+function doctorCheckName(check: string): string {
+  return check.split(":")[0] ?? check;
+}
+
+function actionUsesDefaultLocalSetupFiles(action: DoctorNextAction): boolean {
+  return (
+    action.action.includes("generated local setup file") ||
+    action.action.includes("generated local setup files")
+  );
+}
+
+function renderDoctorLocalSetupFiles(
+  action: DoctorNextAction,
+  options: RenderDoctorCommandOptions,
+): readonly string[] {
+  if (options.showDetails === true || !actionUsesDefaultLocalSetupFiles(action)) {
+    return [];
+  }
+
+  const files = defaultLocalSetupFilesByCheckName[doctorCheckName(action.check)] ?? [];
+  if (files.length === 0) {
+    return [];
+  }
+
+  if (files.length === 1) {
+    return [`        Local file: ${files[0]}`];
+  }
+
+  return ["        Local files:", ...files.map((file) => `          ${file}`)];
+}
+
+function renderDoctorUnlockChecklist(
+  blockedChecks: readonly string[],
+  options: RenderDoctorCommandOptions,
+): readonly string[] {
+  if (options.showDetails === true || blockedChecks.length === 0) {
+    return [];
+  }
+
+  const counts = new Map<string, number>();
+  for (const check of blockedChecks) {
+    const checkName = doctorCheckName(check);
+    const group = doctorUnlockGroups.find((candidate) => candidate.matches(checkName));
+    const groupName = group?.name ?? "Other checks";
+    counts.set(groupName, (counts.get(groupName) ?? 0) + 1);
+  }
+  const title = blockedChecks.every((check) => doctorCheckName(check) === "state")
+    ? "Local unlock checklist:"
+    : "Live unlock checklist:";
+
   return [
-    `  [fix] ${action.check}`,
+    title,
+    ...[
+      ...doctorUnlockGroups.map((group) => group.name),
+      ...(counts.has("Other checks") ? ["Other checks"] : []),
+    ].flatMap((groupName) => {
+      const count = counts.get(groupName) ?? 0;
+      return count === 0 ? [] : [`  [needs] ${groupName}: ${doctorBlockerCountLabel(count)}`];
+    }),
+    "",
+  ];
+}
+
+function renderDoctorAction(
+  action: DoctorNextAction,
+  options: RenderDoctorCommandOptions,
+): readonly string[] {
+  const command =
+    options.showDetails === true
+      ? (action.detailCommand ?? action.command)
+      : action.command !== undefined && !isDetailedCommand(action.command)
+        ? action.command
+        : undefined;
+  return [
+    `  [fix] ${renderDoctorCheckLabel(action.check, options)}`,
     `        ${action.action}`,
-    ...(action.env === undefined ? [] : [`        Env: ${action.env.join(", ")}`]),
-    ...(action.command === undefined ? [] : [`        Command: ${action.command}`]),
+    ...renderDoctorLocalSetupFiles(action, options),
+    ...(options.showDetails === true && action.env !== undefined
+      ? [`        Env: ${action.env.join(", ")}`]
+      : []),
+    ...(command === undefined ? [] : [`        Command: ${command}`]),
     `        Guide: ${action.guide}`,
     ...(action.completionGuide === undefined
       ? []
@@ -1478,10 +1773,15 @@ function renderDoctorAction(action: DoctorNextAction): readonly string[] {
   ];
 }
 
-export function renderDoctorCommandResult(result: DoctorResult): string {
+export function renderDoctorCommandResult(
+  result: DoctorResult,
+  options: RenderDoctorCommandOptions = {},
+): string {
   const passingChecks = result.ok ? result.checks : result.checks.filter(isPassingCheck);
   const blockedChecks = result.ok ? [] : result.checks.filter((check) => !isPassingCheck(check));
   const readyLabel = result.ok ? "ready" : "needs attention";
+  const hiddenDetails =
+    options.showDetails === true ? false : (result.nextActions ?? []).some(actionHasHiddenDetails);
 
   return [
     renderVivariumGlobe(),
@@ -1492,13 +1792,25 @@ export function renderDoctorCommandResult(result: DoctorResult): string {
     `Checks: ${passingChecks.length} passing, ${blockedChecks.length} blocked`,
     "",
     ...(blockedChecks.length === 0
-      ? ["Checks:", ...passingChecks.map((check) => `  [ok] ${check}`)]
+      ? ["Checks:", ...passingChecks.map((check) => `  [ok] ${renderDoctorCheckLabel(check, options)}`)]
       : [
+          ...renderDoctorUnlockChecklist(blockedChecks, options),
           "Blocked checks:",
-          ...blockedChecks.map((check) => `  [fix] ${check}`),
+          ...blockedChecks.map((check) => `  [fix] ${renderDoctorCheckLabel(check, options)}`),
           ...(result.nextActions === undefined || result.nextActions.length === 0
             ? []
-            : ["", "Next actions:", ...result.nextActions.flatMap(renderDoctorAction)]),
+            : [
+                "",
+                "Next actions:",
+                ...result.nextActions.flatMap((action) => renderDoctorAction(action, options)),
+                ...(hiddenDetails
+                  ? [
+                      "",
+                      "Details:",
+                      "  Re-run with --details to show exact env keys and shell commands.",
+                    ]
+                  : []),
+              ]),
         ]),
     "",
   ].join("\n");
@@ -1512,29 +1824,275 @@ function cliCommand(_context: DoctorNextActionContext, args: string): string {
   return `vivarium ${args}`;
 }
 
+function offlineLocalStateCheck(statePath: string): string {
+  if (!existsSync(statePath)) {
+    return "state:unavailable";
+  }
+
+  try {
+    const state = new SQLiteStateRepository(statePath);
+    try {
+      const identity = state.getIdentity();
+      const hasIdentity = identity !== undefined && identity.name.trim().length > 0;
+      const hasStarterSkill = state.listLocalSkills().some(
+        (skill) =>
+          skill.status === "promoted" &&
+          skill.domain.trim().length > 0 &&
+          skill.body.trim().length > 0,
+      );
+      return hasIdentity && hasStarterSkill ? "state:configured" : "state:uninitialized";
+    } finally {
+      state.close();
+    }
+  } catch {
+    return "state:invalid";
+  }
+}
+
+function offlineLocalDoctor(options: DoctorCommandOptions): DoctorResult {
+  if (options.statePath === undefined) {
+    return {
+      ok: true,
+      checks: ["state:in-memory", "provider:local", "world:filesystem"],
+    };
+  }
+
+  const stateCheck = offlineLocalStateCheck(options.statePath);
+  const checks = [stateCheck, "provider:local", "world:filesystem"];
+  const ok = stateCheck === "state:configured";
+  const stateAction =
+    stateCheck === "state:invalid"
+      ? "Move the invalid local SQLite state aside, then run vivarium local to create a fresh local memory database."
+      : stateCheck === "state:uninitialized"
+        ? "Run vivarium local to seed local-agent identity and starter skills, then rerun vivarium doctor."
+      : "Run vivarium local to initialize local SQLite memory, then rerun vivarium doctor.";
+  return {
+    ok,
+    checks,
+    ...(ok
+      ? {}
+      : {
+          nextActions: [
+            {
+              check: stateCheck,
+              action: stateAction,
+              command: "vivarium local",
+              guide: "docs/guides/install.md",
+            },
+          ],
+        }),
+  };
+}
+
+function isDefaultLiveEnvFile(envFilePath: string | undefined): boolean {
+  return (
+    envFilePath === "live-readiness.local.env" ||
+    envFilePath?.endsWith("/.vivarium/live/live-readiness.local.env") === true
+  );
+}
+
 function liveSetupCommand(context: DoctorNextActionContext): string {
   const envFilePath = context.envFilePath ?? "<filled-env-file>";
-  return cliCommand(context, `live setup --env-file ${shellQuote(envFilePath)} --confirm-write`);
+  if (isDefaultLiveEnvFile(context.envFilePath)) {
+    return cliCommand(context, "connect setup --confirm-write");
+  }
+
+  return cliCommand(context, `connect setup --env-file ${shellQuote(envFilePath)} --confirm-write`);
+}
+
+function liveConnectCommand(context: DoctorNextActionContext): string {
+  if (context.envFilePath === undefined) {
+    return cliCommand(context, "connect");
+  }
+  if (isDefaultLiveEnvFile(context.envFilePath)) {
+    return cliCommand(context, "connect");
+  }
+
+  return cliCommand(context, `connect --env-file ${shellQuote(context.envFilePath)}`);
+}
+
+function liveAccountHandoffCommand(context: DoctorNextActionContext): string {
+  return usesDefaultLiveSetup(context)
+    ? cliCommand(context, "connect signup")
+    : liveConnectWizardCommand(context);
+}
+
+function liveConnectFillCommand(context: DoctorNextActionContext): string {
+  if (context.envFilePath === undefined) {
+    return liveConnectCommand(context);
+  }
+  if (isDefaultLiveEnvFile(context.envFilePath)) {
+    return cliCommand(context, "connect fill");
+  }
+
+  return cliCommand(context, `connect fill --env-file ${shellQuote(context.envFilePath)}`);
+}
+
+function liveConnectWizardCommand(context: DoctorNextActionContext): string {
+  const setupFlags = "--secrets-dir ~/.vivarium/secrets --setup-dir ~/.vivarium/live";
+  if (context.envFilePath === undefined) {
+    return cliCommand(context, "setup live");
+  }
+  if (isDefaultLiveEnvFile(context.envFilePath)) {
+    return cliCommand(context, "setup live");
+  }
+
+  return cliCommand(
+    context,
+    `connect wizard --path ${shellQuote(context.envFilePath)} ${setupFlags}`,
+  );
+}
+
+function liveConnectSmokeCommand(context: DoctorNextActionContext): string {
+  if (context.envFilePath === undefined) {
+    return cliCommand(context, "connect");
+  }
+  if (isDefaultLiveEnvFile(context.envFilePath)) {
+    return cliCommand(context, "connect smoke");
+  }
+
+  return cliCommand(context, `connect smoke --env-file ${shellQuote(context.envFilePath)}`);
+}
+
+function liveProofInitCommand(
+  context: DoctorNextActionContext,
+  options: { readonly overwrite?: boolean } = {},
+): string {
+  const suffix = options.overwrite === true ? " --overwrite" : "";
+  if (context.envFilePath === undefined) {
+    return cliCommand(context, `proof init${suffix}`);
+  }
+  if (isDefaultLiveEnvFile(context.envFilePath)) {
+    return cliCommand(context, `proof init${suffix}`);
+  }
+
+  return cliCommand(
+    context,
+    `proof init --env-file ${shellQuote(context.envFilePath)}${suffix}`,
+  );
+}
+
+function liveEnvFileLabel(context: DoctorNextActionContext): string {
+  return context.envFilePath ?? "the live readiness env file";
+}
+
+function usesDefaultLiveSetup(context: DoctorNextActionContext): boolean {
+  return context.envFilePath === undefined || isDefaultLiveEnvFile(context.envFilePath);
+}
+
+const providerSetupHandoffChecks = [
+  "provider.env",
+  "provider.anthropic",
+  "provider.openrouter",
+  "provider.privateOaiCompat",
+] as const;
+
+const providerSetupFillChecks = [
+  "provider.anthropicModel",
+  "provider.anthropicContextWindow",
+  "provider.openrouterModel",
+  "provider.openrouterBaseUrl",
+  "provider.openrouterContextWindow",
+  "provider.privateOaiCompatContextWindow",
+] as const;
+
+const credentialSetupHandoffChecks = [
+  "credentials.masterKey",
+  "internalApi.credentialValue",
+  "internalApi.healthUrl",
+] as const;
+
+function hasBlockingNamedCheck(
+  context: DoctorNextActionContext,
+  names: readonly string[],
+): boolean {
+  return names.some((name) => {
+    const check = context.checks?.find((candidate) => doctorCheckName(candidate) === name);
+    return check !== undefined && !isPassingCheck(check);
+  });
+}
+
+function hasProviderSetupPrerequisiteBlocker(context: DoctorNextActionContext): boolean {
+  return hasBlockingNamedCheck(context, [
+    ...providerSetupHandoffChecks,
+    ...providerSetupFillChecks,
+  ]);
+}
+
+function providerSetupPrerequisiteCommand(context: DoctorNextActionContext): string {
+  if (hasBlockingNamedCheck(context, providerSetupHandoffChecks)) {
+    return liveAccountHandoffCommand(context);
+  }
+  if (hasBlockingNamedCheck(context, providerSetupFillChecks)) {
+    return liveConnectFillCommand(context);
+  }
+
+  return liveSetupCommand(context);
+}
+
+function providerProfilesPathAction(context: DoctorNextActionContext): string {
+  if (usesDefaultLiveSetup(context) && hasProviderSetupPrerequisiteBlocker(context)) {
+    return "Complete provider handoff/fill values first, then run vivarium connect setup to create the generated provider profile file.";
+  }
+
+  return usesDefaultLiveSetup(context)
+    ? "Run vivarium connect setup to create the generated provider profile file."
+    : `Fill the provider profiles path in ${liveEnvFileLabel(context)}, then create the configured provider profiles.`;
+}
+
+function providerProfileAction(context: DoctorNextActionContext, label: string): string {
+  if (usesDefaultLiveSetup(context) && hasProviderSetupPrerequisiteBlocker(context)) {
+    return `Complete provider handoff/fill values first, then run vivarium connect setup to create or refresh the ${label} provider profile.`;
+  }
+
+  return usesDefaultLiveSetup(context)
+    ? `Run vivarium connect setup to create or refresh the ${label} provider profile.`
+    : `Fill and create the ${label} provider profile from ${liveEnvFileLabel(context)}.`;
+}
+
+function credentialStoreAction(context: DoctorNextActionContext): string {
+  if (
+    usesDefaultLiveSetup(context) &&
+    hasBlockingNamedCheck(context, credentialSetupHandoffChecks)
+  ) {
+    return "Complete internal credential handoff values first, then run vivarium connect setup to create the encrypted credential store at the generated local setup path.";
+  }
+
+  return usesDefaultLiveSetup(context)
+    ? "Run vivarium connect setup to create the encrypted credential store at the generated local setup path."
+    : `Create the encrypted credential store and save its path in ${liveEnvFileLabel(context)}.`;
+}
+
+function credentialStoreCommand(context: DoctorNextActionContext): string {
+  return hasBlockingNamedCheck(context, credentialSetupHandoffChecks)
+    ? liveAccountHandoffCommand(context)
+    : liveSetupCommand(context);
 }
 
 function nextActionForCheck(check: string, context: DoctorNextActionContext): DoctorNextAction {
   const guide = "docs/guides/live-readiness.md";
   const completionGuide = `${guide}#completion-boundary`;
-  const [name = check] = check.split(":");
+  const [name = check, status = ""] = check.split(":");
 
   switch (name) {
     case "agent.name":
       return {
         check,
-        action: "Choose the final agent repo name and export it for live readiness.",
+        action: usesDefaultLiveSetup(context)
+          ? "Paste the final agent repo name into its generated local setup file, then rerun vivarium setup live."
+          : `Choose the final agent repo name in ${liveEnvFileLabel(context)} before live readiness.`,
         env: [agentRepoNameEnv],
+        ...(usesDefaultLiveSetup(context) ? { command: liveConnectWizardCommand(context) } : {}),
         guide: `${guide}#naming-gate`,
       };
     case "world.name":
       return {
         check,
-        action: "Choose the final world repo name and export it for live readiness.",
+        action: usesDefaultLiveSetup(context)
+          ? "Paste the final world repo name into its generated local setup file, then rerun vivarium setup live."
+          : `Choose the final world repo name in ${liveEnvFileLabel(context)} before live readiness.`,
         env: [worldRepoNameEnv],
+        ...(usesDefaultLiveSetup(context) ? { command: liveConnectWizardCommand(context) } : {}),
         guide: `${guide}#naming-gate`,
       };
     case "liveEnvFile.permissions":
@@ -1564,9 +2122,17 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "world.subscriptionsPath":
       return {
         check,
-        action: "Create a world subscription registry and export its path.",
+        action: usesDefaultLiveSetup(context)
+          ? "Run vivarium setup live to stage the default world subscription registry path."
+          : `Create a world subscription registry and save its path in ${liveEnvFileLabel(context)}.`,
         env: [worldSubscriptionsPathEnv],
-        command: cliCommand(
+        command: usesDefaultLiveSetup(context)
+          ? liveConnectWizardCommand(context)
+          : cliCommand(
+              context,
+              'world subscribe --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" --world-root <world-root> --world-label canonical --world-ref <world-ref>',
+            ),
+        detailCommand: cliCommand(
           context,
           'world subscribe --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" --world-root <world-root> --world-label canonical --world-ref <world-ref>',
         ),
@@ -1575,9 +2141,17 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "world.canonicalRef":
       return {
         check,
-        action: "Export the canonical world ref and ensure it exists in the subscription registry.",
+        action: usesDefaultLiveSetup(context)
+          ? "Paste the canonical world ref into its generated local setup file, then rerun vivarium setup live."
+          : `Fill the canonical world ref in ${liveEnvFileLabel(context)} and ensure it exists in the subscription registry.`,
         env: [canonicalWorldRefEnv],
-        command: cliCommand(
+        command: usesDefaultLiveSetup(context)
+          ? liveConnectWizardCommand(context)
+          : cliCommand(
+              context,
+              'world subscribe --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" --world-root <canonical-world-root> --world-label canonical --world-ref "$VIVARIUM_CANONICAL_WORLD_REF"',
+            ),
+        detailCommand: cliCommand(
           context,
           'world subscribe --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" --world-root <canonical-world-root> --world-label canonical --world-ref "$VIVARIUM_CANONICAL_WORLD_REF"',
         ),
@@ -1586,10 +2160,17 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "world.privateForkRef":
       return {
         check,
-        action:
-          "Export the private fork world ref and ensure it exists in the subscription registry.",
+        action: usesDefaultLiveSetup(context)
+          ? "Paste the private world ref into its generated local setup file, then rerun vivarium setup live."
+          : `Fill the private fork world ref in ${liveEnvFileLabel(context)} and ensure it exists in the subscription registry.`,
         env: [privateWorldRefEnv],
-        command: cliCommand(
+        command: usesDefaultLiveSetup(context)
+          ? liveConnectWizardCommand(context)
+          : cliCommand(
+              context,
+              'world subscribe --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" --world-root <private-world-root> --world-label private --world-ref "$VIVARIUM_PRIVATE_WORLD_REF" --auto-push',
+            ),
+        detailCommand: cliCommand(
           context,
           'world subscribe --subscriptions-path "$VIVARIUM_WORLD_SUBSCRIPTIONS_PATH" --world-root <private-world-root> --world-label private --world-ref "$VIVARIUM_PRIVATE_WORLD_REF" --auto-push',
         ),
@@ -1598,36 +2179,49 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "provider.env":
       return {
         check,
-        action: "Export at least one provider API key before live provider smoke tests.",
+        action: usesDefaultLiveSetup(context)
+          ? "Open vivarium connect signup for account and key handoff, then paste provider values into generated local setup files and rerun vivarium setup live before smoke tests."
+          : "Open the custom-path connect wizard, then connect at least one model provider before live smoke tests.",
         env: [anthropicApiKeyEnv, openRouterApiKeyEnv, privateOaiCompatApiKeyEnv],
+        command: liveAccountHandoffCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.anthropic":
       return {
         check,
-        action: "Export the Anthropic API key for v1 provider coverage.",
+        action: usesDefaultLiveSetup(context)
+          ? "Open vivarium connect signup for the Anthropic key, then paste it into its generated local setup file and rerun vivarium setup live."
+          : "Use the custom-path connect wizard to add an Anthropic API key, then save the Anthropic provider profile.",
         env: [anthropicApiKeyEnv],
+        command: liveAccountHandoffCommand(context),
+        detailCommand: cliCommand(
+          context,
+          'providers configure --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --name "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE" --kind anthropic --api-key-env ANTHROPIC_API_KEY --model "$VIVARIUM_ANTHROPIC_MODEL" --capability chat --capability tools --context-window "$VIVARIUM_ANTHROPIC_CONTEXT_WINDOW" --cost-class expensive',
+        ),
         guide: `${guide}#provider-environment`,
       };
     case "provider.anthropicModel":
       return {
         check,
-        action:
-          "Export the Anthropic model name used by live setup when creating the Anthropic provider profile.",
+        action: `Fill the Anthropic model in ${liveEnvFileLabel(context)}.`,
         env: [anthropicModelEnv],
+        command: liveConnectFillCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.anthropicContextWindow":
       return {
         check,
-        action: "Export a positive integer Anthropic context window used by live setup.",
+        action: `Fill the Anthropic context window in ${liveEnvFileLabel(context)} with a positive integer.`,
         env: [anthropicContextWindowEnv],
+        command: liveConnectFillCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.openrouter":
       return {
         check,
-        action: "Export the OpenRouter API key and save an OpenRouter provider profile.",
+        action: usesDefaultLiveSetup(context)
+          ? "Open vivarium connect signup for the OpenRouter key, then paste it into its generated local setup file and rerun vivarium setup live."
+          : "Use the custom-path connect wizard to add an OpenRouter API key, then save the OpenRouter provider profile.",
         env: [
           openRouterApiKeyEnv,
           openRouterProviderProfileEnv,
@@ -1635,7 +2229,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
           openRouterBaseUrlEnv,
           openRouterContextWindowEnv,
         ],
-        command: cliCommand(
+        command: liveAccountHandoffCommand(context),
+        detailCommand: cliCommand(
           context,
           'providers configure --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --name "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE" --kind openai-compat --api-key-env OPENROUTER_API_KEY --model "$VIVARIUM_OPENROUTER_MODEL" --base-url "$VIVARIUM_OPENROUTER_BASE_URL" --capability chat --capability json_mode --context-window "$VIVARIUM_OPENROUTER_CONTEXT_WINDOW" --cost-class medium',
         ),
@@ -1644,74 +2239,87 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "provider.openrouterModel":
       return {
         check,
-        action:
-          "Export the OpenRouter model name used by live setup when creating the OpenRouter provider profile.",
+        action: `Fill the OpenRouter model in ${liveEnvFileLabel(context)}.`,
         env: [openRouterModelEnv],
+        command: liveConnectFillCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.openrouterBaseUrl":
       return {
         check,
-        action:
-          "Export the complete http:// or https:// OpenRouter-compatible base URL used by live setup.",
+        action: `Fill the OpenRouter base URL in ${liveEnvFileLabel(context)}.`,
         env: [openRouterBaseUrlEnv],
+        command: liveConnectFillCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.openrouterContextWindow":
       return {
         check,
-        action: "Export a positive integer OpenRouter context window used by live setup.",
+        action: `Fill the OpenRouter context window in ${liveEnvFileLabel(context)} with a positive integer.`,
         env: [openRouterContextWindowEnv],
+        command: liveConnectFillCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.privateOaiCompat":
       return {
         check,
-        action:
-          "Export the private OpenAI-compatible provider key, complete http:// or https:// base URL, and model.",
+        action: usesDefaultLiveSetup(context)
+          ? "Open vivarium connect signup for the private endpoint handoff, then paste its API key, base URL, model, and context window into generated local setup files and rerun vivarium setup live."
+          : "Use the custom-path connect wizard to connect the private OpenAI-compatible endpoint, then save its provider profile.",
         env: [
           privateOaiCompatApiKeyEnv,
           privateOaiCompatBaseUrlEnv,
           privateOaiCompatModelEnv,
           privateOaiCompatContextWindowEnv,
         ],
+        command: liveAccountHandoffCommand(context),
+        detailCommand: cliCommand(
+          context,
+          'providers configure --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --name "$VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE" --kind openai-compat --api-key-env VIVARIUM_OAI_COMPAT_API_KEY --model "$VIVARIUM_OAI_COMPAT_MODEL" --base-url "$VIVARIUM_OAI_COMPAT_BASE_URL" --capability chat --capability json_mode --context-window "$VIVARIUM_OAI_COMPAT_CONTEXT_WINDOW" --cost-class medium',
+        ),
         guide: `${guide}#provider-environment`,
       };
     case "provider.privateOaiCompatContextWindow":
       return {
         check,
         action:
-          "Export a positive integer private OpenAI-compatible context window used by live setup.",
+          usesDefaultLiveSetup(context)
+            ? "Open vivarium connect signup for the private endpoint context window, then paste it into its generated local setup file and rerun vivarium setup live."
+            : `Fill the private OpenAI-compatible context window in ${liveEnvFileLabel(context)} with a positive integer.`,
         env: [privateOaiCompatContextWindowEnv],
+        command: usesDefaultLiveSetup(context) ? liveAccountHandoffCommand(context) : liveConnectFillCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.profilesPath":
       return {
         check,
-        action: "Export the provider profiles path and create the configured provider profiles.",
+        action: providerProfilesPathAction(context),
         env: [providerProfilesPathEnv],
-        command: liveSetupCommand(context),
+        command: providerSetupPrerequisiteCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.anthropicProfile":
       return {
         check,
-        action: "Export and create the Anthropic provider profile.",
+        action: providerProfileAction(context, "Anthropic"),
         env: [anthropicProviderProfileEnv],
+        command: providerSetupPrerequisiteCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.openrouterProfile":
       return {
         check,
-        action: "Export and create the OpenRouter provider profile.",
+        action: providerProfileAction(context, "OpenRouter"),
         env: [openRouterProviderProfileEnv],
+        command: providerSetupPrerequisiteCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.privateOaiCompatProfile":
       return {
         check,
-        action: "Export and create the private OpenAI-compatible provider profile.",
+        action: providerProfileAction(context, "private OpenAI-compatible"),
         env: [privateOaiCompatProviderProfileEnv],
+        command: providerSetupPrerequisiteCommand(context),
         guide: `${guide}#provider-environment`,
       };
     case "provider.anthropicSmoke":
@@ -1725,7 +2333,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
           anthropicModelEnv,
           anthropicContextWindowEnv,
         ],
-        command: cliCommand(
+        command: liveConnectSmokeCommand(context),
+        detailCommand: cliCommand(
           context,
           'providers smoke --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --profile "$VIVARIUM_ANTHROPIC_PROVIDER_PROFILE"',
         ),
@@ -1743,7 +2352,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
           openRouterBaseUrlEnv,
           openRouterContextWindowEnv,
         ],
-        command: cliCommand(
+        command: liveConnectSmokeCommand(context),
+        detailCommand: cliCommand(
           context,
           'providers smoke --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --profile "$VIVARIUM_OPENROUTER_PROVIDER_PROFILE"',
         ),
@@ -1762,7 +2372,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
           privateOaiCompatModelEnv,
           privateOaiCompatContextWindowEnv,
         ],
-        command: cliCommand(
+        command: liveConnectSmokeCommand(context),
+        detailCommand: cliCommand(
           context,
           'providers smoke --profiles-path "$VIVARIUM_PROVIDER_PROFILES_PATH" --profile "$VIVARIUM_PRIVATE_OAI_COMPAT_PROVIDER_PROFILE"',
         ),
@@ -1771,38 +2382,49 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "credentials.path":
       return {
         check,
-        action: "Create the encrypted credential store and export its path.",
+        action: credentialStoreAction(context),
         env: [credentialsPathEnv],
-        command: liveSetupCommand(context),
+        command: credentialStoreCommand(context),
         guide: `${guide}#internal-api-credential`,
       };
     case "credentials.masterKey":
       return {
         check,
-        action: "Export the local credential store master key used by credential smoke tests.",
+        action: usesDefaultLiveSetup(context)
+          ? "Open vivarium connect signup for the internal credential handoff, then paste the credential store master key into its generated local setup file and rerun vivarium setup live."
+          : `Fill the local credential store master key in ${liveEnvFileLabel(context)}.`,
         env: [credentialsMasterKeyEnv],
+        command: usesDefaultLiveSetup(context) ? liveAccountHandoffCommand(context) : liveConnectFillCommand(context),
         guide: `${guide}#internal-api-credential`,
       };
     case "internalApi.credentialName":
       return {
         check,
-        action: "Export the encrypted credential name used for the internal API smoke test.",
+        action: usesDefaultLiveSetup(context)
+          ? "Run vivarium setup live to write the default internal API credential name."
+          : `Fill the encrypted credential name in ${liveEnvFileLabel(context)}.`,
         env: [internalApiCredentialNameEnv],
+        command: usesDefaultLiveSetup(context) ? liveConnectWizardCommand(context) : liveConnectCommand(context),
         guide: `${guide}#internal-api-credential`,
       };
     case "internalApi.credentialValue":
       return {
         check,
-        action: "Export the internal API credential value used to create the encrypted credential.",
+        action: usesDefaultLiveSetup(context)
+          ? "Open vivarium connect signup for the internal API token handoff, then paste it into its generated local setup file and rerun vivarium setup live."
+          : `Fill the internal API credential value in ${liveEnvFileLabel(context)}.`,
         env: [internalApiCredentialValueEnv],
+        command: usesDefaultLiveSetup(context) ? liveAccountHandoffCommand(context) : liveConnectFillCommand(context),
         guide: `${guide}#internal-api-credential`,
       };
     case "internalApi.healthUrl":
       return {
         check,
-        action:
-          "Export the complete http:// or https:// internal API health URL used by credential smoke tests.",
+        action: usesDefaultLiveSetup(context)
+          ? "Open vivarium connect signup for the internal API health URL handoff, then paste it into its generated local setup file and rerun vivarium setup live."
+          : `Fill the internal API health URL in ${liveEnvFileLabel(context)}.`,
         env: [internalApiHealthUrlEnv],
+        command: usesDefaultLiveSetup(context) ? liveAccountHandoffCommand(context) : liveConnectFillCommand(context),
         guide: `${guide}#internal-api-credential`,
       };
     case "credentials.smoke":
@@ -1816,7 +2438,8 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
           internalApiCredentialNameEnv,
           internalApiHealthUrlEnv,
         ],
-        command: cliCommand(
+        command: liveConnectSmokeCommand(context),
+        detailCommand: cliCommand(
           context,
           'credentials smoke --path "$VIVARIUM_CREDENTIALS_PATH" --master-key "$VIVARIUM_CREDENTIALS_MASTER_KEY" --name "$VIVARIUM_INTERNAL_API_CREDENTIAL_NAME" --url "$VIVARIUM_INTERNAL_API_HEALTH_URL" --method GET',
         ),
@@ -1825,35 +2448,49 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
     case "github.env":
       return {
         check,
-        action: "Export a GitHub token for live GitHub smoke and write checks.",
+        action: usesDefaultLiveSetup(context)
+          ? "Open vivarium connect signup for GitHub/public release handoff, then paste the GitHub token into its generated local setup file and rerun vivarium setup live."
+          : `Add a GitHub token for live smoke and write checks to ${liveEnvFileLabel(context)}.`,
         env: [...githubEnvNames],
+        ...(usesDefaultLiveSetup(context) ? { command: liveAccountHandoffCommand(context) } : {}),
         guide: `${guide}#github-auth`,
       };
     case "github.owner":
       return {
         check,
-        action: "Export the GitHub owner or organization for the canonical world repo.",
+        action: usesDefaultLiveSetup(context)
+          ? "Open vivarium connect signup for GitHub/public release handoff, then paste the GitHub owner into its generated local setup file and rerun vivarium setup live."
+          : `Fill the GitHub owner or organization for the canonical world repo in ${liveEnvFileLabel(context)}.`,
         env: [githubOwnerEnv],
+        ...(usesDefaultLiveSetup(context) ? { command: liveAccountHandoffCommand(context) } : {}),
         guide: `${guide}#github-auth`,
       };
     case "github.repositoryId":
       return {
         check,
-        action: "Export the GitHub GraphQL repository ID for Discussion creation.",
+        action: usesDefaultLiveSetup(context)
+          ? "Open vivarium connect signup for GitHub/public release handoff, then paste the GitHub repository ID into its generated local setup file and rerun vivarium setup live."
+          : `Fill the GitHub GraphQL repository ID for Discussion creation in ${liveEnvFileLabel(context)}.`,
         env: [githubRepositoryIdEnv],
+        ...(usesDefaultLiveSetup(context) ? { command: liveAccountHandoffCommand(context) } : {}),
         guide: `${guide}#github-auth`,
       };
     case "github.discussionCategoryId":
       return {
         check,
-        action: "Export the GitHub Discussion category ID for the Phase 0 RFC.",
+        action: usesDefaultLiveSetup(context)
+          ? "Open vivarium connect signup for GitHub/public release handoff, then paste the GitHub Discussion category ID into its generated local setup file and rerun vivarium setup live."
+          : `Fill the GitHub Discussion category ID for the Phase 0 RFC in ${liveEnvFileLabel(context)}.`,
         env: [githubDiscussionCategoryIdEnv],
+        ...(usesDefaultLiveSetup(context) ? { command: liveAccountHandoffCommand(context) } : {}),
         guide: `${guide}#github-auth`,
       };
     case "github.auth":
       return {
         check,
-        action: "Refresh GitHub CLI authentication or export a valid GitHub token.",
+        action: usesDefaultLiveSetup(context)
+          ? "Refresh GitHub CLI authentication, or paste a valid GitHub token into its generated local setup file and rerun vivarium setup live."
+          : `Refresh GitHub CLI authentication or add a valid GitHub token to ${liveEnvFileLabel(context)}.`,
         env: [...githubEnvNames],
         command: "gh auth status",
         guide: `${guide}#github-auth`,
@@ -1869,7 +2506,10 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
           githubRepositoryIdEnv,
           githubDiscussionCategoryIdEnv,
         ],
-        command: cliCommand(
+        ...(usesDefaultLiveSetup(context)
+          ? { command: cliCommand(context, "github discussion --confirm-write") }
+          : {}),
+        detailCommand: cliCommand(
           context,
           'github discussion --owner "$VIVARIUM_GITHUB_OWNER" --repo "$VIVARIUM_WORLD_REPO_NAME" --token-env GITHUB_TOKEN --repository-id "$VIVARIUM_GITHUB_REPOSITORY_ID" --category-id "$VIVARIUM_GITHUB_DISCUSSION_CATEGORY_ID" --title "RFC 0001: Phase 0 Bootstrap" --body "$(cat ../the-world/proposals/0001-phase-0-bootstrap-rfc.md)" --confirm-write',
         ),
@@ -1880,7 +2520,15 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: "Make the latest agent GitHub Actions CI run on main complete successfully.",
         env: [githubOwnerEnv, agentRepoNameEnv],
-        command:
+        ...(usesDefaultLiveSetup(context)
+          ? {
+              command: cliCommand(
+                context,
+                "github workflow-runs --target agent --branch main --limit 1",
+              ),
+            }
+          : {}),
+        detailCommand:
           'gh run list --repo "$VIVARIUM_GITHUB_OWNER/$VIVARIUM_AGENT_REPO_NAME" --branch main --workflow CI --limit 1',
         guide: `${guide}#github-auth`,
       };
@@ -1889,7 +2537,15 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
         check,
         action: "Make the latest world GitHub Actions CI run on main complete successfully.",
         env: [githubOwnerEnv, worldRepoNameEnv],
-        command:
+        ...(usesDefaultLiveSetup(context)
+          ? {
+              command: cliCommand(
+                context,
+                "github workflow-runs --target world --branch main --limit 1",
+              ),
+            }
+          : {}),
+        detailCommand:
           'gh run list --repo "$VIVARIUM_GITHUB_OWNER/$VIVARIUM_WORLD_REPO_NAME" --branch main --workflow CI --limit 1',
         guide: `${guide}#github-auth`,
       };
@@ -1911,9 +2567,18 @@ function nextActionForCheck(check: string, context: DoctorNextActionContext): Do
       return {
         check,
         action:
-          "Create the v1 evidence manifest and export its path before claiming live v1 verification.",
+          status === "missing" || status === "placeholder"
+            ? usesDefaultLiveSetup(context)
+              ? "Run vivarium setup live so it can save the v1 evidence manifest path before live verification."
+              : "Run the custom-path connect wizard with the setup directory so it can save the v1 evidence manifest path before live verification."
+            : usesDefaultLiveSetup(context)
+              ? "Run vivarium proof init to create or repair the generated v1 evidence manifest before claiming live verification."
+              : `Create or repair the configured v1 evidence manifest from ${liveEnvFileLabel(context)} before claiming live v1 verification.`,
         env: [v1EvidencePathEnv],
-        command: cliCommand(context, 'live evidence-init --path "$VIVARIUM_V1_EVIDENCE_PATH"'),
+        command:
+          status === "missing" || status === "placeholder"
+            ? liveConnectWizardCommand(context)
+            : liveProofInitCommand(context, { overwrite: status === "invalid" }),
         guide: `${guide}#v1-evidence-manifest`,
         completionGuide,
       };
@@ -2204,7 +2869,7 @@ function liveReadinessDoctor(options: DoctorCommandOptions): DoctorResult {
     checks,
     nextActions: checks
       .filter((check) => !isPassingCheck(check))
-      .map((check) => nextActionForCheck(check, nextActionContext)),
+      .map((check) => nextActionForCheck(check, { ...nextActionContext, checks })),
   };
 }
 
@@ -2213,8 +2878,5 @@ export function doctorCommand(options: DoctorCommandOptions = {}): DoctorResult 
     return liveReadinessDoctor(options);
   }
 
-  return {
-    ok: true,
-    checks: ["state:in-memory", "provider:local", "world:filesystem"],
-  };
+  return offlineLocalDoctor(options);
 }

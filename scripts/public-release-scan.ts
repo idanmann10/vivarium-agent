@@ -58,11 +58,14 @@ export function scanPublicReleaseFiles(files: readonly PublicReleaseFile[]): rea
   return failures;
 }
 
-function trackedFiles(): readonly string[] {
-  const result = Bun.spawnSync(["git", "ls-files", "-z"], {
-    stdout: "pipe",
-    stderr: "pipe",
-  });
+function releaseCandidatePaths(): readonly string[] {
+  const result = Bun.spawnSync(
+    ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+    {
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
 
   if (result.exitCode !== 0) {
     const stderr = new TextDecoder().decode(result.stderr);
@@ -75,12 +78,12 @@ function trackedFiles(): readonly string[] {
     .filter((path) => path.length > 0);
 }
 
-function readTrackedFiles(paths: readonly string[]): readonly PublicReleaseFile[] {
+function readCandidateFiles(paths: readonly string[]): readonly PublicReleaseFile[] {
   return paths.map((path) => ({ path, text: readFileSync(path, "utf8") }));
 }
 
 if (import.meta.main) {
-  const failures = scanPublicReleaseFiles(readTrackedFiles(trackedFiles()));
+  const failures = scanPublicReleaseFiles(readCandidateFiles(releaseCandidatePaths()));
 
   if (failures.length > 0) {
     console.error(failures.join("\n"));

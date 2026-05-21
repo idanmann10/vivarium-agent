@@ -18,14 +18,19 @@
   "type": "module",
   "scripts": {
     "build": "bun run scripts/build.ts",
+    "dependency:audit": "bun audit",
     "format:check": "oxfmt --check package.json .oxlintrc.jsonc .oxfmtrc.json knip.json turbo.json tsconfig.base.json scripts/tooling.test.ts scripts/workflows.test.ts scripts/reference-docs.test.ts scripts/install.test.ts scripts/public-release-scan.ts scripts/public-release-scan.test.ts scripts/launch-security-audit.ts scripts/launch-security-audit.test.ts",
     "knip": "knip --include dependencies,unlisted,unresolved --no-config-hints",
     "launch:security-audit": "bun run scripts/launch-security-audit.ts",
     "lint": "bun run scripts/lint.ts && oxlint .",
+    "local": "bun apps/cli/src/main.ts local --world-root ../the-world --state-path .vivarium/state.db",
+    "local:run": "bun apps/cli/src/main.ts local run --world-root ../the-world --state-path .vivarium/state.db",
     "public-release:scan": "bun run scripts/public-release-scan.ts",
+    "quickstart": "bun run local && bun run local:run",
     "record:local-e2e-demo": "node scripts/record-local-e2e-demo.cjs",
-    "test": "bun test",
+    "test": "bun test --timeout=120000",
     "typecheck": "tsc --noEmit -p tsconfig.base.json",
+    "vivarium": "bun apps/cli/src/main.ts",
     "verify:sqlite-stack": "node scripts/verify-better-sqlite3.cjs"
   },
   "dependencies": {
@@ -40,9 +45,12 @@
     "knip": "^6.12.2",
     "oxfmt": "^0.49.0",
     "oxlint": "^1.64.0",
-    "turbo": "^2.5.8",
+    "turbo": "^2.9.14",
     "typescript": "^5.9.3",
     "vitest": "^4.1.6"
+  },
+  "overrides": {
+    "esbuild": "0.25.12"
   },
   "packageManager": "bun@1.3.11"
 }

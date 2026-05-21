@@ -16,6 +16,8 @@ bun apps/daemon/src/main.ts
 ```
 
 The default listener is `http://127.0.0.1:8787`. Override it with `VIVARIUM_DAEMON_HOST`,
-`VIVARIUM_DAEMON_PORT`, and `VIVARIUM_WORLD_ROOT`.
+`VIVARIUM_DAEMON_PORT`, `VIVARIUM_WORLD_ROOT`, and `VIVARIUM_STATE_PATH`. When
+`VIVARIUM_STATE_PATH` is omitted, the daemon uses `$HOME/.vivarium/state.db` if
+`HOME` is available; otherwise it falls back to in-memory state.
 
 Docker Compose supervision is documented in `docs/guides/deploy-local-compose.md`.

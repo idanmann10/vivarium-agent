@@ -17,7 +17,12 @@ import {
   scanToolOutputForPromptInjection,
   type ComputerUseConfirmationLevel,
 } from "./safety/pipeline.js";
-import { resolveToolPolicy, type ToolPolicy, type ToolPolicyAction } from "./safety/policies.js";
+import {
+  evaluateToolPolicyForRequest,
+  type ResolvedToolPolicy,
+  type ToolPolicy,
+  type ToolPolicyAction,
+} from "./safety/policies.js";
 
 export interface ToolDispatchRequest {
   readonly name: string;
@@ -40,6 +45,7 @@ export interface ToolDispatchEvent {
   readonly name: string;
   readonly status: "ok" | "error" | "blocked";
   readonly reason?: string;
+  readonly policy?: ResolvedToolPolicy;
 }
 
 export interface ToolSafetySurpriseEvent {
@@ -321,18 +327,25 @@ function credentialArgumentSurprise(name: string): ToolSafetySurpriseEvent {
   };
 }
 
-function dispatchEvent(name: string, result: ToolDispatchResult): ToolDispatchEvent {
+function dispatchEvent(
+  name: string,
+  result: ToolDispatchResult,
+  policy?: ResolvedToolPolicy,
+): ToolDispatchEvent {
   if (result.ok) {
-    return result.warnings === undefined || result.warnings.length === 0
-      ? { name, status: "ok" }
-      : { name, status: "ok", reason: result.warnings.join("; ") };
+    const okEvent =
+      result.warnings === undefined || result.warnings.length === 0
+        ? { name, status: "ok" as const }
+        : { name, status: "ok" as const, reason: result.warnings.join("; ") };
+    return policy === undefined ? okEvent : { ...okEvent, policy };
   }
 
-  return {
+  const event: ToolDispatchEvent = {
     name,
     status: result.blocked === true ? "blocked" : "error",
     reason: result.error,
   };
+  return policy === undefined ? event : { ...event, policy };
 }
 
 function fromExternalResult(result: ExternalToolResult): ToolDispatchResult {
@@ -356,30 +369,42 @@ function toolPolicyError(action: "block" | "require_confirmation", toolName: str
   return reason === undefined ? message : `${message}: ${reason}`;
 }
 
+interface ToolPolicyCheckResult {
+  readonly policy: ResolvedToolPolicy;
+  readonly result?: ToolDispatchResult;
+}
+
 function checkToolPolicy(
   request: ToolDispatchRequest,
   external: ExternalToolRequest,
   options: ToolDispatcherOptions,
-): ToolDispatchResult | undefined {
-  const policy = resolveToolPolicy(
-    external.name,
+): ToolPolicyCheckResult {
+  const evaluation = evaluateToolPolicyForRequest(
+    { toolId: external.name, args: external.args },
     options.toolPolicies ?? [],
     options.toolPolicyDefaultAction ?? "approve",
   );
+  const policy = evaluation.policy;
 
   if (policy.action === "approve") {
-    return undefined;
+    return { policy };
   }
 
   if (policy.action === "block") {
-    return { ok: false, error: toolPolicyError(policy.action, external.name, policy.reason), blocked: true };
+    return {
+      policy,
+      result: { ok: false, error: toolPolicyError(policy.action, external.name, policy.reason), blocked: true },
+    };
   }
 
   if (!hasPolicyConfirmation(request)) {
-    return { ok: false, error: toolPolicyError(policy.action, external.name, policy.reason), blocked: true };
+    return {
+      policy,
+      result: { ok: false, error: toolPolicyError(policy.action, external.name, policy.reason), blocked: true },
+    };
   }
 
-  return undefined;
+  return { policy };
 }
 
 async function dispatchExternal(
@@ -505,15 +530,15 @@ export function createToolDispatcher(options: ToolDispatcherOptions): ToolDispat
         return { ok: false, error: reason };
       }
 
-      const policyResult = checkToolPolicy(request, external, options);
-      if (policyResult !== undefined) {
-        emit(options, dispatchEvent(request.name, policyResult));
-        return policyResult;
+      const policyCheck = checkToolPolicy(request, external, options);
+      if (policyCheck.result !== undefined) {
+        emit(options, dispatchEvent(request.name, policyCheck.result, policyCheck.policy));
+        return policyCheck.result;
       }
 
       const rateLimitResult = checkRateLimit(request.name);
       if (rateLimitResult !== undefined) {
-        emit(options, dispatchEvent(request.name, rateLimitResult));
+        emit(options, dispatchEvent(request.name, rateLimitResult, policyCheck.policy));
         return rateLimitResult;
       }
 
@@ -524,12 +549,12 @@ export function createToolDispatcher(options: ToolDispatcherOptions): ToolDispat
           blocked: true,
         } satisfies ToolDispatchResult;
         emitSafetySurprise(options, credentialArgumentSurprise(request.name));
-        emit(options, dispatchEvent(request.name, result));
+        emit(options, dispatchEvent(request.name, result, policyCheck.policy));
         return result;
       }
 
       const result = await dispatchExternal(external, options);
-      emit(options, dispatchEvent(request.name, result));
+      emit(options, dispatchEvent(request.name, result, policyCheck.policy));
       return result;
     },
   };

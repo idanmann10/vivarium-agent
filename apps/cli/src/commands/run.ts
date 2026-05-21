@@ -19,6 +19,7 @@ export type RunProviderKind = "local" | "anthropic" | "openai" | "openai-compat"
 
 export interface RunCommandOptions {
   readonly goal: string;
+  readonly agentName?: string;
   readonly domain?: string;
   readonly worldRoot?: string;
   readonly worldSubscriptionsPath?: string;
@@ -30,6 +31,7 @@ export interface RunCommandOptions {
   readonly providerBaseUrl?: string;
   readonly providerProfilesPath?: string;
   readonly providerProfile?: string;
+  readonly statusCommand?: string;
   readonly availableToolsets?: readonly string[];
   readonly availableTools?: readonly string[];
   readonly env?: Readonly<Record<string, string | undefined>>;
@@ -42,7 +44,10 @@ export function describeRunCommand(options: RunCommandOptions): string {
 
 export interface RunCommandResult {
   readonly success: boolean;
+  readonly agentName: string;
   readonly runId: string | null;
+  readonly memoryPath?: string;
+  readonly statusCommand?: string;
   readonly provider: {
     readonly kind: string;
     readonly id: string;
@@ -70,6 +75,7 @@ export interface RunHighSurpriseSummary {
 
 export interface RunTransparencySummary {
   readonly plan: string | null;
+  readonly outcome: string | null;
   readonly prediction: Prediction | null;
   readonly validation: RunValidationSummary | null;
   readonly consulted: {
@@ -101,9 +107,14 @@ function localProvider(): ConfiguredRunProvider {
   };
 }
 
+function shellQuote(value: string): string {
+  return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
+}
+
 function providerConfigError(kind: string, id: string, model: string | null | undefined, error: string): RunCommandResult {
   return {
     success: false,
+    agentName: "local-agent",
     runId: null,
     provider: { kind, id, model: model ?? null },
     episodeKinds: [],
@@ -115,6 +126,7 @@ function providerConfigError(kind: string, id: string, model: string | null | un
 function emptyRunTransparency(): RunTransparencySummary {
   return {
     plan: null,
+    outcome: null,
     prediction: null,
     validation: null,
     consulted: { skills: [], traces: [] },
@@ -138,6 +150,7 @@ function findLatestEpisode<Kind extends Episode["kind"]>(
 
 export function summarizeRunEpisodes(episodes: readonly Episode[]): RunTransparencySummary {
   const plan = findLatestEpisode(episodes, "plan");
+  const observation = findLatestEpisode(episodes, "observation");
   const prediction = findLatestEpisode(episodes, "prediction");
   const validation = findLatestEpisode(episodes, "validation");
   const highSurprises = episodes
@@ -154,6 +167,7 @@ export function summarizeRunEpisodes(episodes: readonly Episode[]): RunTranspare
 
   return {
     plan: plan?.plan ?? null,
+    outcome: summarizeOutcome(observation?.content),
     prediction: prediction?.prediction ?? null,
     validation:
       validation === undefined
@@ -169,6 +183,23 @@ export function summarizeRunEpisodes(episodes: readonly Episode[]): RunTranspare
     },
     highSurprises,
   };
+}
+
+function summarizeOutcome(content: unknown): string | null {
+  if (content === undefined || content === null) {
+    return null;
+  }
+
+  const raw = typeof content === "string" ? content : JSON.stringify(content);
+  if (raw === undefined) {
+    return null;
+  }
+  const normalized = raw.replace(/\s+/g, " ").trim();
+  if (normalized.length === 0) {
+    return null;
+  }
+
+  return normalized.length <= 240 ? normalized : `${normalized.slice(0, 237)}...`;
 }
 
 function isRunProviderKind(value: string): value is RunProviderKind {
@@ -267,6 +298,22 @@ function configuredProvider(options: RunCommandOptions): ConfiguredRunProvider |
   );
 }
 
+function configuredEnvValue(
+  env: Readonly<Record<string, string | undefined>> | undefined,
+  name: string,
+): string | undefined {
+  const value = env?.[name] ?? process.env[name];
+  return value === undefined || value.length === 0 ? undefined : value;
+}
+
+function configuredWorldRoot(options: RunCommandOptions): string | undefined {
+  return options.worldRoot ?? configuredEnvValue(options.env, "VIVARIUM_WORLD_ROOT");
+}
+
+function configuredDomain(options: RunCommandOptions): string {
+  return options.domain ?? configuredEnvValue(options.env, "VIVARIUM_DOMAIN") ?? "coding";
+}
+
 function createRunWorldReader(options: RunCommandOptions): LocalWorldReader {
   if (options.worldSubscriptionsPath !== undefined) {
     const worlds = listWorldSubscriptionsCommand({ subscriptionsPath: options.worldSubscriptionsPath }).subscriptions;
@@ -277,24 +324,28 @@ function createRunWorldReader(options: RunCommandOptions): LocalWorldReader {
     };
   }
 
-  return createLocalWorldReader({ root: options.worldRoot ?? "../the-world" });
+  return createLocalWorldReader({ root: configuredWorldRoot(options) ?? "../the-world" });
 }
 
 export async function runCommand(options: RunCommandOptions): Promise<RunCommandResult> {
+  const agentName = options.agentName ?? "local-agent";
   const selectedProvider = configuredProvider(options);
   if ("success" in selectedProvider) {
-    return selectedProvider;
+    return { ...selectedProvider, agentName };
   }
 
+  const worldRoot = configuredWorldRoot(options);
   const state: StateRepository = options.statePath === undefined ? new InMemoryStateRepository() : new SQLiteStateRepository(options.statePath);
   const tools = createSelfTools({
     state,
     world: createRunWorldReader(options),
+    ...(worldRoot === undefined ? {} : { worldRoot }),
+    ...(options.worldSubscriptionsPath === undefined ? {} : { worldSubscriptionsPath: options.worldSubscriptionsPath }),
   });
   const request = {
     goal: options.goal,
-    domain: options.domain ?? "coding",
-    agentName: "local-cli-agent",
+    domain: configuredDomain(options),
+    agentName,
     provider: selectedProvider.provider,
     tools,
     availableToolsets: options.availableToolsets ?? [],
@@ -312,7 +363,14 @@ export async function runCommand(options: RunCommandOptions): Promise<RunCommand
 
   return {
     success: result.success,
+    agentName,
     runId: String(result.runId),
+    ...(options.statePath === undefined ? {} : { memoryPath: options.statePath }),
+    statusCommand:
+      options.statusCommand ??
+      (options.statePath === undefined
+        ? "vivarium status"
+        : `vivarium status --state-path ${shellQuote(options.statePath)}`),
     provider: selectedProvider.summary,
     episodeKinds,
     transparency,
@@ -342,13 +400,43 @@ function renderPredictionSummary(prediction: Prediction | null): readonly string
   ];
 }
 
+function renderOutcomeSummary(outcome: string | null): readonly string[] {
+  return outcome === null ? [] : [`Outcome: ${outcome}`];
+}
+
+function renderRunReceipt(result: RunCommandResult): readonly string[] {
+  if (!result.success || result.runId === null || result.memoryPath === undefined) {
+    return [];
+  }
+
+  const score = result.transparency.validation?.score;
+  const scoreText = score === undefined ? "." : ` and score ${score}.`;
+  const statusCommand = result.statusCommand ?? "vivarium status";
+  return [
+    `Recorded: ${statusCommand} will show Run ID ${result.runId} with success state${scoreText}`,
+  ];
+}
+
 function renderRunGuidance(result: RunCommandResult): readonly string[] {
+  const statusCommand = result.statusCommand ?? "vivarium status";
   if (result.success) {
     return [
-      "Next command:",
-      result.runId === null
-        ? "  vivarium doctor"
-        : `  vivarium publish run --run-id ${result.runId} --visibility public --contributor <agent-id>`,
+      "Next commands:",
+      "  vivarium dashboard --open",
+      "  vivarium daemon smoke",
+      "  vivarium local run --goal \"try another small coding task\"",
+      `  ${statusCommand}`,
+    ];
+  }
+
+  if (isProviderSetupError(result.error)) {
+    return [
+      "Next commands:",
+      "  vivarium connect signup",
+      "  vivarium connect fill",
+      "  vivarium connect setup --confirm-write",
+      "  vivarium connect smoke",
+      "  vivarium local run",
     ];
   }
 
@@ -358,6 +446,21 @@ function renderRunGuidance(result: RunCommandResult): readonly string[] {
   ];
 }
 
+function isProviderSetupError(error: string | undefined): boolean {
+  return (
+    error?.startsWith("Missing --provider-") === true ||
+    error?.startsWith("Missing provider environment variable:") === true ||
+    error?.startsWith("Missing --provider-profiles-path") === true ||
+    error?.startsWith("Provider profile not found:") === true
+  );
+}
+
+function renderRunError(error: string): string {
+  return isProviderSetupError(error)
+    ? "Provider credentials are not connected for this run."
+    : error;
+}
+
 export function renderRunCommandResult(result: RunCommandResult): string {
   return [
     renderVivariumGlobe(),
@@ -365,15 +468,19 @@ export function renderRunCommandResult(result: RunCommandResult): string {
     "Vivarium Run",
     "------------",
     `Status: ${result.success ? "success" : "blocked"}`,
+    `Agent: ${result.agentName}`,
     `Run ID: ${result.runId ?? "not started"}`,
     `Provider: ${renderProviderSummary(result.provider)}`,
+    ...(result.memoryPath === undefined ? [] : [`Memory: ${result.memoryPath}`]),
     `Episodes: ${result.episodeKinds.length === 0 ? "none" : result.episodeKinds.join(", ")}`,
     `Consulted skills: ${result.transparency.consulted.skills.length}`,
     `Consulted traces: ${result.transparency.consulted.traces.length}`,
     renderValidationSummary(result.transparency.validation),
+    ...renderOutcomeSummary(result.transparency.outcome),
     ...renderPredictionSummary(result.transparency.prediction),
     `High surprises: ${result.transparency.highSurprises.length}`,
-    ...(result.error === undefined ? [] : ["", `Error: ${result.error}`]),
+    ...renderRunReceipt(result),
+    ...(result.error === undefined ? [] : ["", `Reason: ${renderRunError(result.error)}`]),
     "",
     ...renderRunGuidance(result),
     "",

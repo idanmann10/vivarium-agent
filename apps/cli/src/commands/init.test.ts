@@ -21,6 +21,39 @@ function createWorldFixture(): string {
 }
 
 describe("runInitCommand", () => {
+  test("defaults to a named local agent under the Vivarium home directory", () => {
+    const worldRoot = createWorldFixture();
+    const home = mkdtempSync(join(tmpdir(), "init-home-"));
+    const previousHome = process.env.HOME;
+    process.env.HOME = home;
+
+    try {
+      const result = runInitCommand({
+        primaryDomain: "coding",
+        bindGithubIdentity: false,
+        worldRoot,
+      });
+
+      expect(result).toMatchObject({
+        agentName: "local-agent",
+        statePath: join(home, ".vivarium", "state.db"),
+      });
+
+      const state = new SQLiteStateRepository(result.statePath);
+      expect(state.getIdentity()).toMatchObject({
+        name: "local-agent",
+        summary: "Newborn local agent initialized for coding.",
+      });
+      state.close();
+    } finally {
+      if (previousHome === undefined) {
+        delete process.env.HOME;
+      } else {
+        process.env.HOME = previousHome;
+      }
+    }
+  });
+
   test("runs migrations and installs starter skills from the selected domain", () => {
     const worldRoot = createWorldFixture();
     const statePath = join(mkdtempSync(join(tmpdir(), "init-state-")), "state.db");
@@ -36,6 +69,8 @@ describe("runInitCommand", () => {
 
     expect(result.primaryDomain).toBe("coding");
     expect(result.statePath).toBe(statePath);
+    expect(result.worldRoot).toBe(worldRoot);
+    expect(result.agentName).toBe("local-agent");
     expect(result.starterSkills.map((skill) => skill.title).sort()).toEqual(["Red Green", "Small Steps"]);
     expect(result.starterTraces.map((trace) => trace.title)).toEqual(["Debugging Trace"]);
     expect(result.curriculumPath).toBe(join(worldRoot, "domains", "coding", "curriculum.md"));
@@ -63,8 +98,10 @@ describe("runInitCommand", () => {
 
   test("renders branded setup guidance for terminal use", () => {
     const output = renderInitCommandResult({
+      agentName: "local-agent",
       primaryDomain: "coding",
       statePath: "/tmp/vivarium-state.db",
+      worldRoot: "/tmp/world",
       starterSkills: [
         {
           id: "domains/coding/skills/red-green/SKILL.md",
@@ -79,10 +116,16 @@ describe("runInitCommand", () => {
     });
 
     expect(output).toContain("Vivarium Init");
+    expect(output).toContain("Agent: local-agent");
     expect(output).toContain("Domain: coding");
     expect(output).toContain("Starter skills: 1");
     expect(output).toContain("Prompts:");
     expect(output).toContain("Next command:");
+    expect(output).toContain(
+      "vivarium local run --domain coding --state-path /tmp/vivarium-state.db --world-root /tmp/world",
+    );
+    expect(output).not.toContain('vivarium local run --goal "build a simple agent end to end"');
+    expect(output).not.toContain("vivarium run --goal");
     expect(output.trim().startsWith("{")).toBe(false);
   });
 });

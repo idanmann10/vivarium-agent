@@ -6,11 +6,16 @@ export interface LaunchHandoffCommandOptions {
   readonly repo?: string;
   readonly ref?: string;
   readonly scriptRef?: string;
+  readonly daemonHost?: string;
+  readonly daemonPort?: string;
+  readonly reviewPrNumber?: string;
+  readonly reviewerUsername?: string;
 }
 
 export interface LaunchHandoffCommandResult {
   readonly installCommand: string;
   readonly postInstallCommands: readonly string[];
+  readonly liveVerificationCommands: readonly string[];
   readonly requiredUnblocks: readonly string[];
   readonly keyExplanations: readonly string[];
   readonly ownerNextActions: readonly string[];
@@ -20,19 +25,57 @@ const defaultOwner = "idanmann10";
 const defaultRepo = "vivarium-agent";
 const defaultRef = "main";
 const defaultScriptRef = "main";
+const defaultDaemonHost = "127.0.0.1";
+const defaultDaemonPort = "8787";
 
-function installCommand(owner: string, repo: string, ref: string, scriptRef: string): string {
+function shellValue(value: string): string {
+  return /^[A-Za-z0-9_./:-]+$/.test(value) ? value : JSON.stringify(value);
+}
+
+function installerFlags(ref: string, daemonHost: string, daemonPort: string): readonly string[] {
+  return [
+    ...(ref === defaultRef ? [] : ["--ref", shellValue(ref)]),
+    "--daemon",
+    "launchd",
+    ...(daemonHost === defaultDaemonHost ? [] : ["--daemon-host", shellValue(daemonHost)]),
+    ...(daemonPort === defaultDaemonPort ? [] : ["--daemon-port", shellValue(daemonPort)]),
+  ];
+}
+
+function installCommand(
+  owner: string,
+  repo: string,
+  ref: string,
+  scriptRef: string,
+  daemonHost: string,
+  daemonPort: string,
+): string {
   const scriptUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${scriptRef}/scripts/install.sh`;
-  if (ref === "main") {
-    return `curl -fsSL ${scriptUrl} | VIVARIUM_DAEMON=launchd bash`;
+  return `curl -fsSL ${scriptUrl} | bash -s -- ${installerFlags(ref, daemonHost, daemonPort).join(" ")}`;
+}
+
+function daemonSmokeCommand(daemonHost: string, daemonPort: string): string {
+  if (daemonHost === defaultDaemonHost && daemonPort === defaultDaemonPort) {
+    return "vivarium daemon smoke";
   }
 
-  return [
-    `curl -fsSL ${scriptUrl} | \\`,
-    `  VIVARIUM_AGENT_REF=${ref} \\`,
-    "  VIVARIUM_DAEMON=launchd \\",
-    "  bash",
-  ].join("\n");
+  return `vivarium daemon smoke --status-url http://${daemonHost}:${daemonPort}/status`;
+}
+
+function dashboardOpenCommand(daemonHost: string, daemonPort: string): string {
+  if (daemonHost === defaultDaemonHost && daemonPort === defaultDaemonPort) {
+    return "vivarium dashboard --open";
+  }
+
+  return `vivarium dashboard --open --url http://${daemonHost}:${daemonPort}`;
+}
+
+function setupOpenCommand(daemonHost: string, daemonPort: string): string {
+  if (daemonHost === defaultDaemonHost && daemonPort === defaultDaemonPort) {
+    return "vivarium --setup --open";
+  }
+
+  return `vivarium --setup --open --dashboard-url http://${daemonHost}:${daemonPort}`;
 }
 
 export function launchHandoffCommand(
@@ -42,14 +85,34 @@ export function launchHandoffCommand(
   const repo = options.repo ?? defaultRepo;
   const ref = options.ref ?? defaultRef;
   const scriptRef = options.scriptRef ?? (ref === defaultRef ? defaultScriptRef : ref);
+  const daemonHost = options.daemonHost ?? defaultDaemonHost;
+  const daemonPort = options.daemonPort ?? defaultDaemonPort;
+  const reviewPrNumber = options.reviewPrNumber ?? "PR_NUMBER";
+  const reviewerUsername = options.reviewerUsername ?? "REVIEWER_GITHUB_USERNAME";
 
   return {
-    installCommand: installCommand(owner, repo, ref, scriptRef),
+    installCommand: installCommand(owner, repo, ref, scriptRef, daemonHost, daemonPort),
     postInstallCommands: [
-      'vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
-      "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
-      "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ~/.vivarium/the-world --state-path .vivarium/state.db",
-      "vivarium doctor --live --env-file live-readiness.local.env",
+      setupOpenCommand(daemonHost, daemonPort),
+      "vivarium local run",
+      dashboardOpenCommand(daemonHost, daemonPort),
+      daemonSmokeCommand(daemonHost, daemonPort),
+      "vivarium status",
+      "vivarium tools",
+      "vivarium help",
+      "vivarium update",
+    ],
+    liveVerificationCommands: [
+      "vivarium setup live",
+      "vivarium connect signup",
+      "vivarium connect",
+      "vivarium connect fill",
+      "vivarium connect setup --confirm-write",
+      "vivarium model",
+      "vivarium connect smoke",
+      "vivarium proof init",
+      "vivarium proof",
+      "vivarium doctor --live",
     ],
     requiredUnblocks: [
       "real provider keys/smokes for Anthropic, OpenRouter, and the private OpenAI-compatible provider",
@@ -63,8 +126,22 @@ export function launchHandoffCommand(
       "GitHub IDs point checks at the public repos and Discussion category; they are not secrets.",
     ],
     ownerNextActions: [
-      "Run the stable main install command above for local Mac setup.",
-      "After secrets and evidence are available, rerun vivarium doctor --live --env-file live-readiness.local.env.",
+      ref === defaultRef
+        ? "Run the stable main install command above, then run the setup/open and local agent commands."
+        : "Run the branch-pinned install command above, then run the setup/open and local agent commands.",
+      ...(ref === defaultRef
+        ? []
+        : [
+            "Keep branch protection and review intact before switching installs back to main.",
+            "Invite one eligible non-author reviewer when GitHub reports REVIEW_REQUIRED.",
+            `gh pr view ${reviewPrNumber} --repo ${owner}/${repo} --json reviewDecision,mergeStateStatus,reviewRequests`,
+            `gh api repos/${owner}/${repo}/collaborators --jq '.[].login'`,
+            `gh api -X PUT repos/${owner}/${repo}/collaborators/${reviewerUsername} -f permission=push`,
+            `gh pr edit ${reviewPrNumber} --repo ${owner}/${repo} --add-reviewer ${reviewerUsername}`,
+            "If the collaborator list only shows the PR author, the reviewer must accept the invite before the review request can satisfy branch protection.",
+            "Do not lower branch protection or self-approve just to merge.",
+          ]),
+      "Use the live verification commands only after secrets and evidence are available.",
       "Do not claim full v1 live readiness until doctor --live reports ready.",
     ],
   };
@@ -81,6 +158,9 @@ export function renderLaunchHandoffCommandResult(result: LaunchHandoffCommandRes
     "",
     "After install:",
     ...renderLaunchSequence(result.postInstallCommands),
+    "",
+    "When ready for live verification:",
+    ...renderLaunchSequence(result.liveVerificationCommands),
     "",
     "Production boundary:",
     "  Local Mac install/deploy is ready for reviewer/operator use.",

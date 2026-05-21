@@ -1,30 +1,33 @@
+import { join } from "node:path";
+import { parseDaemonHost, parseDaemonPort } from "../../../packages/core/src/index.js";
 import { createDaemonServer } from "./server.js";
 import { startDaemonHttpServer, type RunningDaemonHttpServer } from "./http-transport.js";
 
 export interface DaemonMainConfig {
   readonly hostname: string;
   readonly port: number;
+  readonly statePath?: string;
   readonly worldRoot: string;
 }
 
 export type DaemonMainEnv = Readonly<Record<string, string | undefined>>;
 
-function parsePort(raw: string | undefined): number {
-  if (raw === undefined) {
-    return 8787;
+function defaultDaemonStatePath(env: DaemonMainEnv): string | undefined {
+  const configured = env.VIVARIUM_STATE_PATH?.trim();
+  if (configured !== undefined && configured.length > 0) {
+    return configured;
   }
 
-  const port = Number.parseInt(raw, 10);
-  if (!Number.isInteger(port) || String(port) !== raw || port < 1 || port > 65535) {
-    throw new Error("VIVARIUM_DAEMON_PORT must be an integer from 1 to 65535");
-  }
-  return port;
+  const home = env.HOME?.trim();
+  return home === undefined || home.length === 0 ? undefined : join(home, ".vivarium", "state.db");
 }
 
 export function readDaemonMainConfig(env: DaemonMainEnv): DaemonMainConfig {
+  const statePath = defaultDaemonStatePath(env);
   return {
-    hostname: env.VIVARIUM_DAEMON_HOST ?? "127.0.0.1",
-    port: parsePort(env.VIVARIUM_DAEMON_PORT),
+    hostname: parseDaemonHost(env.VIVARIUM_DAEMON_HOST),
+    port: parseDaemonPort(env.VIVARIUM_DAEMON_PORT),
+    ...(statePath === undefined ? {} : { statePath }),
     worldRoot: env.VIVARIUM_WORLD_ROOT ?? "../the-world",
   };
 }
@@ -32,7 +35,10 @@ export function readDaemonMainConfig(env: DaemonMainEnv): DaemonMainConfig {
 export function startDaemonMain(env: DaemonMainEnv = Bun.env): RunningDaemonHttpServer {
   const config = readDaemonMainConfig(env);
   return startDaemonHttpServer({
-    daemon: createDaemonServer({ worldRoot: config.worldRoot }),
+    daemon: createDaemonServer({
+      ...(config.statePath === undefined ? {} : { statePath: config.statePath }),
+      worldRoot: config.worldRoot,
+    }),
     hostname: config.hostname,
     port: config.port,
   });

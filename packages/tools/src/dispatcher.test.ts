@@ -275,6 +275,119 @@ describe("createToolDispatcher", () => {
     expect(clicks).toBe(1);
   });
 
+  test("enforces terminal prefix policies across every shell segment", async () => {
+    const commands: string[] = [];
+    const dispatcher = createToolDispatcher({
+      toolPolicyDefaultAction: "block",
+      toolPolicies: [
+        {
+          id: "allow-git-status",
+          pattern: "terminal.run",
+          commandPrefix: ["git", "status"],
+          action: "approve",
+        },
+        {
+          id: "allow-pwd",
+          pattern: "terminal.run",
+          commandPrefix: ["pwd"],
+          action: "approve",
+        },
+      ],
+      externalAdapters: {
+        runTerminal: async (command) => {
+          commands.push(command);
+          return { exitCode: 0, stdout: command, stderr: "" };
+        },
+      },
+    });
+
+    await expect(
+      dispatcher.dispatch({ name: "terminal.run", args: { command: "git status --short && pwd" } }),
+    ).resolves.toMatchObject({ ok: true });
+    await expect(
+      dispatcher.dispatch({ name: "terminal.run", args: { command: "git status --short && rm -rf build" } }),
+    ).resolves.toEqual({
+      ok: false,
+      error: "Tool policy blocks terminal.run: Default tool policy action",
+      blocked: true,
+    });
+    expect(commands).toEqual(["git status --short && pwd"]);
+  });
+
+  test("emits the blocking policy decision for terminal segment audit events", async () => {
+    const events: ToolDispatchEvent[] = [];
+    const dispatcher = createToolDispatcher({
+      toolPolicyDefaultAction: "block",
+      toolPolicies: [
+        {
+          id: "allow-git-status",
+          pattern: "terminal.run",
+          commandPrefix: ["git", "status"],
+          action: "approve",
+        },
+      ],
+      externalAdapters: {
+        runTerminal: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
+      },
+      onDispatch: (event) => events.push(event),
+    });
+
+    await expect(
+      dispatcher.dispatch({ name: "terminal.run", args: { command: "git status --short && rm -rf build" } }),
+    ).resolves.toEqual({
+      ok: false,
+      error: "Tool policy blocks terminal.run: Default tool policy action",
+      blocked: true,
+    });
+
+    expect(events).toContainEqual({
+      name: "terminal.run",
+      status: "blocked",
+      reason: "Tool policy blocks terminal.run: Default tool policy action",
+      policy: {
+        id: "default",
+        pattern: "*",
+        action: "block",
+        reason: "Default tool policy action",
+        subject: "rm -rf build",
+      },
+    });
+  });
+
+  test("requires confirmation for terminal prefixes that are policy-gated", async () => {
+    let runs = 0;
+    const dispatcher = createToolDispatcher({
+      toolPolicyDefaultAction: "block",
+      toolPolicies: [
+        {
+          id: "confirm-rm",
+          pattern: "terminal.run",
+          commandPrefix: ["rm"],
+          action: "require_confirmation",
+          reason: "File removal needs operator approval",
+        },
+      ],
+      externalAdapters: {
+        runTerminal: async () => {
+          runs += 1;
+          return { exitCode: 0, stdout: "", stderr: "" };
+        },
+      },
+    });
+
+    await expect(
+      dispatcher.dispatch({ name: "terminal.run", args: { command: "rm -rf build" } }),
+    ).resolves.toEqual({
+      ok: false,
+      error: "Tool policy requires confirmation for terminal.run: File removal needs operator approval",
+      blocked: true,
+    });
+    await expect(
+      dispatcher.dispatch({ name: "terminal.run", args: { command: "rm -rf build", confirmed: true } }),
+    ).resolves.toMatchObject({ ok: true });
+    expect(runs).toBe(1);
+  });
+
   test("blocks external tool calls that exceed per-day rate limits across dispatcher instances", async () => {
     const dailyUsage = new TestDailyUsageStore();
     const makeDispatcher = () =>

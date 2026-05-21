@@ -6,6 +6,17 @@ import { describe, expect, test } from "bun:test";
 import { agentId, episodeId, runId, skillId } from "../../core/src/index.js";
 import { SQLiteStateRepository } from "./sqlite-repository.js";
 
+async function waitForFile(path: string): Promise<void> {
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    if (existsSync(path)) {
+      return;
+    }
+    await Bun.sleep(25);
+  }
+
+  throw new Error(`Timed out waiting for ${path}`);
+}
+
 describe("SQLiteStateRepository", () => {
   test("creates parent directories for state database files", () => {
     const dbPath = join(mkdtempSync(join(tmpdir(), "agent-state-parent-")), "nested", "state.db");
@@ -139,5 +150,55 @@ describe("SQLiteStateRepository", () => {
       expect(state.listPublishableArtifacts()).toEqual([{ kind: "run", path: "runs/run-sqlite", body: "redacted" }]);
       state.close();
     }
+  });
+
+  test("waits briefly for concurrent local state writers instead of failing with database locked", async () => {
+    const root = mkdtempSync(join(tmpdir(), "agent-state-locked-"));
+    const dbPath = join(root, "state.db");
+    const readyPath = join(root, "lock-ready");
+    const run = runId("run-concurrent-writer");
+
+    new SQLiteStateRepository(dbPath).close();
+
+    const lockHolder = Bun.spawn(
+      [
+        process.execPath,
+        "--eval",
+        [
+          'import { Database } from "bun:sqlite";',
+          'import { writeFileSync } from "node:fs";',
+          `const db = new Database(${JSON.stringify(dbPath)}, { create: true });`,
+          'db.run("BEGIN IMMEDIATE");',
+          `writeFileSync(${JSON.stringify(readyPath)}, "ready", "utf8");`,
+          "await Bun.sleep(350);",
+          'db.run("COMMIT");',
+          "db.close();",
+        ].join("\n"),
+      ],
+      { stderr: "pipe", stdout: "pipe" },
+    );
+
+    await waitForFile(readyPath);
+
+    const state = new SQLiteStateRepository(dbPath);
+    state.createRun({
+      id: run,
+      agentId: agentId("agent-concurrent-writer"),
+      domain: "coding",
+      goal: "wait for sqlite writer",
+      startedAt: "2026-05-09T00:00:00.000Z",
+      endedAt: null,
+      success: null,
+      score: null,
+      notes: "",
+      publishable: false,
+      published: false,
+      publishedAt: null,
+      visibility: "private",
+    });
+    expect(state.getRun(run)?.goal).toBe("wait for sqlite writer");
+    state.close();
+
+    expect(await lockHolder.exited).toBe(0);
   });
 });

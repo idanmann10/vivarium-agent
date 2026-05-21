@@ -52,6 +52,39 @@ function providerPrompt(init: RequestInit): string {
 }
 
 describe("runCommand", () => {
+  test("runs the named local agent by default and keeps next steps local", async () => {
+    const statePath = join(mkdtempSync(join(tmpdir(), "cli-run-state-")), "state.db");
+    const result = await runCommand({
+      goal: "build a simple agent end to end",
+      domain: "coding",
+      worldRoot: createWorldFixture(),
+      statePath,
+    });
+    const output = renderRunCommandResult(result);
+
+    expect(result).toMatchObject({
+      success: true,
+      agentName: "local-agent",
+      provider: { kind: "local", id: "local", model: null },
+    });
+    expect(output).toContain("Agent: local-agent");
+    expect(output).toContain("Provider: local");
+    expect(output).toContain(`Memory: ${statePath}`);
+    expect(output).toContain(
+      'Outcome: Observation: executed "build a simple agent end to end" with local deterministic provider.',
+    );
+    expect(output).not.toContain("build a tiny local agent");
+    expect(output).toContain(`Recorded: vivarium status --state-path ${statePath} will show Run ID`);
+    expect(output).toContain("vivarium local run --goal");
+    expect(output).toContain(`vivarium status --state-path ${statePath}`);
+    expect(output).toContain("vivarium dashboard --open");
+    expect(output).toContain("vivarium daemon smoke");
+    expect(output).not.toContain("vivarium launch handoff");
+    expect(output).not.toContain("vivarium model");
+    expect(output).not.toContain("vivarium publish run");
+    expect(output).not.toContain("--contributor <agent-id>");
+  });
+
   test("runs a goal through a configured OpenAI-compatible provider", async () => {
     const requests: { readonly url: string; readonly init: RequestInit }[] = [];
     const result = await runCommand({
@@ -290,11 +323,13 @@ describe("runCommand", () => {
 
     expect(result).toEqual({
       success: false,
+      agentName: "local-agent",
       runId: null,
       provider: { kind: "openai", id: "run-openai", model: "gpt-test" },
       episodeKinds: [],
       transparency: {
         plan: null,
+        outcome: null,
         prediction: null,
         validation: null,
         consulted: { skills: [], traces: [] },
@@ -320,11 +355,13 @@ describe("runCommand", () => {
 
     expect(result).toEqual({
       success: false,
+      agentName: "local-agent",
       runId: null,
       provider: { kind: "ollama", id: "run-ollama", model: "ollama/test" },
       episodeKinds: [],
       transparency: {
         plan: null,
+        outcome: null,
         prediction: null,
         validation: null,
         consulted: { skills: [], traces: [] },
@@ -337,11 +374,14 @@ describe("runCommand", () => {
   test("renders successful runs as branded terminal output", () => {
     const output = renderRunCommandResult({
       success: true,
+      agentName: "local-agent",
       runId: "run-demo-000",
+      memoryPath: "/tmp/vivarium-state.db",
       provider: { kind: "local", id: "local", model: null },
       episodeKinds: ["run_start", "plan", "validation", "run_end"],
       transparency: {
         plan: "Plan: inspect and verify.",
+        outcome: "Observation: rendered local output.",
         prediction: {
           about: "local-provider.execute",
           expected: "Prediction: goal should complete.",
@@ -360,20 +400,48 @@ describe("runCommand", () => {
     expect(output).toContain("Status: success");
     expect(output).toContain("Run ID: run-demo-000");
     expect(output).toContain("Provider: local");
+    expect(output).toContain("Memory: /tmp/vivarium-state.db");
     expect(output).toContain("Episodes: run_start, plan, validation, run_end");
     expect(output).toContain("Consulted skills: 1");
     expect(output).toContain("Validation: pass (0.8)");
+    expect(output).toContain("Outcome: Observation: rendered local output.");
+    expect(output).toContain(
+      "Recorded: vivarium status will show Run ID run-demo-000 with success state and score 0.8.",
+    );
     expect(output.trim().startsWith("{")).toBe(false);
   });
 
-  test("renders blocked runs with actionable errors", () => {
+  test("does not claim a status receipt for in-memory runs", () => {
+    const output = renderRunCommandResult({
+      success: true,
+      agentName: "local-agent",
+      runId: "run-memory-000",
+      provider: { kind: "local", id: "local", model: null },
+      episodeKinds: ["run_start", "run_end"],
+      transparency: {
+        plan: null,
+        outcome: "Observation: rendered local output.",
+        prediction: null,
+        validation: { score: 0.8, passed: true, reasons: ["validated"] },
+        consulted: { skills: [], traces: [] },
+        highSurprises: [],
+      },
+    });
+
+    expect(output).not.toContain("Recorded:");
+    expect(output).toContain("vivarium status");
+  });
+
+  test("renders blocked provider runs with friendly setup guidance", () => {
     const output = renderRunCommandResult({
       success: false,
+      agentName: "local-agent",
       runId: null,
       provider: { kind: "openai", id: "run-openai", model: "gpt-test" },
       episodeKinds: [],
       transparency: {
         plan: null,
+        outcome: null,
         prediction: null,
         validation: null,
         consulted: { skills: [], traces: [] },
@@ -387,8 +455,24 @@ describe("runCommand", () => {
     expect(output).toContain("Run ID: not started");
     expect(output).toContain("Provider: openai (gpt-test)");
     expect(output).toContain("Episodes: none");
-    expect(output).toContain("Error: Missing provider environment variable: OPENAI_API_KEY");
-    expect(output).toContain("Next command:");
+    expect(output).toContain("Reason: Provider credentials are not connected for this run.");
+    expect(output).not.toContain("OPENAI_API_KEY");
+    expect(output).toContain("Next commands:");
+    expect(output).toContain("vivarium connect signup");
+    expect(output).toContain("vivarium connect fill");
+    expect(output).toContain("vivarium connect setup --confirm-write");
+    expect(output).toContain("vivarium connect smoke");
+    expect(output).toContain(
+      [
+        "Next commands:",
+        "  vivarium connect signup",
+        "  vivarium connect fill",
+        "  vivarium connect setup --confirm-write",
+        "  vivarium connect smoke",
+        "  vivarium local run",
+      ].join("\n"),
+    );
+    expect(output).toContain("vivarium local run");
     expect(output.trim().startsWith("{")).toBe(false);
   });
 });

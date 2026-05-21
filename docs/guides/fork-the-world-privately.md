@@ -12,14 +12,14 @@ Save the canonical world and private fork in a local subscription registry:
 
 ```bash
 vivarium world subscribe \
-  --subscriptions-path ~/.the-agent/world-subscriptions.json \
+  --subscriptions-path ~/.vivarium/world-subscriptions.json \
   --world-root ~/worlds/canonical \
   --world-label canonical \
   --world-ref git@github.com:<owner>/<canonical-world>.git \
   --priority 1
 
 vivarium world subscribe \
-  --subscriptions-path ~/.the-agent/world-subscriptions.json \
+  --subscriptions-path ~/.vivarium/world-subscriptions.json \
   --world-root ~/worlds/team-private \
   --world-label team-private \
   --world-ref git@github.com:<owner>/<private-world>.git \
@@ -34,7 +34,7 @@ Search saved subscriptions:
 
 ```bash
 vivarium world search \
-  --subscriptions-path ~/.the-agent/world-subscriptions.json \
+  --subscriptions-path ~/.vivarium/world-subscriptions.json \
   --domain coding \
   --query "<topic>"
 ```

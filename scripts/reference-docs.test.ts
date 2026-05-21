@@ -175,17 +175,24 @@ const guideDocs = {
   ],
   "add-an-anti-pattern": ["ANTI-PATTERN.md", "why", "insteadDo", "relatedSkills", "evidenceRunIds"],
   "add-credentials": [
+    "vivarium setup live",
+    "vivarium connect signup",
+    "vivarium connect fill",
+    "vivarium connect setup --confirm-write",
+    "vivarium connect smoke",
     "credentials add",
     "credentials smoke",
     "encrypted",
     "master-key",
-    "VIVARIUM_CREDENTIALS_PATH",
   ],
   "author-a-trace": ["TRACE.md", "TraceStep", "prerequisites", "pitfalls", "alternatives"],
   "configure-providers": [
+    "vivarium setup live",
     "VIVARIUM_PROVIDER_PROFILES_PATH",
     "providers configure",
     "providers smoke",
+    "connect signup",
+    "connect fill",
     "Anthropic",
     "OpenRouter",
   ],
@@ -214,13 +221,16 @@ const guideDocs = {
     "bun run knip",
     "VIVARIUM_INSTALL_DIR",
     "VIVARIUM_BIN_DIR",
-    "VIVARIUM_DAEMON=launchd",
+    "--daemon launchd",
     "LaunchAgent",
     "vivarium daemon smoke",
-    "vivarium run --goal",
-    "--state-path .vivarium/state.db",
-    "setup --quick",
-    "vivarium live env-init --path live-readiness.local.env",
+    "vivarium local",
+    "vivarium local run",
+    "vivarium launch handoff",
+    "vivarium connect",
+    "vivarium connect signup",
+    "vivarium proof",
+    "vivarium proof init",
     "vivarium help",
     "vivarium status",
     "vivarium update",
@@ -231,10 +241,11 @@ const guideDocs = {
   ],
   "live-readiness": [
     "doctor --live",
-    "--env-file live-readiness.local.env",
-    "live env-init --path live-readiness.local.env",
+    "connect init",
+    "vivarium connect",
+    "proof",
     "liveEnvFile.permissions:insecure",
-    "source live-readiness.local.env",
+    "source ~/.vivarium/live/live-readiness.local.env",
     "VIVARIUM_CREDENTIALS_MASTER_KEY",
     "VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE",
     "Naming Gate",
@@ -277,6 +288,9 @@ const packageReadmes = {
   "apps/cli": [
     "dispatcher",
     "setup",
+    "connect",
+    "connect setup",
+    "proof",
     "init",
     "doctor --live",
     "completionGuide",
@@ -381,12 +395,13 @@ const agentRootDocs = {
     "Terminal-first setup",
     "What grows over time",
     "Release boundary",
-    "vivarium live evidence-init --path v1-evidence.json",
+    "vivarium launch handoff",
     "flowchart LR",
     "managed-agent-model.md",
     "Quick Start",
     "bun run knip",
     "bun run public-release:scan",
+    "bun run dependency:audit",
     "doctor --live",
     "live-readiness.local.env",
     "SECURITY.md",
@@ -430,6 +445,7 @@ const agentRootDocs = {
     "changeset",
     "bun run knip",
     "bun run public-release:scan",
+    "bun run dependency:audit",
     "bun run launch:security-audit",
     "doctor --live",
     "live-readiness.local.env",
@@ -587,6 +603,17 @@ describe("reference docs", () => {
     }
   });
 
+  test("keeps default daemon smoke docs on the short command", () => {
+    for (const path of [
+      join("docs", "guides", "deploy-local-compose.md"),
+      join("docs", "guides", "live-readiness.md"),
+    ]) {
+      const body = readFileSync(path, "utf8");
+      expect(body).toContain("vivarium daemon smoke");
+      expect(body).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
+    }
+  });
+
   test("keeps public operator docs on installed CLI commands", () => {
     for (const path of installedCliDocs) {
       const body = readFileSync(path, "utf8");
@@ -595,41 +622,168 @@ describe("reference docs", () => {
     }
   });
 
-  test("keeps install docs on the installed live setup sequence", () => {
+  test("keeps install docs on the installed local-first setup sequence", () => {
     for (const path of ["README.md", join("docs", "guides", "install.md")]) {
+      const body = readFileSync(path, "utf8");
+      const normalizedBody = body.replaceAll(/\s+/g, " ");
       const block = readAfterInstallationBlock(path);
       for (const stage of [
-        "# [1] Prove the local loop",
-        "# [2] Prepare live readiness",
-        "# [3] Inspect configured models",
-        "# [4] Prepare live evidence",
-        "# [5] Run the readiness gate",
-        "# [6] Verify the Mac daemon",
-        "# [7] Review launch handoff",
-        "# [8] Keep moving",
+        "# [1] Set up Vivarium",
+        "# [2] Run the local agent",
+        "# [3] Open the dashboard",
+        "# [4] Keep moving",
       ]) {
         expect(block).toContain(stage);
       }
       for (const command of [
-        'vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
-        "Edit live-readiness.local.env locally. Keep it out of git.",
-        "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db",
-        "vivarium setup --env-file live-readiness.local.env --domain coding --world-root ../the-world --state-path .vivarium/state.db --confirm-write",
-        "vivarium model --env-file live-readiness.local.env",
-        "vivarium live evidence-init --path v1-evidence.json",
-        "vivarium doctor --live --env-file live-readiness.local.env",
-        "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
-        "vivarium launch handoff",
+        "vivarium --setup",
+        "vivarium local run",
+        "vivarium dashboard --open",
+        "vivarium daemon smoke",
         "vivarium status",
+        "vivarium tools",
         "vivarium help",
         "vivarium update",
       ]) {
         expect(block).toContain(command);
       }
+      expect(block).toContain("\nvivarium local run\n");
+      expect(block).not.toContain("vivarium launch handoff");
+      expect(block).not.toContain("Verify the Mac daemon");
+      expect(block).not.toContain('vivarium local run --goal "build a simple agent end to end"');
+      expect(block).not.toContain(
+        "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
+      );
+      expect(body).toContain("vivarium daemon smoke");
+      expect(body).not.toContain("vivarium daemon smoke --status-url http://127.0.0.1:8787/status");
+      expect(body).toContain(
+        "Use `vivarium launch handoff` when you are ready for production evidence.",
+      );
+      expect(normalizedBody).toContain(
+        "`vivarium start` remains the friendly alias for `vivarium local`; both commands seed the same starter memory, stage the same private live-readiness file, and print the local-first launch sequence",
+      );
+      expect(normalizedBody).toContain(
+        "If you run `vivarium local run` before `vivarium start`, the command seeds the same starter memory, stages the private live-readiness file, and then runs the local agent",
+      );
+      expect(body).toContain(
+        "If the local SQLite state file is invalid, `vivarium local run` stops before writing new run data",
+      );
+      expect(normalizedBody).toContain(
+        "Use `vivarium status` after a run to confirm the latest local run goal, run ID, success state, and score",
+      );
+      expect(normalizedBody).toContain(
+        "Use `vivarium tools` to inspect external toolsets and safety policy posture without mutating local state",
+      );
+      expect(body).toContain("## Local terminal smoke");
+      expect(body).toContain('export PATH="$HOME/.local/bin:$PATH"');
+      for (const command of [
+        "vivarium update",
+        "vivarium help",
+        "vivarium --setup",
+        "vivarium --setup --open",
+        'vivarium local run --goal "build a simple agent end to end"',
+        "vivarium dashboard --open",
+        "vivarium status",
+        "vivarium daemon smoke",
+      ]) {
+        expect(body).toContain(command);
+      }
+      expect(normalizedBody).toContain(
+        "`vivarium --setup --open` is the shortest local setup path: it seeds local memory, stages the private live-readiness file for later, and opens the localhost gateway URL",
+      );
+      expect(normalizedBody).toContain(
+        "`vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon gateway backed by `/status`",
+      );
+      expect(normalizedBody).toContain(
+        "The daemon root is a TailAdmin/shadcn-inspired `Vivarium Gateway` with a first-screen Live Workspace that puts Quick Chat beside Agent World, Activity Lanes, an Agent Dock, a Quest Log, run controls, Dream controls, Agent Directory, world telemetry, and a game-like agent world canvas with CSS fallback sprites",
+      );
+      expect(normalizedBody).toContain(
+        "Use `vivarium dashboard --open` to open that URL in your browser",
+      );
+      expect(normalizedBody).toContain(
+        "The localhost dashboard includes Quick Chat and Operator Console `Run agent` forms with the default `build a simple agent end to end` goal",
+      );
+      expect(normalizedBody).toContain(
+        "Clicking `Run agent` records the local run through `/run` and shows the run ID inline",
+      );
+      expect(normalizedBody).toContain(
+        "Clicking `Run Dream` posts to `/dream` and appends the Dream consolidation summary in chat",
+      );
+      expect(normalizedBody).toContain(
+        "The dashboard also shows the latest local run summary after the daemon records a run",
+      );
+      expect(normalizedBody).toContain(
+        "`vivarium daemon smoke` also prints the latest local run when the daemon reports one",
+      );
+      expect(normalizedBody).toContain(
+        "`vivarium local run` should print `Status: success`, `Provider: local`, and `Validation: pass (0.8)`",
+      );
+      expect(normalizedBody).toContain("`vivarium daemon smoke` should print `Status: ok`");
+      expect(normalizedBody).toContain(
+        "The installed `vivarium` command preserves the installer-selected domain, world root, state path, and live-readiness file as overridable defaults",
+      );
+      expect(normalizedBody).toContain(
+        "so `vivarium local run` stays enough after custom-path or branch-pinned installs",
+      );
+      expect(body).not.toContain("vivarium local run --domain coding");
+      expect(normalizedBody).toContain(
+        "The LaunchAgent daemon uses the same installer-selected state path, so `vivarium daemon smoke` reports the durable local memory backing the daemon",
+      );
+      expect(normalizedBody).toContain(
+        "Copy the exact installer-printed `vivarium local run` command only when you are running outside the installed wrapper",
+      );
+      expect(normalizedBody).toContain(
+        "`vivarium status --state-path <file> --live-env-path <file>` keeps those explicit paths in its next `vivarium local run` and `vivarium connect` commands",
+      );
+      expect(body).toContain(
+        "Use `vivarium setup live` when you are ready to create provider keys",
+      );
+      expect(body).toContain(
+        "`vivarium connect signup` reopens model provider, GitHub/public release, and internal credential handoff",
+      );
+      expect(body).toContain("local value map");
+      expect(body).toContain("~/.vivarium/secrets/anthropic.key");
+      expect(body).toContain("~/.vivarium/secrets/internal-health-url.txt");
+      expect(body).not.toContain("only need to reopen the provider account links");
+      expect(body).toContain(
+        "Use `vivarium connect wizard` only when you want to choose those paths yourself",
+      );
+      const liveSetupPath = body.indexOf("Live setup path:");
+      const advancedLiveControls = body.indexOf("Advanced live setup controls", liveSetupPath);
+      const customWizard = body.indexOf("vivarium connect wizard", advancedLiveControls);
+      expect(liveSetupPath).toBeGreaterThan(-1);
+      expect(advancedLiveControls).toBeGreaterThan(liveSetupPath);
+      expect(customWizard).toBeGreaterThan(advancedLiveControls);
+      for (const command of [
+        "vivarium setup live",
+        "vivarium connect signup",
+        "vivarium connect",
+        "vivarium connect setup --confirm-write",
+        "vivarium connect smoke",
+        "vivarium proof init",
+        "vivarium proof",
+        "vivarium doctor --live",
+      ]) {
+        expect(body.slice(liveSetupPath, advancedLiveControls)).toContain(command);
+      }
+      expect(body).not.toContain("same guided connect wizard");
       expect(block).not.toContain("\nvivarium model\n");
       expect(block).not.toContain("\nvivarium doctor\n");
+      expect(block).not.toContain("\nvivarium onboard\n");
       expect(block).not.toContain("\nvivarium setup\n");
+      expect(block).not.toContain('vivarium run --goal "validate local setup"');
+      expect(block).not.toContain("vivarium setup --quick");
+      expect(block).not.toContain("VIVARIUM_");
+      expect(block).not.toContain("live-readiness.local.env");
     }
+    const installGuide = readFileSync(join("docs", "guides", "install.md"), "utf8");
+    expect(installGuide).toContain("Use the source-checkout shortcuts");
+    expect(installGuide).toContain("bun run quickstart");
+    expect(installGuide).toContain("bun run local");
+    expect(installGuide).toContain("bun run local:run");
+    expect(installGuide).toContain("bun run vivarium -- local");
+    expect(installGuide).toContain("prints the next local commands for a first run");
+    expect(installGuide).not.toContain("first run, live setup, and `doctor --live`");
   });
 
   test("documents installed CLI terminal color controls", () => {
@@ -645,6 +799,25 @@ describe("reference docs", () => {
       ]) {
         expect(body).toContain(term);
       }
+    }
+  });
+
+  test("documents installer flags for common setup overrides", () => {
+    const body = readFileSync(join("docs", "guides", "install.md"), "utf8");
+
+    for (const term of [
+      "bash -s -- --ref main --daemon launchd",
+      "bash scripts/install.sh --dry-run",
+      "--dir ~/.vivarium/vivarium-agent",
+      "--world-root ~/.vivarium/the-world",
+      "--domain coding",
+      "--state-path ~/.vivarium/state.db",
+      "--live-env-path ~/.vivarium/live/live-readiness.local.env",
+      "--color always",
+      "--theme matrix",
+      "Environment variables remain supported for CI",
+    ]) {
+      expect(body).toContain(term);
     }
   });
 
@@ -668,14 +841,17 @@ describe("reference docs", () => {
 
     for (const term of [
       "Pre-main Mac install",
-      "VIVARIUM_AGENT_REF=<branch-or-tag-or-commit>",
-      "VIVARIUM_DAEMON=launchd",
+      "--ref <branch-or-tag-or-commit>",
+      "--daemon launchd",
+      "`vivarium launch handoff` to print the same branch-pinned install command",
+      "vivarium launch handoff --help",
+      "vivarium launch handoff --ref main",
       "~/.vivarium/vivarium-agent",
       "~/.vivarium/the-world",
       "~/.local/bin/vivarium",
       "live-readiness.local.env",
-      "vivarium daemon smoke --status-url http://127.0.0.1:8787/status",
-      'vivarium run --goal "validate local setup" --state-path .vivarium/state.db',
+      "vivarium daemon smoke",
+      "vivarium local run",
     ]) {
       expect(body).toContain(term);
     }
@@ -712,14 +888,29 @@ describe("reference docs", () => {
     expect(existsSync(path), `${path} should exist`).toBe(true);
     const body = existsSync(path) ? readFileSync(path, "utf8") : "";
     expect(body).toContain("doctor --live");
-    expect(body).toContain("--env-file live-readiness.local.env");
-    expect(body).toContain("live env-init --path live-readiness.local.env");
-    expect(body).toContain("source live-readiness.local.env");
+    expect(body).toContain("vivarium setup live");
+    expect(body).toContain("connect init");
     expect(body).toContain("Do not commit");
     expect(body).toContain("live-readiness.local.env");
-    expect(body).toContain("vivarium live env-init --path live-readiness.local.env");
+    expect(body).toContain("vivarium connect init");
+    expect(body).toContain("vivarium connect");
+    expect(body).toContain("vivarium connect signup");
+    expect(body).toContain("vivarium connect setup --confirm-write");
+    expect(body).toContain("vivarium connect setup --confirm-write");
+    expect(body).toContain("vivarium connect smoke");
+    expect(body).toContain("vivarium proof init");
+    expect(body).toContain("vivarium proof");
+    expect(body).not.toContain("vivarium providers smoke");
+    expect(body).not.toContain("vivarium credentials smoke");
     expect(body).toContain("vivarium doctor --live");
+    expect(body).toContain('export VIVARIUM_ANTHROPIC_MODEL="claude-sonnet-4-6"');
+    expect(body).toContain('export VIVARIUM_ANTHROPIC_CONTEXT_WINDOW="1000000"');
+    expect(body).toContain('export VIVARIUM_OPENROUTER_MODEL="openrouter/auto"');
+    expect(body).toContain('export VIVARIUM_OPENROUTER_BASE_URL="https://openrouter.ai/api/v1"');
+    expect(body).toContain('export VIVARIUM_OPENROUTER_CONTEXT_WINDOW="2000000"');
+    expect(body).not.toContain('export VIVARIUM_OPENROUTER_BASE_URL="<openrouter-base-url>"');
     expect(body).not.toContain("bun apps/cli/src/main.ts");
+    expect(body).not.toContain("vivarium live env-init --path live-readiness.local.env");
     for (const envVar of liveReadinessEnvVars) {
       expect(body).toContain(`export ${envVar}=`);
     }
@@ -729,14 +920,28 @@ describe("reference docs", () => {
     const guide = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
     const example = readFileSync(join("docs", "live-readiness.env.example"), "utf8");
     for (const path of [
-      "/Users/idanmann/.codex/memories/vivarium-world-subscriptions.json",
-      "/Users/idanmann/.codex/memories/vivarium-provider-profiles.json",
-      "/Users/idanmann/.codex/memories/vivarium-credentials.enc",
-      "/Users/idanmann/.codex/memories/vivarium-v1-evidence.json",
+      "$HOME/.vivarium/live/world-subscriptions.json",
+      "$HOME/.vivarium/live/provider-profiles.json",
+      "$HOME/.vivarium/live/credentials.enc",
+      "$HOME/.vivarium/live/v1-evidence.json",
     ]) {
       expect(guide).toContain(path);
       expect(example).toContain(path);
     }
+  });
+
+  test("documents the default private live-readiness setup file", () => {
+    const readme = readFileSync("README.md", "utf8");
+    const installGuide = readFileSync(join("docs", "guides", "install.md"), "utf8");
+    const liveGuide = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    const example = readFileSync(join("docs", "live-readiness.env.example"), "utf8");
+
+    for (const body of [readme, installGuide, liveGuide]) {
+      expect(body).toContain("~/.vivarium/live/live-readiness.local.env");
+    }
+    expect(example).toContain("$HOME/.vivarium/live/live-readiness.local.env");
+    expect(readme).not.toContain("--live-env-path live-readiness.local.env");
+    expect(installGuide).not.toContain("Local live-readiness env file: `live-readiness.local.env`");
   });
 
   test("uses inspectable references in the live-readiness evidence manifest example", () => {
@@ -769,8 +974,190 @@ describe("reference docs", () => {
       '--name "$VIVARIUM_INTERNAL_API_CREDENTIAL_NAME"',
       '--value "$VIVARIUM_INTERNAL_API_CREDENTIAL_VALUE"',
       '--url "$VIVARIUM_INTERNAL_API_HEALTH_URL"',
+      "--secrets-dir",
+      "--setup-dir",
     ]) {
       expect(body).toContain(term);
+    }
+  });
+
+  test("keeps live provider setup on friendly fill before raw env wiring", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    const providerSection = body.indexOf("## Provider Environment");
+    const signupHandoff = body.indexOf("vivarium connect signup", providerSection);
+    const localSetupFiles = body.indexOf("private-base-url.txt", signupHandoff);
+    const rerunSetup = body.indexOf("vivarium setup live", localSetupFiles);
+    const rawExport = body.indexOf("export ANTHROPIC_API_KEY=<redacted>", providerSection);
+
+    expect(providerSection).not.toBe(-1);
+    expect(signupHandoff).toBeGreaterThan(providerSection);
+    expect(localSetupFiles).toBeGreaterThan(signupHandoff);
+    expect(rerunSetup).toBeGreaterThan(localSetupFiles);
+    expect(rawExport).toBeGreaterThan(rerunSetup);
+    expect(body).toContain("Manual env-key reference");
+  });
+
+  test("keeps live internal credential setup on friendly commands before raw credential wiring", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    const credentialSection = body.indexOf("## Internal API Credential");
+    const signupHandoff = body.indexOf("vivarium connect signup", credentialSection);
+    const localSetupFile = body.indexOf("internal-health-url.txt", signupHandoff);
+    const rerunSetup = body.indexOf("vivarium setup live", localSetupFile);
+    const guardedWrite = body.indexOf("vivarium connect setup --confirm-write", rerunSetup);
+    const guidedSmoke = body.indexOf("vivarium connect smoke", guardedWrite);
+    const lowLevelReference = body.indexOf("Low-level credential commands", guidedSmoke);
+    const rawCredentialsAdd = body.indexOf("vivarium credentials add", credentialSection);
+    const rawExport = body.indexOf("export VIVARIUM_CREDENTIALS_PATH", credentialSection);
+
+    expect(credentialSection).not.toBe(-1);
+    expect(signupHandoff).toBeGreaterThan(credentialSection);
+    expect(localSetupFile).toBeGreaterThan(signupHandoff);
+    expect(rerunSetup).toBeGreaterThan(localSetupFile);
+    expect(guardedWrite).toBeGreaterThan(rerunSetup);
+    expect(guidedSmoke).toBeGreaterThan(guardedWrite);
+    expect(lowLevelReference).toBeGreaterThan(guidedSmoke);
+    expect(rawCredentialsAdd).toBeGreaterThan(lowLevelReference);
+    expect(rawExport).toBeGreaterThan(lowLevelReference);
+  });
+
+  test("keeps live repo, GitHub, and world setup on generated local files before raw env wiring", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    const namingSection = body.indexOf("## Naming Gate");
+    const providerSection = body.indexOf("## Provider Environment");
+    const manualEnvReference = body.indexOf("### Manual env-key reference");
+    const githubSection = body.indexOf("## GitHub Auth");
+    const worldSection = body.indexOf("## Multi-World Subscriptions");
+    const namingFile = body.indexOf("agent-repo-name.txt", namingSection);
+    const githubSignupHandoff = body.indexOf("vivarium connect signup", githubSection);
+    const githubFile = body.indexOf("github-token.key", githubSignupHandoff);
+    const friendlyGithubSmoke = body.indexOf("vivarium github smoke", githubFile);
+    const friendlyGithubDiscussion = body.indexOf(
+      "vivarium github discussion --confirm-write",
+      githubFile,
+    );
+    const friendlyAgentCi = body.indexOf(
+      "vivarium github workflow-runs --target agent",
+      githubFile,
+    );
+    const friendlyWorldCi = body.indexOf(
+      "vivarium github workflow-runs --target world",
+      githubFile,
+    );
+    const lowLevelTokenPath = body.indexOf("Low-level token path", githubFile);
+    const worldFile = body.indexOf("canonical-world-ref.txt", worldSection);
+    const rawAgentName = body.indexOf("export VIVARIUM_AGENT_REPO_NAME");
+    const rawGithubToken = body.indexOf("export GITHUB_TOKEN");
+    const rawCanonicalWorldRef = body.indexOf("export VIVARIUM_CANONICAL_WORLD_REF");
+
+    expect(namingSection).toBeGreaterThan(-1);
+    expect(providerSection).toBeGreaterThan(namingSection);
+    expect(manualEnvReference).toBeGreaterThan(providerSection);
+    expect(githubSection).toBeGreaterThan(manualEnvReference);
+    expect(worldSection).toBeGreaterThan(githubSection);
+    expect(namingFile).toBeGreaterThan(namingSection);
+    expect(namingFile).toBeLessThan(manualEnvReference);
+    expect(githubSignupHandoff).toBeGreaterThan(githubSection);
+    expect(githubFile).toBeGreaterThan(githubSignupHandoff);
+    expect(friendlyGithubSmoke).toBeGreaterThan(githubFile);
+    expect(friendlyGithubDiscussion).toBeGreaterThan(friendlyGithubSmoke);
+    expect(friendlyAgentCi).toBeGreaterThan(friendlyGithubDiscussion);
+    expect(friendlyWorldCi).toBeGreaterThan(friendlyAgentCi);
+    expect(lowLevelTokenPath).toBeGreaterThan(friendlyWorldCi);
+    expect(worldFile).toBeGreaterThan(worldSection);
+    expect(rawAgentName).toBeGreaterThan(manualEnvReference);
+    expect(rawGithubToken).toBeGreaterThan(manualEnvReference);
+    expect(rawCanonicalWorldRef).toBeGreaterThan(manualEnvReference);
+    expect(body.slice(0, manualEnvReference)).not.toContain("export VIVARIUM_AGENT_REPO_NAME");
+    expect(body.slice(0, manualEnvReference)).not.toContain("export GITHUB_TOKEN");
+    expect(body.slice(0, manualEnvReference)).not.toContain("export VIVARIUM_CANONICAL_WORLD_REF");
+  });
+
+  test("keeps internal credential setup on friendly live setup before raw commands", () => {
+    const body = readFileSync(join("docs", "guides", "add-credentials.md"), "utf8");
+    const friendlySetup = body.indexOf("vivarium setup live");
+    const signupHandoff = body.indexOf("vivarium connect signup", friendlySetup);
+    const localSetupFile = body.indexOf("internal-health-url.txt", signupHandoff);
+    const rerunSetup = body.indexOf("vivarium setup live", localSetupFile);
+    const guardedWrite = body.indexOf("vivarium connect setup --confirm-write", rerunSetup);
+    const guidedSmoke = body.indexOf("vivarium connect smoke", guardedWrite);
+    const lowLevelCommands = body.indexOf("## Low-Level Commands", guidedSmoke);
+    const firstRawCredentialKey = body.indexOf("VIVARIUM_CREDENTIALS_PATH");
+
+    expect(friendlySetup).toBeGreaterThan(-1);
+    expect(signupHandoff).toBeGreaterThan(friendlySetup);
+    expect(localSetupFile).toBeGreaterThan(signupHandoff);
+    expect(rerunSetup).toBeGreaterThan(localSetupFile);
+    expect(guardedWrite).toBeGreaterThan(rerunSetup);
+    expect(guidedSmoke).toBeGreaterThan(guardedWrite);
+    expect(lowLevelCommands).toBeGreaterThan(guidedSmoke);
+    expect(firstRawCredentialKey).toBeGreaterThan(lowLevelCommands);
+    expect(body.slice(0, lowLevelCommands)).not.toContain("export VIVARIUM_");
+  });
+
+  test("keeps live readiness guide on setup live first", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    const setupLive = body.indexOf("vivarium setup live");
+    const connectWizard = body.indexOf("vivarium connect wizard");
+    const manualEnvReference = body.indexOf("### Manual env-key reference");
+    const rawSource = body.indexOf("source ~/.vivarium/live/live-readiness.local.env");
+
+    expect(setupLive).not.toBe(-1);
+    expect(connectWizard).toBeGreaterThan(setupLive);
+    expect(manualEnvReference).toBeGreaterThan(connectWizard);
+    expect(rawSource).toBeGreaterThan(manualEnvReference);
+    expect(body).toContain("Use `vivarium connect wizard` only when you need custom paths");
+    expect(body).toContain("`vivarium connect signup` shows a local value map");
+    expect(body).toContain("~/.vivarium/secrets/github-token.key");
+    expect(body).toContain("~/.vivarium/secrets/private-context-window.txt");
+    expect(body).not.toContain("guided connect wizard in one command");
+  });
+
+  test("keeps live readiness naming guidance aligned with public repo names", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+
+    expect(body).toContain(
+      "The public repository names are `vivarium-agent` and `vivarium-world`.",
+    );
+    expect(body).not.toContain(
+      "`goal.md` still treats `the-agent` and `the-world` as temporary names",
+    );
+  });
+
+  test("keeps provider configuration guide on setup live first", () => {
+    const body = readFileSync(join("docs", "guides", "configure-providers.md"), "utf8");
+    const setupLive = body.indexOf("vivarium setup live");
+    const connectWizard = body.indexOf("vivarium connect wizard");
+    const localSetupFile = body.indexOf("private-base-url.txt", setupLive);
+    const rerunSetup = body.indexOf("vivarium setup live", localSetupFile);
+    const guardedWrite = body.indexOf("vivarium connect setup --confirm-write", rerunSetup);
+    const guidedSmoke = body.indexOf("vivarium connect smoke", guardedWrite);
+    const lowLevelReference = body.indexOf("## Low-Level Provider Commands", guidedSmoke);
+    const rawExport = body.indexOf("export ANTHROPIC_API_KEY=<redacted>");
+    const rawProvidersConfigure = body.indexOf("vivarium providers configure", setupLive);
+
+    expect(setupLive).not.toBe(-1);
+    expect(connectWizard).toBeGreaterThan(setupLive);
+    expect(localSetupFile).toBeGreaterThan(setupLive);
+    expect(rerunSetup).toBeGreaterThan(localSetupFile);
+    expect(guardedWrite).toBeGreaterThan(rerunSetup);
+    expect(guidedSmoke).toBeGreaterThan(guardedWrite);
+    expect(lowLevelReference).toBeGreaterThan(guidedSmoke);
+    expect(rawExport).toBeGreaterThan(lowLevelReference);
+    expect(rawProvidersConfigure).toBeGreaterThan(lowLevelReference);
+    expect(body).toContain("Use `vivarium connect wizard` only when you need custom paths");
+    expect(body).not.toContain("--env-file live-readiness.local.env");
+  });
+
+  test("keeps provider-backed goal examples on the friendly local run command", () => {
+    for (const path of [
+      join("docs", "guides", "configure-providers.md"),
+      join("docs", "guides", "live-readiness.md"),
+    ]) {
+      const body = readFileSync(path, "utf8");
+
+      expect(body).toContain("vivarium local run \\");
+      expect(body).toContain('--env-file "$HOME/.vivarium/live/live-readiness.local.env"');
+      expect(body).not.toContain("vivarium run \\");
     }
   });
 
@@ -780,36 +1167,63 @@ describe("reference docs", () => {
       "## Current Production Blocker Map",
       "Model providers",
       "Internal credential smoke",
-      "GitHub live checks",
       "V1 evidence manifest",
-      "Mac installer and handoff PRs have already merged",
-      "it is not one of the current `doctor --live`",
-      "doctor --live reports `31 passing, 22 blocked`",
+      "reviewed installer branch lands on",
+      "`main`. For pre-main validation",
+      "PR review",
+      "status belongs in the active PR or audit",
+      "state is not one of the current `doctor --live` blockers",
+      "doctor --live reports `36 passing, 17 blocked`",
+      "Provider accounts: 8 blockers",
+      "Internal credential: 3 blockers",
+      "V1 evidence: 6 blockers",
+      "Default private setup file",
+      "needs real values",
+      "missing",
     ]) {
       expect(body).toContain(term);
     }
+    expect(body).toContain("Already clear:");
+    expect(body).not.toContain("PR #26 remains under required review");
+    expect(body).not.toContain("Mac installer and handoff PRs have already merged");
+    expect(body).not.toContain("GitHub live checks |");
   });
 
   test("documents live unlock keys by operator purpose", () => {
     const guide = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
     const example = readFileSync(join("docs", "live-readiness.env.example"), "utf8");
+    const unlockMap = guide.indexOf("## Operator Unlock Key Map");
+    const namingGate = guide.indexOf("## Naming Gate", unlockMap);
+    const manualEnvReference = guide.indexOf("### Manual env-key reference");
+    const unlockMapBody = guide.slice(unlockMap, namingGate);
+
+    expect(unlockMap).toBeGreaterThan(-1);
+    expect(namingGate).toBeGreaterThan(unlockMap);
+    expect(manualEnvReference).toBeGreaterThan(namingGate);
     for (const term of [
       "## Operator Unlock Key Map",
-      "Provider keys/models",
-      "`ANTHROPIC_API_KEY`",
-      "`VIVARIUM_OPENROUTER_BASE_URL`",
+      "Provider accounts and models",
+      "Provider accounts and models | `vivarium connect signup`",
+      "vivarium setup live",
+      "vivarium connect fill",
       "Provider profiles",
-      "`VIVARIUM_PROVIDER_PROFILES_PATH`",
       "Encrypted credentials/internal API",
-      "`VIVARIUM_CREDENTIALS_MASTER_KEY`",
-      "`VIVARIUM_INTERNAL_API_HEALTH_URL`",
+      "Encrypted credentials/internal API | `vivarium connect signup`",
+      "vivarium connect setup --confirm-write",
       "GitHub/public release",
-      "`GITHUB_TOKEN`",
+      "GitHub/public release | `vivarium connect signup`",
+      "world subscribe",
       "V1 evidence manifest",
-      "`VIVARIUM_V1_EVIDENCE_PATH`",
+      "vivarium proof init",
     ]) {
-      expect(guide).toContain(term);
+      expect(unlockMapBody).toContain(term);
     }
+    expect(unlockMapBody).not.toContain("ANTHROPIC_API_KEY");
+    expect(unlockMapBody).not.toContain("VIVARIUM_");
+    expect(unlockMapBody).not.toContain("GITHUB_TOKEN");
+    expect(guide.indexOf("ANTHROPIC_API_KEY")).toBeGreaterThan(manualEnvReference);
+    expect(guide.indexOf("VIVARIUM_OPENROUTER_BASE_URL")).toBeGreaterThan(manualEnvReference);
+    expect(guide.indexOf("GITHUB_TOKEN")).toBeGreaterThan(manualEnvReference);
     for (const term of [
       "# Provider keys/models",
       "# Provider profiles",
@@ -839,6 +1253,101 @@ describe("reference docs", () => {
     }
   });
 
+  test("keeps live readiness setup on the connect-created evidence manifest path", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    const v1Section = body.indexOf("## V1 Evidence Manifest");
+    const completionBoundary = body.indexOf("## Completion Boundary", v1Section);
+    const v1SectionBody = body.slice(v1Section, completionBoundary);
+    const proofInit = v1SectionBody.indexOf("vivarium proof init");
+    const rawEvidencePath = v1SectionBody.indexOf("VIVARIUM_V1_EVIDENCE_PATH");
+    const liveEvidenceInit = v1SectionBody.indexOf("vivarium live evidence-init");
+
+    expect(v1Section).toBeGreaterThan(-1);
+    expect(completionBoundary).toBeGreaterThan(v1Section);
+    expect(proofInit).toBeGreaterThan(-1);
+    expect(rawEvidencePath).toBeGreaterThan(proofInit);
+    expect(liveEvidenceInit).toBeGreaterThan(proofInit);
+    expect(body).toContain("evidence manifest skeleton");
+    expect(body).toContain("evidence-manifest file readiness");
+    expect(body).toContain("`doctor --live` checks the required v1 evidence content");
+    expect(body).toContain(
+      "Run `connect setup --confirm-write` if the wizard did not already confirm the write, saving the provider profile file, encrypted credential store, and evidence manifest skeleton.",
+    );
+    expect(body).toContain("Run `proof init`");
+    expect(body).toContain("Run `connect smoke`");
+    expect(body).toContain("Run `proof`");
+    expect(body).not.toContain("Initialize `VIVARIUM_V1_EVIDENCE_PATH` with `live evidence-init`");
+  });
+
+  test("documents the connect dashboard across live setup groups", () => {
+    for (const path of [
+      "README.md",
+      join("apps", "cli", "README.md"),
+      join("docs", "guides", "live-readiness.md"),
+    ]) {
+      const body = readFileSync(path, "utf8");
+      expect(body).toContain("names/world");
+      expect(body).toContain("GitHub/public release");
+      expect(body).toContain("provider");
+      expect(body).toContain("internal credential");
+      expect(body).toContain("evidence");
+      expect(body).not.toContain("provider, credential, and evidence readiness");
+      expect(body).not.toContain(
+        "provider, encrypted internal-credential, and evidence-manifest file readiness",
+      );
+    }
+  });
+
+  test("keeps the live verification sequence on all connect setup groups", () => {
+    const body = readFileSync(join("docs", "guides", "live-readiness.md"), "utf8");
+    const sequence = body.slice(body.indexOf("## Verification Sequence"));
+
+    expect(sequence).toContain(
+      "plain-language names/world, GitHub/public release, provider, internal credential, and evidence labels",
+    );
+    expect(sequence).toContain(
+      "dashboard reports the names/world, GitHub/public release, provider, internal credential, and evidence file setup sections ready",
+    );
+    expect(sequence).not.toContain(
+      "plain-language provider, internal credential, and evidence-manifest labels",
+    );
+    expect(sequence).not.toContain(
+      "dashboard reports the provider, internal credential, and evidence file setup sections ready",
+    );
+  });
+
+  test("documents connect fill across all live setup groups", () => {
+    for (const path of [
+      join("apps", "cli", "README.md"),
+      join("docs", "guides", "live-readiness.md"),
+    ]) {
+      const body = readFileSync(path, "utf8");
+      const normalized = body.replaceAll(/\s+/g, " ");
+      expect(normalized).toContain(
+        "`connect fill` updates names/world, GitHub/public release, provider, internal credential, and evidence values by friendly setup labels",
+      );
+      expect(normalized).not.toContain(
+        "`connect fill` writes common provider and internal credential values by friendly setup labels",
+      );
+      expect(normalized).not.toContain(
+        "`vivarium connect fill` can also update common provider and internal",
+      );
+    }
+  });
+
+  test("keeps public live setup snippets on group-neutral local file wording", () => {
+    for (const path of ["README.md", join("docs", "guides", "install.md")]) {
+      const body = readFileSync(path, "utf8");
+      expect(body).toContain("Paste requested values into ~/.vivarium/secrets, then:");
+      expect(body).not.toContain(
+        "Paste the provider keys and internal token into ~/.vivarium/secrets",
+      );
+      expect(body).not.toContain(
+        "Paste repo, GitHub, world, provider, and internal values into ~/.vivarium/secrets",
+      );
+    }
+  });
+
   test("ignores filled live-readiness environment files", () => {
     const gitignore = readFileSync(".gitignore", "utf8");
     for (const pattern of ["live-readiness.local.env", "docs/live-readiness.local.env"]) {
@@ -856,6 +1365,42 @@ describe("reference docs", () => {
     }
   });
 
+  test("keeps the CLI app README on the connect live setup path", () => {
+    const body = readFileSync(join("apps", "cli", "README.md"), "utf8");
+    const normalizedBody = body.replaceAll(/\s+/g, " ");
+    const commandGroups = body.indexOf("Implemented command groups include:");
+    const lowLevelBoundary = body.indexOf("Lower-level/debug command groups");
+    const credentialsCommands = body.indexOf("credentials add/list/smoke");
+    const providerCommands = body.indexOf("providers configure/list/smoke");
+    const liveCommands = body.indexOf("live env-init/setup/evidence-init");
+
+    expect(commandGroups).toBeGreaterThan(-1);
+    expect(lowLevelBoundary).toBeGreaterThan(commandGroups);
+    expect(credentialsCommands).toBeGreaterThan(lowLevelBoundary);
+    expect(providerCommands).toBeGreaterThan(lowLevelBoundary);
+    expect(liveCommands).toBeGreaterThan(lowLevelBoundary);
+    expect(body).toContain("connect init");
+    expect(body).toContain("connect signup");
+    expect(body).toContain("connect");
+    expect(body).toContain("connect fill");
+    expect(body).toContain("connect setup --confirm-write");
+    expect(body).toContain("connect smoke");
+    expect(body).toContain("tools");
+    expect(normalizedBody).toContain("read-only external tool and safety policy dashboard");
+    expect(body).toContain("proof init");
+    expect(body).toContain("proof");
+    expect(body).toContain("names/world");
+    expect(body).toContain("GitHub/public release");
+    expect(body).toContain("provider, internal credential, and evidence readiness");
+    expect(body).toContain("friendly setup labels");
+    expect(body).toContain("evidence manifest skeleton");
+    expect(body).toContain(
+      "remains available as the lower-level setup-file creation command for custom paths",
+    );
+    expect(body).not.toContain("connect init creates the private local readiness file");
+    expect(body).not.toContain("existing `live setup` path");
+  });
+
   test("documents top-level thesis and doc navigation", () => {
     for (const [path, terms] of Object.entries(topLevelDocs)) {
       const body = readFileSync(path, "utf8");
@@ -863,6 +1408,47 @@ describe("reference docs", () => {
         expect(body).toContain(term);
       }
     }
+  });
+
+  test("keeps the checked-in local e2e demo on current local run output", () => {
+    const body = readFileSync(join("docs", "demos", "local-e2e.cast"), "utf8");
+
+    expect(body).toContain("Vivarium Run");
+    expect(body).toContain("Status: success");
+    expect(body).toContain("Provider: local");
+    expect(body).toContain("Memory: <demo-state.db>");
+    expect(body).toContain(
+      "Recorded: vivarium status --state-path <demo-state.db> --live-env-path <demo-live-readiness.local.env> will show Run ID run-demo-000 with success state and score 0.8.",
+    );
+    expect(body).toContain('Outcome: Observation: executed \\"build a simple agent end to end\\"');
+    expect(body).toContain("Last run: build a simple agent end to end");
+    expect(body).not.toContain("build a tiny local agent");
+    expect(body).toContain("Run ID: run-demo-000");
+    expect(body).toContain("Readiness file: <demo-live-readiness.local.env>");
+    expect(body).toContain(
+      "$ vivarium --setup --open --domain coding --world-root <demo-world> --state-path <demo-state.db> --live-env-path <demo-live-readiness.local.env>",
+    );
+    expect(body).not.toContain("$ vivarium --setup --domain");
+    expect(body).toContain("Opened: http://127.0.0.1:8787");
+    expect(body).toContain("--world-root <demo-world>");
+    expect(body).toContain("--live-env-path <demo-live-readiness.local.env>");
+    expect(body).not.toContain('vivarium local run --goal \\"build a simple agent end to end\\"');
+    expect(body).toContain("run-demo-000");
+    expect(body).toContain(
+      'vivarium dashboard --open\\n  vivarium daemon smoke\\n  vivarium local run --goal \\"try another small coding task\\"\\n  vivarium status --state-path <demo-state.db> --live-env-path <demo-live-readiness.local.env>',
+    );
+    expect(body).toContain(
+      "vivarium dashboard --open   Open the local gateway URL.\\n  vivarium daemon smoke       Verify the local daemon.",
+    );
+    expect(body).toContain("vivarium version");
+    expect(body).not.toContain("vivarium model               Inspect provider profile readiness.");
+    expect(body).not.toContain(
+      "vivarium launch handoff      Review install and production boundaries.",
+    );
+    expect(body).not.toContain("vivarium launch handoff\\n  vivarium model");
+    expect(body).not.toContain("/Users/");
+    expect(body).not.toContain("vivarium-local-e2e-demo-");
+    expect(body).not.toContain("Memory: /");
   });
 
   test("documents the v1 completion boundary in the active audit", () => {
@@ -911,27 +1497,113 @@ describe("reference docs", () => {
     const body = existsSync(path) ? readFileSync(path, "utf8") : "";
     for (const term of [
       "curl -fsSL https://raw.githubusercontent.com/idanmann10/vivarium-agent/main/scripts/install.sh",
-      "VIVARIUM_DAEMON=launchd",
+      "bash -s -- --daemon launchd",
       "installed checkout",
-      "branch `main`",
+      "branch `codex/local-agent-production-ready`",
       "clean status",
+      "Branch-pinned dry-runs stay clean",
+      "avoid leaking `fatal:` Git probes",
       "Stable reinstalls recover from old branch-pinned checkouts",
       "Fresh installs prefill safe public metadata",
+      "Missing Git recovery is copyable",
+      "xcode-select --install",
+      "Missing Bun recovery is copyable",
+      "custom `VIVARIUM_BUN_PATH`",
+      "curl -fsSL https://bun.sh/install \\| bash",
+      "Missing LaunchAgent runtime recovery is copyable",
+      "rerun without `VIVARIUM_DAEMON=launchd`",
+      "Invalid daemon host/port values fail before install work or daemon start",
+      "packages/core/src/daemon-config.test.ts",
+      "trailing-dot `VIVARIUM_DAEMON_HOST`",
+      "leading-zero `VIVARIUM_DAEMON_PORT`",
+      "integer from 1 to 65535",
+      "apps/daemon/src/main.test.ts",
+      "vivarium launch handoff --daemon-host",
+      "vivarium launch handoff --daemon-port",
       "origin` set to `https://github.com/idanmann10/vivarium-agent.git",
       "vivarium update",
+      "/Users/idanmann/.bun/bin/bun install --frozen-lockfile",
+      "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
-      "`406 pass, 0 fail`",
-      "`31 passing, 22 blocked`",
-      "PR #22 merged as `991b177`",
-      "PR #23 merged as `9d21154`",
-      "branch protection remained intact",
+      "Memory: /Users/idanmann/.vivarium/state.db",
+      "`607 pass, 0 fail, 5319 expect calls`",
+      "build a simple agent end to end",
+      "current simple-agent run ID is intentionally not hardcoded",
+      "Gateway dashboard supports the local agent loop",
+      "TailAdmin/shadcn-inspired `Vivarium Gateway`",
+      "Live Workspace",
+      "Quick Chat",
+      "Agent World",
+      "Activity Lanes",
+      "CSS fallback sprites",
+      "Run Dream",
+      "Dream consolidation summary",
+      "Run Dream preserves starter skills",
+      "23 skills, 22 promoted, 1 archived",
+      "fresh temp install builds a simple agent end to end",
+      "run-1779026348114-323",
+      "Provider-profile runs use the live setup file",
+      "Anthropic setup details match live setup",
+      "Setup live skips already-configured local source files",
+      "Connect signup skips already-configured local source files",
+      "Connect signup skips ready proof init",
+      "Connect smoke blocked handoff points back to setup files",
+      "Proof blocked handoff points back to setup files",
+      "paste values only into files still listed here",
+      "bun run dependency:audit",
+      "No vulnerabilities found",
+      "fix(runtime): preserve unused starter skills during dream",
+      "vivarium 0.0.0",
+      "daemon smoke and status verify the current latest simple-agent run",
+      "status next commands preserve explicit `--state-path` and `--live-env-path` values",
+      "focused help smokes",
+      "vivarium local --help",
+      "vivarium status --help",
+      "default Compose daemon docs",
+      "short smoke command",
+      "Invite one eligible non-author reviewer when GitHub reports REVIEW_REQUIRED.",
+      "gh pr view 26 --repo idanmann10/vivarium-agent --json reviewDecision,mergeStateStatus,reviewRequests",
+      "gh api repos/idanmann10/vivarium-agent/collaborators --jq '.[].login'",
+      "gh api -X PUT repos/idanmann10/vivarium-agent/collaborators/REVIEWER_GITHUB_USERNAME -f permission=push",
+      "resolves the current branch PR through GitHub CLI when available",
+      "gh pr edit PR_NUMBER --repo idanmann10/vivarium-agent --add-reviewer REVIEWER_GITHUB_USERNAME",
+      "vivarium launch handoff --pr-number 26 --reviewer REVIEWER_GITHUB_USERNAME",
+      "gh pr edit 26 --repo idanmann10/vivarium-agent --add-reviewer REVIEWER_GITHUB_USERNAME",
+      "reviewer must accept the invite before the review request can satisfy branch protection",
+      "`36 passing, 17 blocked`",
+      "`4 passing, 4 blocked`",
+      "PR #26",
+      "Live/v1 production readiness blockers",
+      "issue #9",
+      "`vivarium launch handoff`",
+      "<current-commit>",
+      "current commit-pinned installer URL",
+      "short default `vivarium daemon smoke` command",
+      "custom daemon endpoints",
+      "current collaborator list only returns `idanmann10`",
+      "gh pr view 26 --repo idanmann10/vivarium-agent --json headRefOid,reviewDecision,mergeStateStatus,reviewRequests,statusCheckRollup",
       "Operator Handoff",
-      'vivarium run --goal "validate local setup"',
+      "Until PR #26 lands, use the branch-pinned pre-main handoff.",
+      "After PR #26 lands, use the stable main installer.",
+      "vivarium local run",
       "provider keys",
       "two-week improvement evidence",
     ]) {
       expect(body).toContain(term);
     }
+    const hardcodedCommitInstallerLines = body.split(/\r?\n/).filter((line) => {
+      const looksLikeInstallerCommand =
+        line.startsWith("curl -fsSL ") &&
+        line.includes("idanmann10/vivarium-agent/") &&
+        line.includes("/scripts/install.sh");
+      return (
+        looksLikeInstallerCommand &&
+        !line.includes("/main/scripts/install.sh") &&
+        !line.includes("/<current-commit>/scripts/install.sh")
+      );
+    });
+    expect(hardcodedCommitInstallerLines).toEqual([]);
+    expect(body).not.toMatch(/\bat `[0-9a-f]{7,40}`/);
   });
 
   test("documents open-source production readiness at the repo root", () => {
@@ -941,6 +1613,14 @@ describe("reference docs", () => {
       for (const term of terms) {
         expect(body).toContain(term);
       }
+    }
+  });
+
+  test("keeps public setup docs on friendly evidence labels", () => {
+    for (const path of ["README.md", join("apps", "cli", "README.md")]) {
+      const body = readFileSync(path, "utf8");
+      expect(body).toContain("evidence");
+      expect(body).not.toContain("VIVARIUM_V1_EVIDENCE_PATH");
     }
   });
 });

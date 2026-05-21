@@ -130,6 +130,22 @@ function headers(token: string): Record<string, string> {
   };
 }
 
+function isPlaceholderValue(value: string): boolean {
+  return /^<[^>]+>$/.test(value.trim());
+}
+
+function readToken(
+  env: Readonly<Record<string, string | undefined>>,
+  tokenEnv: string,
+): string | undefined {
+  const token = env[tokenEnv]?.trim();
+  if (token === undefined || token.length === 0 || isPlaceholderValue(token)) {
+    return undefined;
+  }
+
+  return token;
+}
+
 function parsePermissions(value: unknown): GitHubRepositoryPermissions | undefined {
   const permissions = value as { readonly pull?: unknown; readonly push?: unknown; readonly admin?: unknown };
   if (
@@ -224,8 +240,8 @@ function workflowRunsUrl(options: GitHubWorkflowRunsCommandOptions): string {
 
 export async function githubSmokeCommand(options: GitHubSmokeCommandOptions): Promise<GitHubSmokeCommandResult> {
   const env = options.env ?? process.env;
-  const token = env[options.tokenEnv];
-  if (token === undefined || token.length === 0) {
+  const token = readToken(env, options.tokenEnv);
+  if (token === undefined) {
     return {
       ok: false,
       owner: options.owner,
@@ -293,8 +309,8 @@ export async function githubDiscussionCommand(options: GitHubDiscussionCommandOp
   }
 
   const env = options.env ?? process.env;
-  const token = env[options.tokenEnv];
-  if (token === undefined || token.length === 0) {
+  const token = readToken(env, options.tokenEnv);
+  if (token === undefined) {
     return {
       ok: false,
       owner: options.owner,
@@ -350,8 +366,8 @@ export async function githubPullRequestCommand(options: GitHubPullRequestCommand
   }
 
   const env = options.env ?? process.env;
-  const token = env[options.tokenEnv];
-  if (token === undefined || token.length === 0) {
+  const token = readToken(env, options.tokenEnv);
+  if (token === undefined) {
     return {
       ok: false,
       owner: options.owner,
@@ -403,8 +419,8 @@ export function renderGitHubPullRequestCommandResult(result: GitHubPullRequestCo
 
 export async function githubWorkflowRunsCommand(options: GitHubWorkflowRunsCommandOptions): Promise<GitHubWorkflowRunsCommandResult> {
   const env = options.env ?? process.env;
-  const token = env[options.tokenEnv];
-  if (token === undefined || token.length === 0) {
+  const token = readToken(env, options.tokenEnv);
+  if (token === undefined) {
     return {
       ok: false,
       owner: options.owner,
