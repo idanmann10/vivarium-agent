@@ -695,13 +695,13 @@ describe("reference docs", () => {
         "`vivarium dashboard` prints `http://127.0.0.1:8787`, the daemon gateway backed by `/status`",
       );
       expect(normalizedBody).toContain(
-        "The daemon root is a TailAdmin/shadcn-inspired `Vivarium Gateway` with agent chat, session cards, a command bar, run controls, Agent Party, Model + Tools, Live Run Stream, Agent Directory, World Inspector, world telemetry, and a canvas world view",
+        "The daemon root is a TailAdmin/shadcn-inspired `Vivarium Gateway` with a first-screen Live Workspace, Quick Chat, Agent World, Activity Lanes, run controls, Dream controls, Agent Directory, world telemetry, and a game-like agent world canvas with CSS fallback sprites",
       );
       expect(normalizedBody).toContain(
         "Use `vivarium dashboard --open` to open that URL in your browser",
       );
       expect(normalizedBody).toContain(
-        "The localhost dashboard includes a `Run agent` form with the default `build a simple agent end to end` goal",
+        "The localhost dashboard includes Quick Chat and Operator Console `Run agent` forms with the default `build a simple agent end to end` goal",
       );
       expect(normalizedBody).toContain(
         "Clicking `Run agent` records the local run through `/run` and shows the run ID inline",
@@ -1521,13 +1521,18 @@ describe("reference docs", () => {
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
       "Memory: /Users/idanmann/.vivarium/state.db",
-      "`606 pass, 0 fail, 5254 expect calls`",
+      "`607 pass, 0 fail, 5303 expect calls`",
       "build a simple agent end to end",
       "current simple-agent run ID is intentionally not hardcoded",
       "Gateway dashboard supports the local agent loop",
       "TailAdmin/shadcn-inspired `Vivarium Gateway`",
+      "Live Workspace",
+      "Quick Chat",
+      "Agent World",
+      "Activity Lanes",
+      "CSS fallback sprites",
       "Run Dream",
-      "Dream consolidated 23 local skills across coding.",
+      "Dream consolidation summary",
       "Run Dream preserves starter skills",
       "23 skills, 22 promoted, 1 archived",
       "fresh temp install builds a simple agent end to end",
