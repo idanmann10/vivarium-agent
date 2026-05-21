@@ -1521,7 +1521,7 @@ describe("reference docs", () => {
       "/Users/idanmann/.local/bin/vivarium` now executes `/Users/idanmann/.bun/bin/bun",
       "Status: ok",
       "Memory: /Users/idanmann/.vivarium/state.db",
-      "`607 pass, 0 fail, 5303 expect calls`",
+      "`607 pass, 0 fail, 5307 expect calls`",
       "build a simple agent end to end",
       "current simple-agent run ID is intentionally not hardcoded",
       "Gateway dashboard supports the local agent loop",

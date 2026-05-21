@@ -108,6 +108,8 @@ describe("modelCommand", () => {
     expect(output).toContain("Secret: missing provider key");
     expect(output).toContain("Provider secrets need attention:");
     expect(output).toContain("vivarium connect signup");
+    expect(output).toContain("Paste provider keys into generated local setup files:");
+    expect(output).toContain("vivarium setup live");
     expect(output).toContain("vivarium connect fill");
     expect(output).toContain("vivarium connect setup --confirm-write");
     expect(output).toContain("vivarium connect smoke");
@@ -225,6 +227,8 @@ describe("modelCommand", () => {
     expect(output).toContain("[fix] openrouter");
     expect(output).toContain("[fix] private-finetune");
     expect(output).toContain("vivarium connect signup");
+    expect(output).toContain("Paste missing provider values into generated local setup files:");
+    expect(output).toContain("vivarium setup live");
     expect(output).toContain("vivarium connect fill");
     expect(output).toContain("vivarium connect setup --confirm-write");
     expect(output).not.toContain("vivarium live setup --env-file live-readiness.local.env --confirm-write");
